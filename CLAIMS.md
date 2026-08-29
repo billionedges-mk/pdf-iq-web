@@ -307,3 +307,29 @@ The lesson is narrower than the others and worth stating plainly: **a cache head
 too.** `immutable` on a mutable URL is the same category of error as any other unverified
 assertion on this site, and it fails in the one place nothing local can see — someone else's
 browser, holding a copy of a file that no longer exists.
+
+
+### A fifth failure — and the first the page can catch itself
+
+The readout showed the *old* string again, on pdf-iq.com, after the content-hash fix. The apex
+was serving the current build: correct HTML, correct hashed bundle, `clean: true`, six files
+loaded and all same-origin. The string could not come from the deployed code.
+
+`/assets/net.js` — the old, unhashed path — still returned **200** with the pre-fix bundle,
+marked `immutable`:
+
+    var s={requests:[],sentBytes:0,sends:[],crossOrigin:[],loaded:!1}
+
+Cloudflare Pages keeps assets from earlier deployments reachable. A browser holding stale HTML
+asks for the old path, is handed old code with a year-long immutable lifetime, and runs it.
+Content hashing prevents this recurring, but only once a visitor has received new HTML at least
+once — the last generation of unhashed markup still points at the old file.
+
+No local test can see this. It is not a property of the build; it is a property of what one
+particular browser is holding. The page is the only thing positioned to notice, so now it does:
+the build id is stamped into both the HTML and the bundle, and if they disagree the readout
+stops showing a figure and says **"reload this page — it is running an old copy"** instead.
+
+That is the general principle worth keeping. Where a claim can be wrong for reasons no test can
+reach, the honest move is not a better number — it is for the thing to detect that it cannot
+stand behind the number, and say so.

@@ -55,6 +55,33 @@ worded so that it stays true if the measurement comes back badly.
 
 ---
 
+## Test coverage
+
+- **OCR is not in the automated pass.** `e2e-selftest.ts` drives the other six tools end to
+  end; OCR is excluded because a run needs a 6–11 MB language model fetch and roughly ten
+  seconds, which would make every local test run slow enough that people stop running it. It
+  has been verified by hand (8 pages, 9.9s, 1.2s a page, 95% mean confidence) but nothing
+  guards it against regression.
+
+  Three ways to make it feasible, cheapest first:
+  1. **A separate slow suite, run on demand.** `npm run selftest:slow`, not part of the default
+     pass, run before a release rather than on every change. Least work, and it keeps the fast
+     suite fast — the property that makes people actually run it.
+  2. **Warm the model cache once.** tesseract.js caches the model in IndexedDB, so the fetch
+     costs ten seconds on the first run of a browser profile and nothing afterwards. A suite
+     that tolerates one slow first run is close to free thereafter, but it is fragile on CI,
+     where the profile is fresh every time.
+  3. **A smaller language.** The `tessdata_fast` variants are roughly 2 MB against 10 MB. That
+     changes what is being tested, though — accuracy is the thing OCR is judged on, and testing
+     a model we do not ship proves less than it appears to.
+
+  Preference is (1) with (2) as a side effect. Do not do (3) without also measuring accuracy
+  against the model that actually ships.
+
+- **Chrome only.** No Safari or Firefox has run any of this. Safari matters most: it is the one
+  browser that decodes HEIC, and it has its own history with `OffscreenCanvas` and
+  `createImageBitmap`, both of which the compressor depends on.
+
 ## Website operational
 
 - **Cloudflare log retention** is described on `/privacy` without a retention period, because the

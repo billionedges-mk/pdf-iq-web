@@ -169,6 +169,35 @@ async function main(): Promise<void> {
   }
   write('');
 
+  // ---- 5. a stale bundle is detected and refuses to show a figure ----------
+  write('• A cached bundle from an older deploy is caught, not trusted');
+  try {
+    const { win, doc, frame } = await load('/compress/', 700);
+    const api = (win as unknown as { pdfiqNet: { build: () => { running: string; expected: string; stale: boolean } } }).pdfiqNet;
+    const build = api.build();
+    note(`running ${build.running}, page expects ${build.expected}`);
+    ok(build.running === build.expected, 'a fresh load agrees with itself');
+    ok(!build.stale, 'not reported stale');
+    ok(CLEAN.test(readouts(doc)[0]), 'shows a figure while it agrees');
+
+    // Rewrite the document's stamp to simulate HTML from a different deploy, which is
+    // exactly the shape of the real failure: new markup, cached script.
+    const meta = doc.querySelector('meta[name="pdfiq-build"]') as HTMLMetaElement;
+    meta.content = 'deadbeefcafe';
+    await win.fetch('/favicon.svg').catch(() => {});
+    await new Promise((r) => setTimeout(r, 250));
+    const after = readouts(doc);
+    note(`after the stamp changed: ${JSON.stringify(after[0])}`);
+    ok(after.every((t) => /running an old copy/.test(t)), 'every readout says to reload');
+    ok(!CLEAN.test(after[0]), 'it stops showing a figure it cannot stand behind');
+    ok(api.build().stale, 'reported stale');
+    frame.remove();
+  } catch (err) {
+    failed++;
+    write(`  FAIL  ${err instanceof Error ? err.message : String(err)}`);
+  }
+  write('');
+
   write(failed === 0 ? 'READOUT VERIFIED' : `${failed} GROUP(S) FAILED`);
   document.title = failed === 0 ? 'readout: pass' : `readout: ${failed} failed`;
   (window as unknown as { selftestDone: boolean }).selftestDone = true;

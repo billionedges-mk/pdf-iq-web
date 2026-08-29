@@ -7,6 +7,8 @@
 // and the footer readout can honestly say zero.
 
 import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync, readdirSync } from 'node:fs';
+import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
@@ -20,6 +22,32 @@ const WATCH = process.argv.includes('--watch');
 const SERVE = process.argv.includes('--serve');
 
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
+
+/**
+ * An identifier for this build, stamped into both the HTML and the bundle so the running
+ * page can tell whether the two came from the same deploy.
+ *
+ * This exists because they can disagree. Cloudflare Pages keeps assets from previous
+ * deployments reachable, so a browser holding stale HTML fetches the old, unhashed asset
+ * path, gets pre-fix code served `immutable`, and runs it — showing a readout the current
+ * build cannot produce, with nothing on the wire to explain it. Nothing local can detect
+ * that; only the page itself can, by comparing what it was compiled as against what the
+ * document says it should be.
+ */
+function buildId() {
+  const fromCI = process.env.CF_PAGES_COMMIT_SHA;
+  if (fromCI) return fromCI.slice(0, 12);
+  try {
+    return execSync('git rev-parse --short=12 HEAD', { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString().trim();
+  } catch {
+    // No git and no CI: hash the sources so the id still changes when the code does.
+    const h = createHash('sha256');
+    for (const f of ['src/styles/app.css', 'src/entries/net.ts']) h.update(read(f));
+    return h.digest('hex').slice(0, 12);
+  }
+}
+const BUILD_ID = buildId();
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 // ---------------------------------------------------------------- shell
@@ -116,6 +144,7 @@ function document_({ page, body, css, assets }) {
 <meta property="og:title" content="${esc(page.title)}">
 <meta property="og:description" content="${esc(page.description)}">
 <meta name="theme-color" content="#FAF8F4">
+<meta name="pdfiq-build" content="${BUILD_ID}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 ${FONT_PRELOADS}
 <style>${css}</style>
@@ -258,7 +287,7 @@ async function bundle() {
     sourcemap: WATCH,
     logLevel: 'warning',
     metafile: true,
-    define: { 'process.env.NODE_ENV': '"production"' },
+    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID) },
   });
 
   const hashed = new Map();
@@ -332,7 +361,7 @@ async function build() {
     `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`
   );
 
-  console.log(`built ${ALL.length} routes -> dist/`);
+  console.log(`built ${ALL.length} routes -> dist/  (build ${BUILD_ID})`);
 }
 
 await build();

@@ -40,6 +40,9 @@
  * it catches that beacon by construction.
  */
 
+/** Stamped in at build time; compared against the document's own stamp. */
+declare const __PDFIQ_BUILD__: string;
+
 interface Sent {
   bytes: number;
   where: string;
@@ -192,10 +195,45 @@ function formatBytes(n: number): string {
   return `${(n / 1048576).toFixed(1)} MB`;
 }
 
+/**
+ * Is this bundle the one this page was built with?
+ *
+ * They can disagree. Cloudflare Pages keeps assets from earlier deployments reachable, so
+ * a browser holding stale HTML fetches the old asset path, is handed pre-fix code marked
+ * `immutable`, and runs it — reporting a number the current build cannot produce, with
+ * nothing on the wire to explain it. Content-hashed filenames stop that happening again,
+ * but only once a visitor has received new HTML at least once.
+ *
+ * No local test can see this: it is a property of what a particular browser is holding.
+ * The page is the only thing positioned to notice, so it checks, and says so rather than
+ * showing a figure it cannot stand behind.
+ */
+function staleBundle(): { running: string; expected: string } | null {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="pdfiq-build"]');
+  const expected = meta?.content ?? '';
+  const running = typeof __PDFIQ_BUILD__ === 'string' ? __PDFIQ_BUILD__ : '';
+  if (!expected || !running || expected === running) return null;
+  return { running, expected };
+}
+
 function render(): void {
   // Every readout on the page, not one by id. The homepage carries two.
   const wraps = Array.from(document.querySelectorAll<HTMLElement>('[data-netreadout]'));
   if (!wraps.length) return;
+
+  const stale = staleBundle();
+  if (stale) {
+    for (const wrap of wraps) {
+      const el = wrap.querySelector<HTMLElement>('[data-netreadout-text]');
+      if (el) el.textContent = 'reload this page — it is running an old copy';
+      wrap.classList.add('netreadout--dirty');
+      wrap.setAttribute('title',
+        `This page was built as ${stale.expected} but the script running is ${stale.running}. ` +
+        'Your browser is holding a cached copy from an earlier deploy, so any figure here ' +
+        'would describe code you are not running. Reload to get the current one.');
+    }
+    return;
+  }
 
   const sent = state.sentBytes;
   const third = state.thirdParty.length;
@@ -226,6 +264,7 @@ if (document.readyState !== 'complete') window.addEventListener('load', render, 
 declare global {
   interface Window {
     pdfiqNet: {
+      build: () => { running: string; expected: string; stale: boolean };
       bytesSent: () => number;
       thirdParty: () => string[];
       seen: () => string[];
@@ -235,10 +274,15 @@ declare global {
   }
 }
 window.pdfiqNet = {
+  build: () => ({
+    running: typeof __PDFIQ_BUILD__ === 'string' ? __PDFIQ_BUILD__ : 'unknown',
+    expected: document.querySelector<HTMLMetaElement>('meta[name="pdfiq-build"]')?.content ?? 'unknown',
+    stale: staleBundle() !== null,
+  }),
   bytesSent: () => state.sentBytes,
   thirdParty: () => state.thirdParty.slice(),
   seen: () => state.seen.slice(),
-  clean: () => state.sentBytes === 0 && state.thirdParty.length === 0,
+  clean: () => staleBundle() === null && state.sentBytes === 0 && state.thirdParty.length === 0,
 };
 
 export {};
