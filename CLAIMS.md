@@ -333,3 +333,26 @@ stops showing a figure and says **"reload this page — it is running an old cop
 That is the general principle worth keeping. Where a claim can be wrong for reasons no test can
 reach, the honest move is not a better number — it is for the thing to detect that it cannot
 stand behind the number, and say so.
+
+
+### "Next, with this same file" was not true
+
+Reported from use: after Images to PDF, following "Compress it" opened an empty drop zone and
+the file just produced had to be found on disk and picked again.
+
+The compress result said **"Next, with this same file"** and merge said **"Next, with this
+merged file"**. Both were plain links. The sentence promised the one thing that did not happen,
+which puts it in the same category as every other claim in this file — it was checkable, and
+nobody checked it.
+
+Implemented rather than reworded, because the chain is the point: compress then split, or OCR
+then compress. Each page is a separate document by design, so the bytes are handed over through
+IndexedDB on this origin — never a request, never off the device — claimed and deleted in the
+same transaction, with anything abandoned swept after ten minutes.
+
+That is the first time a document of the user's is written to storage rather than only held in
+memory, so the privacy page now declares it as a third item alongside the OCR model and its
+flag, and says plainly that it only happens if one of those links is clicked.
+
+All seven tools now hand off and six accept. Images to PDF only hands off, because a PDF is not
+an input it takes. Split hands on the first part, and says so.

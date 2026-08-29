@@ -13,6 +13,7 @@ import { PageGrid } from '../lib/pagegrid.js';
 import { readOutline, writeOutline, remapOutline, countOutline, type OutlineNode } from '../lib/outline.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, describeRanges } from '../lib/format.js';
+import { wireNextLinks, claimIncoming } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
 
 const STAGES = ['Copying pages in the new order', 'Rebuilding bookmarks', 'Writing the file'];
@@ -31,6 +32,10 @@ let outline: OutlineNode[] = [];
 let busy = false;
 
 warnWhileBusy(() => busy);
+
+/** The finished file, so the "next" links can carry it to the following tool. */
+let lastResult: { bytes: Uint8Array; name: string } | null = null;
+wireNextLinks(document, () => lastResult);
 
 const input = $<HTMLInputElement>('[data-file-input]')!;
 wireDropzone($('[data-dropzone]')!, input, (files) => void take(files[0]));
@@ -260,6 +265,7 @@ function renderResult(bytes: Uint8Array, kept: number, bookmarks: number): void 
   $('[data-result-mono]')!.textContent = bits.join(' · ');
 
   const outName = suffixName(file!.name, '-reordered');
+  lastResult = { bytes, name: outName };
   const save = $<HTMLButtonElement>('[data-save]')!;
   save.textContent = `Save ${outName}`;
   save.onclick = () => saveFile(bytes, outName);
@@ -285,3 +291,9 @@ function reset(): void {
   busy = false;
   shell.show('empty');
 }
+
+// A file handed over from another tool's "next" links. Nothing happens on a normal
+// visit; claimIncoming returns null unless this page was opened with a handoff key.
+void claimIncoming().then((handed) => {
+  if (handed) void take(handed);
+});

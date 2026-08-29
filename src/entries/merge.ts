@@ -15,6 +15,7 @@ import { readOutline, writeOutline, shiftOutline, countOutline, type OutlineNode
 import { rebuildAcroForm, hasFormFields } from '../lib/acroform.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural } from '../lib/format.js';
+import { wireNextLinks, claimIncoming } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
 
 const STAGES = ['Copying pages', 'Rebuilding bookmarks', 'Writing the file'];
@@ -37,6 +38,10 @@ let nextId = 1;
 let busy = false;
 
 warnWhileBusy(() => busy);
+
+/** The finished file, so the "next" links can carry it to the following tool. */
+let lastResult: { bytes: Uint8Array; name: string } | null = null;
+wireNextLinks(document, () => lastResult);
 
 const input = $<HTMLInputElement>('[data-file-input]')!;
 wireDropzone($('[data-dropzone]')!, input, (files) => void addFiles(files));
@@ -309,6 +314,7 @@ function renderResult(
     : 'none in these files';
 
   const name = ($<HTMLInputElement>('[data-outname]')!.value || 'merged.pdf').replace(/(\.pdf)?$/i, '.pdf');
+  lastResult = { bytes, name };
   const save = $<HTMLButtonElement>('[data-save]')!;
   save.textContent = `Save ${name}`;
   save.onclick = () => saveFile(bytes, name);
@@ -325,3 +331,9 @@ function reset(): void {
   outname.value = 'merged.pdf';
   shell.show('empty');
 }
+
+// A file handed over from another tool's "next" links. Nothing happens on a normal
+// visit; claimIncoming returns null unless this page was opened with a handoff key.
+void claimIncoming().then((handed) => {
+  if (handed) void addFiles([handed]);
+});

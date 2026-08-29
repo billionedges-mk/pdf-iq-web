@@ -330,6 +330,77 @@ const CASES: Case[] = [
   },
 ];
 
+
+// ---------------------------------------------------------------- handoff
+
+const HANDOFF_CASES: Case[] = [
+  {
+    name: 'Compress → Split carries the file across, so nothing is re-picked',
+    async run() {
+      const p = await open('/compress/');
+      const src = await scanPdf(6, 1100, 1550, 0.94);
+      feed(p, [fileOf(src, 'chain-test.pdf')]);
+      await waitFor(p.doc, 'selected');
+      click(p.doc, '[data-start]');
+      await waitFor(p.doc, 'result');
+      const compressed = await capture(p);
+      note(`compressed to ${(compressed.length / 1024).toFixed(0)} KB, 6 pages`);
+
+      // Follow the real link, exactly as a person would.
+      const link = p.doc.querySelector<HTMLAnchorElement>('.nextup a[href="/split/"]')!;
+      ok(!!link, 'the result offers "Split it"');
+      link.click();
+      // The click stashes asynchronously and then navigates the frame.
+      await new Promise((r) => setTimeout(r, 900));
+      await new Promise<void>((r) => {
+        if (p.frame.contentWindow?.location.pathname === '/split/') return r();
+        p.frame.addEventListener('load', () => r(), { once: true });
+      });
+      await new Promise((r) => setTimeout(r, 2500));
+
+      const doc2 = p.frame.contentDocument!;
+      const views = Array.from(doc2.querySelectorAll<HTMLElement>('[data-view]')).filter((e) => !e.hidden).map((e) => e.dataset.view);
+      note(`split opened showing: ${views.join(',')}`);
+      ok(views.includes('selected'), 'split opened with the file already loaded, not the drop zone');
+      const meta = doc2.querySelector('[data-file-meta]')!.textContent!;
+      note(`split sees: ${meta}`);
+      ok(/6 pages/.test(meta), 'split reports the same 6 pages');
+      ok(doc2.querySelector('[data-file-name]')!.textContent!.includes('-small'),
+        'it is the compressed output, not the original');
+
+      // The query string must be gone, so a reload does not try to re-claim it.
+      ok(!p.frame.contentWindow!.location.search.includes('from='),
+        'the handoff key is removed from the URL');
+      p.frame.remove();
+    },
+  },
+  {
+    name: 'A handoff is one-shot: claiming it twice gets nothing',
+    async run() {
+      const p = await open('/compress/');
+      const mod = await import('../lib/handoff.js');
+      const key = await mod.stash(new Uint8Array([37, 80, 68, 70, 45, 49]), 'once.pdf');
+      ok(typeof key === 'string', 'stashing returned a key');
+      const first = await mod.claim(key!);
+      ok(first !== null && first.name === 'once.pdf', 'the first claim gets the file');
+      const second = await mod.claim(key!);
+      ok(second === null, 'the second claim gets nothing — it was deleted on read');
+      p.frame.remove();
+    },
+  },
+  {
+    name: 'A direct visit is unaffected, and a bogus key does not break the page',
+    async run() {
+      const p = await open('/split/?from=doesnotexist');
+      await new Promise((r) => setTimeout(r, 1200));
+      const views = Array.from(p.doc.querySelectorAll<HTMLElement>('[data-view]')).filter((e) => !e.hidden).map((e) => e.dataset.view);
+      ok(views.includes('empty'), 'falls back to the drop zone rather than erroring');
+      ok(!p.frame.contentWindow!.location.search.includes('from='), 'the bad key is cleared from the URL');
+      p.frame.remove();
+    },
+  },
+];
+
 // ---------------------------------------------------------------- errors
 
 const ERROR_CASES: Case[] = [
@@ -467,6 +538,7 @@ async function main(): Promise<void> {
 
   const groups: Array<[string, Case[]]> = [
     ['TOOLS — real files through the real pages', CASES],
+    ['HANDOFF — the next tool gets the file', HANDOFF_CASES],
     ['ERROR PATHS — every failure named specifically', ERROR_CASES],
     ['ACCESSIBILITY', A11Y_CASES],
   ];

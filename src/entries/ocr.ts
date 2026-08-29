@@ -23,6 +23,7 @@ import {
 } from '../lib/textlayer.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, describeRanges, seconds } from '../lib/format.js';
+import { wireNextLinks, claimIncoming } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
 
 const STAGES = ['Loading the language model', 'Reading each page', 'Writing the text behind the scan'];
@@ -55,6 +56,10 @@ let results: PageResult[] = [];
 const pageScale = new Map<number, number>();
 
 warnWhileBusy(() => busy);
+
+/** The finished file, so the "next" links can carry it to the following tool. */
+let lastResult: { bytes: Uint8Array; name: string } | null = null;
+wireNextLinks(document, () => lastResult);
 
 const input = $<HTMLInputElement>('[data-file-input]')!;
 wireDropzone($('[data-dropzone]')!, input, (files) => void take(files[0]));
@@ -412,6 +417,7 @@ function renderResult(bytes: Uint8Array, took: number): void {
     `${seconds(took)} on this device (${(took / Math.max(1, results.length) / 1000).toFixed(1)}s a page)`;
 
   const outName = suffixName(file!.name, '-searchable');
+  lastResult = { bytes, name: outName };
   const save = $<HTMLButtonElement>('[data-save]')!;
   save.textContent = `Save ${outName}`;
   save.onclick = () => saveFile(bytes, outName);
@@ -449,3 +455,8 @@ function reset(): void {
   busy = false;
   shell.show('empty');
 }
+
+// A file handed over from another tool's "next" links.
+void claimIncoming().then((handed) => {
+  if (handed) void take(handed);
+});

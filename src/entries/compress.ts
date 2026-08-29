@@ -12,6 +12,7 @@ import { PRESETS, analyse, compress, worthIt, explainNoGain, STAGES, type Preset
 import { openPdf } from '../lib/open-pdf.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, percent } from '../lib/format.js';
+import { wireNextLinks, claimIncoming } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
 
 const shell = new ToolShell();
@@ -27,6 +28,10 @@ let controller: AbortController | null = null;
 let busy = false;
 
 warnWhileBusy(() => busy);
+
+/** The finished file, so the "next" links can carry it to the following tool. */
+let lastResult: { bytes: Uint8Array; name: string } | null = null;
+wireNextLinks(document, () => lastResult);
 
 // ---------------------------------------------------------------- intake
 
@@ -226,6 +231,7 @@ function renderResult(r: CompressResult): void {
   $('[data-signed-warning]')!.hidden = !r.signed;
 
   const outName = suffixName(file!.name, '-small');
+  lastResult = { bytes: r.bytes, name: outName };
   const save = $<HTMLButtonElement>('[data-save]')!;
   save.textContent = `Save ${outName}`;
   save.onclick = () => saveFile(r.bytes, outName);
@@ -279,3 +285,9 @@ function reset(): void {
   preset = PRESETS[0];
   shell.show('empty');
 }
+
+// A file handed over from another tool's "next" links. Nothing happens on a normal
+// visit; claimIncoming returns null unless this page was opened with a handoff key.
+void claimIncoming().then((handed) => {
+  if (handed) void take(handed);
+});

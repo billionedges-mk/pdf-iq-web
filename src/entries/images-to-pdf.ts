@@ -12,6 +12,8 @@ import { PDFDocument, degrees } from 'pdf-lib';
 import { loadImage, isHeic, type LoadedImage } from '../lib/image.js';
 import { ToolShell, Progress, wireDropzone, saveFile, readHead, $, $$, breathe, warnWhileBusy, MAX_BYTES } from '../lib/ui.js';
 import { formatBytes, plural } from '../lib/format.js';
+// Only the outgoing half: this tool takes images, so a handed-over PDF is not for it.
+import { wireNextLinks } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
 
 const STAGES = ['Placing each image on a page', 'Writing the file'];
@@ -36,6 +38,10 @@ let pageSize = PAGE_SIZES[0];
 let busy = false;
 
 warnWhileBusy(() => busy);
+
+/** The finished file, so the "next" links can carry it to the following tool. */
+let lastResult: { bytes: Uint8Array; name: string } | null = null;
+wireNextLinks(document, () => lastResult);
 
 const input = $<HTMLInputElement>('[data-file-input]')!;
 wireDropzone($('[data-dropzone]')!, input, (files) => void addFiles(files));
@@ -381,6 +387,7 @@ function renderResult(bytes: Uint8Array): void {
     : pageSize.name;
 
   const name = 'images.pdf';
+  lastResult = { bytes, name };
   const save = $<HTMLButtonElement>('[data-save]')!;
   save.textContent = `Save ${name}`;
   save.onclick = () => saveFile(bytes, name);
