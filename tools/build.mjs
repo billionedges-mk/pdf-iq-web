@@ -99,10 +99,10 @@ function substituteTokens(body, file) {
   return out;
 }
 
-function document_({ page, body, css }) {
+function document_({ page, body, css, assets }) {
   const url = ORIGIN + href(page.slug);
   const shell = page.shell ? ` style="--shell: ${page.shell}"` : '';
-  const script = page.entry ? `\n  <script type="module" src="/assets/${page.entry}.js"></script>` : '';
+  const script = page.entry ? `\n  <script type="module" src="/assets/${assets.get(page.entry)}"></script>` : '';
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -127,7 +127,7 @@ ${header(page.slug)}
 ${body}
   </main>
 ${footer()}
-  <script type="module" src="/assets/net.js"></script>${script}
+  <script type="module" src="/assets/${assets.get('net')}"></script>${script}
 </body>
 </html>
 `;
@@ -241,18 +241,38 @@ async function bundle() {
     ...ALL.filter((p) => p.entry).map((p) => join(ROOT, `src/entries/${p.entry}.ts`)),
   ];
 
-  await esbuild.build({
+  // Entry filenames carry a content hash. Without one, `immutable` on /assets/* is a
+  // lie: it tells the browser this URL's bytes will never change, and they change every
+  // deploy. A visitor who had loaded the old net.js was pinned to it for a year and kept
+  // seeing a readout the live code could not produce. esbuild already hashed the shared
+  // chunks; the entry points were the ones still on a stable name.
+  const result = await esbuild.build({
     entryPoints: entries,
     bundle: true,
     splitting: true,
     format: 'esm',
     target: ['es2022'],
+    entryNames: '[name]-[hash]',
     outdir: join(OUT, 'assets'),
     minify: !WATCH,
     sourcemap: WATCH,
     logLevel: 'warning',
+    metafile: true,
     define: { 'process.env.NODE_ENV': '"production"' },
   });
+
+  const hashed = new Map();
+  for (const [outPath, meta] of Object.entries(result.metafile.outputs)) {
+    if (!meta.entryPoint) continue;
+    const name = meta.entryPoint.replace(/^.*[\/]/, '').replace(/\.ts$/, '');
+    hashed.set(name, outPath.replace(/^.*[\/]/, ''));
+  }
+  for (const page of ALL) {
+    const need = page.entry ?? null;
+    if (need && !hashed.has(need)) throw new Error(`no bundle emitted for entry '${need}'`);
+  }
+  if (!hashed.has('net')) throw new Error('no bundle emitted for net.ts');
+  return hashed;
 }
 
 // ---------------------------------------------------------------- pages
@@ -269,6 +289,9 @@ async function build() {
   mkdirSync(OUT, { recursive: true });
 
   const css = fontCss() + '\n' + read('src/styles/app.css');
+
+  // Bundle first: the pages need the content-hashed filenames to point at.
+  const assets = await bundle();
 
   for (const page of ALL) {
     const file = join(ROOT, 'src/pages', `${page.slug || 'index'}.html`);
@@ -296,13 +319,12 @@ async function build() {
     body = substituteTokens(body, file);
     const dir = page.slug === '' ? OUT : join(OUT, page.slug);
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, 'index.html'), document_({ page, body, css }));
+    writeFileSync(join(dir, 'index.html'), document_({ page, body, css, assets }));
   }
 
   copyFonts();
   copyVendor();
   copyStatic();
-  await bundle();
 
   writeFileSync(join(OUT, 'sitemap.xml'), sitemap());
   writeFileSync(

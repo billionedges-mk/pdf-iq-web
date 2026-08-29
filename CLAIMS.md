@@ -286,3 +286,24 @@ background."** pdf.js paces display rendering with `requestAnimationFrame`, whic
 in a hidden tab — measured at not settling in 12 s, against 407 ms once visible. Switching to
 `intent: 'print'` made the original copy correct again. A claim that flips twice is worth
 re-testing on every change to the code beneath it, not just once.
+
+
+### A fourth failure, of a different kind
+
+After all of that, the readout still showed the *old* string in a browser — text the live code
+could no longer produce. Production was already serving the new bundle; the browser was not
+running it.
+
+`/assets/*` was served `Cache-Control: immutable, max-age=31536000` while the entry filenames
+were stable: `net.js`, `compress.js`. `immutable` is a promise that the bytes at that URL will
+never change, and they changed on every deploy. Anyone who had loaded the old bundle was pinned
+to it for a year. esbuild was already hashing the shared chunks; only the entry points, the ones
+that change most, were on stable names.
+
+Entry filenames now carry a content hash, so `immutable` is true rather than convenient. The
+build asserts every declared entry produced a bundle, and every asset a page references exists.
+
+The lesson is narrower than the others and worth stating plainly: **a cache header is a claim
+too.** `immutable` on a mutable URL is the same category of error as any other unverified
+assertion on this site, and it fails in the one place nothing local can see — someone else's
+browser, holding a copy of a file that no longer exists.
