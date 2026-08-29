@@ -1,0 +1,139 @@
+    <div class="tool-head">
+      <h1 class="page-title">Images to PDF</h1>
+      <p class="page-lede">Photos and scans into one document.</p>
+    </div>
+
+    <p class="sr-status" role="status" aria-live="polite" data-live></p>
+
+    <input id="pdfiq-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif" multiple class="visually-hidden" data-file-input>
+
+    <section aria-label="Choose images" data-view="empty" style="margin-top: 18px;">
+      <div class="dropzone" role="button" tabindex="0" data-dropzone
+           aria-label="Drop your photos here, or press Enter to choose files">
+        <span class="dropzone__ring" aria-hidden="true" hidden></span>
+        <span class="dropzone__mark" aria-hidden="true"></span>
+        <div>
+          <p class="dropzone__head">Drop your photos here</p>
+          <p class="dropzone__sub">or click to choose them &mdash; on a phone, straight from your camera roll</p>
+        </div>
+        <p class="dropzone__meta">JPG &middot; PNG &middot; WEBP &middot; GIF &middot; stays on this device</p>
+      </div>
+
+      <div class="assurances">
+        <div>
+          <h2>Receipts, IDs and signed pages.</h2>
+          <p>Those are the usual reason people are here, and they are exactly the images you should not be
+             handing to a server. This one builds the document in your browser instead.</p>
+        </div>
+        <div>
+          <h2>Photos carry more than the picture.</h2>
+          <p>A phone photo has GPS coordinates, the phone model and the capture time inside it by default.
+             This page can strip all three before the image goes on a page.</p>
+        </div>
+        <div>
+          <h2>About iPhone HEIC.</h2>
+          <p>Safari can read HEIC; Chrome and Firefox cannot, and we will say so rather than fail vaguely.
+             Sharing photos out of the Photos app usually converts them to JPEG on the way.</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Page order" data-view="selected" class="tool-cols" hidden>
+      <div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <p class="kicker">Page order</p>
+          <p class="outcome__mono" style="margin: 0;" data-totals>&nbsp;</p>
+        </div>
+
+        <ul class="tray" data-tray></ul>
+
+        <div class="toolbar">
+          <button type="button" class="btn-quiet" data-add>Add more images</button>
+          <button type="button" class="btn-quiet" data-clear>Start over</button>
+        </div>
+
+        <div class="actions" style="margin-top: 22px;">
+          <button type="button" class="btn" data-start disabled>Build the PDF here</button>
+        </div>
+        <p class="hint" data-plan>&nbsp;</p>
+      </div>
+
+      <div class="tool-aside">
+        <fieldset class="preset-set" style="margin-top: 0;">
+          <legend>Page size</legend>
+          <div class="preset-list" data-sizes></div>
+        </fieldset>
+
+        <label class="checkline">
+          <input type="checkbox" checked data-strip-exif>
+          <span>Strip photo EXIF &mdash; GPS coordinates, phone model, capture time. Phone photos carry all
+                three by default.</span>
+        </label>
+
+        <p class="hint">Images are placed at their full resolution and are not re-encoded, so nothing is lost
+           on the way in. If you need the file smaller, compress it afterwards rather than degrading it twice.</p>
+      </div>
+    </section>
+
+    <section aria-label="Building the PDF" data-view="processing" class="card" style="margin-top: 18px;" hidden>
+      <div class="proc-head">
+        <h2 class="proc-title" data-focus>Building the PDF on your device</h2>
+        <p class="proc-pct" data-pct>0%</p>
+      </div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+           aria-labelledby="proc-label">
+        <div class="bar__fill" data-bar></div>
+      </div>
+      <span class="visually-hidden" id="proc-label">Progress</span>
+      <div class="proc-facts">
+        <span data-facts>starting</span>
+        <span data-elapsed>0.0s elapsed</span>
+      </div>
+      <ol class="stages" data-stages>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Placing each image on a page</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Writing the file</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+      </ol>
+      <button type="button" class="btn-quiet" style="margin-top: 14px;" data-stop>Stop</button>
+    </section>
+
+    <section aria-label="Result" data-view="result" style="margin-top: 18px;" hidden>
+      <div class="card">
+        <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
+        <p class="outcome__head" data-result-head>&nbsp;</p>
+        <div class="actions" style="margin-top: 24px;">
+          <button type="button" class="btn" data-save>Save</button>
+          <button type="button" class="btn-quiet" data-keep-adjusting>Change the order</button>
+        </div>
+        <dl class="facts">
+          <div><dt>images</dt><dd data-fact-images>&mdash;</dd></div>
+          <div><dt>resolution</dt><dd data-fact-res>&mdash;</dd></div>
+          <div><dt>EXIF</dt><dd data-fact-exif>&mdash;</dd></div>
+          <div><dt>page size</dt><dd data-fact-size>&mdash;</dd></div>
+        </dl>
+      </div>
+      <div class="nextup">
+        <span class="nextup__label">Next:</span>
+        <a href="/compress/">Compress it</a>
+        <a href="/ocr/">Make the text searchable</a>
+        <a href="/merge/">Merge with a form</a>
+      </div>
+    </section>
+
+    <section aria-label="Problem with this file" data-view="error" style="margin-top: 18px;" hidden>
+      <div class="card card--problem">
+        <h2 class="kicker" data-err-kicker data-focus>&nbsp;</h2>
+        <p class="outcome__head" data-err-title>&nbsp;</p>
+        <p class="outcome__body" data-err-body>&nbsp;</p>
+        <div style="margin-top: 20px;">
+          <button type="button" class="btn btn--sm" data-err-action hidden></button>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn-quiet" data-again>Choose different images</button>
+          <span class="outcome__mono" data-err-mono>&nbsp;</span>
+        </div>
+      </div>
+    </section>

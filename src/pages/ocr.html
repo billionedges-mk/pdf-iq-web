@@ -1,0 +1,172 @@
+    <div class="tool-head">
+      <h1 class="page-title">OCR &mdash; make a scan searchable</h1>
+      <p class="page-lede">Read the text in a scan, on your own machine.</p>
+    </div>
+
+    <p class="sr-status" role="status" aria-live="polite" data-live></p>
+
+    <input id="pdfiq-file" type="file" accept="application/pdf,.pdf" class="visually-hidden" data-file-input>
+
+    <section aria-label="Choose a scan" data-view="empty" style="margin-top: 18px;">
+      <div class="dropzone" role="button" tabindex="0" data-dropzone
+           aria-label="Drop your scan here, or press Enter to choose a file">
+        <span class="dropzone__ring" aria-hidden="true" hidden></span>
+        <span class="dropzone__mark" aria-hidden="true"></span>
+        <div>
+          <p class="dropzone__head">Drop your scan here</p>
+          <p class="dropzone__sub">or click to choose it &mdash; pick a language on the next step</p>
+        </div>
+        <p class="dropzone__meta">PDF &middot; the slow tool here &middot; stays on this device</p>
+      </div>
+
+      <div class="assurances">
+        <div>
+          <h2>The heavy job is the one to keep at home.</h2>
+          <p>OCR is what people usually hand to a server, because it is expensive. Expensive is the reason not
+             to: a scanned passport, medical letter or contract is the last thing you want sitting in
+             someone's processing queue.</p>
+        </div>
+        <div>
+          <h2>The scan is kept, always.</h2>
+          <p>The words are written invisibly behind the original image. We do not offer to replace the scan
+             with typeset text: recognition is never perfect, and keeping the picture means a misread can
+             never damage the document.</p>
+        </div>
+        <div>
+          <h2>One download, then nothing.</h2>
+          <p>The language model comes from this site the first time you use it and is then cached. That is
+             the only request this page ever makes, and the footer counts it. After that, OCR works with no
+             connection like everything else here.</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="OCR options" data-view="selected" class="tool-cols" hidden>
+      <div>
+        <div class="card card--tight filechip">
+          <span class="filechip__mark" aria-hidden="true"></span>
+          <div class="filechip__body">
+            <p class="filechip__name" data-file-name>&nbsp;</p>
+            <p class="filechip__meta" data-file-meta>&nbsp;</p>
+          </div>
+          <button type="button" class="btn-quiet btn-quiet--xs" data-replace>Replace</button>
+        </div>
+
+        <label class="field">
+          Language of the text
+          <select data-lang></select>
+        </label>
+        <p class="hint" data-lang-note>&nbsp;</p>
+
+        <div class="card card--flag" style="margin-top: 16px;" data-hastext hidden>
+          <p class="outcome__body" style="margin: 0;" data-hastext-note>&nbsp;</p>
+        </div>
+
+        <div class="actions" style="margin-top: 22px;">
+          <button type="button" class="btn" data-start>Start reading</button>
+        </div>
+        <p class="hint">You can switch to another tab while this runs &mdash; it keeps going in the
+           background. Closing the tab stops it for good; nothing is queued anywhere else.</p>
+      </div>
+
+      <div class="tool-aside">
+        <p class="kicker">What to expect</p>
+        <ul>
+          <li>Clean printed text: near-perfect.</li>
+          <li>Faxes and photocopies: good, with occasional wrong characters.</li>
+          <li>Handwriting: not attempted. We will say which pages we skipped.</li>
+          <li>Tables keep their words, not their grid.</li>
+        </ul>
+
+        <p class="kicker" style="margin-top: 24px;">Here vs. the app</p>
+        <p class="hint">On this page OCR is unlimited, with no account. The Android app does not have OCR
+           yet — when it arrives it is planned to be metered on the free tier, with Pro making it
+           unlimited there.</p>
+        <p class="hint">The reason for the difference: an app can count what it has done without asking who
+           you are, and a website cannot — counting here would mean adding an account, which is the one
+           thing we are not going to do. So the web version is the place to bring a long batch.</p>
+      </div>
+    </section>
+
+    <section aria-label="Reading" data-view="processing" class="card" style="margin-top: 18px;" hidden>
+      <div class="proc-head">
+        <h2 class="proc-title" data-focus>Reading on your device</h2>
+        <p class="proc-pct" data-pct>0%</p>
+      </div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+           aria-labelledby="proc-label">
+        <div class="bar__fill" data-bar></div>
+      </div>
+      <span class="visually-hidden" id="proc-label">Progress</span>
+      <div class="proc-facts">
+        <span data-facts>starting</span>
+        <span data-elapsed>0.0s elapsed</span>
+        <span data-rate></span>
+        <span data-remain></span>
+        <span data-threads></span>
+      </div>
+
+      <ol class="stages" data-stages>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Loading the language model</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Reading each page</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Writing the text behind the scan</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+      </ol>
+
+      <div class="pagegrid" data-blocks style="grid-template-columns: repeat(auto-fill, minmax(18px, 1fr)); gap: 4px; margin-top: 20px;"></div>
+      <p class="hint">One block per page. Filled blocks are pages already read.</p>
+
+      <p class="proc-note">This is your own processor working through the pages, several at a time. There is
+         no queue in front of you and no faster tier — the only thing between you and the result is
+         arithmetic.</p>
+      <button type="button" class="btn-quiet" style="margin-top: 14px;" data-stop>Stop</button>
+    </section>
+
+    <section aria-label="Result" data-view="result" style="margin-top: 18px;" hidden>
+      <div class="card">
+        <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
+        <p class="outcome__head" data-result-head>&nbsp;</p>
+        <p class="outcome__body" data-result-detail>&nbsp;</p>
+        <div class="actions" style="margin-top: 24px;">
+          <button type="button" class="btn" data-save>Save</button>
+          <button type="button" class="btn-quiet" data-save-text>Save the plain text instead</button>
+          <button type="button" class="btn-quiet" data-again>Read another</button>
+        </div>
+        <dl class="facts">
+          <div><dt>size</dt><dd data-fact-size>&mdash;</dd></div>
+          <div><dt>words found</dt><dd data-fact-words>&mdash;</dd></div>
+          <div><dt>appearance</dt><dd>unchanged, text sits behind the scan</dd></div>
+          <div><dt>time taken</dt><dd data-fact-time>&mdash;</dd></div>
+        </dl>
+      </div>
+      <div class="nextup">
+        <span class="nextup__label">Next:</span>
+        <a href="/compress/">Compress it</a>
+        <a href="/split/">Split it</a>
+        <a href="/reorder/">Drop the blank pages</a>
+      </div>
+    </section>
+
+    <section aria-label="Problem with this file" data-view="error" style="margin-top: 18px;" hidden>
+      <div class="card card--problem">
+        <h2 class="kicker" data-err-kicker data-focus>&nbsp;</h2>
+        <p class="outcome__head" data-err-title>&nbsp;</p>
+        <p class="outcome__body" data-err-body>&nbsp;</p>
+        <form class="pwform" data-err-password hidden>
+          <label>Password<input type="password" autocomplete="off" data-password-input></label>
+          <button type="submit" class="btn" style="padding: 12px 18px; font-size: 15.5px;">Unlock here</button>
+        </form>
+        <div style="margin-top: 20px;">
+          <button type="button" class="btn btn--sm" data-err-action hidden></button>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn-quiet" data-again>Choose a different file</button>
+          <span class="outcome__mono" data-err-mono>&nbsp;</span>
+        </div>
+      </div>
+    </section>

@@ -1,0 +1,149 @@
+    <div class="tool-head">
+      <h1 class="page-title">Merge PDF</h1>
+      <p class="page-lede">Combine files into one. None of them leave this tab.</p>
+    </div>
+
+    <p class="sr-status" role="status" aria-live="polite" data-live></p>
+
+    <input id="pdfiq-file" type="file" accept="application/pdf,.pdf" multiple class="visually-hidden" data-file-input>
+
+    <section aria-label="Choose PDFs" data-view="empty" style="margin-top: 18px;">
+      <div class="dropzone" role="button" tabindex="0" data-dropzone
+           aria-label="Drop your PDFs here, or press Enter to choose files">
+        <span class="dropzone__ring" aria-hidden="true" hidden></span>
+        <span class="dropzone__mark" aria-hidden="true"></span>
+        <div>
+          <p class="dropzone__head">Drop your PDFs here</p>
+          <p class="dropzone__sub">or click to choose them &mdash; you can set the order next</p>
+        </div>
+        <p class="dropzone__meta">2 or more PDFs &middot; stays on this device</p>
+      </div>
+
+      <div class="assurances">
+        <div>
+          <h2>Order is yours, not ours.</h2>
+          <p>Merging is the one job where file order matters and every tool gets it wrong. Yours arrive in the
+             order you dropped them, and nothing is written until you say so.</p>
+        </div>
+        <div>
+          <h2>No upload, so no deletion policy.</h2>
+          <p>Other tools promise to delete your files in an hour. Yours were never on our disk, so there is no
+             promise to keep.</p>
+        </div>
+        <div>
+          <h2>Check the network tab.</h2>
+          <p>Merge a dozen files with developer tools open. You will see zero requests, because there is
+             nowhere for them to go.</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Order to merge" data-view="selected" class="tool-cols" hidden>
+      <div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <p class="kicker">Order to merge</p>
+          <p class="outcome__mono" style="margin: 0;" data-totals>&nbsp;</p>
+        </div>
+
+        <ul class="tray" data-tray></ul>
+
+        <div class="toolbar">
+          <button type="button" class="btn-quiet" data-add>Add another file</button>
+          <button type="button" class="btn-quiet" data-clear>Start over</button>
+        </div>
+
+        <label class="field">
+          Save as
+          <input type="text" data-outname value="merged.pdf" spellcheck="false">
+        </label>
+
+        <div class="actions" style="margin-top: 22px;">
+          <button type="button" class="btn" data-start disabled>Merge on this device</button>
+        </div>
+        <p class="hint" data-plan>&nbsp;</p>
+      </div>
+
+      <div class="tool-aside">
+        <p class="kicker">What gets kept</p>
+        <ul>
+          <li>Every page, at its original size and quality.</li>
+          <li>Bookmarks, nested under each source file's name.</li>
+          <li>Links inside a file. Links pointing between files cannot survive a merge.</li>
+          <li data-forms-note hidden>Form fields, renamed where two files use the same name &mdash; sharing a
+              name in PDF means sharing a value.</li>
+          <li>Mixed page sizes stay mixed. We will not scale an A4 contract to fit a Letter cover page.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section aria-label="Merging" data-view="processing" class="card" style="margin-top: 18px;" hidden>
+      <div class="proc-head">
+        <h2 class="proc-title" data-focus>Merging on your device</h2>
+        <p class="proc-pct" data-pct>0%</p>
+      </div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+           aria-labelledby="proc-label">
+        <div class="bar__fill" data-bar></div>
+      </div>
+      <span class="visually-hidden" id="proc-label">Progress</span>
+      <div class="proc-facts">
+        <span data-facts>starting</span>
+        <span data-elapsed>0.0s elapsed</span>
+      </div>
+      <ol class="stages" data-stages>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Copying pages</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Rebuilding bookmarks</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Writing the file</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+      </ol>
+      <p class="proc-note">Copying pages is fast; rebuilding bookmarks is the slow part. Your device is doing
+         both, so nothing has been sent anywhere — stopping just stops the work.</p>
+      <button type="button" class="btn-quiet" style="margin-top: 14px;" data-stop>Stop</button>
+    </section>
+
+    <section aria-label="Result" data-view="result" style="margin-top: 18px;" hidden>
+      <div class="card">
+        <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
+        <p class="outcome__head" data-result-head>&nbsp;</p>
+        <div class="actions" style="margin-top: 24px;">
+          <button type="button" class="btn" data-save>Save</button>
+          <button type="button" class="btn-quiet" data-keep-adjusting>Change the order</button>
+        </div>
+        <dl class="facts">
+          <div><dt>pages</dt><dd data-fact-pages>&mdash;</dd></div>
+          <div><dt>bookmarks</dt><dd data-fact-bookmarks>&mdash;</dd></div>
+          <div><dt>page sizes</dt><dd data-fact-sizes>&mdash;</dd></div>
+          <div><dt>form fields</dt><dd data-fact-forms>&mdash;</dd></div>
+        </dl>
+      </div>
+      <div class="nextup">
+        <span class="nextup__label">Next, with this merged file:</span>
+        <a href="/compress/">Compress it</a>
+        <a href="/reorder/">Reorder pages</a>
+        <a href="/ocr/">Make it searchable</a>
+      </div>
+    </section>
+
+    <section aria-label="Problem with this file" data-view="error" style="margin-top: 18px;" hidden>
+      <div class="card card--problem">
+        <h2 class="kicker" data-err-kicker data-focus>&nbsp;</h2>
+        <p class="outcome__head" data-err-title>&nbsp;</p>
+        <p class="outcome__body" data-err-body>&nbsp;</p>
+        <form class="pwform" data-err-password hidden>
+          <label>Password<input type="password" autocomplete="off" data-password-input></label>
+          <button type="submit" class="btn" style="padding: 12px 18px; font-size: 15.5px;">Unlock here</button>
+        </form>
+        <div style="margin-top: 20px;">
+          <button type="button" class="btn btn--sm" data-err-action hidden></button>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn-quiet" data-again>Start over</button>
+          <span class="outcome__mono" data-err-mono>&nbsp;</span>
+        </div>
+      </div>
+    </section>

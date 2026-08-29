@@ -1,0 +1,220 @@
+    <div class="tool-head">
+      <h1 class="page-title">Compress PDF</h1>
+      <p class="page-lede">Make a PDF smaller. It never leaves this tab.</p>
+    </div>
+
+    <p class="sr-status" role="status" aria-live="polite" data-live></p>
+
+    <input id="pdfiq-file" type="file" accept="application/pdf,.pdf" class="visually-hidden" data-file-input>
+
+    <!-- ---------------------------------------------------------------- empty -->
+    <section aria-label="Choose a PDF" data-view="empty" style="margin-top: 18px;">
+      <div class="dropzone" role="button" tabindex="0" data-dropzone
+           aria-label="Drop a PDF here, or press Enter to choose a file">
+        <span class="dropzone__ring" aria-hidden="true" hidden></span>
+        <span class="dropzone__mark" aria-hidden="true"></span>
+        <div>
+          <p class="dropzone__head">Drop a PDF here</p>
+          <p class="dropzone__sub">or click to choose one from your device</p>
+        </div>
+        <p class="dropzone__meta">PDF &middot; stays on this device</p>
+      </div>
+
+      <div class="assurances">
+        <div>
+          <h2>Turn off your wifi and try it.</h2>
+          <p>The compressor came down with this page, like the stylesheet did. Once it is here it works with
+             no connection, because there is nothing to connect to.</p>
+        </div>
+        <div>
+          <h2>No upload, so no deletion policy.</h2>
+          <p>Other tools promise to delete your file in an hour. Your file was never on our disk, so there is
+             no promise to keep.</p>
+        </div>
+        <div>
+          <h2>Check the network tab.</h2>
+          <p>Open your browser's developer tools and compress a file. You will see zero requests. That is the
+             whole claim, and you can verify it yourself.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------- selected -->
+    <section aria-label="Compression options" data-view="selected" class="tool-cols" hidden>
+      <div>
+        <div class="card card--tight filechip">
+          <span class="filechip__mark" aria-hidden="true"></span>
+          <div class="filechip__body">
+            <p class="filechip__name" data-file-name>&nbsp;</p>
+            <p class="filechip__meta" data-file-meta>&nbsp;</p>
+          </div>
+          <button type="button" class="btn-quiet btn-quiet--xs" data-replace>Replace</button>
+        </div>
+
+        <fieldset class="preset-set">
+          <legend>How small</legend>
+          <div class="preset-list" data-presets></div>
+        </fieldset>
+
+        <label class="checkline">
+          <input type="checkbox" checked data-strip-meta>
+          <span>Strip metadata &mdash; author, software, edit timestamps. Scanned contracts often carry a name
+                you did not mean to send.</span>
+        </label>
+
+        <div class="actions" style="margin-top: 22px;">
+          <button type="button" class="btn" data-start>Compress on this device</button>
+        </div>
+        <p class="hint" data-plan>&nbsp;</p>
+      </div>
+
+      <div class="tool-aside">
+        <p class="kicker">What gets changed</p>
+        <ul>
+          <li>Images are recompressed and downscaled.</li>
+          <li>Text, vectors and form fields are copied byte-for-byte.</li>
+          <li>Page count, order and size never change.</li>
+          <li data-signed-note hidden>This file carries a digital signature, and rebuilding it will break that
+              signature. Your original is not modified.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------------- processing -->
+    <section aria-label="Compressing" data-view="processing" class="card" style="margin-top: 18px;" hidden>
+      <div class="proc-head">
+        <h2 class="proc-title" data-focus>Compressing on your device</h2>
+        <p class="proc-pct" data-pct>0%</p>
+      </div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+           aria-labelledby="proc-label">
+        <div class="bar__fill" data-bar></div>
+      </div>
+      <span class="visually-hidden" id="proc-label">Compression progress</span>
+      <div class="proc-facts">
+        <span data-facts>starting</span>
+        <span data-elapsed>0.0s elapsed</span>
+      </div>
+
+      <ol class="stages" data-stages>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Reading page tree</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Recompressing images</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Rebuilding the file</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Verifying every page is present</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+      </ol>
+
+      <p class="proc-note">Your own machine is doing this work, not a server. Nothing has been sent anywhere,
+         so stopping just stops the work.</p>
+      <button type="button" class="btn-quiet" style="margin-top: 14px;" data-stop>Stop</button>
+    </section>
+
+    <!-- --------------------------------------------------------------- result -->
+    <section aria-label="Result" data-view="result" style="margin-top: 18px;" hidden>
+      <div class="card">
+        <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
+        <div class="sizes">
+          <p class="size-before" data-before>&nbsp;</p>
+          <p class="size-after" data-after>&nbsp;</p>
+          <p class="size-saved" data-saved>&nbsp;</p>
+        </div>
+
+        <div class="compare">
+          <div class="compare__row">
+            <span class="compare__label">before</span>
+            <span class="compare__track compare__track--full"></span>
+          </div>
+          <div class="compare__row">
+            <span class="compare__label">after</span>
+            <span class="compare__track"><span class="compare__fill" data-after-bar></span></span>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top: 24px;">
+          <button type="button" class="btn" data-save>Save</button>
+          <button type="button" class="btn-quiet" data-again>Compress another</button>
+        </div>
+
+        <dl class="facts">
+          <div>
+            <dt>pages</dt>
+            <dd data-fact-pages>&mdash;</dd>
+          </div>
+          <div>
+            <dt>images</dt>
+            <dd data-fact-images>&mdash;</dd>
+          </div>
+          <div>
+            <dt>text &amp; vectors</dt>
+            <dd>untouched</dd>
+          </div>
+          <div>
+            <dt>metadata</dt>
+            <dd data-fact-meta>&mdash;</dd>
+          </div>
+        </dl>
+        <p class="hint" data-signed-warning hidden>This file was digitally signed. The signature does not
+           survive rebuilding the document, so the saved copy will show as unsigned. Your original is untouched.</p>
+      </div>
+
+      <div class="nextup">
+        <span class="nextup__label">Next, with this same file:</span>
+        <a href="/split/">Split it</a>
+        <a href="/ocr/">Make it searchable</a>
+        <a href="/merge/">Merge with another</a>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------------- nogain -->
+    <section aria-label="Result" data-view="nogain" style="margin-top: 18px;" hidden>
+      <div class="card card--flag">
+        <h2 class="kicker" data-focus>Nothing worth saving</h2>
+        <p class="outcome__head">This file is already about as small as a PDF of these pages gets.</p>
+        <div class="outcome__numbers">
+          <span class="outcome__delta" data-nogain-delta>&nbsp;</span>
+          <span class="outcome__pct" data-nogain-pct>&nbsp;</span>
+        </div>
+        <p class="outcome__body" data-nogain-why>&nbsp;</p>
+        <div class="actions" style="margin-top: 22px;">
+          <button type="button" class="btn btn--sm" data-keep>Keep my original</button>
+          <button type="button" class="btn-quiet" data-harder>Try the Smallest setting anyway</button>
+        </div>
+        <p class="hint" data-nogain-harder-note hidden>Smallest drops scans to 72 dpi. We will run it and show
+           you the real result rather than guess at it now.</p>
+      </div>
+      <p class="outcome__foot">Compressing again from the result you already have does not help: the second
+         pass re-encodes an already-encoded image and usually makes it look worse without making it smaller.</p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- error -->
+    <section aria-label="Problem with this file" data-view="error" style="margin-top: 18px;" hidden>
+      <div class="card card--problem">
+        <h2 class="kicker" data-err-kicker data-focus>&nbsp;</h2>
+        <p class="outcome__head" data-err-title>&nbsp;</p>
+        <p class="outcome__body" data-err-body>&nbsp;</p>
+
+        <form class="pwform" data-err-password hidden>
+          <label>
+            Password
+            <input type="password" autocomplete="off" data-password-input>
+          </label>
+          <button type="submit" class="btn" style="padding: 12px 18px; font-size: 15.5px;">Unlock here</button>
+        </form>
+
+        <div style="margin-top: 20px;">
+          <button type="button" class="btn btn--sm" data-err-action hidden></button>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn-quiet" data-again>Choose a different file</button>
+          <span class="outcome__mono" data-err-mono>&nbsp;</span>
+        </div>
+      </div>
+    </section>

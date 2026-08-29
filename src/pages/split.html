@@ -1,0 +1,145 @@
+    <div class="tool-head">
+      <h1 class="page-title">Split PDF</h1>
+      <p class="page-lede">Take pages out, or cut one file into several.</p>
+    </div>
+
+    <p class="sr-status" role="status" aria-live="polite" data-live></p>
+
+    <input id="pdfiq-file" type="file" accept="application/pdf,.pdf" class="visually-hidden" data-file-input>
+
+    <section aria-label="Choose a PDF" data-view="empty" style="margin-top: 18px;">
+      <div class="dropzone" role="button" tabindex="0" data-dropzone
+           aria-label="Drop a PDF here, or press Enter to choose a file">
+        <span class="dropzone__ring" aria-hidden="true" hidden></span>
+        <span class="dropzone__mark" aria-hidden="true"></span>
+        <div>
+          <p class="dropzone__head">Drop a PDF here</p>
+          <p class="dropzone__sub">or click to choose one &mdash; you pick where it splits next</p>
+        </div>
+        <p class="dropzone__meta">any page count &middot; stays on this device</p>
+      </div>
+
+      <div class="assurances">
+        <div>
+          <h2>Page count is not the limit here.</h2>
+          <p>Splitting copies pages rather than rendering them, so a long document is not harder than a short
+             one. There is no upload limit because there is no upload.</p>
+        </div>
+        <div>
+          <h2>Your original is untouched.</h2>
+          <p>Splitting builds new files beside the one you opened. Nothing is written over.</p>
+        </div>
+        <div>
+          <h2>Check the network tab.</h2>
+          <p>Split a file with developer tools open and you will see zero requests. That is the whole claim,
+             and you can verify it yourself.</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Split options" data-view="selected" class="tool-cols" hidden>
+      <div>
+        <div class="card card--tight filechip">
+          <span class="filechip__mark" aria-hidden="true"></span>
+          <div class="filechip__body">
+            <p class="filechip__name" data-file-name>&nbsp;</p>
+            <p class="filechip__meta" data-file-meta>&nbsp;</p>
+          </div>
+          <button type="button" class="btn-quiet btn-quiet--xs" data-replace>Replace</button>
+        </div>
+
+        <fieldset class="preset-set">
+          <legend>Where to split</legend>
+          <div class="preset-list" data-modes></div>
+        </fieldset>
+
+        <div data-mode-range hidden>
+          <label class="field">
+            Pages
+            <input type="text" data-ranges placeholder="1-14, 20, 33-40" spellcheck="false">
+          </label>
+          <p class="hint" data-range-hint>&nbsp;</p>
+        </div>
+
+        <div data-mode-every hidden>
+          <label class="field">
+            Pages per file
+            <input type="number" data-every min="1" step="1" value="10">
+          </label>
+        </div>
+
+        <div class="actions" style="margin-top: 22px;">
+          <button type="button" class="btn" data-start disabled>Split on this device</button>
+        </div>
+        <p class="hint" data-outcome>&nbsp;</p>
+      </div>
+
+      <div class="tool-aside">
+        <p class="kicker" data-preview-title>Pages</p>
+        <div class="pagegrid" data-grid></div>
+        <p class="hint">Thumbnails are rendered here by your browser. They exist only in this tab's memory.</p>
+      </div>
+    </section>
+
+    <section aria-label="Splitting" data-view="processing" class="card" style="margin-top: 18px;" hidden>
+      <div class="proc-head">
+        <h2 class="proc-title" data-focus>Splitting on your device</h2>
+        <p class="proc-pct" data-pct>0%</p>
+      </div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+           aria-labelledby="proc-label">
+        <div class="bar__fill" data-bar></div>
+      </div>
+      <span class="visually-hidden" id="proc-label">Progress</span>
+      <div class="proc-facts">
+        <span data-facts>starting</span>
+        <span data-elapsed>0.0s elapsed</span>
+      </div>
+      <ol class="stages" data-stages>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Building each part</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+        <li><span class="stages__mark" aria-hidden="true" data-stage-mark>·</span>
+            <span class="stages__label">Writing the files</span>
+            <span class="stages__status" data-stage-status>waiting</span></li>
+      </ol>
+      <button type="button" class="btn-quiet" style="margin-top: 14px;" data-stop>Stop</button>
+    </section>
+
+    <section aria-label="Result" data-view="result" style="margin-top: 18px;" hidden>
+      <div class="card">
+        <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
+        <p class="outcome__head" data-result-head>&nbsp;</p>
+        <ul class="tray" data-outputs></ul>
+        <div class="actions" style="margin-top: 20px;">
+          <button type="button" class="btn" data-save-zip>Save all as a zip</button>
+          <button type="button" class="btn-quiet" data-again>Split another</button>
+        </div>
+        <p class="hint">Your original file is untouched, on your disk, where it was.</p>
+      </div>
+      <div class="nextup">
+        <span class="nextup__label">Next:</span>
+        <a href="/compress/">Compress a part</a>
+        <a href="/merge/">Merge with something else</a>
+        <a href="/ocr/">Make searchable</a>
+      </div>
+    </section>
+
+    <section aria-label="Problem with this file" data-view="error" style="margin-top: 18px;" hidden>
+      <div class="card card--problem">
+        <h2 class="kicker" data-err-kicker data-focus>&nbsp;</h2>
+        <p class="outcome__head" data-err-title>&nbsp;</p>
+        <p class="outcome__body" data-err-body>&nbsp;</p>
+        <form class="pwform" data-err-password hidden>
+          <label>Password<input type="password" autocomplete="off" data-password-input></label>
+          <button type="submit" class="btn" style="padding: 12px 18px; font-size: 15.5px;">Unlock here</button>
+        </form>
+        <div style="margin-top: 20px;">
+          <button type="button" class="btn btn--sm" data-err-action hidden></button>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn-quiet" data-again>Choose a different file</button>
+          <span class="outcome__mono" data-err-mono>&nbsp;</span>
+        </div>
+      </div>
+    </section>

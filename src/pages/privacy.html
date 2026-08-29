@@ -1,0 +1,255 @@
+    <div class="tool-head">
+      <h1 class="page-title">Privacy</h1>
+    </div>
+    <p class="prose__updated">Effective 29 August 2026 &middot; covers pdf-iq.com and the PDFiq Android app</p>
+
+    <div class="prose">
+      <p>This one page covers both things we make: the tools on this website, and the PDFiq
+         Android app. They are built differently and collect different amounts, so they are
+         described separately rather than averaged into one comfortable paragraph.</p>
+
+      <div class="card card--flag" style="margin-top: 22px;">
+        <p class="kicker">The short version</p>
+        <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">
+          <strong>This website:</strong> no account, no cookies, no analytics, and no upload. Your
+          files are opened by your browser and never sent anywhere.</p>
+        <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">
+          <strong>The app:</strong> the same tools run on your phone and your files stay there — but
+          the app is not silent. It contains Firebase Analytics and Crashlytics, and its AI
+          summarise feature sends the extracted text of your document to Google's Gemini API.
+          Both are described in full below.</p>
+        <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">We do not claim either
+          surface is "100% private", because that would not be true of the app's summarise
+          feature.</p>
+      </div>
+
+      <h2>Who we are</h2>
+      <p>pdf-iq.com and the PDFiq Android app are published by BillionEdges. In this policy "we",
+         "us" and "our" mean BillionEdges, and "you" means the person using the site or the app.</p>
+      <p>You can reach us at <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a>
+         about anything here.</p>
+
+      <!-- ============================================================ website -->
+      <h2>Part one — this website</h2>
+
+      <h3>Your files are not uploaded</h3>
+      <p>Every tool on this site — compress, merge, split, images to PDF, rotate, reorder and OCR —
+         runs inside your browser tab. The code that does the work is downloaded with the page, the
+         same way a stylesheet is, and it then operates on a file your browser holds in memory.</p>
+      <p>There is no upload step because there is no server to upload to. That means there is also
+         no deletion policy for your documents: we cannot delete what we never received. You can
+         check this yourself — open your browser's developer tools, use a tool, and watch the
+         network panel stay empty. The counter in the footer of every page measures the same thing
+         and is live, not decorative.</p>
+
+      <h3>What we collect on this site</h3>
+      <p><strong>No account.</strong> There is nothing to sign in to.</p>
+      <p><strong>No cookies.</strong> We set none, for any purpose, including analytics.</p>
+      <p><strong>No analytics and no tracking.</strong> There is no analytics SDK, no tag manager,
+         no pixel and no third-party script of any kind on this site. Nothing here reports back
+         what you did.</p>
+      <p><strong>No third-party requests.</strong> Fonts are served from this domain rather than a
+         font CDN, so loading a page does not tell anyone else that you visited.</p>
+
+      <h3>Two things stored in your browser</h3>
+      <p>These stay on your device and are never sent to us. You can clear both at any time through
+         your browser's "clear site data" control.</p>
+      <ul>
+        <li>The OCR page records a single flag noting that a language model has already been
+            downloaded, so it can tell you whether the next run needs a download.</li>
+        <li>The OCR language model itself is cached by your browser after its first download, so
+            OCR keeps working with no connection.</li>
+      </ul>
+
+      <h3>The one request this site makes</h3>
+      <p>OCR needs a language recognition model, which is between 6 MB and 11 MB depending on the
+         language. It is served from this domain, downloaded once, and then cached. That download
+         is a request for a file; it does not carry any part of your document, and no other tool on
+         this site fetches anything at all after the page has loaded.</p>
+
+      <h3>Server logs</h3>
+      <p>The site is static files served by Cloudflare Pages. Asking for a web page necessarily
+         tells the server who is asking, so — as with every website — the request is recorded,
+         including your IP address, the time, the page requested and your browser's user-agent
+         string. We do not combine those records with anything else, and there is nothing else to
+         combine them with: no account, no cookie, no identifier.</p>
+      <p>Your documents are not in those logs, because your documents are never sent.</p>
+
+      <!-- ================================================================ app -->
+      <h2>Part two — the PDFiq Android app</h2>
+
+      <h3>What happens entirely on your device</h3>
+      <p>These run locally. The files involved never leave your phone and we cannot see them:</p>
+      <ul>
+        <li>Creating a PDF from photos or camera images</li>
+        <li>Compressing a PDF</li>
+        <li>Rotating, deleting, reordering and extracting pages</li>
+        <li>Merging and splitting PDFs</li>
+        <li>Viewing, saving and sharing the results</li>
+      </ul>
+      <p>These work with no internet connection and without an account, and they are unlimited and
+         not metered.</p>
+      <p>The app does not request storage permission — it uses Android's own photo and document
+         pickers, so you choose exactly which files it can see. <strong>It also does not request
+         camera permission:</strong> scanning hands the job to your existing camera app, which
+         returns the picture, and that needs no permission of its own.</p>
+
+      <h3>Summarise — the one feature that sends data off your device</h3>
+      <p>When you use Summarise, this is what happens, in order:</p>
+      <ol>
+        <li>The text is extracted from your PDF on your phone.</li>
+        <li>That extracted text — not the file, not the images, not the original formatting — is
+            sent over an encrypted connection to our server.</li>
+        <li>Our server forwards the text to our AI provider, which generates the summary.</li>
+        <li>The summary is returned to your phone and displayed.</li>
+      </ol>
+      <p>We do not store the text, the summary, or any part of your document. The text exists only
+         for the duration of the request and is discarded once the summary is returned. It is not
+         written to a database and is not retained in our systems.</p>
+      <p>Our AI provider is Google (Gemini API). At the time of writing, data submitted through the
+         paid Gemini API is not used to train their models. We may change or add providers, and
+         will update this policy if we do.</p>
+      <p>You are shown a disclosure explaining this before your first summary, and it stays
+         available in the app's Settings. Our own advice, stated in the app: don't send anything
+         you wouldn't email.</p>
+      <p>Summarise is the only feature that requires an account, because it costs us money to run
+         and we need to count usage fairly.</p>
+
+      <h3>Account information</h3>
+      <p>If you sign in to use Summarise, we receive your <strong>email address</strong> and a
+         <strong>Google account identifier</strong> through Google Sign-In. We do not receive your
+         contacts, your Google Drive, your photos, or your Google profile beyond this. We do not
+         build a marketing list and we do not send marketing email.</p>
+
+      <h3>Usage counters</h3>
+      <p>To apply the monthly summary allowance we store a small record against your account, in
+         Google Firestore:</p>
+      <ul>
+        <li>Account identifier — to attach your counters to you</li>
+        <li>Subscription tier — to apply the correct limit</li>
+        <li>Number of summaries used this month — to enforce the monthly allowance</li>
+        <li>Current period and reset date — to know when the allowance renews</li>
+        <li>Recent request timestamps — to apply an hourly rate limit and prevent abuse</li>
+      </ul>
+      <p>That is the entirety of what we hold about you on our servers. There is no document, no
+         text, no summary and no file name in that record.</p>
+
+      <h3>Diagnostics and analytics</h3>
+      <p>The app contains <strong>Firebase Crashlytics</strong>, which sends us crash reports, and
+         <strong>Firebase Analytics</strong>, which tells us which features are used and where
+         people run into problems. These record events such as "a PDF was created" or "an operation
+         failed", along with device model, operating system version, country, and an app-generated
+         identifier.</p>
+      <p>They never receive your document content, extracted text, summaries, or file names.</p>
+      <p>This is declared to Google Play on our Data Safety form as collecting app interactions,
+         crash logs, diagnostics and device identifiers. It is stated here in the same terms.</p>
+      <p>The app contains <strong>no advertising SDK</strong>. We do not sell, rent or share your
+         personal information with data brokers, advertisers, or any third party for their own
+         marketing purposes.</p>
+
+      <h3>Purchases and app integrity</h3>
+      <p>Subscriptions, when they are offered, are processed by Google Play. We never see or handle
+         your card details, billing address, or payment information — we receive only confirmation
+         of whether a subscription is active. We use RevenueCat to manage subscription status.</p>
+      <p>We use Firebase App Check with Google Play Integrity to confirm that requests to our
+         servers come from a genuine installation of PDFiq rather than an automated script. This
+         protects our AI costs and does not involve your documents.</p>
+
+      <h3>What the app never collects</h3>
+      <ul>
+        <li>Your PDFs or images — they are never uploaded</li>
+        <li>The text of your documents, beyond the single Summarise request described above</li>
+        <li>Your summaries</li>
+        <li>File names or document metadata</li>
+        <li>Your contacts, calendar, location, microphone or camera roll</li>
+        <li>Payment details</li>
+      </ul>
+
+      <!-- ============================================================= shared -->
+      <h2>Who your data is shared with</h2>
+      <p>Nothing from this website is shared with anyone, because nothing from this website is
+         collected. The app uses a small number of providers, each for a specific purpose:</p>
+      <ul>
+        <li><strong>Google Firebase</strong> — sign-in, usage counters, hosting, analytics and
+            crash reports. Receives: account identifier, usage counts, diagnostic events.</li>
+        <li><strong>Google (Gemini API)</strong> — generating summaries. Receives: the extracted
+            text of a document you chose to summarise.</li>
+        <li><strong>Google Play</strong> — subscription billing. Receives: payment details, handled
+            entirely by Google.</li>
+        <li><strong>RevenueCat</strong> — subscription status. Receives: account identifier and
+            subscription state.</li>
+      </ul>
+      <p>We may also disclose information where we are legally required to, or where it is
+         necessary to protect our rights or the safety of others.</p>
+
+      <h2>Where your data is processed</h2>
+      <p>Our servers and database are hosted on Google Cloud infrastructure in India (the
+         asia-south1 region). Our AI provider and analytics services may process data in other
+         countries, including the United States. By using Summarise you consent to your extracted
+         text being processed in these locations.</p>
+
+      <h2>How long we keep things</h2>
+      <ul>
+        <li><strong>Document text and summaries:</strong> not kept at all — discarded when the
+            request completes.</li>
+        <li><strong>Account and usage counters:</strong> kept while your account is active, and
+            deleted when you delete your account.</li>
+        <li><strong>Crash and analytics data:</strong> retained according to Firebase's default
+            retention periods, typically up to 14 months.</li>
+        <li><strong>Files the app creates on your phone:</strong> temporary working copies are
+            deleted automatically after 7 days or once 20 files accumulate. Files you explicitly
+            save go to your Documents folder and are yours — we never touch or delete them.</li>
+        <li><strong>Files this website creates:</strong> none. What you save, your browser saves
+            straight to your own disk.</li>
+      </ul>
+
+      <h2>Deleting your account and data</h2>
+      <p>If you signed in for Summarise, you can delete your account and everything associated with
+         it at any time.</p>
+      <ul>
+        <li>In the app: <strong>Settings &rarr; Delete account</strong>.</li>
+        <li>By email: write to <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a>
+            from the address you signed in with, and we will delete your account within 30 days.</li>
+      </ul>
+      <p>Deleting your account removes your account record and usage counters from our servers. It
+         does not affect any PDF you have already saved — those files are yours and are not ours to
+         delete. Cancelling a subscription is separate from deleting an account, and is handled
+         through Google Play.</p>
+      <p>If you have only ever used this website, or have never used Summarise, we hold nothing
+         about you and there is nothing to delete.</p>
+
+      <h2>Your rights</h2>
+      <p>Depending on where you live, you may have rights to access, correct, export, restrict or
+         delete the personal information we hold about you, and to object to certain processing.
+         Because we hold so little — an email address and a set of counters — most such requests
+         are straightforward.</p>
+      <p>Write to <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> and we will
+         respond within 30 days. We will not charge you for exercising these rights and will not
+         treat you differently for doing so.</p>
+
+      <h2>Children</h2>
+      <p>Neither the site nor the app is directed at children, and neither is designed for use by
+         anyone under 13. We do not knowingly collect personal information from children. If you
+         believe a child has provided us with personal information, contact us and we will delete
+         it.</p>
+
+      <h2>Security</h2>
+      <p>All communication between the app and our servers uses encrypted connections (TLS), as
+         does this website. Our AI provider keys are held on our servers and are never included in
+         the app. Requests to our servers require both a valid sign-in and proof that the request
+         came from a genuine installation of PDFiq.</p>
+      <p>No system is perfectly secure and we cannot guarantee absolute security. What we can tell
+         you is that the most sensitive thing you could give us — your documents — is something we
+         deliberately never hold.</p>
+
+      <h2>Changes to this policy</h2>
+      <p>If we change this policy in a way that materially affects how your information is handled,
+         we will update the effective date above and notify you in the app before the change takes
+         effect. Continued use after that point means you accept the revised policy.</p>
+
+      <h2>Contact</h2>
+      <p>Questions, concerns or requests about your data:
+         <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a></p>
+      <p class="prose__updated">PDFiq and pdf-iq.com are published by BillionEdges. Last updated
+         29 August 2026.</p>
+    </div>
