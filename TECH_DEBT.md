@@ -28,6 +28,15 @@ rather than justifying a release of their own.
 
 **Precondition for all five:** `pdf-iq.com/privacy` returns 200 in a browser, not just in DNS.
 
+### Also waiting on the app, unrelated to the domain
+
+- **Locked PDFs.** On the app side a password-protected file used to disable the Compress button
+  with no explanation. The website's handling — detect structurally, prompt, accept **either** the
+  user or the owner password, refuse rather than emit something corrupt — should be carried across.
+  The owner-password case matters specifically: the first real locked file tested here carried a
+  correct owner password and the website rejected it, so any app-side implementation that checks
+  only the user password has the same defect waiting in it.
+
 ---
 
 ## Unverified claims on the website
