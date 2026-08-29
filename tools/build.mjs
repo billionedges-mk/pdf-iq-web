@@ -11,7 +11,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
-import { TOOLS, PAGES, ALL, href, ORIGIN } from './site.mjs';
+import { TOOLS, PAGES, ALL, HOME_TOOLS, href, ORIGIN } from './site.mjs';
 import { LANGUAGES } from './langs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,6 +71,17 @@ const FONT_PRELOADS = [
   'public-sans-400.woff2', 'public-sans-700.woff2', 'public-sans-800.woff2',
   'ibm-plex-mono-400.woff2', 'ibm-plex-mono-500.woff2',
 ].map((f) => `<link rel="preload" href="/fonts/${f}" as="font" type="font/woff2" crossorigin>`).join('\n');
+
+// The homepage tool grid is generated from TOOLS rather than written out by hand.
+// It was duplicated once — in site.mjs and again in index.html — and the two drifted
+// within a day, which is exactly how a corrected claim comes back.
+function toolGrid() {
+  return HOME_TOOLS.map((t) => `      <a class="toolcard" href="${href(t.slug)}">
+        <span class="toolcard__mark" aria-hidden="true"></span>
+        <span class="toolcard__name">${esc(t.cardName ?? t.name)}</span>
+        <span class="toolcard__note">${esc(t.card)}</span>
+      </a>`).join('\n');
+}
 
 function document_({ page, body, css }) {
   const url = ORIGIN + href(page.slug);
@@ -234,7 +245,15 @@ async function build() {
       console.warn(`  (skip) no page body for /${page.slug} — expected src/pages/${page.slug || 'index'}.html`);
       continue;
     }
-    const body = readFileSync(file, 'utf8');
+    let body = readFileSync(file, 'utf8');
+    if (body.includes('<!--TOOL_GRID-->')) {
+      body = body.replace(
+        '    <!--TOOL_GRID-->',
+        `    <div class="grid-cards">
+${toolGrid()}
+    </div>`
+      );
+    }
     const dir = page.slug === '' ? OUT : join(OUT, page.slug);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'index.html'), document_({ page, body, css }));

@@ -36,11 +36,13 @@
       <p>OCR is the one partial exception: it needs to fetch its language model the first time you
          use a given language. After that it is cached and works offline too.</p>
 
-      <h2>OCR is slow, or seems to stop</h2>
-      <p>OCR has to draw each page before it can read it, and browsers stop drawing pages in
-         background tabs. If you switch to another tab the job pauses and picks up where it left
-         off when you come back. The page says so while it is happening. Every other tool copies
-         bytes rather than drawing, so none of them are affected.</p>
+      <h2>OCR is slow</h2>
+      <p>It is the heaviest tool here, because every page has to be drawn and then read a word at
+         a time. It uses several of your processor's cores at once to keep that bearable, and once
+         it has read enough pages to know, it shows you the measured rate and how long is left.
+         You can switch to another tab while it runs; it keeps going.</p>
+      <p>The first run in a given language also downloads that language's model, which is between
+         6 MB and 11 MB. That happens once and is then cached.</p>
 
       <h2>Some pages came back without text</h2>
       <p>We would rather name the pages we could not read than quietly average them into a

@@ -11,6 +11,7 @@ export const TOOLS = [
     title: 'Merge PDF — combine files in your browser, nothing uploaded',
     description:
       'Combine PDFs into one file, in the order you set. Runs entirely in your browser: the files never leave your device.',
+    cardName: 'Merge PDF',
     card: 'Combine files into one, in the order you set. Drag to reorder before you save.',
   },
   {
@@ -18,6 +19,7 @@ export const TOOLS = [
     title: 'Split PDF — extract pages in your browser, nothing uploaded',
     description:
       'Pull out a page range or cut one PDF into several. Runs entirely in your browser: the file never leaves your device.',
+    cardName: 'Split PDF',
     card: 'Pull out a page range, or cut one document into several. Page count has no limit here.',
   },
   {
@@ -25,6 +27,7 @@ export const TOOLS = [
     title: 'Compress PDF — make a PDF smaller in your browser, nothing uploaded',
     description:
       'Make a PDF smaller for email or a filing. Runs entirely in your browser: the file never leaves your device, and we say so when it cannot get smaller.',
+    cardName: 'Compress PDF',
     card: 'Make a file smaller for email or a filing. We tell you the real before and after, and say so when it cannot get smaller.',
   },
   {
@@ -32,6 +35,7 @@ export const TOOLS = [
     title: 'Images to PDF — photos and scans into one document, nothing uploaded',
     description:
       'Turn photos or scans into one PDF. Runs entirely in your browser: the images never leave your device.',
+    cardName: 'Images to PDF',
     card: 'Turn photos or scans into one document. Phone photos of receipts are the usual case.',
   },
   {
@@ -39,6 +43,7 @@ export const TOOLS = [
     title: 'Rotate PDF — fix sideways scans in your browser, nothing uploaded',
     description:
       'Turn PDF pages the right way up. Runs entirely in your browser: the file never leaves your device.',
+    cardName: 'Rotate pages',
     card: 'Fix sideways scans. Turn every page at once or only the ones that are wrong.',
   },
   {
@@ -46,6 +51,7 @@ export const TOOLS = [
     title: 'Reorder PDF pages — move and delete pages in your browser, nothing uploaded',
     description:
       'Move or delete PDF pages on a grid of the real pages. Runs entirely in your browser: the file never leaves your device.',
+    cardName: 'Reorder pages',
     card: 'Move or delete pages on a grid of the real pages, then save the new order.',
   },
   {
@@ -53,7 +59,8 @@ export const TOOLS = [
     title: 'OCR PDF — make a scan searchable in your browser, nothing uploaded',
     description:
       'Read the text in a scanned PDF so you can search and copy it. Runs entirely in your browser: the file never leaves your device.',
-    card: 'Read the text in a scan so you can search and copy it. Slowest tool here, and worth the wait.',
+    cardName: 'OCR — make searchable',
+    card: 'Read the text in a scan so you can search and copy it. The heaviest tool here, and worth the wait.',
   },
 ];
 
@@ -90,5 +97,21 @@ export const PAGES = [
 ];
 
 export const ALL = [...PAGES, ...TOOLS];
+
+/**
+ * Order of the tool grid on the homepage, which is not the nav order.
+ * Compress leads because it is the tool people arrive for and the one that carries the
+ * argument — it reports a real before and after, and says so when it can do nothing.
+ */
+export const HOME_ORDER = ['compress', 'merge', 'split', 'images-to-pdf', 'rotate', 'reorder', 'ocr'];
+
+export const HOME_TOOLS = HOME_ORDER.map((slug) => {
+  const tool = TOOLS.find((t) => t.slug === slug);
+  if (!tool) throw new Error(`HOME_ORDER names a tool that does not exist: ${slug}`);
+  return tool;
+});
+if (HOME_TOOLS.length !== TOOLS.length) {
+  throw new Error('HOME_ORDER must list every tool exactly once');
+}
 
 export const href = (slug) => (slug === '' ? '/' : `/${slug}/`);
