@@ -88,6 +88,39 @@ back. The homepage grid is now generated from `site.mjs`, with a build-time guar
 | 14 | Merge "bookmarks are the slow part" | 0.0% vs file write 76.5% | rewritten |
 | 15 | "Slowest tool here" | 1.2 s/page vs compress 1.18 | "heaviest" |
 
+---
+
+## Record — homepage redesign
+
+Only `Homepage.dc.html` changed; the other twelve artboards are byte-identical to the first
+bundle, and `Homepage v1.dc.html` preserves what was already implemented.
+
+| # | Claim as drawn | Finding | Action |
+|---|---|---|---|
+| 16 | "tools are compiled to WebAssembly" | **regression** — this was corrected in v1 and came back verbatim | rewritten again |
+| 17 | "Same tools on a phone" (grid card) | app has six of seven; its OCR package is committed and DI-wired but has no route in `Screen.kt`, no entry in `PdfiqNavHost`, no home tile | "Six of these seven, on a phone" |
+| 18 | "the same tools with no tab open" (price card) | same, and this one was **already shipped** in the v1 implementation | "six of these seven tools" |
+| 19 | "Same tools, offline, on Android" (footer) | same, on all twelve pages — the redesign's footer change removes it | replaced by a plain "Android app" link |
+| 20 | "Unlimited files of any page count, forever" | conflicts with the 200 MB ceiling the tools actually enforce | "As many files as you like, for as long as we run this" |
+| 21 | "Pro — later this year" | a dated commitment that ages into being wrong | "Pro — not yet" |
+
+Passed cleanly: no predicted sizes, no stage-cost claims, and — an improvement on v1 — no
+relative-speed claim at all. "Test it in ten seconds" describes the reader's own test, not
+processing, and stands.
+
+Two implementation-level findings that were not claims:
+
+- The design carries the readout **twice** (hero and footer). The instrumentation addressed a
+  single `id`, so the second would have rendered a hardcoded zero — a decorative readout beside
+  a real one. Now keyed on `[data-netreadout]`, all of them.
+- Building it surfaced a bug in the instrumentation itself: request counting was gated on a flag
+  set in the `load` handler, but `PerformanceObserver` delivers callbacks asynchronously, so
+  fonts that started at 9ms were handed to the callback after a `loadEventEnd` of 21ms and
+  counted as post-load traffic. The homepage read **"2 requests"** under a panel whose entire job
+  is to read zero. Counting now compares each entry's own `startTime` against `loadEventEnd`.
+
+---
+
 Two further corrections came from the brief rather than from measurement: the privacy page's
 claim of "no advertising or analytics SDK" (the app contains Firebase Analytics and Crashlytics,
 declared to Google), and its claim that the app requests camera permission (it does not).

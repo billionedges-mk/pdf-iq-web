@@ -11,7 +11,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
-import { TOOLS, PAGES, ALL, HOME_TOOLS, href, ORIGIN } from './site.mjs';
+import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, href, ORIGIN } from './site.mjs';
 import { LANGUAGES } from './langs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -45,19 +45,16 @@ ${links}
 function footer() {
   return `  <footer class="site-footer">
     <div class="site-footer__inner">
-      <p class="netreadout" id="netreadout">
+      <p class="netreadout" data-netreadout>
         <span class="netreadout__dot" aria-hidden="true"></span>
-        <span id="netreadout-text">0 requests &middot; 0 bytes sent since this page loaded</span>
+        <span data-netreadout-text>0 requests &middot; 0 bytes sent since this page loaded</span>
       </p>
       <nav class="footer-nav" aria-label="Site">
         <a href="/privacy/">Privacy</a>
         <a href="/terms/">Terms</a>
         <a href="/support/">Support</a>
+        <a href="/app/">Android app</a>
       </nav>
-      <a class="footer-android" href="/app/">
-        <span class="footer-android__mark" aria-hidden="true"></span>
-        <span>Same tools, offline, on Android</span>
-      </a>
     </div>
   </footer>`;
 }
@@ -76,15 +73,17 @@ const FONT_PRELOADS = [
 // It was duplicated once — in site.mjs and again in index.html — and the two drifted
 // within a day, which is exactly how a corrected claim comes back.
 function toolGrid() {
-  return HOME_TOOLS.map((t) => `      <a class="toolcard" href="${href(t.slug)}">
+  const card = (t) => `      <a class="toolcard${t.outline ? ' toolcard--outline' : ''}" href="${href(t.slug)}">
         <span class="toolcard__mark" aria-hidden="true"></span>
         <span class="toolcard__name">${esc(t.cardName ?? t.name)}</span>
         <span class="toolcard__note">${esc(t.card)}</span>
-      </a>`).join('\n');
+      </a>`;
+  return [...HOME_TOOLS, HOME_APP_CARD].map(card).join('\n');
 }
 
 function document_({ page, body, css }) {
   const url = ORIGIN + href(page.slug);
+  const shell = page.shell ? ` style="--shell: ${page.shell}"` : '';
   const script = page.entry ? `\n  <script type="module" src="/assets/${page.entry}.js"></script>` : '';
   return `<!doctype html>
 <html lang="en">
@@ -103,10 +102,10 @@ function document_({ page, body, css }) {
 ${FONT_PRELOADS}
 <style>${css}</style>
 </head>
-<body>
+<body${shell}>
 <a class="skip-link" href="#main">Skip to the tool</a>
 ${header(page.slug)}
-  <main class="site-main" id="main">
+  <main class="site-main${page.slug === '' ? ' site-main--home' : ''}" id="main">
 ${body}
   </main>
 ${footer()}
@@ -246,13 +245,14 @@ async function build() {
       continue;
     }
     let body = readFileSync(file, 'utf8');
+    // The page supplies the grid container; this fills it. Asserting the marker was
+    // actually consumed, rather than assuming replace() matched, is the same discipline
+    // as grepping the built output — a replace that hits nothing returns success.
     if (body.includes('<!--TOOL_GRID-->')) {
-      body = body.replace(
-        '    <!--TOOL_GRID-->',
-        `    <div class="grid-cards">
-${toolGrid()}
-    </div>`
-      );
+      body = body.replace(/[ \t]*<!--TOOL_GRID-->/, toolGrid());
+      if (body.includes('<!--TOOL_GRID-->')) {
+        throw new Error(`TOOL_GRID marker survived substitution in ${file}`);
+      }
     }
     const dir = page.slug === '' ? OUT : join(OUT, page.slug);
     mkdirSync(dir, { recursive: true });

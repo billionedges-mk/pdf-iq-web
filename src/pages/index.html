@@ -1,33 +1,62 @@
-    <h1 class="page-title" style="max-width: 720px;">Seven PDF tools that run inside this tab.</h1>
-    <p style="margin: 10px 0 0; font-size: clamp(15.5px, 2vw, 18px); line-height: 1.55; color: var(--ink-78); max-width: 620px;">
-      Your file is opened by your browser, changed on your device, and saved back to your disk.
-      There is no upload step because there is nowhere to upload to.</p>
+    <section class="home-hero" aria-label="Seven PDF tools">
+      <div class="home-hero__top">
+        <div class="home-hero__lede">
+          <p class="home-eyebrow">Runs in this tab &middot; nothing uploaded</p>
+          <h1 class="home-title">Seven PDF tools that never see your file.</h1>
+          <p class="home-sub">Your file is opened by your browser, changed on your device, and
+            saved back to your disk. There is no upload step because there is nowhere to upload
+            to.</p>
+        </div>
 
-    <!--TOOL_GRID-->
+        <div class="checkit netreadout" data-netreadout>
+          <p class="kicker">Check it yourself</p>
+          <ul>
+            <li>
+              <span class="checkit__dot checkit__dot--live" aria-hidden="true"></span>
+              <span data-netreadout-text>0 requests &middot; 0 bytes sent since this page loaded</span>
+            </li>
+            <li>
+              <span class="checkit__dot" aria-hidden="true"></span>
+              <span>turn off your wifi &mdash; the tools still work</span>
+            </li>
+            <li>
+              <span class="checkit__dot" aria-hidden="true"></span>
+              <span>no account, no queue, no watermark</span>
+            </li>
+          </ul>
+        </div>
+      </div>
 
-    <section class="section" aria-label="What it costs">
+      <div class="home-grid">
+        <!--TOOL_GRID-->
+      </div>
+
+      <p class="home-jump"><a href="#costs">&darr; what it costs, and why there is no upload bar</a></p>
+    </section>
+
+    <section class="home-section" id="costs" aria-label="What it costs">
       <h2 class="section__title">What it costs</h2>
-      <p class="section__lede">Your device does the processing, so there is no per-file cost to pass
-        on. Nothing here is for sale today.</p>
+      <p class="section__lede">Your device does the processing, so there is no per-file cost to
+        pass on. Nothing here is for sale today.</p>
 
       <div class="price-grid">
         <div class="price">
           <p class="kicker">These seven tools</p>
           <p class="price__amount">$0</p>
-          <p class="price__note">No account, no daily limit, no watermark, no queue. Unlimited files
-            of any page count, forever.</p>
+          <p class="price__note">No account, no daily limit, no watermark, no queue. As many files
+            as you like, for as long as we run this.</p>
         </div>
         <div class="price price--mark">
           <p class="kicker">Android app</p>
           <p class="price__amount">Free</p>
-          <p class="price__note">Free while we're new. Share-sheet support, camera scanning, and the
-            same tools with no tab open.</p>
+          <p class="price__note">Free while we're new. Share-sheet support, camera scanning, and
+            six of these seven tools with no tab open.</p>
           <a class="btn" href="/app/">See the app</a>
         </div>
         <div class="price">
-          <p class="kicker">Pro — later this year</p>
+          <p class="kicker">Pro &mdash; not yet</p>
           <p class="price__amount">$4.99<span>/mo</span></p>
-          <p class="price__sub">or $29.99/year · same price on web and phone</p>
+          <p class="price__sub">or $29.99/year &middot; same price on web and phone</p>
           <p class="price__note">Unlimited OCR, 100 AI summaries a month, batch processing, and one
             subscription across phone, tablet and web.</p>
           <p style="margin: 12px 0 0; font-size: 14.5px; font-weight: 700;">Not on sale yet, on
@@ -36,28 +65,30 @@
       </div>
 
       <p style="margin: 14px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink-80); max-width: 640px;">
-        The seven web tools are never behind Pro. Free, unlimited, no account — that does not change
-        when Pro arrives.</p>
-      <p class="price__sub" style="margin-top: 10px;">payment placeholder — Paddle will handle
+        The seven web tools are never behind Pro. Free, unlimited, no account &mdash; that does not
+        change when Pro arrives.</p>
+      <p class="price__sub" style="margin-top: 10px;">payment placeholder &mdash; Paddle will handle
         billing as merchant of record when Pro opens on the web. No card details are entered on
         pdf-iq pages.</p>
     </section>
 
-    <section class="threeup">
-      <div>
-        <h2>Why there is no upload bar</h2>
-        <p>The tools are JavaScript, shipped with the page like a stylesheet. Once loaded they run
-          against a file your browser holds in memory. Only OCR adds anything further, and only the
-          first time you use it.</p>
-      </div>
-      <div>
-        <h2>Test it in ten seconds</h2>
-        <p>Load a tool, disconnect from the internet, then use it. It still works. Nothing that
-          needs a server survives that test.</p>
-      </div>
-      <div>
-        <h2>No account, no queue, no watermark</h2>
-        <p>There is no server cost per file, so there is nothing to meter. Use it twice or forty
-          times a day.</p>
+    <section class="home-section home-section--last" aria-label="How it works">
+      <div class="threeup" style="margin-top: 0;">
+        <div>
+          <h2>Why there is no upload bar</h2>
+          <p>The tools are JavaScript, shipped with the page like a stylesheet. Once loaded they
+            run against a file your browser holds in memory. Only OCR fetches anything further, and
+            only the first time you use a language.</p>
+        </div>
+        <div>
+          <h2>Test it in ten seconds</h2>
+          <p>Load a tool, disconnect from the internet, then use it. It still works. Nothing that
+            needs a server survives that test.</p>
+        </div>
+        <div>
+          <h2>Nothing to delete</h2>
+          <p>Other tools promise to erase your file within an hour. Yours was never on our disk, so
+            there is no promise for us to keep or break.</p>
+        </div>
       </div>
     </section>

@@ -135,12 +135,27 @@ function noteCrossOrigin(url: string): void {
 
 // ---- count requests made after load ----------------------------------------
 
+/**
+ * When the page finished loading, in the same clock as a resource entry's startTime.
+ * Infinity until the load event has completed, so nothing counts before then.
+ */
+function loadedAt(): number {
+  const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+  return nav && nav.loadEventEnd > 0 ? nav.loadEventEnd : Infinity;
+}
+
 function watchResources(): void {
   if (typeof PerformanceObserver === 'undefined') return;
   const obs = new PerformanceObserver((list) => {
-    if (!state.loaded) return;
     for (const entry of list.getEntries()) {
       const e = entry as PerformanceResourceTiming;
+      // Compare the entry's own timestamp against load, rather than trusting a flag set
+      // in the load handler. Observer callbacks are queued and delivered asynchronously,
+      // so a resource that started and finished *before* load can be handed to this
+      // callback *after* it — measured: two preloaded fonts starting at 9ms, delivered
+      // after a loadEventEnd of 21ms, and counted as post-load traffic. That put
+      // "2 requests" under a panel whose entire job is to read zero.
+      if (e.startTime <= loadedAt()) continue;
       state.requests.push(e.name);
       if (isCrossOrigin(e.name)) noteCrossOrigin(e.name);
     }
@@ -165,16 +180,23 @@ function formatBytes(n: number): string {
 }
 
 function render(): void {
-  const el = document.getElementById('netreadout-text');
-  const wrap = document.getElementById('netreadout');
-  if (!el || !wrap) return;
+  // Every readout on the page, not one by id. The redesigned homepage carries two —
+  // one in the hero and one in the footer — and an id can only ever address the first,
+  // so the other would sit there showing a hardcoded zero. A readout that is not wired
+  // to the instrumentation is exactly the decorative version this is meant not to be.
+  const wraps = Array.from(document.querySelectorAll<HTMLElement>('[data-netreadout]'));
+  if (!wraps.length) return;
 
   const reqs = state.requests.length;
   const sent = state.sentBytes;
-  el.textContent = `${plural(reqs, 'request', 'requests')} · ${formatBytes(sent)} sent since this page loaded`;
-
+  const text = `${plural(reqs, 'request', 'requests')} · ${formatBytes(sent)} sent since this page loaded`;
   const bad = sent > 0 || state.crossOrigin.length > 0;
-  wrap.classList.toggle('netreadout--dirty', bad);
+
+  for (const wrap of wraps) {
+    const el = wrap.querySelector<HTMLElement>('[data-netreadout-text]');
+    if (el) el.textContent = text;
+    wrap.classList.toggle('netreadout--dirty', bad);
+  }
 
   const detail: string[] = [];
   if (reqs === 0) {
@@ -185,12 +207,15 @@ function render(): void {
   }
   if (sent > 0) detail.push(`Request bodies sent: ${state.sends.map((s) => s.where).join(', ')}`);
   if (state.crossOrigin.length) detail.push(`Cross-origin: ${state.crossOrigin.join(', ')}`);
-  wrap.setAttribute('title', detail.join('\n'));
+  for (const wrap of wraps) wrap.setAttribute('title', detail.join('\n'));
 }
 
 function start(): void {
   state.loaded = true;
+  // Re-render shortly after load too: entries that started before load can still be
+  // delivered to the observer after it, and those must be excluded rather than counted.
   render();
+  setTimeout(render, 0);
 }
 
 watchResources();
