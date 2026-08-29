@@ -1,21 +1,43 @@
 /**
  * The footer readout.
  *
- * This is instrumentation, not decoration. It reports two measured numbers:
+ * This is instrumentation, not decoration, and it reports the two numbers that actually
+ * carry the site's claim:
  *
- *   requests   — resource requests the browser actually made *after* this page
- *                finished loading, counted by PerformanceObserver.
- *   bytes sent — the total size of every request body this page has handed to
- *                fetch, XMLHttpRequest, sendBeacon or a WebSocket.
+ *   bytes sent          — the total size of every request body this page has handed to
+ *                         fetch, XMLHttpRequest, sendBeacon or a WebSocket. A PDF leaving
+ *                         this device would have to travel as a request body, so this is
+ *                         the claim itself, measured at the only place it can be measured.
+ *   third-party requests — anything fetched from an origin that is not this one, at any
+ *                         point in the page's life.
  *
- * "bytes sent" is the number that carries the claim. A PDF leaving this device
- * would have to travel as a request body, so if that figure is ever non-zero
- * something is wrong and the readout says so loudly rather than quietly.
+ * ---------------------------------------------------------------------------------
+ * WHY IT NO LONGER COUNTS "REQUESTS SINCE LOAD"
  *
- * The request count is honestly allowed to move: the OCR page fetches its
- * language model, and pdf.js fetches its worker. Both are same-origin static
- * assets and neither carries a byte of the user's document. Hovering the
- * readout lists exactly what was fetched.
+ * It used to, and that metric was wrong three separate times on its own page:
+ *
+ *   1. It updated one element found by id, so the redesigned homepage's second readout
+ *      sat there rendering a hardcoded zero beside a live one.
+ *   2. It gated counting on a flag set in the load handler. PerformanceObserver delivers
+ *      asynchronously, so preloaded fonts starting at 9ms were handed to the callback
+ *      after a loadEventEnd of 21ms and counted as post-load traffic.
+ *   3. Fixing that to compare startTime against loadEventEnd was still wrong: browsers
+ *      fetch the favicon lazily, genuinely after load, so a correct implementation of the
+ *      rule still read "1 request" on a page that had done nothing.
+ *
+ * Each fix was right about the bug and wrong about the metric. "Requests since the load
+ * event" is a proxy for nothing anyone cares about, and its boundary has an open-ended
+ * supply of edge cases — lazy favicons, speculative connections, extensions, prefetch.
+ *
+ * The decisive argument is what it would have missed. Cloudflare Pages injected a Web
+ * Analytics beacon into the document on the custom domain. That loads *during* page load,
+ * so `startTime <= loadEventEnd` and the old rule skipped it. The readout would have
+ * reported zero while a third-party script was on the page. The CSP caught it; this did
+ * not. A counter that reads zero through the exact event it exists to detect is worse
+ * than no counter.
+ *
+ * Counting third-party requests has no timing boundary, so it has no boundary bugs, and
+ * it catches that beacon by construction.
  */
 
 interface Sent {
@@ -24,22 +46,31 @@ interface Sent {
 }
 
 const state = {
-  requests: [] as string[],
   sentBytes: 0,
   sends: [] as Sent[],
-  crossOrigin: [] as string[],
-  loaded: false,
+  /** Third-party origins seen, in order, deduplicated by full URL. */
+  thirdParty: [] as string[],
+  /** Every resource the page fetched, for the hover detail only. */
+  seen: [] as string[],
 };
 
 const origin = location.origin;
 
-function isCrossOrigin(url: string): boolean {
+function isThirdParty(url: string): boolean {
   try {
     const u = new URL(url, location.href);
-    if (u.protocol === 'data:' || u.protocol === 'blob:') return false;
+    // data: and blob: never leave the tab. about:blank and similar are not fetches.
+    if (u.protocol === 'data:' || u.protocol === 'blob:' || u.protocol === 'about:') return false;
     return u.origin !== origin;
   } catch {
     return false;
+  }
+}
+
+function noteThirdParty(url: string): void {
+  if (!state.thirdParty.includes(url)) {
+    state.thirdParty.push(url);
+    render();
   }
 }
 
@@ -62,7 +93,7 @@ function bodyBytes(body: unknown): number {
     return n;
   }
   // A ReadableStream body cannot be measured without consuming it. Record it as
-  // unknown-but-present rather than pretending it was empty.
+  // present-but-unmeasured rather than pretending it was empty.
   if (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream) return -1;
   return 0;
 }
@@ -76,13 +107,16 @@ function recordSend(url: string, body: unknown, via: string): void {
 }
 
 // ---- patch every path a request body can take out of this tab ----------------
+//
+// These also catch a cross-origin attempt that the CSP blocks, which never produces a
+// resource timing entry — so a blocked beacon is still visible here.
 
 const nativeFetch = window.fetch;
 window.fetch = function patchedFetch(input: RequestInfo | URL, init?: RequestInit) {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
   const body = init?.body ?? (input instanceof Request ? input.body : null);
   if (body) recordSend(url, body, 'fetch');
-  if (isCrossOrigin(url)) noteCrossOrigin(url);
+  if (isThirdParty(url)) noteThirdParty(url);
   return nativeFetch.call(this, input as RequestInfo, init);
 };
 
@@ -90,7 +124,7 @@ const nativeOpen = XMLHttpRequest.prototype.open;
 const nativeSend = XMLHttpRequest.prototype.send;
 XMLHttpRequest.prototype.open = function (method: string, url: string | URL, ...rest: unknown[]) {
   (this as XMLHttpRequest & { __url?: string }).__url = String(url);
-  if (isCrossOrigin(String(url))) noteCrossOrigin(String(url));
+  if (isThirdParty(String(url))) noteThirdParty(String(url));
   // @ts-expect-error - forwarding the browser's own variadic signature
   return nativeOpen.call(this, method, url, ...rest);
 };
@@ -104,7 +138,7 @@ if (navigator.sendBeacon) {
   const nativeBeacon = navigator.sendBeacon.bind(navigator);
   navigator.sendBeacon = function (url: string | URL, data?: BodyInit | null) {
     recordSend(String(url), data, 'beacon');
-    if (isCrossOrigin(String(url))) noteCrossOrigin(String(url));
+    if (isThirdParty(String(url))) noteThirdParty(String(url));
     return nativeBeacon(url, data);
   };
 }
@@ -114,8 +148,7 @@ if (NativeWebSocket) {
   class WatchedWebSocket extends NativeWebSocket {
     constructor(url: string | URL, protocols?: string | string[]) {
       super(url, protocols);
-      state.requests.push(`websocket ${url}`);
-      if (isCrossOrigin(String(url))) noteCrossOrigin(String(url));
+      if (isThirdParty(String(url))) noteThirdParty(String(url));
       render();
     }
     send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
@@ -126,43 +159,23 @@ if (NativeWebSocket) {
   window.WebSocket = WatchedWebSocket as unknown as typeof WebSocket;
 }
 
-function noteCrossOrigin(url: string): void {
-  if (!state.crossOrigin.includes(url)) {
-    state.crossOrigin.push(url);
-    render();
-  }
-}
-
-// ---- count requests made after load ----------------------------------------
-
-/**
- * When the page finished loading, in the same clock as a resource entry's startTime.
- * Infinity until the load event has completed, so nothing counts before then.
- */
-function loadedAt(): number {
-  const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
-  return nav && nav.loadEventEnd > 0 ? nav.loadEventEnd : Infinity;
-}
+// ---- watch every resource, whenever it happens ------------------------------
 
 function watchResources(): void {
   if (typeof PerformanceObserver === 'undefined') return;
   const obs = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
       const e = entry as PerformanceResourceTiming;
-      // Compare the entry's own timestamp against load, rather than trusting a flag set
-      // in the load handler. Observer callbacks are queued and delivered asynchronously,
-      // so a resource that started and finished *before* load can be handed to this
-      // callback *after* it — measured: two preloaded fonts starting at 9ms, delivered
-      // after a loadEventEnd of 21ms, and counted as post-load traffic. That put
-      // "2 requests" under a panel whose entire job is to read zero.
-      if (e.startTime <= loadedAt()) continue;
-      state.requests.push(e.name);
-      if (isCrossOrigin(e.name)) noteCrossOrigin(e.name);
+      state.seen.push(e.name);
+      if (isThirdParty(e.name)) noteThirdParty(e.name);
     }
     render();
   });
   try {
-    obs.observe({ type: 'resource', buffered: false });
+    // buffered:true so resources fetched before this script ran are included. A script
+    // injected into the document head loads early; missing it is exactly the failure
+    // this readout exists to prevent.
+    obs.observe({ type: 'resource', buffered: true });
   } catch {
     /* older browsers: the send-side instrumentation above still holds */
   }
@@ -180,62 +193,52 @@ function formatBytes(n: number): string {
 }
 
 function render(): void {
-  // Every readout on the page, not one by id. The redesigned homepage carries two —
-  // one in the hero and one in the footer — and an id can only ever address the first,
-  // so the other would sit there showing a hardcoded zero. A readout that is not wired
-  // to the instrumentation is exactly the decorative version this is meant not to be.
+  // Every readout on the page, not one by id. The homepage carries two.
   const wraps = Array.from(document.querySelectorAll<HTMLElement>('[data-netreadout]'));
   if (!wraps.length) return;
 
-  const reqs = state.requests.length;
   const sent = state.sentBytes;
-  const text = `${plural(reqs, 'request', 'requests')} · ${formatBytes(sent)} sent since this page loaded`;
-  const bad = sent > 0 || state.crossOrigin.length > 0;
+  const third = state.thirdParty.length;
+  const text = `${formatBytes(sent)} sent · ${plural(third, 'third-party request', 'third-party requests')}`;
+  const bad = sent > 0 || third > 0;
+
+  const detail: string[] = [];
+  detail.push(bad
+    ? 'Something left this page. That is a bug — please report it.'
+    : 'Nothing has been sent, and nothing has been fetched from anyone but this site.');
+  if (sent > 0) detail.push(`Request bodies: ${state.sends.map((s) => s.where).join(', ')}`);
+  if (third > 0) detail.push(`Third-party: ${state.thirdParty.join(', ')}`);
+  detail.push(`${state.seen.length} files loaded from this site.`);
 
   for (const wrap of wraps) {
     const el = wrap.querySelector<HTMLElement>('[data-netreadout-text]');
     if (el) el.textContent = text;
     wrap.classList.toggle('netreadout--dirty', bad);
+    wrap.setAttribute('title', detail.join('\n'));
   }
-
-  const detail: string[] = [];
-  if (reqs === 0) {
-    detail.push('Nothing has been requested since this page finished loading.');
-  } else {
-    detail.push('Requested since load (all same-origin assets of this site):');
-    for (const r of state.requests.slice(-12)) detail.push(`  ${r.replace(origin, '')}`);
-  }
-  if (sent > 0) detail.push(`Request bodies sent: ${state.sends.map((s) => s.where).join(', ')}`);
-  if (state.crossOrigin.length) detail.push(`Cross-origin: ${state.crossOrigin.join(', ')}`);
-  for (const wrap of wraps) wrap.setAttribute('title', detail.join('\n'));
-}
-
-function start(): void {
-  state.loaded = true;
-  // Re-render shortly after load too: entries that started before load can still be
-  // delivered to the observer after it, and those must be excluded rather than counted.
-  render();
-  setTimeout(render, 0);
 }
 
 watchResources();
-if (document.readyState === 'complete') start();
-else window.addEventListener('load', start, { once: true });
+render();
+if (document.readyState !== 'complete') window.addEventListener('load', render, { once: true });
 
-// Let the tool pages report what they fetched, and let tests read the truth.
+// Read by the readout self-test, and by anyone who wants to check from the console.
 declare global {
   interface Window {
     pdfiqNet: {
-      requests: () => string[];
       bytesSent: () => number;
-      crossOrigin: () => string[];
+      thirdParty: () => string[];
+      seen: () => string[];
+      /** True when the page has done nothing it should not have. */
+      clean: () => boolean;
     };
   }
 }
 window.pdfiqNet = {
-  requests: () => state.requests.slice(),
   bytesSent: () => state.sentBytes,
-  crossOrigin: () => state.crossOrigin.slice(),
+  thirdParty: () => state.thirdParty.slice(),
+  seen: () => state.seen.slice(),
+  clean: () => state.sentBytes === 0 && state.thirdParty.length === 0,
 };
 
 export {};

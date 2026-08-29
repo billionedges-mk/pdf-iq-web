@@ -180,6 +180,73 @@ walked back; and "the scan is kept, always" on OCR, the design decision from cor
 its reason stated beside it.
 
 
+
+---
+
+### 11. Platform-injected claims — *added after the Cloudflare beacon*
+
+**The host can add third-party scripts we did not write, in production only.** Cloudflare Pages
+injected its Web Analytics beacon on the custom domain. Nothing in the repo referenced it, every
+local check passed, and the privacy page's "no analytics SDK, no tag manager, no pixel and no
+third-party script of any kind" was true of the source and false of the served page.
+
+This is a category the other ten checks do not reach, because all of them read what we wrote. A
+claim about what a page *contains* has to be verified against what the origin *serves*.
+
+Two things caught it, and it is worth being exact about which:
+
+- **The CSP blocked it.** `default-src 'none'` with `script-src 'self'` meant the beacon could not
+  execute. That was luck as much as design — the CSP was written for XSS, not for the host.
+- **The readout surfaced the symptom**, a request count that no local build explained.
+
+The readout would *not* have caught the beacon on its own as it was then written: an injected
+script loads during page load, and the counting rule at the time only counted requests after
+`loadEventEnd`. It would have reported zero with a third-party script on the page. That is why
+the metric was replaced — see below.
+
+**Verify on the origin, not in the repo:** after any deploy to a new host or domain, fetch the
+served HTML and enumerate `<script>` tags and external URLs. Grep for the vendor's name in the
+*markup*, not in the prose — a first pass here returned nine hits for "analytics" on the privacy
+page, all of which were that page's own description of Firebase Analytics.
+
+---
+
+## Record — the readout, rebuilt
+
+The element carrying the site's central claim was wrong three times on its own page:
+
+| | Failure | Caught by |
+|---|---|---|
+| 1 | updated one element by id, so the homepage's second readout rendered a hardcoded zero | review, before shipping |
+| 2 | gated counting on a flag set in the load handler; PerformanceObserver delivers asynchronously, so preloaded fonts starting at 9ms were counted after a loadEventEnd of 21ms | the homepage reading "2 requests" |
+| 3 | compared startTime to loadEventEnd, which is a correct implementation of the wrong rule: browsers fetch the favicon lazily, genuinely after load | production reading "1 request" with nothing on the wire |
+
+Each fix was right about the bug and wrong about the metric. "Requests since the load event" is a
+proxy for nothing a visitor cares about, and its boundary has an open-ended supply of edge cases.
+
+The decisive argument was what it would have *missed*: the injected beacon loads during page
+load, so the rule skipped it. A counter that reads zero through the exact event it exists to
+detect is worse than no counter.
+
+It now reports **bytes sent** and **third-party requests** — the claim itself, and the corroboration
+— with no timing boundary, so it has no boundary bugs and catches the beacon class by construction.
+
+### The test, and why "reads zero" is not enough
+
+`src/test/readout-selftest.ts` loads all twelve routes in same-origin iframes, settles, and
+asserts on the *rendered text* rather than internals. It was validated by mutation, not by
+passing:
+
+- **Mutation A — count our own assets** (the shape of failures 2 and 3): 13 groups fail, with the
+  real bug's exact wording, `"0 bytes sent · 6 third-party requests"`.
+- **Mutation B — make `render()` a no-op**, the decorative-readout failure: **the clean-page group
+  still passes**, because the HTML default already contains the clean string. Only the cases that
+  force a non-zero state catch it.
+
+Mutation B is the reason the test asserts in both directions. A readout stuck at zero is
+indistinguishable from a correct one until something makes it move, so the test makes a real
+cross-origin request and sends a real 4096-byte body and requires it to notice both.
+
 ---
 
 ## Record — first production deploy

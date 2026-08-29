@@ -47,7 +47,7 @@ function footer() {
     <div class="site-footer__inner">
       <p class="netreadout" data-netreadout>
         <span class="netreadout__dot" aria-hidden="true"></span>
-        <span data-netreadout-text>0 requests &middot; 0 bytes sent since this page loaded</span>
+        <span data-netreadout-text>0 bytes sent &middot; 0 third-party requests</span>
       </p>
       <nav class="footer-nav" aria-label="Site">
         <a href="/privacy/">Privacy</a>
