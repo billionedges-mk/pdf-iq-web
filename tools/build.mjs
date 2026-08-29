@@ -222,10 +222,24 @@ function copyStatic() {
 // ---------------------------------------------------------------- scripts
 
 async function bundle() {
+  // The script tag and the bundle must come from the same fact. They did not: the tag was
+  // emitted from `page.entry` unconditionally while bundling silently skipped any entry
+  // whose file was missing. The homepage declared `entry: 'home'` from the first scaffold
+  // and src/entries/home.ts was never written, so every build shipped a page pointing at a
+  // bundle that did not exist. Locally that 404s; on Cloudflare Pages it returns 200 with
+  // the HTML index, cached immutable for a year, and the footer readout counted it.
+  for (const page of ALL) {
+    if (!page.entry) continue;
+    const file = join(ROOT, `src/entries/${page.entry}.ts`);
+    if (!existsSync(file)) {
+      throw new Error(`/${page.slug} declares entry '${page.entry}' but ${file} does not exist`);
+    }
+  }
+
   const entries = [
     join(ROOT, 'src/entries/net.ts'),
     ...ALL.filter((p) => p.entry).map((p) => join(ROOT, `src/entries/${p.entry}.ts`)),
-  ].filter((p) => existsSync(p));
+  ];
 
   await esbuild.build({
     entryPoints: entries,

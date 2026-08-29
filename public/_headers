@@ -28,6 +28,7 @@
 # applied its own Content-Encoding on top, the browser would transparently decode one layer and
 # hand tesseract raw traineddata, which it would then fail to inflate. Declaring them
 # application/gzip keeps them out of the compressible set; no Content-Encoding is set here.
+# Cache-Control is inherited from the /vendor/* rule above — Pages applies every matching
+# rule, so repeating it here emitted the directives twice in one header.
 /vendor/tessdata/*
   Content-Type: application/gzip
-  Cache-Control: public, max-age=31536000, immutable

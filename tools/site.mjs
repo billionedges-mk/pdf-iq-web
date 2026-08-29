@@ -74,7 +74,8 @@ export const TOOLS = [
 /** Everything else. */
 export const PAGES = [
   {
-    slug: '', name: 'Home', entry: 'home', shell: '1120px',
+    // No page-specific bundle: the homepage is static, and net.js ships on every page.
+    slug: '', name: 'Home', entry: null, shell: '1120px',
     title: 'pdf-iq — seven PDF tools that run inside your browser tab',
     description:
       'Compress, merge, split, rotate, reorder, convert and OCR PDFs without uploading them. The work happens on your device, so there is no upload step and nothing to delete.',

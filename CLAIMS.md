@@ -179,6 +179,35 @@ seven web tools are never behind Pro", the stated strategy that the sentence exi
 walked back; and "the scan is kept, always" on OCR, the design decision from correction C with
 its reason stated beside it.
 
+
+---
+
+## Record — first production deploy
+
+The footer readout showed **1 request** on a clean load of `pdf-iq-web.pages.dev`. The first
+thing it caught in production was production itself.
+
+It was not Cloudflare Web Analytics, which was the reasonable first suspicion and would have made
+the privacy page's "no third-party script of any kind" false in production while true in the
+source. Verified: the only script on any served page is `/assets/net.js` plus the tool bundle, and
+the only external URLs anywhere are the canonical and og:url tags. No beacon is injected.
+
+It was ours. The homepage emitted `<script src="/assets/home.js">` for a bundle that has never
+existed: `site.mjs` declared `entry: 'home'` in the first scaffold and `src/entries/home.ts` was
+never written. The script tag came from `page.entry`; the bundling silently skipped any entry
+whose file was missing. Two facts, one source needed — the same shape as every drift in this file.
+
+Locally that 404s and went unnoticed. On Cloudflare Pages a missing `/assets/*` path returns
+**200 with the HTML index**, typed `text/html`, and my own `immutable` rule then told browsers to
+cache that wrong answer for a year. A 404 would have been the kinder failure.
+
+The build now throws when a page declares an entry whose file is absent, negative-tested by
+restoring the broken declaration and watching it fail.
+
+Production checks passed at the same time: language models serve as `application/gzip` with no
+`Content-Encoding` layered on top, so tesseract can still inflate them; `_headers` is applied,
+with HTML `must-revalidate` and assets `immutable`.
+
 ---
 
 Two further corrections came from the brief rather than from measurement: the privacy page's
