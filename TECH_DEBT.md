@@ -39,11 +39,13 @@ worded so that it stays true if the measurement comes back badly.
   probe has been run to find where a real tab actually dies, on desktop or on a phone. The
   too-large message says "the ceiling this page sets" rather than claiming it is your device's
   limit. Needs a real probe on both before launch.
-- **Encrypted PDFs.** The unlock path in `src/lib/open-pdf.ts` is written and typechecked but has
-  never seen a password-protected file. pdf-lib cannot decrypt at all, so it routes through
-  pdf.js `saveDocument()`; the code re-opens the result *without* `ignoreEncryption` and refuses
-  rather than emitting a corrupt file. Whether real encrypted documents survive that round trip
-  is unproven. Blocked on a fixture.
+- **Encrypted PDFs — resolved, with one gap.** A real locked file proved both halves wrong:
+  detection never fired, and the pdf.js `saveDocument()` route does not decrypt at all. Both are
+  fixed and tested end to end against a generated RC4 40-bit fixture. Remaining gap: **only RC4
+  40-bit has been exercised against a real file.** `src/lib/decrypt.ts` also implements RC4
+  128-bit, AES-128 (/AESV2) and AES-256 (/AESV3, R5 and R6), and those paths are written from the
+  specification but have never met a document. `tools/encrypt-fixture.mjs` only emits RC4 40-bit;
+  extending it to AES would close this.
 - **CMYK, JPEG 2000, JBIG2 and CCITT images.** `judge()` in `src/lib/pdf-inspect.ts` detects and
   skips these with specific reasons. The *logic* is tested; it has never been run against a real
   file of any of those kinds.

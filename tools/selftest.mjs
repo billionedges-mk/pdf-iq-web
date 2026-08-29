@@ -3,6 +3,7 @@
 // does not produce it.
 import * as esbuild from 'esbuild';
 import { writeFileSync, mkdirSync } from 'node:fs';
+import { buildEncryptedPdf } from './encrypt-fixture.mjs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,5 +26,12 @@ for (const name of ['selftest', 'tools-selftest', 'ocr-probe', 'readout-selftest
   });
   writeFileSync(join(OUT, `${name}.html`), page(name));
 }
+
+// A genuinely encrypted PDF with a known password, so the unlock path can be tested.
+// No real document is committed; this is generated fresh each time.
+mkdirSync(join(OUT, 'fixtures'), { recursive: true });
+writeFileSync(join(OUT, 'fixtures', 'encrypted-rc4.pdf'),
+  buildEncryptedPdf({ userPassword: 'correct-horse', pages: 3 }));
+console.log('encrypted fixture -> dist/fixtures/encrypted-rc4.pdf (password: correct-horse)');
 
 console.log('selftests built -> dist/selftest.html, dist/tools-selftest.html');

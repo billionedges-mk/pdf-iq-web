@@ -1,17 +1,23 @@
 /**
  * The error taxonomy.
  *
- * Everything here is classified by the *type* thrown, never by matching the text of
- * a message. Library messages are not a stable interface: they get reworded between
- * versions and some are localised by the browser. `err instanceof EncryptedPDFError`
- * and `err.name === 'PasswordException'` survive that; `/encrypted/i.test(err.message)`
- * does not.
+ * The rule is still to classify by type rather than by message text, because messages get
+ * reworded between versions and some are localised. pdf.js honours that: its build keeps
+ * `.name` intact, so `PasswordException` and `InvalidPDFException` dispatch correctly.
  *
- * Every kind declared here has to be reachable from a real file. A kind that nothing
- * can produce reads as covered and is not.
+ * pdf-lib does not, and finding that out cost a real bug. Its published build is ES5, and
+ * `class X extends Error` transpiled to ES5 loses its prototype chain, so every one of its
+ * error classes arrives as a plain `Error` with `.name === 'Error'`. The type dispatch
+ * that used to be here could never fire, and a genuinely encrypted file fell through to
+ * "unexpected failure" rather than reaching the password prompt.
+ *
+ * Encryption is therefore detected structurally now, from `doc.isEncrypted`, and never
+ * from an error at all. What is left of pdf-lib dispatch matches on message, with a check
+ * in `tools/verify-pdflib-errors.mjs` that fails loudly if an upgrade rewords them.
+ *
+ * Every kind declared here has to be reachable from a real file. A kind that nothing can
+ * produce reads as covered and is not.
  */
-
-import { EncryptedPDFError } from 'pdf-lib';
 
 export type ErrorKind =
   | 'locked'
@@ -229,14 +235,48 @@ export function unknown(file: FileFacts, err: unknown): ToolError {
  * Dispatch is on constructor identity and on the stable `.name` that pdf.js sets on
  * its exception classes — never on message text.
  */
+/**
+ * Message fragments pdf-lib uses, and what each means.
+ *
+ * This matches on message text, which is normally the wrong thing to do and is banned
+ * everywhere else in this codebase. The reason for the exception, measured rather than
+ * assumed: pdf-lib's published build is compiled to ES5, and `class X extends Error`
+ * transpiled to ES5 loses its prototype chain. Every one of its error classes arrives as
+ * a plain `Error` with `.name === 'Error'` and fails `instanceof`:
+ *
+ *   EncryptedPDFError      instanceof self: false | .name: Error
+ *   MissingPDFHeaderError  instanceof self: false | .name: Error
+ *   PDFParsingError        instanceof self: false | .name: Error
+ *
+ * So the type-based dispatch that used to be here never fired, and every pdf-lib failure
+ * fell through to "unexpected failure" — which is exactly what a real locked file
+ * produced. The message is the only signal the library gives.
+ *
+ * That makes this a pinned-version dependency, so `tools/verify-pdflib-errors.mjs`
+ * asserts these fragments still match what pdf-lib actually throws. An upgrade that
+ * reworded them fails that check loudly instead of quietly degrading the error copy.
+ */
+export const PDFLIB_MESSAGES: Array<[fragment: string, kind: 'encrypted' | 'header' | 'parse']> = [
+  ['is encrypted', 'encrypted'],
+  ['No PDF header found', 'header'],
+  ['Failed to parse PDF document', 'parse'],
+  ['Expected instance of PDFDict', 'parse'],
+  ['Unbalanced parenthesis', 'parse'],
+  ['Expected object number', 'parse'],
+  ['stalled', 'parse'],
+];
+
+/**
+ * Classify a thrown value from pdf-lib or pdf.js.
+ *
+ * pdf.js is dispatched on `.name`, which its modern build preserves correctly — verified:
+ * a locked file throws `PasswordException` with `code` 1 for "needs a password" and 2 for
+ * "that one was wrong". pdf-lib is dispatched on message, for the reason above.
+ */
 export function classify(err: unknown, file: FileFacts): ToolError {
-  if (err instanceof EncryptedPDFError) {
-    return locked(file, 'encrypted');
-  }
   if (err && typeof err === 'object' && 'name' in err) {
     const name = String((err as Error).name);
     if (name === 'PasswordException') {
-      // pdf.js: code 1 = a password is needed, code 2 = the one supplied was wrong.
       const code = (err as { code?: number }).code;
       return code === 2 ? wrongPassword(file) : locked(file, 'encrypted');
     }
@@ -247,10 +287,14 @@ export function classify(err: unknown, file: FileFacts): ToolError {
       return outOfMemory(file, 'reading this document');
     }
   }
-  // pdf-lib's parser errors all extend Error and are thrown for structurally broken files.
-  if (err instanceof Error && /^(MissingPDFHeaderError|PDFParsingError|PDFObjectParsingError|PDFInvalidObjectParsingError|PDFStreamParsingError|MissingKeywordError|NextByteAssertionError|UnbalancedParenthesisError|StalledParserError|NumberParsingError|CorruptPageTreeError|MissingCatalogError|ReparseError|UnrecognizedStreamTypeError)$/.test(err.name)) {
-    const where = err.name === 'MissingPDFHeaderError' ? 'it has no PDF header' : `the parser stopped at ${err.name}`;
-    return damaged(file, where);
+
+  const message = err instanceof Error ? err.message : String(err ?? '');
+  for (const [fragment, kind] of PDFLIB_MESSAGES) {
+    if (!message.includes(fragment)) continue;
+    if (kind === 'encrypted') return locked(file, 'encrypted');
+    if (kind === 'header') return notPdf(file, new Uint8Array(0));
+    return damaged(file, 'the parser could not read its structure');
   }
+
   return unknown(file, err);
 }

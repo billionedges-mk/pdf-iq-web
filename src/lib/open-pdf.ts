@@ -1,26 +1,32 @@
 /**
  * Opening a document, including the locked ones.
  *
- * pdf-lib parses and rebuilds PDFs but has no decryption at all, so an encrypted file
- * cannot simply be handed to it. pdf.js does decrypt. So for a locked file we let
- * pdf.js open it with the password and write the document back out, then check that
- * what came back is genuinely readable without a password before going near it.
+ * Two things were wrong here and both were found by a real password-protected file:
  *
- * That check matters. If the unlocked copy were still encrypted, pdf-lib would parse
- * the ciphertext as though it were content and cheerfully produce a corrupt file — the
- * failure would land on the user as a broken download rather than as an error here.
+ *   Detection did not work. It tested `err instanceof EncryptedPDFError`, and pdf-lib's
+ *   dist is compiled to ES5, where `class X extends Error` loses its prototype chain.
+ *   Every pdf-lib error arrives as a plain `Error` with `.name === 'Error'`, so the check
+ *   never fired and a locked file fell through to the catch-all. Detection is now
+ *   structural: `doc.isEncrypted` after loading with `ignoreEncryption`.
+ *
+ *   The unlock route did not work either. It opened the file in pdf.js with the password
+ *   and called `saveDocument()`. That preserves encryption — measured: the output was the
+ *   same size, still carried `/Encrypt`, and pdf-lib refused it. Decryption is now done
+ *   directly, in decrypt.ts.
  */
 
 import { PDFDocument } from 'pdf-lib';
 import * as E from './errors.js';
 import type { ToolError, FileFacts } from './errors.js';
-import { openDocument } from './pdfjs.js';
+import { decryptPdf, isEncrypted } from './decrypt.js';
 
 export interface OpenedPdf {
   doc: PDFDocument;
-  /** The bytes the document was parsed from — unlocked, if it started locked. */
+  /** The bytes the document was parsed from — decrypted, if it started locked. */
   bytes: Uint8Array;
   wasEncrypted: boolean;
+  /** Which handler was unlocked, for the result panel. */
+  handler?: string;
 }
 
 export type OpenResult =
@@ -30,72 +36,75 @@ export type OpenResult =
 const LOAD_OPTS = { updateMetadata: false } as const;
 
 export async function openPdf(bytes: Uint8Array, facts: FileFacts, password?: string): Promise<OpenResult> {
-  if (password === undefined) {
-    try {
-      const doc = await PDFDocument.load(bytes, LOAD_OPTS);
-      return { ok: true, value: { doc, bytes, wasEncrypted: false } };
-    } catch (err) {
-      const mapped = E.classify(err, facts);
-      if (mapped.kind !== 'locked') return { ok: false, error: mapped };
-      // Fall through: ask pdf.js what kind of encryption this is so the message can
-      // say something true about it.
-      return { ok: false, error: await describeLock(bytes, facts) };
-    }
-  }
-
-  // ---- a password was supplied ----
-  let unlocked: Uint8Array;
+  // Structural check first, so encryption never depends on an error surviving a
+  // transpiler. `ignoreEncryption` lets the parse succeed; the flag is the real answer.
+  let encrypted: boolean;
   try {
-    const opened = await openDocument(bytes, password);
-    unlocked = await opened.doc.saveDocument();
-    await opened.close();
+    encrypted = await isEncrypted(bytes);
   } catch (err) {
     return { ok: false, error: E.classify(err, facts) };
   }
 
-  try {
-    // No ignoreEncryption here on purpose: this must succeed as an ordinary document.
-    const doc = await PDFDocument.load(unlocked, LOAD_OPTS);
-    return { ok: true, value: { doc, bytes: unlocked, wasEncrypted: true } };
-  } catch (err) {
-    const mapped = E.classify(err, facts);
-    if (mapped.kind === 'locked') {
+  if (encrypted) {
+    // A file carrying only an owner password opens with an empty user password. That is
+    // very common — "protected" usually means printing is restricted, not that anyone
+    // was ever given a password — so try it before asking.
+    const candidate = password ?? '';
+    const result = await decryptPdf(bytes, candidate);
+
+    if (!result.ok) {
+      if (result.reason === 'unsupported') {
+        return { ok: false, error: unsupportedEncryption(facts, result.detail) };
+      }
+      // Wrong password, or none supplied yet.
       return {
         ok: false,
-        error: {
-          kind: 'locked',
-          kicker: 'Unlocked, but not rebuildable',
-          title: 'The password was right, but this file cannot be rewritten here.',
-          body:
-            `${facts.name} opened with that password, so we could read it — but its encryption is applied in a way ` +
-            'this page cannot remove while rebuilding the document, and writing it back out would produce a corrupt file. ' +
-            'Open it in a PDF reader, save an unprotected copy, and that copy will work here.',
-          mono: `decrypted for reading, re-save blocked · 0 bytes sent`,
-        },
+        error: password === undefined
+          ? E.locked(facts, result.detail)
+          : E.wrongPassword(facts),
       };
     }
-    return { ok: false, error: mapped };
-  }
-}
 
-/** Ask pdf.js what the encryption actually is, so "Locked file" can be specific. */
-async function describeLock(bytes: Uint8Array, facts: FileFacts): Promise<ToolError> {
-  let detail = 'encrypted';
-  try {
-    const probe = await openDocument(bytes);
-    await probe.close();
-    // Opened without a password after all — permissions-only encryption.
-  } catch (err) {
-    if (err && typeof err === 'object' && 'name' in err && (err as Error).name === 'PasswordException') {
-      detail = 'open password required';
+    try {
+      // No ignoreEncryption here, deliberately: the decrypted bytes must open as an
+      // ordinary document, or we have produced something subtly wrong.
+      const doc = await PDFDocument.load(result.bytes, LOAD_OPTS);
+      return { ok: true, value: { doc, bytes: result.bytes, wasEncrypted: true, handler: result.handler } };
+    } catch (err) {
+      return { ok: false, error: decryptedButBroken(facts, result.handler) };
     }
   }
-  const version = readVersion(bytes);
-  return E.locked(facts, [version, detail].filter(Boolean).join(' · '));
+
+  try {
+    const doc = await PDFDocument.load(bytes, LOAD_OPTS);
+    return { ok: true, value: { doc, bytes, wasEncrypted: false } };
+  } catch (err) {
+    return { ok: false, error: E.classify(err, facts) };
+  }
 }
 
-function readVersion(bytes: Uint8Array): string {
-  const head = new TextDecoder('latin1').decode(bytes.subarray(0, 16));
-  const m = /%PDF-(\d\.\d)/.exec(head);
-  return m ? `PDF ${m[1]}` : '';
+function unsupportedEncryption(facts: FileFacts, detail: string): ToolError {
+  return {
+    kind: 'locked',
+    kicker: 'Protected in a way we cannot open',
+    title: 'This file uses a form of protection this page does not handle.',
+    body:
+      `${facts.name} is encrypted with ${detail}, which is outside the standard password ` +
+      'protection we can unlock here. Open it in a PDF reader, save an unprotected copy, and ' +
+      'that copy will work. Nothing was sent anywhere.',
+    mono: `${detail} · 0 bytes sent`,
+  };
+}
+
+function decryptedButBroken(facts: FileFacts, handler: string): ToolError {
+  return {
+    kind: 'damaged',
+    kicker: 'Unlocked, but not readable',
+    title: 'The password was right, but what came out was not a usable document.',
+    body:
+      `${facts.name} decrypted with ${handler}, and the result still could not be parsed. That ` +
+      'points at damage inside the file rather than at the password. Your original is untouched, ' +
+      'and nothing was sent anywhere.',
+    mono: `${handler} · decrypted, parse failed · 0 bytes sent`,
+  };
 }

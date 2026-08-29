@@ -356,3 +356,43 @@ flag, and says plainly that it only happens if one of those links is clicked.
 
 All seven tools now hand off and six accept. Images to PDF only hands off, because a PDF is not
 an input it takes. Split hands on the first part, and says so.
+
+
+### 12. Library error identity — *added after a real encrypted file*
+
+**Do not assume a library's error classes survive its own build.** `errors.ts` dispatched on
+`err instanceof EncryptedPDFError`, following the rule that types beat message text. pdf-lib's
+published bundle is ES5, and `class X extends Error` transpiled to ES5 loses its prototype
+chain. Measured:
+
+    EncryptedPDFError      instanceof self: false | .name: Error
+    MissingPDFHeaderError  instanceof self: false | .name: Error
+    PDFParsingError        instanceof self: false | .name: Error
+
+Every pdf-lib error arrived as a plain `Error`. The dispatch could never fire, so **the entire
+pdf-lib branch of the taxonomy was dead code** and every failure — locked, damaged, headerless —
+fell through to "unexpected failure". A real password-protected file is what exposed it.
+
+pdf.js, by contrast, keeps `.name` intact: `PasswordException` with `code` 1 or 2. So the rule is
+right, and the check is whether a given library honours it.
+
+Two consequences worth keeping:
+
+- **Prefer a structural fact to an error.** Encryption is now read from `doc.isEncrypted`, a
+  property of the document, not from something thrown. It cannot be broken by a transpiler.
+- **When only a fragile signal exists, put a tripwire on it.** Message matching is still the only
+  option for pdf-lib's other failures, so `tools/verify-pdflib-errors.mjs` provokes each error and
+  asserts the fragments still match. An upgrade that rewords them fails loudly rather than quietly
+  degrading the copy. It also reports if the classes ever become identifiable again.
+
+### A route that was written, reviewed, and could never have worked
+
+The unlock path went: open in pdf.js with the password, call `saveDocument()`, hand the result to
+pdf-lib. It was typechecked, guarded, and wrong. `saveDocument()` writes back annotation and form
+edits; it preserves encryption. Measured on a 1,679-byte fixture: output 1,679 bytes, `/Encrypt`
+still present, pdf-lib refused it.
+
+The guard did fire correctly and refused rather than emitting a corrupt file — the honest-failure
+design working on a case it was not designed for. But the feature could never have succeeded, and
+nothing short of running it would have shown that. It sat in TECH_DEBT as "written but untested"
+for the whole project, which was the right label and not a substitute for running it.

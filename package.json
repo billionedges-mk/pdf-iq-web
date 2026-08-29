@@ -9,6 +9,7 @@
     "dev": "node tools/build.mjs --watch --serve",
     "licenses": "node tools/licenses.mjs",
     "audit": "node tools/audit.mjs",
+    "verify:pdflib": "node tools/verify-pdflib-errors.mjs",
     "contrast": "node tools/contrast.mjs",
     "selftest": "node tools/selftest.mjs",
     "typecheck": "tsc --noEmit"

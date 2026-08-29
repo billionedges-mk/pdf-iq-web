@@ -467,6 +467,92 @@ const ERROR_CASES: Case[] = [
   },
 ];
 
+
+// ---------------------------------------------------------------- encryption
+
+const ENCRYPTED_CASES: Case[] = [
+  {
+    name: 'A locked file reaches the password prompt, not the catch-all',
+    async run() {
+      const p = await open('/compress/');
+      const bytes = new Uint8Array(await (await fetch('/fixtures/encrypted-rc4.pdf')).arrayBuffer());
+      note(`fixture ${bytes.length} bytes, RC4 40-bit, user password set`);
+      feed(p, [fileOf(bytes, 'board-minutes.pdf')]);
+      await waitFor(p.doc, 'error', 10000);
+
+      const kicker = p.doc.querySelector('[data-err-kicker]')!.textContent!;
+      const title = p.doc.querySelector('[data-err-title]')!.textContent!;
+      const mono = p.doc.querySelector('[data-err-mono]')!.textContent!;
+      note(`"${kicker}" — ${title}`);
+      note(mono);
+      ok(/Locked file/i.test(kicker), 'identified as locked, not "unexpected failure"');
+      ok(!/did not anticipate|Unexpected failure/i.test(title + kicker), 'did not fall through to the catch-all');
+      ok(/RC4/.test(mono), 'the technical line names the handler it found');
+      ok(!p.doc.querySelector<HTMLElement>('[data-err-password]')!.hidden, 'the password field is shown');
+      p.frame.remove();
+    },
+  },
+  {
+    name: 'A wrong password is rejected and says so specifically',
+    async run() {
+      const p = await open('/compress/');
+      const bytes = new Uint8Array(await (await fetch('/fixtures/encrypted-rc4.pdf')).arrayBuffer());
+      feed(p, [fileOf(bytes, 'board-minutes.pdf')]);
+      await waitFor(p.doc, 'error', 10000);
+
+      const input = p.doc.querySelector<HTMLInputElement>('[data-password-input]')!;
+      input.value = 'not-the-password';
+      p.doc.querySelector<HTMLFormElement>('[data-err-password]')!
+        .dispatchEvent(new (p.win as unknown as { Event: typeof Event }).Event('submit', { bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 1500));
+
+      const title = p.doc.querySelector('[data-err-title]')!.textContent!;
+      note(`"${title}"`);
+      ok(/did not open the file/i.test(title), 'says the password was rejected');
+      ok(!p.doc.querySelector<HTMLElement>('[data-err-password]')!.hidden, 'the field stays available to try again');
+      p.frame.remove();
+    },
+  },
+  {
+    name: 'The right password unlocks it and the tool then works end to end',
+    async run() {
+      const p = await open('/compress/');
+      const bytes = new Uint8Array(await (await fetch('/fixtures/encrypted-rc4.pdf')).arrayBuffer());
+      feed(p, [fileOf(bytes, 'board-minutes.pdf')]);
+      await waitFor(p.doc, 'error', 10000);
+
+      const input = p.doc.querySelector<HTMLInputElement>('[data-password-input]')!;
+      input.value = 'correct-horse';
+      p.doc.querySelector<HTMLFormElement>('[data-err-password]')!
+        .dispatchEvent(new (p.win as unknown as { Event: typeof Event }).Event('submit', { bubbles: true, cancelable: true }));
+      await waitFor(p.doc, 'selected', 12000);
+
+      const meta = p.doc.querySelector('[data-file-meta]')!.textContent!;
+      note(`unlocked: ${meta}`);
+      ok(/3 pages/.test(meta), 'the unlocked document reports its 3 pages');
+
+      // And it has to be genuinely usable afterwards, not merely opened.
+      click(p.doc, '[data-start]');
+      await waitFor(p.doc, 'result', 25000).catch(async () => {
+        await waitFor(p.doc, 'nogain', 5000);
+      });
+      const views = visible(p.doc);
+      note(`after compressing: ${views.join(',')}`);
+      ok(views.includes('result') || views.includes('nogain'), 'compression completed on the unlocked file');
+
+      if (views.includes('result')) {
+        const out = await capture(p);
+        const doc = await reopen(out, 'unlocked compress');
+        ok(doc.getPageCount() === 3, 'the saved output has all 3 pages');
+        const raw = new TextDecoder('latin1').decode(out);
+        ok(!/\/Encrypt/.test(raw), 'the output carries no encryption dictionary');
+      }
+      ok(clean(p), 'nothing sent while unlocking');
+      p.frame.remove();
+    },
+  },
+];
+
 // ---------------------------------------------------------------- a11y
 
 const A11Y_CASES: Case[] = [
@@ -540,6 +626,7 @@ async function main(): Promise<void> {
     ['TOOLS — real files through the real pages', CASES],
     ['HANDOFF — the next tool gets the file', HANDOFF_CASES],
     ['ERROR PATHS — every failure named specifically', ERROR_CASES],
+    ['ENCRYPTION — detection, refusal, and unlock', ENCRYPTED_CASES],
     ['ACCESSIBILITY', A11Y_CASES],
   ];
 
