@@ -48,6 +48,27 @@ The merge page claimed bookmarks were the slow part; measured over a 300-page me
 or slower. OCR was described as slowest at 1.2 s/page while compress ran at 1.18 s/page. Any
 comparison between two things needs both measured, and re-checked when either changes.
 
+
+### 10. Permanence claims — *added after the account-language sweep*
+"Forever", "ever", "always", "never". A claim that **binds a future decision** rather than
+describing a current one. "No account needed" is true and strong; "no account, ever" is a promise
+that may want breaking the day a Pro subscriber opens the site expecting to be recognised.
+
+The test is not the word, it is what the word governs:
+
+- **Architectural facts keep their absolutes.** "Your file never leaves this tab", "we never
+  receive them", "never on our disk" describe how the thing is built. They are not pledges, and
+  softening them would weaken a claim that is simply true.
+- **Business and product pledges get described, not promised.** "No ads, ever" becomes "No ads,
+  and no advertising SDK in the build" — checkable today, and it does not mortgage a decision
+  nobody has had to make yet.
+- **A deliberate strategic commitment keeps its absolute** when it is one the business has
+  actually made and will be held to. "The seven web tools are never behind Pro" stays, because
+  that is the stated position and walking it back is exactly what the sentence exists to prevent.
+
+Same reasoning as cutting "and will stay that way" from the store listing: describe what is true,
+do not pledge what might change.
+
 ---
 
 ## Method
@@ -118,6 +139,25 @@ Two implementation-level findings that were not claims:
   fonts that started at 9ms were handed to the callback after a `loadEventEnd` of 21ms and
   counted as post-load traffic. The homepage read **"2 requests"** under a panel whose entire job
   is to read zero. Counting now compares each entry's own `startTime` against `loadEventEnd`.
+
+
+---
+
+## Record — permanence sweep, all twelve pages
+
+| # | Claim | Why it binds | Now reads |
+|---|---|---|---|
+| 22 | "no account — that does not change when Pro arrives" | mortgages sign-in on the day a Pro subscriber opens the site expecting to be recognised | "They need no account today. If sign-in ever appears here it will be so a Pro subscriber is recognised, not a condition of using these seven." |
+| 23 | "adding an account, which is the one thing we are not going to do" | an explicit never, about the same decision | "we would rather not put that in front of a free tool" |
+| 24 | "No ads, ever." | a promise where a checkable fact was available | "No ads, and no advertising SDK in the build." |
+| 25 | "Pro — later this year" (app page) | a dated commitment; softened on the homepage but missed here | "Pro — not yet" |
+| 26 | "The same seven tools, on your phone" / "All seven tools, offline" | the app has six; found while reading context for the sweep, not by the sweep | "Six of the seven", plus a line saying OCR is web-only for now |
+
+Kept deliberately: every architectural absolute ("never leaves this tab", "never on our disk",
+"never receive them"), which describes how the thing is built rather than what we promise; "the
+seven web tools are never behind Pro", the stated strategy that the sentence exists to stop being
+walked back; and "the scan is kept, always" on OCR, the design decision from correction C with
+its reason stated beside it.
 
 ---
 
