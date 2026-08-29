@@ -70,7 +70,12 @@ export class ToolShell {
     const action = $<HTMLButtonElement>('[data-err-action]', this.root);
     if (action) {
       action.hidden = !err.action;
-      if (err.action) action.textContent = err.action;
+      if (err.action) {
+        action.textContent = err.action.label;
+        action.onclick = err.action.run;
+      } else {
+        action.onclick = null;
+      }
     }
     const pw = $('[data-err-password]', this.root);
     if (pw) pw.hidden = !err.password;

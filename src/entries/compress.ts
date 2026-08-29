@@ -8,7 +8,7 @@
  */
 
 import { PDFDocument } from 'pdf-lib';
-import { PRESETS, analyse, compress, worthIt, explainNoGain, STAGES, type Preset, type Analysis, type CompressResult } from '../lib/compress.js';
+import { PRESETS, STAGES, analyse, compress, explainNoGain, harderOffer, type Analysis, type CompressResult, type Preset, worthIt, worthShowing } from '../lib/compress.js';
 import { openPdf } from '../lib/open-pdf.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, percent } from '../lib/format.js';
@@ -151,7 +151,7 @@ $('[data-strip-meta]')?.addEventListener('change', () => renderPlan());
 
 $('[data-start]')?.addEventListener('click', () => void run(preset));
 
-async function run(which: Preset): Promise<void> {
+async function run(which: Preset, explicit = false): Promise<void> {
   if (!doc || !analysis || !file || !sourceBytes) return;
 
   // Each run starts from a clean parse: a previous pass mutated the object graph.
@@ -199,7 +199,10 @@ async function run(which: Preset): Promise<void> {
   busy = false;
   analysis = freshAnalysis;
 
-  if (worthIt(result.beforeBytes, result.afterBytes)) renderResult(result);
+  const show = explicit
+    ? worthShowing(result.beforeBytes, result.afterBytes)
+    : worthIt(result.beforeBytes, result.afterBytes);
+  if (show) renderResult(result);
   else renderNoGain(result, which);
 }
 
@@ -248,13 +251,23 @@ function renderNoGain(r: CompressResult, which: Preset): void {
     : 'no smaller at all';
   $('[data-nogain-why]')!.textContent = explainNoGain(analysis!, which);
 
+  // Only offer a harder pass when it would actually change this file. Both numbers the
+  // decision rests on are the ones already used to write the sentence above the button.
+  const offer = harderOffer(analysis!, which);
   const harder = $<HTMLButtonElement>('[data-harder]')!;
-  const smallest = PRESETS[PRESETS.length - 1];
-  // Only offer a harder pass when there is genuinely a harder one left to try.
-  const canGoHarder = which.key !== smallest.key && analysis!.recompressible.length > 0;
-  harder.hidden = !canGoHarder;
-  $('[data-nogain-harder-note]')!.hidden = !canGoHarder;
-  harder.onclick = () => void run(smallest);
+  const note = $('[data-nogain-harder-note]')!;
+  harder.hidden = !offer.preset;
+  note.hidden = !offer.preset;
+  if (offer.preset) {
+    const target = offer.preset;
+    harder.textContent = `Try the ${target.name} setting anyway`;
+    note.textContent = offer.note;
+    // Explicit: the user has been told it is not worth it and asked regardless, so the
+    // result is shown rather than measured and thrown away.
+    harder.onclick = () => void run(target, true);
+  } else {
+    harder.onclick = null;
+  }
 
   $('[data-keep]')!.onclick = () => reset();
 

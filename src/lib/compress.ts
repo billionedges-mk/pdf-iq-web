@@ -429,7 +429,99 @@ function stripDocumentMetadata(doc: PDFDocument): void {
  */
 export function worthIt(before: number, after: number): boolean {
   const saved = before - after;
-  return saved > 0 && saved / before >= 0.03 && saved >= 50 * 1024;
+  return saved > 0 && saved / before >= 0.03 && saved >= MIN_ABSOLUTE_SAVING;
+}
+
+/** The absolute floor below which an unprompted saving is not worth the quality cost. */
+const MIN_ABSOLUTE_SAVING = 50 * 1024;
+
+/**
+ * Worth showing when the user explicitly asked for a harder pass.
+ *
+ * The absolute floor is dropped here on purpose. It exists to stop us *offering* work
+ * whose payoff nobody would notice — not to withhold a file someone asked for by name.
+ * Keeping it applied to the explicit path made "Try the Smallest setting anyway" dead on
+ * every file under 50 KB: it ran, produced a genuinely smaller file, and discarded it,
+ * leaving the card reading "58.8% smaller" and "Nothing worth saving" at the same time.
+ *
+ * The percentage bar stays, because a saving nobody can perceive is still not a saving.
+ */
+export function worthShowing(before: number, after: number): boolean {
+  const saved = before - after;
+  return saved > 0 && saved / before >= 0.03;
+}
+
+/**
+ * Should we offer a harder pass, and what would it actually do to *this* file?
+ *
+ * Both numbers this decides on — the median quality and the median dpi — are already
+ * computed to write the sentence above the button. Offering a setting that cannot change
+ * the file, in a card whose whole argument is that we tell you the truth rather than hand
+ * you a worse file, is the one thing that screen cannot afford to do.
+ */
+export interface HarderOffer {
+  /** The preset to run, or null when nothing harder would change this file. */
+  preset: Preset | null;
+  /** What it would do to this file, in the card's voice. Empty when not offered. */
+  note: string;
+  /** Why nothing harder can help. Empty when an offer is made. */
+  nothingLeft: string;
+}
+
+export function harderOffer(analysis: Analysis, current: Preset): HarderOffer {
+  const none = (nothingLeft = '') => ({ preset: null, note: '', nothingLeft });
+  const smallest = PRESETS[PRESETS.length - 1];
+
+  if (current.key === smallest.key) return none();
+  if (analysis.recompressible.length === 0) return none();
+
+  const targetQ = Math.round(smallest.quality * 100);
+  const targetDpi = smallest.targetDpi;
+  const q = analysis.medianQuality;
+  const dpi = analysis.medianDpi;
+
+  // Unknown counts as "might help" — we would rather run it and show the real number
+  // than refuse on a guess.
+  const qualityIsALever = q == null || q > targetQ;
+  const dpiIsALever = dpi == null || dpi > targetDpi;
+
+  if (!qualityIsALever && !dpiIsALever) {
+    return none(
+      `Our Smallest setting would not change it either: it targets quality ${targetQ} at ` +
+      `${targetDpi} dpi, and this file is already at quality ${q} and ${Math.round(dpi!)} dpi.`
+    );
+  }
+
+  const tail = ' We will run it and show you the real result rather than guess at it now.';
+
+  if (qualityIsALever && !dpiIsALever) {
+    // The case that made the card contradict itself: already at the target resolution, so
+    // dpi is not the lever, but the quality still is. Naming dpi here would be a lie.
+    return {
+      preset: smallest,
+      nothingLeft: '',
+      note:
+        `This file is already at ${Math.round(dpi!)} dpi, so Smallest would not resize anything — but ` +
+        `${q == null ? 'its images' : `its images are at quality ${q}, and re-encoding them`} at quality ` +
+        `${targetQ} would still make it smaller.${tail}`,
+    };
+  }
+
+  if (!qualityIsALever && dpiIsALever) {
+    return {
+      preset: smallest,
+      nothingLeft: '',
+      note:
+        `Its images are already at quality ${q}, so re-encoding is not where the saving would come ` +
+        `from — but they are at ${Math.round(dpi!)} dpi and Smallest drops them to ${targetDpi}.${tail}`,
+    };
+  }
+
+  return {
+    preset: smallest,
+    nothingLeft: '',
+    note: `Smallest re-encodes images at quality ${targetQ} and drops anything above ${targetDpi} dpi.${tail}`,
+  };
 }
 
 /**
@@ -462,6 +554,14 @@ export function explainNoGain(analysis: Analysis, preset: Preset): string {
   if (analysis.skippedBytes > analysis.actionableBytes) {
     sentence += ' Most of the file is not image data at all.';
   }
-  sentence += ' We could hand you a visibly worse file for a few kilobytes, but that is not an improvement, so we are telling you instead.';
+
+  // The closing sentence has to match what the card actually offers underneath it. The
+  // "we could hand you a worse file" line only makes sense when a worse file is on offer;
+  // when nothing harder would change this document, saying it invites the reader to go
+  // looking for a button that is not there.
+  const harder = harderOffer(analysis, preset);
+  sentence += harder.preset
+    ? ' We could hand you a visibly worse file for a few kilobytes, but that is not an improvement, so we are telling you instead.'
+    : ` ${harder.nothingLeft || 'There is no harder setting that would change it.'}`;
   return sentence;
 }

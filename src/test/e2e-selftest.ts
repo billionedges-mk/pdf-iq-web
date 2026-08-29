@@ -18,10 +18,20 @@ let emit: Log = () => {};
 let failures = 0;
 let checks = 0;
 
+/**
+ * A failed assertion, already printed and already counted.
+ *
+ * It needs its own type: the case runner catches whatever aborts a case and reports it,
+ * and it cannot otherwise tell a failed `ok()` from a genuine exception. It used to guess
+ * from the message text and guess wrong, so every failed assertion was printed twice and
+ * counted twice — one real failure reported as two.
+ */
+class Failed extends Error {}
+
 function ok(cond: boolean, message: string): void {
   checks++;
   emit(`  ${cond ? 'ok  ' : 'FAIL'}  ${message}`);
-  if (!cond) { failures++; throw new Error(message); }
+  if (!cond) { failures++; throw new Failed(message); }
 }
 const note = (line: string) => emit(`      ${line}`);
 
@@ -82,6 +92,20 @@ async function textPdf(pages: number, landscape: number[] = []): Promise<Uint8Ar
     const page = doc.addPage(wide ? [841.89, 595.28] : [595.28, 841.89]);
     page.drawText(`Document page ${i + 1} of ${pages}`, { x: 56, y: 700, size: 18, font });
   }
+  return doc.save();
+}
+
+/**
+ * One JPEG drawn at exactly 72 dpi — one image pixel per PDF point — at a chosen quality.
+ * Small enough that no preset's saving can clear the 50 KB absolute floor, which is the
+ * shape that made "Try the Smallest setting anyway" run and then discard its own result.
+ */
+async function smallScanPdf(px: number, py: number, q: number): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const blob = await blobOf(drawPage(px, py, 1, 1), 'image/jpeg', q);
+  const img = await doc.embedJpg(new Uint8Array(await blob.arrayBuffer()));
+  const page = doc.addPage([px, py]);
+  page.drawImage(img, { x: 0, y: 0, width: px, height: py });
   return doc.save();
 }
 
@@ -577,6 +601,68 @@ const ENCRYPTED_CASES: Case[] = [
       p.frame.remove();
     },
   },
+  {
+    /**
+     * The reported defect. On a file whose saving cannot clear the 50 KB absolute floor,
+     * the button ran a real compression, produced a genuinely smaller file, and threw it
+     * away — leaving the card reading "58.8% smaller" and "Nothing worth saving" at once,
+     * with no way to get the file. Fails against the previous commit.
+     */
+    name: 'Try-the-harder-setting hands over the file it produces',
+    async run() {
+      const p = await open('/compress/');
+      const bytes = await smallScanPdf(170, 240, 0.94);
+      note(`fixture ${(bytes.length / 1024).toFixed(1)} KB, one JPEG at quality 94 and 72 dpi`);
+      feed(p, [fileOf(bytes, 'receipt.pdf')]);
+      await waitFor(p.doc, 'selected', 15000);
+      click(p.doc, '[data-start]');
+      await waitFor(p.doc, 'nogain', 30000);
+
+      const harder = p.doc.querySelector<HTMLButtonElement>('[data-harder]')!;
+      ok(!harder.hidden, 'the harder pass is offered on this file');
+      const noteText = p.doc.querySelector('[data-nogain-harder-note]')!.textContent!;
+      note(`note: ${noteText.trim()}`);
+      ok(/already at 72 dpi/.test(noteText),
+        'the note admits the file is already at the target resolution');
+      ok(/quality 42/.test(noteText), 'and names quality as the actual lever');
+
+      harder.click();
+      const landed = await waitFor(p.doc, 'result', 30000).then(() => true).catch(() => false);
+      note(`after clicking: ${visible(p.doc).join(',')}`);
+      ok(landed, 'the pass the user asked for produces a result screen, not the same card again');
+
+      const save = p.doc.querySelector<HTMLButtonElement>('[data-save]')!;
+      ok(!!save && !save.hidden, 'and a Save button for the file it just made');
+      const out = await capture(p);
+      const doc = await reopen(out, 'harder pass');
+      ok(doc.getPageCount() === 1, 'the saved file is a readable 1-page PDF');
+      ok(out.length < bytes.length, `and is actually smaller: ${(bytes.length / 1024).toFixed(1)} KB → ${(out.length / 1024).toFixed(1)} KB`);
+      ok(clean(p), 'nothing sent');
+      p.frame.remove();
+    },
+  },
+  {
+    name: 'A harder setting that cannot help is not offered at all',
+    async run() {
+      const p = await open('/compress/');
+      // Already at quality 40 and 72 dpi: at or below Smallest on both axes.
+      const bytes = await smallScanPdf(170, 240, 0.4);
+      feed(p, [fileOf(bytes, 'already-small.pdf')]);
+      await waitFor(p.doc, 'selected', 15000);
+      click(p.doc, '[data-start]');
+      await waitFor(p.doc, 'nogain', 30000);
+
+      const why = p.doc.querySelector('[data-nogain-why]')!.textContent!;
+      note(`card says: ${why.trim()}`);
+      const harder = p.doc.querySelector<HTMLButtonElement>('[data-harder]')!;
+      note(`harder button hidden: ${harder.hidden}`);
+      ok(harder.hidden === true, 'no offer is made when no harder setting would change the file');
+      ok(!/visibly worse file/.test(why),
+        'and the copy stops offering a worse file the card has no way to produce');
+      ok(clean(p), 'nothing sent');
+      p.frame.remove();
+    },
+  },
 ];
 
 // ---------------------------------------------------------------- a11y
@@ -665,9 +751,12 @@ async function main(): Promise<void> {
       try {
         await c.run();
       } catch (err) {
-        groupFails++;
-        if (!(err instanceof Error) || !err.message) write(`  FAIL  ${String(err)}`);
-        else if (!err.message.startsWith('  ')) write(`  FAIL  ${err.message}`);
+        // A failed ok() is already printed and already in `failures`. Anything else
+        // aborted the case for a reason nothing has reported yet.
+        if (!(err instanceof Failed)) {
+          groupFails++;
+          write(`  FAIL  ${err instanceof Error && err.message ? err.message : String(err)}`);
+        }
       }
       write('');
     }

@@ -10,7 +10,7 @@
  */
 
 import { PDFDocument } from 'pdf-lib';
-import { analyse, compress, worthIt, explainNoGain, PRESETS } from '../lib/compress.js';
+import { PRESETS, analyse, compress, explainNoGain, harderOffer, type Analysis, worthIt, worthShowing } from '../lib/compress.js';
 import { findImages, measurePlacements } from '../lib/pdf-inspect.js';
 import { readJpeg } from '../lib/jpeg.js';
 import { formatBytes } from '../lib/format.js';
@@ -102,6 +102,86 @@ async function makeTextPdf(pages: number): Promise<Uint8Array> {
 // ---------------------------------------------------------------- cases
 
 const CASES: Case[] = [
+  {
+    // Both of these come from the reported file: one JPEG at quality 94 and 72 dpi. The
+    // card offered "Try the Smallest setting anyway" and said, three lines apart, that
+    // the file was already at Smallest's target resolution.
+    name: 'A harder pass is offered only when it would change the file',
+    async run() {
+      const smallest = PRESETS[PRESETS.length - 1];
+      const balanced = PRESETS[0];
+      const base = {
+        pageCount: 1, totalBytes: 1, images: [], actionableBytes: 1, skippedBytes: 0,
+        skipReasons: new Map(), allJpeg: true, hasText: false, signed: false,
+      };
+      const withImage = (medianQuality: number | null, medianDpi: number | null) =>
+        ({ ...base, recompressible: [{} as never], medianQuality, medianDpi }) as unknown as Analysis;
+
+      // Already at 72 dpi but quality 94: dpi is not the lever, quality is. Offer it, and
+      // say so — naming dpi here is what made the card contradict itself.
+      const qOnly = harderOffer(withImage(94, 72), balanced);
+      note(`q94 / 72 dpi → ${qOnly.preset ? 'offered' : 'not offered'}: ${qOnly.note || qOnly.nothingLeft}`);
+      ok(qOnly.preset?.key === 'smallest', 'quality 94 at 72 dpi still has somewhere to go');
+      ok(/quality 42/.test(qOnly.note), 'the note names quality as the lever');
+      ok(!/drops? (scans|them|anything) to 72 dpi/.test(qOnly.note), 'the note does not claim it will resize a file already at 72 dpi');
+      ok(/already at 72 dpi/.test(qOnly.note), 'the note says outright that resolution will not change');
+
+      // At or below Smallest on both axes: nothing left. Do not offer it.
+      const dead = harderOffer(withImage(40, 72), balanced);
+      note(`q40 / 72 dpi → ${dead.preset ? 'offered' : 'not offered'}: ${dead.nothingLeft}`);
+      ok(dead.preset === null, 'a file already at quality 40 and 72 dpi is offered nothing');
+      ok(/would not change it/.test(dead.nothingLeft), 'and it says why instead');
+
+      // A normal scan: both levers available.
+      const both = harderOffer(withImage(88, 300), balanced);
+      ok(both.preset?.key === 'smallest', '300 dpi at quality 88 has both levers');
+      ok(/quality 42/.test(both.note) && /72 dpi/.test(both.note), 'the note names both');
+
+      // No image to act on, and "already the hardest setting": still nothing to offer.
+      ok(harderOffer({ ...base, recompressible: [], medianQuality: 90, medianDpi: 300 } as unknown as Analysis, balanced).preset === null,
+        'nothing recompressible means nothing to offer');
+      ok(harderOffer(withImage(90, 300), smallest).preset === null, 'Smallest offers no harder setting than itself');
+    },
+  },
+  {
+    name: 'The nothing-to-gain sentence agrees with the button under it',
+    async run() {
+      const balanced = PRESETS[0];
+      const base = {
+        pageCount: 1, totalBytes: 1, images: [{} as never], actionableBytes: 1, skippedBytes: 0,
+        skipReasons: new Map(), allJpeg: true, hasText: false, signed: false,
+      };
+      const a = (q: number, dpi: number) =>
+        ({ ...base, recompressible: [{} as never], medianQuality: q, medianDpi: dpi }) as unknown as Analysis;
+
+      const offered = explainNoGain(a(94, 72), balanced);
+      note(`offered:     ${offered}`);
+      ok(/visibly worse file/.test(offered), 'when a harder pass is offered, the copy stands');
+
+      const nothing = explainNoGain(a(40, 72), balanced);
+      note(`not offered: ${nothing}`);
+      ok(!/visibly worse file/.test(nothing),
+        'when nothing harder is offered, it stops promising a worse file the card cannot produce');
+      ok(/would not change it either/.test(nothing), 'and says the harder setting would not help');
+    },
+  },
+  {
+    name: 'An explicitly requested pass is shown, not measured and discarded',
+    async run() {
+      // 30 KB file, 58.8% saving: the exact shape that left the card reading "58.8%
+      // smaller" and "Nothing worth saving" at once.
+      const before = 30 * 1024;
+      const after = Math.round(before * 0.412);
+      note(`${(before / 1024).toFixed(1)} KB → ${(after / 1024).toFixed(1)} KB, ${(((before - after) / before) * 100).toFixed(1)}% smaller`);
+      ok(!worthIt(before, after), 'unprompted, a 12 KB saving is still below the floor and stays unoffered');
+      ok(worthShowing(before, after), 'but when the user asks for it by name, the result is shown');
+
+      // The bar is not removed, only the absolute floor.
+      ok(!worthShowing(1_000_000, 995_000), 'a saving nobody could perceive is still not shown');
+      ok(!worthShowing(1000, 1000), 'no saving at all is not shown');
+      ok(!worthShowing(1000, 1200), 'a bigger file is never shown as a result');
+    },
+  },
   {
     name: 'JPEG quality estimate matches what the encoder was asked for',
     async run() {

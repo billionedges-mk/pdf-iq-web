@@ -41,8 +41,15 @@ export interface ToolError {
   body: string;
   /** The monospace technical line under the buttons. */
   mono: string;
-  /** Label for an optional recovery action, when one genuinely exists. */
-  action?: string;
+  /**
+   * An optional recovery action.
+   *
+   * It carries its own behaviour on purpose. This was a bare label, and nothing anywhere
+   * bound a click handler to the button that rendered it — a damaged file offered
+   * "Continue with the N readable pages" and did nothing at all when pressed. A label
+   * with no `run` is a promise with no implementation, so the type no longer allows one.
+   */
+  action?: { label: string; run: () => void };
   /** Show the password field. */
   password?: boolean;
 }
@@ -110,7 +117,6 @@ export function notPdf(file: FileFacts, head: Uint8Array): ToolError {
       ? `${file.name} is an image. This page works on PDFs — but Images to PDF will turn it into one, and you can come back here afterwards.`
       : `${file.name} is ${what}. This page reads PDFs and nothing else — it will not quietly convert your document and hand you back something that looks different from what you opened. Export it as a PDF first, then drop it here.`,
     mono: `${sniffed ?? 'unrecognised'} · ${bytes(file.size)} · ${sentSuffix}`,
-    action: isImage ? undefined : undefined,
   };
 }
 
@@ -177,7 +183,6 @@ export function damaged(file: FileFacts, detail: string, readablePages?: number,
       : `${file.name} starts like a PDF but its structure is broken: ${detail}. Nothing here can be recovered from it reliably. ` +
         'If you still have whatever produced it, export a fresh copy.',
     mono: `${detail} · ${bytes(file.size)} · ${sentSuffix}`,
-    action: partial ? `Continue with the ${readablePages} readable pages` : undefined,
   };
 }
 

@@ -418,3 +418,40 @@ No test had ever tried it.
 **The check:** for every spec branch — cipher, revision, credential, filter — either a
 test drives it or the limitation is stated to the user. A branch with no test is not
 implemented, it is asserted.
+
+### 14. An offer must be able to work, and must carry the code that fulfils it
+
+Two separate failures, one shape: a control that renders and cannot act.
+
+**Found by:** the nothing-to-gain card. "Try the Smallest setting anyway" sat three lines
+under a sentence reading *"Its one image is already JPEG at quality 94 and 72 dpi"*, while
+its own note said *"Smallest drops scans to 72 dpi"* — the card stated, in two places, that
+the setting it was offering would do nothing. Pressing it ran a real compression, produced
+a file 58.8% smaller, and threw it away: the result gate applied a fixed 50 KB absolute
+floor to a pass the user had explicitly asked for, so on any file under 50 KB the button
+was provably dead. The card then read "58.8% smaller" and "Nothing worth saving" at once,
+offering only "Keep my original".
+
+The audit for the same shape found a second one: `ui.ts` rendered `[data-err-action]` and
+**no click handler for it existed anywhere in the codebase**. A damaged file offered
+"Continue with the 3 readable pages" and did nothing at all when pressed. Alongside it,
+`action: isImage ? undefined : undefined` — a dead ternary where a third offer had been
+stubbed and abandoned.
+
+**The checks:**
+
+- **If you already compute the precondition, use it.** Both numbers that prove Smallest
+  could not help — the median quality and the median dpi — were already computed, to write
+  the sentence directly above the button. An offer contradicted by the paragraph above it
+  is worse than no offer.
+- **An explicit request is not the same as an unprompted one.** A threshold that stops us
+  *offering* trivial work must not be reused to withhold a result someone asked for by
+  name. Ours was, and it made the button dead.
+- **A label is not an offer.** `ToolError.action` is now `{ label, run }`, so a rendered
+  action cannot exist without the behaviour that fulfils it. If it is not implemented, it
+  is not offered.
+- **The closing sentence must match the buttons under it.** "We could hand you a visibly
+  worse file" is only true when a worse file is actually on offer.
+
+The same rule applies to the two prior instances of this defect on the app side —
+`onSubscribe` and "Try smaller" — which is what makes it a class rather than a bug.

@@ -30,6 +30,12 @@ rather than justifying a release of their own.
 
 ### Also waiting on the app, unrelated to the domain
 
+- **Controls that render and cannot act.** Two were found on the website (see CLAIMS.md
+  check 14) and the same shape has now been seen three times on the app side: `onSubscribe`,
+  "Try smaller", and these. Worth a sweep of the app for offers whose precondition is
+  already computed nearby, and for click targets with no listener bound.
+
+
 - **Locked PDFs.** On the app side a password-protected file used to disable the Compress button
   with no explanation. The website's handling — detect structurally, prompt, accept **either** the
   user or the owner password, refuse rather than emit something corrupt — should be carried across.
@@ -57,6 +63,15 @@ worded so that it stays true if the measurement comes back badly.
   extending it to AES would close this. The owner-password route (Algorithm 7), added after the
   same real file was rejected while carrying a *correct* owner password, is exercised for RC4 by
   the fixture; its AES-256 equivalent shares the same untested status as the rest of V5.
+- **Recovering the readable pages of a damaged PDF.** The damaged-file error used to render
+  "Continue with the N readable pages". Nothing was ever bound to that button, so it did
+  nothing at all; the offer has been withdrawn rather than left as a lie. Salvaging the
+  readable pages is a real feature and a reasonable one — it is simply not built. If it is
+  built, `ToolError.action` now requires the handler alongside the label.
+- **Hopping an image straight to Images to PDF.** The wrong-format error carried
+  `action: isImage ? undefined : undefined`, a dead ternary where this was stubbed and
+  abandoned. The body copy already points the reader at Images to PDF, and `handoff.ts`
+  could carry the file across, so this is small if it is wanted.
 - **CMYK, JPEG 2000, JBIG2 and CCITT images.** `judge()` in `src/lib/pdf-inspect.ts` detects and
   skips these with specific reasons. The *logic* is tested; it has never been run against a real
   file of any of those kinds.
