@@ -1,0 +1,99 @@
+# Claim review
+
+Every design bundle gets read against this list *before* any code is written, and every
+conflict is reported before implementation starts. The first bundle went through it and produced
+fourteen corrections; none of them would have been caught by building the design as drawn.
+
+The governing rule: **if a number cannot be measured, it does not ship.** Not softened, not
+hedged, not reworded into an approximation. Cut, or replaced by a figure the code produces after
+the work is done.
+
+---
+
+## The checklist
+
+### 1. Numbers the code cannot back
+Any figure stated before the work runs — a size, a duration, a count. If the value depends on
+the document, it cannot be known in advance and must not be printed.
+
+### 2. Predicted output sizes
+"≈ 2.9 MB", "2.6 MB anyway". A projected size that turns out wrong is worse than no projection.
+Describe what a setting *does*; report what it *produced*.
+
+### 3. Timing claims
+"about a second a page", "about 40 seconds", "under 2 seconds". Measure on a real fixture. Quote
+the measured figure or nothing.
+
+### 4. Technology claims
+"compiled to WebAssembly" when it is JavaScript. Check what the shipped bundle actually contains.
+
+### 5. Platform-support claims
+HEIC, codecs, formats. Verify per-browser rather than per-spec. "Supported" in a standard is not
+supported in Chrome.
+
+### 6. Cross-surface claims
+Anything the page says about the Android app: metering, permissions, features that have not
+shipped. Check against the app's actual state and its Data Safety declaration.
+
+### 7. Price and date claims
+Any figure or date for Pro. Nothing may imply a purchase that cannot be made.
+
+### 8. Stage-cost claims — *added after the merge finding*
+"X is fast; Y is the slow part." These read as insider knowledge and are almost never measured.
+The merge page claimed bookmarks were the slow part; measured over a 300-page merge it was
+**0.0%** against a file write at **76.5%**. Backwards, not approximate.
+
+### 9. Relative-speed claims — *added after the OCR finding*
+"the slowest tool here", "the fast one". These decay silently when an unrelated tool gets faster
+or slower. OCR was described as slowest at 1.2 s/page while compress ran at 1.18 s/page. Any
+comparison between two things needs both measured, and re-checked when either changes.
+
+---
+
+## Method
+
+**Grep the built output. Never trust that a replace succeeded.**
+
+A text replace that matches nothing returns success. Across this project and the Android one that
+has now silently failed nine times. The most recent: a correction to the OCR section of
+`support.html` searched for *"come back"* where the source said *"came back"* — one word, no
+match, no error, and the obsolete copy shipped into the next commit.
+
+Verify a copy change by grepping `dist/`, not `src/`, and not by the exit status of the edit.
+
+**Keep every claim in one place.** Card copy lived in both `tools/site.mjs` and
+`src/pages/index.html` and drifted within a day, which is how an already-corrected claim came
+back. The homepage grid is now generated from `site.mjs`, with a build-time guard that throws if
+`HOME_ORDER` does not name every tool exactly once.
+
+---
+
+## Record — first bundle
+
+| # | Claim as drawn | Measured | Action |
+|---|---|---|---|
+| 1 | "tools are compiled to WebAssembly" | pdf-lib and pdf.js are JavaScript; only OCR uses wasm | rewritten |
+| 2 | "The compressor is WebAssembly" | no wasm in the compress path at all | rewritten |
+| 3 | Preset estimates ≈2.9 / 2.1 / 1.4 MB | depends entirely on the document | cut |
+| 4 | "Compress hard anyway — 2.6 MB" | a predicted size | cut; runs it and reports the real result |
+| 5 | "4 worker threads" | one thread yielding between images | cut |
+| 6 | "about 40 seconds" for 62 pages | ~72 s at 1.155 s/page | cut |
+| 7 | Compress "about a second a page" | 1.155–1.178 s/page | **verified, kept** |
+| 8 | Split "under 2 seconds" | unknowable before the work | cut |
+| 9 | Rotate "within a few bytes" | −838 bytes on 386 KB | cut; reports measured delta |
+| 10 | OCR "about a second a page" | 7.3 s/page as first built | cut; now 1.2 s/page measured |
+| 11 | OCR model "12 MB" | 6.0–10.4 MB, varies by language | per-language figure from the file |
+| 12 | HEIC supported | Safari only | detected by magic bytes, named specifically |
+| 13 | App meters OCR at 10/month | the app has no OCR yet | moved to future tense |
+| 14 | Merge "bookmarks are the slow part" | 0.0% vs file write 76.5% | rewritten |
+| 15 | "Slowest tool here" | 1.2 s/page vs compress 1.18 | "heaviest" |
+
+Two further corrections came from the brief rather than from measurement: the privacy page's
+claim of "no advertising or analytics SDK" (the app contains Firebase Analytics and Crashlytics,
+declared to Google), and its claim that the app requests camera permission (it does not).
+
+One claim went false and then true again inside a day: **"you can leave this tab in the
+background."** pdf.js paces display rendering with `requestAnimationFrame`, which browsers stop
+in a hidden tab — measured at not settling in 12 s, against 407 ms once visible. Switching to
+`intent: 'print'` made the original copy correct again. A claim that flips twice is worth
+re-testing on every change to the code beneath it, not just once.

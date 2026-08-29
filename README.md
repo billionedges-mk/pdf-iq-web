@@ -136,6 +136,12 @@ project.
 
 ---
 
+## Claim review
+
+Every design bundle is read against `CLAIMS.md` before any code is written, and every conflict
+is reported before implementation. The first bundle produced fifteen corrections that way. The
+governing rule is that a number which cannot be measured does not ship — cut, not softened.
+
 ## Known gaps
 
 See `TECH_DEBT.md`. The short version: the 200 MB file ceiling is a placeholder, encrypted PDFs
