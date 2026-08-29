@@ -1,6 +1,11 @@
 # Cloudflare Pages reads this file directly. Later, more specific rules win.
 
+# HSTS: the origin already 301s http to https, but without this a first visit over http
+# can be intercepted before the redirect happens. One year, subdomains included. No
+# `preload` directive — that is a submission to a browser-vendor list which is slow to
+# reverse, and should be a deliberate decision rather than a side effect of this file.
 /*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY

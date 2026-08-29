@@ -53,7 +53,7 @@ export const TOOLS = [
   },
   {
     slug: 'reorder', nav: 'Reorder', name: 'Reorder Pages', entry: 'reorder',
-    title: 'Reorder PDF pages — move and delete pages in your browser, nothing uploaded',
+    title: 'Reorder PDF pages in your browser — nothing uploaded',
     description:
       'Move or delete PDF pages on a grid of the real pages. Runs entirely in your browser: the file never leaves your device.',
     inApp: true,
@@ -78,7 +78,7 @@ export const PAGES = [
     slug: '', name: 'Home', entry: null, shell: '1120px',
     title: 'pdf-iq — seven PDF tools that run inside your browser tab',
     description:
-      'Compress, merge, split, rotate, reorder, convert and OCR PDFs without uploading them. The work happens on your device, so there is no upload step and nothing to delete.',
+      'Compress, merge, split, rotate, reorder, convert and OCR PDFs without uploading them. The work happens on your device, so there is nothing to delete.',
   },
   {
     slug: 'app', name: 'Android App', entry: null,
@@ -88,18 +88,18 @@ export const PAGES = [
   },
   {
     slug: 'privacy', name: 'Privacy', entry: null,
-    title: 'Privacy — pdf-iq',
+    title: 'Privacy — what pdf-iq and the PDFiq app collect',
     description:
       'What the pdf-iq website and Android app do and do not collect, stated precisely, including the app’s server-side features.',
   },
   {
     slug: 'terms', name: 'Terms', entry: null,
-    title: 'Terms — pdf-iq',
-    description: 'The terms covering use of the pdf-iq website and tools.',
+    title: 'Terms of use — pdf-iq PDF tools',
+    description: 'The terms covering use of the pdf-iq website, the seven browser tools, and the PDFiq Android app, including subscriptions and liability.',
   },
   {
     slug: 'support', name: 'Support', entry: null,
-    title: 'Support — pdf-iq',
+    title: 'Support — help with the pdf-iq PDF tools',
     description: 'Answers to what goes wrong, and how to reach a person about the pdf-iq tools and Android app.',
   },
 ];
