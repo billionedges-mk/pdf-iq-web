@@ -11,7 +11,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
-import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, href, ORIGIN } from './site.mjs';
+import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
 import { LANGUAGES } from './langs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -79,6 +79,24 @@ function toolGrid() {
         <span class="toolcard__note">${esc(t.card)}</span>
       </a>`;
   return [...HOME_TOOLS, HOME_APP_CARD].map(card).join('\n');
+}
+
+/**
+ * Replace {{token}} with the value derived in site.mjs.
+ *
+ * Both failure modes throw rather than passing through. An unknown token would ship a
+ * literal `{{appOfWeb}}` onto the page; a token that quietly stayed put is the same
+ * silent no-op as a replace that matches nothing, which is the failure this whole
+ * mechanism exists to prevent.
+ */
+function substituteTokens(body, file) {
+  const out = body.replace(/\{\{(\w+)\}\}/g, (_, name) => {
+    if (!(name in TOKENS)) throw new Error(`unknown token {{${name}}} in ${file}`);
+    return TOKENS[name];
+  });
+  const leftover = /\{\{(\w+)\}\}/.exec(out);
+  if (leftover) throw new Error(`token ${leftover[0]} survived substitution in ${file}`);
+  return out;
 }
 
 function document_({ page, body, css }) {
@@ -254,6 +272,14 @@ async function build() {
         throw new Error(`TOOL_GRID marker survived substitution in ${file}`);
       }
     }
+    if (body.includes('<!--APP_FEATURES-->')) {
+      const items = APP_FEATURES.map((f) => `            <li>${esc(f)}</li>`).join('\n');
+      body = body.replace(/[ \t]*<!--APP_FEATURES-->/, items);
+      if (body.includes('<!--APP_FEATURES-->')) {
+        throw new Error(`APP_FEATURES marker survived substitution in ${file}`);
+      }
+    }
+    body = substituteTokens(body, file);
     const dir = page.slug === '' ? OUT : join(OUT, page.slug);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'index.html'), document_({ page, body, css }));

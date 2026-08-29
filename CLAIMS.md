@@ -87,6 +87,26 @@ Verify a copy change by grepping `dist/`, not `src/`, and not by the exit status
 back. The homepage grid is now generated from `site.mjs`, with a build-time guard that throws if
 `HOME_ORDER` does not name every tool exactly once.
 
+That fix covered the homepage grid. It did not cover the app page, which restated the tool
+count in its own lede and feature list — and the next correction landed everywhere except
+there. Twice is a pattern, so the surface split now lives in `site.mjs` too: every tool
+declares `inApp`, the counts derive from it, and page bodies carry `{{tokens}}` and an
+`<!--APP_FEATURES-->` marker instead of numbers.
+
+Three build-time guards, each negative-tested by breaking it on purpose:
+
+- a tool without `inApp` throws, so adding one forces the question rather than inheriting a
+  claim of parity;
+- an unknown `{{token}}` throws, so a typo cannot ship a literal brace onto the page;
+- a token or marker that survives substitution throws, because a replace that quietly matches
+  nothing is the original failure wearing a new costume.
+
+Flipping `ocr.inApp` to true and rebuilding moves every count on every page, which is the only
+real proof that a claim now lives in one place. It also exposed a degenerate case the
+hand-written version never had: with nothing web-only, the derived line rendered as " are not in
+the app yet" with an empty subject. That is the cost of deriving, and it is worth paying once.
+
+
 ---
 
 ## Record — first bundle

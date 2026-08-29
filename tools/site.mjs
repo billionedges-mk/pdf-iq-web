@@ -11,6 +11,7 @@ export const TOOLS = [
     title: 'Merge PDF — combine files in your browser, nothing uploaded',
     description:
       'Combine PDFs into one file, in the order you set. Runs entirely in your browser: the files never leave your device.',
+    inApp: true,
     cardName: 'Merge',
     card: 'Several files into one, in the order you set.',
   },
@@ -19,6 +20,7 @@ export const TOOLS = [
     title: 'Split PDF — extract pages in your browser, nothing uploaded',
     description:
       'Pull out a page range or cut one PDF into several. Runs entirely in your browser: the file never leaves your device.',
+    inApp: true,
     cardName: 'Split',
     card: 'Pull out a page range, or cut one file into parts.',
   },
@@ -27,6 +29,7 @@ export const TOOLS = [
     title: 'Compress PDF — make a PDF smaller in your browser, nothing uploaded',
     description:
       'Make a PDF smaller for email or a filing. Runs entirely in your browser: the file never leaves your device, and we say so when it cannot get smaller.',
+    inApp: true,
     cardName: 'Compress',
     card: 'Smaller for email, with the real before and after.',
   },
@@ -35,6 +38,7 @@ export const TOOLS = [
     title: 'Images to PDF — photos and scans into one document, nothing uploaded',
     description:
       'Turn photos or scans into one PDF. Runs entirely in your browser: the images never leave your device.',
+    inApp: true,
     cardName: 'Images to PDF',
     card: 'Phone photos and scans into one document.',
   },
@@ -43,6 +47,7 @@ export const TOOLS = [
     title: 'Rotate PDF — fix sideways scans in your browser, nothing uploaded',
     description:
       'Turn PDF pages the right way up. Runs entirely in your browser: the file never leaves your device.',
+    inApp: true,
     cardName: 'Rotate',
     card: 'Fix sideways scans without re-encoding them.',
   },
@@ -51,6 +56,7 @@ export const TOOLS = [
     title: 'Reorder PDF pages — move and delete pages in your browser, nothing uploaded',
     description:
       'Move or delete PDF pages on a grid of the real pages. Runs entirely in your browser: the file never leaves your device.',
+    inApp: true,
     cardName: 'Reorder',
     card: 'Move or drop pages on a grid of real pages.',
   },
@@ -59,6 +65,7 @@ export const TOOLS = [
     title: 'OCR PDF — make a scan searchable in your browser, nothing uploaded',
     description:
       'Read the text in a scanned PDF so you can search and copy it. Runs entirely in your browser: the file never leaves your device.',
+    inApp: false,
     cardName: 'OCR',
     card: 'Make a scan searchable. Unlimited, free here.',
   },
@@ -94,6 +101,70 @@ export const PAGES = [
     title: 'Support — pdf-iq',
     description: 'Answers to what goes wrong, and how to reach a person about the pdf-iq tools and Android app.',
   },
+];
+
+/**
+ * Which surface has which tool.
+ *
+ * The number of tools the Android app has was written by hand into the app page's lede,
+ * its feature list and the homepage price card — and a correction landed in some of them
+ * and not others, twice. Everything that states a count now derives from here.
+ *
+ * `inApp` is required on every tool rather than defaulted, so adding one forces the
+ * question instead of inheriting a claim of parity.
+ */
+for (const t of TOOLS) {
+  if (typeof t.inApp !== 'boolean') {
+    throw new Error(`${t.slug} does not declare inApp — say whether the Android app has it`);
+  }
+}
+
+export const WEB_TOOLS = TOOLS;
+export const APP_TOOLS = TOOLS.filter((t) => t.inApp);
+export const WEB_ONLY_TOOLS = TOOLS.filter((t) => !t.inApp);
+
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+const word = (n) => WORDS[n] ?? String(n);
+const cap = (s) => s.replace(/^./, (c) => c.toUpperCase());
+const list = (items) =>
+  items.length <= 1
+    ? items[0] ?? ''
+    : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+
+/**
+ * Substituted into page bodies at build time. An unknown token, or one left behind,
+ * fails the build — a count that silently stays literal is the failure this replaces.
+ */
+export const TOKENS = {
+  webToolCount: word(WEB_TOOLS.length),
+  webToolCountCap: cap(word(WEB_TOOLS.length)),
+  appToolCount: word(APP_TOOLS.length),
+  appToolCountCap: cap(word(APP_TOOLS.length)),
+  appOfWeb: `${word(APP_TOOLS.length)} of the ${word(WEB_TOOLS.length)}`,
+  appOfWebCap: `${cap(word(APP_TOOLS.length))} of the ${word(WEB_TOOLS.length)}`,
+  webOnlyTools: list(WEB_ONLY_TOOLS.map((t) => t.cardName)),
+  webOnlyVerb: WEB_ONLY_TOOLS.length === 1 ? 'is' : 'are',
+  webOnlyPronoun: WEB_ONLY_TOOLS.length === 1 ? 'it' : 'they',
+};
+
+/**
+ * The app's feature list, so the page cannot restate the split by hand.
+ *
+ * The web-only line is dropped entirely when nothing is web-only, rather than rendered
+ * with an empty subject. Flipping ocr.inApp to true produced " are not in the app yet"
+ * on the built page — the degenerate case a derived string has and a hand-written one
+ * does not, which is the cost of deriving and worth paying once here.
+ */
+export const APP_FEATURES = [
+  APP_TOOLS.length === WEB_TOOLS.length
+    ? `All ${word(WEB_TOOLS.length)} web tools, offline, no account.`
+    : `${cap(word(APP_TOOLS.length))} of the ${word(WEB_TOOLS.length)} web tools, offline, no account.`,
+  ...(WEB_ONLY_TOOLS.length
+    ? [`${list(WEB_ONLY_TOOLS.map((t) => t.cardName))} ${WEB_ONLY_TOOLS.length === 1 ? 'is' : 'are'} not in the app yet — on the web ${WEB_ONLY_TOOLS.length === 1 ? 'it is' : 'they are'} unlimited.`]
+    : []),
+  'Opens PDFs from the share sheet and from chat apps.',
+  'Multi-page camera scanning straight to PDF.',
+  'No ads, and no advertising SDK in the build.',
 ];
 
 export const ALL = [...PAGES, ...TOOLS];
