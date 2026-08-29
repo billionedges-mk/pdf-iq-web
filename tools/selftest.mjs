@@ -32,6 +32,7 @@ for (const name of ['selftest', 'tools-selftest', 'ocr-probe', 'readout-selftest
 mkdirSync(join(OUT, 'fixtures'), { recursive: true });
 writeFileSync(join(OUT, 'fixtures', 'encrypted-rc4.pdf'),
   buildEncryptedPdf({ userPassword: 'correct-horse', pages: 3 }));
-console.log('encrypted fixture -> dist/fixtures/encrypted-rc4.pdf (password: correct-horse)');
+console.log('encrypted fixture -> dist/fixtures/encrypted-rc4.pdf');
+console.log('  user password: correct-horse   owner password: correct-horse-owner (both must open it)');
 
 console.log('selftests built -> dist/selftest.html, dist/tools-selftest.html');

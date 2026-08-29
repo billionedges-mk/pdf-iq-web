@@ -157,8 +157,9 @@ export function wrongPassword(file: FileFacts): ToolError {
     kicker: 'Password not accepted',
     title: 'That password did not open the file.',
     body:
-      'The document rejected it. Passwords are case sensitive, and a PDF can carry two different ones — ' +
-      'the open password, which is the one needed here, and an owner password that only restricts printing and copying. Try the open password.',
+      'The document rejected it. Passwords are case sensitive, and a leading or trailing space counts as ' +
+      'part of one. A PDF can carry two — the open password and the owner password — and either will unlock ' +
+      'it here, so if you have both, the other one is worth a try.',
     mono: `password rejected on this device · ${sentSuffix}`,
     password: true,
   };

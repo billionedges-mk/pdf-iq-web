@@ -551,6 +551,32 @@ const ENCRYPTED_CASES: Case[] = [
       p.frame.remove();
     },
   },
+  {
+    // The first real locked file to reach this code was rejected with the correct
+    // password, because the password was the *owner* one and only the user password was
+    // ever checked. A PDF has two, either opens it, and the fixture's differ — so this
+    // case fails against the code as it was.
+    name: 'The owner password unlocks it too, not just the user password',
+    async run() {
+      const p = await open('/compress/');
+      const bytes = new Uint8Array(await (await fetch('/fixtures/encrypted-rc4.pdf')).arrayBuffer());
+      feed(p, [fileOf(bytes, 'board-minutes.pdf')]);
+      await waitFor(p.doc, 'error', 10000);
+
+      const input = p.doc.querySelector<HTMLInputElement>('[data-password-input]')!;
+      // Deliberately not the user password this fixture also carries.
+      input.value = 'correct-horse-owner';
+      p.doc.querySelector<HTMLFormElement>('[data-err-password]')!
+        .dispatchEvent(new (p.win as unknown as { Event: typeof Event }).Event('submit', { bubbles: true, cancelable: true }));
+      await waitFor(p.doc, 'selected', 12000);
+
+      const meta = p.doc.querySelector('[data-file-meta]')!.textContent!;
+      note(`unlocked with the owner password: ${meta}`);
+      ok(/3 pages/.test(meta), 'the owner password opens all 3 pages');
+      ok(clean(p), 'nothing sent while unlocking');
+      p.frame.remove();
+    },
+  },
 ];
 
 // ---------------------------------------------------------------- a11y

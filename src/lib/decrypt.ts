@@ -219,13 +219,16 @@ function readEncryptDict(doc: PDFDocument): EncryptInfo | null {
   };
 }
 
-/** Algorithm 2: the file key for R2–R4. */
-function legacyKey(info: EncryptInfo, password: string): Uint8Array {
-  const n = info.v === 1 ? 5 : Math.max(5, Math.min(16, info.length >> 3));
+const keyLength = (info: EncryptInfo) =>
+  info.v === 1 ? 5 : Math.max(5, Math.min(16, info.length >> 3));
+
+/** Algorithm 2: the file key for R2–R4, from an already-padded password. */
+function legacyKeyFromPadded(info: EncryptInfo, padded: Uint8Array): Uint8Array {
+  const n = keyLength(info);
   const p = new Uint8Array(4);
   new DataView(p.buffer).setInt32(0, info.P, true);
 
-  const pieces = [padPassword(password), info.O.subarray(0, 32), p, info.id];
+  const pieces = [padded.subarray(0, 32), info.O.subarray(0, 32), p, info.id];
   if (info.r >= 4 && !info.encryptMetadata) {
     pieces.push(new Uint8Array([0xff, 0xff, 0xff, 0xff]));
   }
@@ -234,6 +237,40 @@ function legacyKey(info: EncryptInfo, password: string): Uint8Array {
     for (let i = 0; i < 50; i++) hash = md5(hash.subarray(0, n));
   }
   return hash.subarray(0, n);
+}
+
+const legacyKey = (info: EncryptInfo, password: string) =>
+  legacyKeyFromPadded(info, padPassword(password));
+
+/**
+ * Algorithm 7: authenticate an *owner* password.
+ *
+ * A PDF carries two passwords. The user password opens it; the owner password also opens
+ * it and additionally lifts the restrictions. Checking only the user password rejects a
+ * correct owner password — which is what happened with the first real locked file to
+ * reach this code: pdf.js opened it and this did not, because the password supplied was
+ * the owner one and the file's user password is something else entirely.
+ *
+ * The owner password is verified indirectly: it decrypts /O to recover the padded user
+ * password, and that is then checked the ordinary way.
+ */
+function userPasswordFromOwner(info: EncryptInfo, password: string): Uint8Array {
+  const n = keyLength(info);
+  let hash = md5(padPassword(password));
+  if (info.r >= 3) {
+    for (let i = 0; i < 50; i++) hash = md5(hash.subarray(0, n));
+  }
+  const rc4Key = hash.subarray(0, n);
+
+  if (info.r === 2) return rc4(rc4Key, info.O);
+  // R3 and R4 apply RC4 twenty times, with the key XORed by a descending counter.
+  let value = info.O;
+  for (let i = 19; i >= 0; i--) {
+    const k = new Uint8Array(n);
+    for (let j = 0; j < n; j++) k[j] = rc4Key[j] ^ i;
+    value = rc4(k, value);
+  }
+  return value;
 }
 
 /** Algorithms 4 and 5: does this key match the /U value? */
@@ -279,7 +316,7 @@ async function hash2B(password: Uint8Array, salt: Uint8Array, extra: Uint8Array,
 }
 
 /** Algorithms 2.A / 8 / 9: the AES-256 file key. */
-async function aes256Key(info: EncryptInfo, password: string): Promise<Uint8Array | null> {
+async function aes256Key(info: EncryptInfo, password: string): Promise<{ key: Uint8Array; role: 'user' | 'owner' } | null> {
   const pw = latin1(password).subarray(0, 127);
   const U = info.U;
   if (U.length < 48) return null;
@@ -295,7 +332,7 @@ async function aes256Key(info: EncryptInfo, password: string): Promise<Uint8Arra
       { name: 'AES-CBC', iv: new Uint8Array(16) as BufferSource }, k,
       concat(info.UE.subarray(0, 32), new Uint8Array(16)) as BufferSource
     );
-    return new Uint8Array(out).subarray(0, 32);
+    return { key: new Uint8Array(out).subarray(0, 32), role: 'user' };
   }
 
   // Try it as the owner password.
@@ -310,7 +347,7 @@ async function aes256Key(info: EncryptInfo, password: string): Promise<Uint8Arra
         { name: 'AES-CBC', iv: new Uint8Array(16) as BufferSource }, k,
         concat(info.OE.subarray(0, 32), new Uint8Array(16)) as BufferSource
       );
-      return new Uint8Array(out).subarray(0, 32);
+      return { key: new Uint8Array(out).subarray(0, 32), role: 'owner' };
     }
   }
   return null;
@@ -345,7 +382,7 @@ async function decryptBytes(handler: Handler, key: Uint8Array, data: Uint8Array)
 }
 
 export type DecryptResult =
-  | { ok: true; bytes: Uint8Array; handler: string }
+  | { ok: true; bytes: Uint8Array; handler: string; role: 'user' | 'owner' }
   | { ok: false; reason: 'wrong-password' | 'unsupported'; detail: string };
 
 /**
@@ -369,16 +406,28 @@ export async function decryptPdf(bytes: Uint8Array, password: string): Promise<D
   }
 
   let handler: Handler;
+  let role: 'user' | 'owner' = 'user';
   if (info.v === 5) {
-    const key = await aes256Key(info, password);
-    if (!key) return { ok: false, reason: 'wrong-password', detail: `AES-256 (R${info.r})` };
-    handler = { key, cipher: 'aes', perObject: false };
+    const result = await aes256Key(info, password);
+    if (!result) return { ok: false, reason: 'wrong-password', detail: `AES-256 (R${info.r})` };
+    handler = { key: result.key, cipher: 'aes', perObject: false };
+    role = result.role;
   } else if (info.v >= 1 && info.v <= 4) {
-    const key = legacyKey(info, password);
-    if (!legacyKeyMatches(info, key)) {
-      return { ok: false, reason: 'wrong-password', detail: info.cipher === 'aes' ? 'AES-128' : `RC4 ${info.length}-bit` };
+    const asUser = legacyKey(info, password);
+    if (legacyKeyMatches(info, asUser)) {
+      handler = { key: asUser, cipher: info.cipher, perObject: true };
+      role = 'user';
+    } else {
+      // Not the user password — it may still be the owner password, which also opens the
+      // document. Checking only the first of the two rejects a password that works.
+      const recovered = userPasswordFromOwner(info, password);
+      const asOwner = legacyKeyFromPadded(info, recovered);
+      if (!legacyKeyMatches(info, asOwner)) {
+        return { ok: false, reason: 'wrong-password', detail: info.cipher === 'aes' ? 'AES-128' : `RC4 ${info.length || 40}-bit` };
+      }
+      handler = { key: asOwner, cipher: info.cipher, perObject: true };
+      role = 'owner';
     }
-    handler = { key, cipher: info.cipher, perObject: true };
   } else {
     return { ok: false, reason: 'unsupported', detail: `V${info.v} handler` };
   }
@@ -409,10 +458,10 @@ export async function decryptPdf(bytes: Uint8Array, password: string): Promise<D
   if (encryptRef instanceof PDFRef) doc.context.delete(encryptRef);
 
   const out = await doc.save({ useObjectStreams: false });
-  const name = info.v === 5 ? `AES-256 (R${info.r})`
+  const cipherName = info.v === 5 ? `AES-256 (R${info.r})`
     : info.cipher === 'aes' ? 'AES-128'
-    : `RC4 ${info.length}-bit`;
-  return { ok: true, bytes: out, handler: name };
+    : `RC4 ${info.length || 40}-bit`;
+  return { ok: true, bytes: out, handler: `${cipherName}, ${role} password`, role };
 }
 
 /** Strings live inside dictionaries and arrays, at any depth. */

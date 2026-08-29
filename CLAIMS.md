@@ -396,3 +396,25 @@ The guard did fire correctly and refused rather than emitting a corrupt file —
 design working on a case it was not designed for. But the feature could never have succeeded, and
 nothing short of running it would have shown that. It sat in TECH_DEBT as "written but untested"
 for the whole project, which was the right label and not a substitute for running it.
+
+### 13. Two ways to satisfy a check means both get tested
+
+When a specification says a thing can be satisfied more than one way, testing one way and
+shipping is a coin flip. Implement and test every branch the spec allows, or say in the
+copy which branch is supported.
+
+**Found by:** a real password-protected PDF. A PDF carries two passwords — user and owner
+— and either opens it. `decrypt.ts` implemented only the user path (Algorithms 2/4/5) and
+never Algorithm 7, so the owner password was rejected as wrong. pdf.js opened the same
+file with the same password, which is what proved it was our bug and not the file.
+
+It went further than a rejection: the "password not accepted" copy told the user the owner
+password "only restricts printing and copying" and to try a different one. The product
+argued with a correct credential.
+
+The fixture generator had produced a distinct owner password since the day it was written.
+No test had ever tried it.
+
+**The check:** for every spec branch — cipher, revision, credential, filter — either a
+test drives it or the limitation is stated to the user. A branch with no test is not
+implemented, it is asserted.

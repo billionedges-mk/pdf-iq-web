@@ -45,7 +45,9 @@ worded so that it stays true if the measurement comes back badly.
   40-bit has been exercised against a real file.** `src/lib/decrypt.ts` also implements RC4
   128-bit, AES-128 (/AESV2) and AES-256 (/AESV3, R5 and R6), and those paths are written from the
   specification but have never met a document. `tools/encrypt-fixture.mjs` only emits RC4 40-bit;
-  extending it to AES would close this.
+  extending it to AES would close this. The owner-password route (Algorithm 7), added after the
+  same real file was rejected while carrying a *correct* owner password, is exercised for RC4 by
+  the fixture; its AES-256 equivalent shares the same untested status as the rest of V5.
 - **CMYK, JPEG 2000, JBIG2 and CCITT images.** `judge()` in `src/lib/pdf-inspect.ts` detects and
   skips these with specific reasons. The *logic* is tested; it has never been run against a real
   file of any of those kinds.
