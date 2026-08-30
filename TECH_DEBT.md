@@ -83,7 +83,25 @@ worded so that it stays true if the measurement comes back badly.
   (60 MB measured faster than 50 MB, across different runs). And this is one strong desktop:
   weaker machines will collapse lower, which is the reason for the margin.
 
-  **Outstanding: the phone figures carry no timings.** The iPhone run reported survival to 400 MB
+  **Outstanding: there is still no valid phone measurement.** The 60 MB ceiling rests on desktop
+  evidence alone.
+
+  The first iPhone run reported survival to 400 MB and a kill at 600 MB during fixture
+  *generation* — but with a summary that carried no times, which is the distinction this whole
+  exercise exists to draw. The re-run with times reported **0.4 seconds of work at 30, 50, 60 and
+  80 MB**: flat, impossible, and printed as a ceiling because nothing checked it. The same ladder
+  on desktop produces 1.9s / 9.1s / 8.5s / 14.0s with correct fixture sizes, so the `?ladder=`
+  path is sound and the fault is iOS-specific and still undiagnosed. Most likely the canvas
+  produced blank or tiny source images under memory pressure, which would make every fixture
+  unrepresentative — the next run will say, because the built size and the source image sizes are
+  now printed on every line.
+
+  `validate()` in `src/lib/probe-validity.ts` now refuses to report a ceiling from a run whose
+  work does not grow with the file, whose fixture came out more than 25% under the size asked
+  for, whose six source images are all identical, or whose work took under 50ms. See CLAIMS.md
+  check 16.
+
+  **Superseded note — the phone figures carry no timings.** The iPhone run reported survival to 400 MB
   and a kill at 600 MB during fixture *generation*, not during the work — but the first version of
   the probe's summary reported only completion and death, which is the distinction this whole
   exercise established is the wrong one. 400 MB "completing" says nothing about whether it took

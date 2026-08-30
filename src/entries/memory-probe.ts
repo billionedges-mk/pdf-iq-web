@@ -14,35 +14,11 @@
 
 import { PDFDocument } from 'pdf-lib';
 import { analyse, compress, PRESETS } from '../lib/compress.js';
+import { validate, type Rung, type State } from '../lib/probe-validity.js';
 
 const KEY = 'pdfiq-memory-probe';
 const out = document.getElementById('probe-out')!;
 const status = document.getElementById('probe-status')!;
-
-interface Rung {
-  mb: number;
-  phase: string;
-  outcome: 'survived' | 'threw' | 'started';
-  detail?: string;
-  /** Time to build the fixture. Not part of the answer — no user does this. */
-  genMs?: number;
-  /** Time for the work a tool actually does. This is the number that matters. */
-  pipeMs?: number;
-  /** Per-stage breakdown of pipeMs, so "it got slow" can name which part. */
-  stages?: Record<string, number>;
-  heapMb?: number;
-  builtBytes?: number;
-}
-
-interface State {
-  agent: string;
-  started: string;
-  deviceMemoryGb?: number;
-  heapLimitMb?: number;
-  cores?: number;
-  rungs: Rung[];
-  finished?: boolean;
-}
 
 const load = (): State | null => {
   try {
@@ -120,13 +96,18 @@ const blobOf = (c: HTMLCanvasElement, q: number) =>
  * the byte count and the object graph are both real without paying to render a thousand
  * separate canvases on a phone.
  */
-async function scanPdfOfSize(targetMb: number, onProgress: (p: string) => void): Promise<Uint8Array> {
+async function scanPdfOfSize(
+  targetMb: number,
+  onProgress: (p: string) => void,
+  reportBase?: (sizes: number[]) => void
+): Promise<Uint8Array> {
   const base: Uint8Array[] = [];
   for (let i = 0; i < 6; i++) {
     const blob = await blobOf(drawScan(1700, 2340, i + 1), 0.86);
     base.push(new Uint8Array(await blob.arrayBuffer()));
     await yieldToUi();
   }
+  reportBase?.(base.map((b) => b.length));
   const per = base.reduce((n, b) => n + b.length, 0) / base.length;
   const pages = Math.max(1, Math.round((targetMb * 1048576) / per));
   onProgress(`${pages} pages of about ${(per / 1024).toFixed(0)} KB`);
@@ -234,10 +215,14 @@ async function run(): Promise<void> {
 
     const t0 = performance.now();
     try {
-      let bytes = await scanPdfOfSize(target, (p) => {
-        rung.phase = `generating: ${p}`;
-        status.textContent = `${target} MB — ${p}`;
-      });
+      let bytes = await scanPdfOfSize(
+        target,
+        (p) => {
+          rung.phase = `generating: ${p}`;
+          status.textContent = `${target} MB — ${p}`;
+        },
+        (sizes) => { state.baseImageBytes = sizes; }
+      );
       rung.genMs = Math.round(performance.now() - t0);
       rung.builtBytes = bytes.length;
       rung.phase = 'pipeline';
@@ -309,18 +294,36 @@ function report(s: State): void {
   const usable = done.filter((r) => (r.pipeMs ?? 0) <= COLLAPSE_MS);
   const collapsed = done.find((r) => (r.pipeMs ?? 0) > COLLAPSE_MS);
   const failed = s.rungs.find((r) => r.outcome !== 'survived');
+  const verdict = validate(s);
 
   say('');
   say('════ RESULT ════');
+  if (s.baseImageBytes?.length) {
+    say(`  source images: ${s.baseImageBytes.map((b) => (b / 1024).toFixed(0) + ' KB').join(', ')}`);
+    say('');
+  }
   for (const r of done) {
     const secs = ((r.pipeMs ?? 0) / 1000).toFixed(1);
-    say(`  ${String(r.mb).padStart(4)} MB  work ${secs.padStart(7)}s  heap ${String(r.heapMb ?? '?').padStart(5)} MB` +
-        `  ${(r.pipeMs ?? 0) > COLLAPSE_MS ? 'COLLAPSED' : 'usable'}`);
+    const built = r.builtBytes ? `${(r.builtBytes / 1048576).toFixed(1)} MB` : '?';
+    say(`  ${String(r.mb).padStart(4)} MB asked  built ${built.padStart(9)}  work ${secs.padStart(7)}s` +
+        `  heap ${String(r.heapMb ?? '?').padStart(5)} MB  ${(r.pipeMs ?? 0) > COLLAPSE_MS ? 'COLLAPSED' : 'usable'}`);
   }
   if (failed) {
-    say(`  ${String(failed.mb).padStart(4)} MB  ${failed.outcome === 'threw' ? 'refused' : 'KILLED'} during "${failed.phase}"`);
+    say(`  ${String(failed.mb).padStart(4)} MB asked  ${failed.outcome === 'threw' ? 'refused' : 'KILLED'} during "${failed.phase}"`);
   }
   say('');
+
+  if (!verdict.ok) {
+    // The same rule the footer readout follows: when the instrument cannot stand behind a
+    // number, it does not print one. A wrong figure that looks right is worse than none.
+    say('RUN INVALID — no ceiling can be read from this.');
+    say('');
+    for (const p of verdict.problems) say(`  · ${p}`);
+    say('');
+    say('Send this whole block anyway. What broke is more useful than the number would have been.');
+    return;
+  }
+
   say(`largest usable size (work under ${COLLAPSE_MS / 1000}s) : ${usable.length ? Math.max(...usable.map((r) => r.mb)) + ' MB' : 'none'}`);
   say(`first size that collapsed but stayed alive  : ${collapsed ? `${collapsed.mb} MB, ${(collapsed.pipeMs! / 1000).toFixed(0)}s` : 'none in this ladder'}`);
   say(`first size that failed outright             : ${failed ? `${failed.mb} MB during "${failed.phase}"` : 'none in this ladder'}`);

@@ -479,3 +479,44 @@ nothing else — an honest absence is checkable, an invented presence is not.
 **Corollary:** when the artefact is missing, the fix is to build it, not to delete the
 sentence. The probe that comment described is now real, at `/memory-probe/`, and the
 figures it produced are recorded in `TECH_DEBT.md`.
+
+### 16. An instrument needs a check that makes an impossible reading refuse
+
+A measurement tool is not exempt from the rules it exists to enforce. It is held to them
+harder, because everything downstream inherits whatever it says and nobody re-derives it.
+
+**Found by:** the memory probe, which was wrong twice in the same investigation while the
+thing it measured was wrong once.
+
+1. Its summary reported *what completed* and *what died* — the question the investigation
+   had already established was the wrong one. A rung that took five and a half minutes was
+   printed as a pass.
+2. Its ladder returned 0.4 seconds of work at 30, 50, 60 and 80 MB on a phone. Identical at
+   every rung, on a device that reports no heap, so nothing contradicted it. A figure that
+   cannot be true was printed as a ceiling.
+
+Both were caught by a person reading the output and finding it implausible. Neither was
+caught by the probe, which had no notion of an answer being impossible.
+
+**The check:** every instrument carries an internal consistency test, and fails loudly
+rather than reporting when it does not hold. The tests are about the shape of the data, not
+its absolute values, so they survive a slow device as well as a fast one:
+
+- **The output must respond to the input.** If the work does not grow with the file, the
+  pipeline is not doing what it claims. This is the one that catches a flat ladder.
+- **The input must be what was asked for.** Every rung reported the size it *requested*.
+  A generator that silently produced something small was invisible; the built size is now
+  printed on every line.
+- **A second signal that does not depend on the platform.** Heap was the only cross-check
+  and iOS does not report it. Six different drawings compress to six different sizes, so
+  six identical sizes means the canvas drew nothing — and that works everywhere.
+- **No result is instant.** A floor below which a time is not physically possible.
+
+This is the footer readout's rule applied to a tool rather than to the product: when it
+cannot stand behind a number, it says so instead of printing one. See also check 15 — an
+instrument that reports confidently from a broken run is a false citation generated fresh
+each time.
+
+`validate()` lives in `src/lib/probe-validity.ts` rather than inside the probe, so it can
+be driven with the two runs that actually happened — including the impossible one — instead
+of being trusted by reading.

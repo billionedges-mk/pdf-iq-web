@@ -13,6 +13,7 @@ import { PDFDocument } from 'pdf-lib';
 import { PRESETS, analyse, compress, explainNoGain, harderOffer, type Analysis, worthIt, worthShowing } from '../lib/compress.js';
 import { findImages, measurePlacements } from '../lib/pdf-inspect.js';
 import { readJpeg } from '../lib/jpeg.js';
+import { validate } from '../lib/probe-validity.js';
 import { MAX_BYTES, MEASURED_COLLAPSE_BYTES } from '../lib/ui.js';
 import { tooBig } from '../lib/errors.js';
 import { formatBytes } from '../lib/format.js';
@@ -104,6 +105,58 @@ async function makeTextPdf(pages: number): Promise<Uint8Array> {
 // ---------------------------------------------------------------- cases
 
 const CASES: Case[] = [
+  {
+    /**
+     * Driven with the two runs that actually happened. The iPhone one reported 0.4s of
+     * work at 30, 50, 60 and 80 MB — flat, impossible, and printed as a ceiling because
+     * nothing checked it. On a device with no heap readout there was no second signal.
+     */
+    name: 'The memory probe refuses to report a figure from a run that cannot be true',
+    async run() {
+      const rung = (mb: number, pipeMs: number, builtMb = mb, heapMb?: number) =>
+        ({ mb, phase: 'save', outcome: 'survived', pipeMs, heapMb, builtBytes: builtMb * 1048576 }) as never;
+      const real = [1_612_000, 1_598_400, 1_640_100, 1_575_300, 1_602_800, 1_588_900];
+
+      // The run as reported from the phone. Fixture sizes were never recorded, which was
+      // itself part of the problem, so the check has to fire without them.
+      const phone = {
+        agent: 'iPhone', started: '', rungs: [rung(30, 400), rung(50, 400), rung(60, 400), rung(80, 400)],
+      } as never;
+      const bad = validate(phone);
+      for (const p of bad.problems) note(`caught: ${p}`);
+      ok(!bad.ok, 'the flat run is rejected');
+      ok(bad.problems.some((p) => /did not grow with the file/.test(p)),
+        'and the reason given is that work did not scale with size');
+
+      // The same shape, but with the fixture recorded as far too small — the likely cause.
+      const blank = {
+        agent: 'iPhone', started: '', baseImageBytes: [41_000, 41_000, 41_000, 41_000, 41_000, 41_000],
+        rungs: [rung(30, 400), rung(50, 400), rung(60, 400), rung(80, 400)],
+      } as never;
+      const blankVerdict = validate(blank);
+      for (const p of blankVerdict.problems) note(`caught: ${p}`);
+      ok(blankVerdict.problems.some((p) => /canvas drew nothing/.test(p)),
+        'six identically sized source images are caught as a canvas that drew nothing');
+
+      // The desktop run, which is real and must still be accepted.
+      const desktop = {
+        agent: 'Chrome', started: '', baseImageBytes: real,
+        rungs: [rung(30, 1863, 30.2, 118), rung(50, 9136, 50.8, 200), rung(60, 8466, 60.3, 238), rung(80, 13999, 79.4, 315)],
+      } as never;
+      const good = validate(desktop);
+      for (const p of good.problems) note(`WRONGLY caught: ${p}`);
+      ok(good.ok, 'the real desktop run is still accepted');
+
+      // A fixture that silently came out small must not pass either.
+      const shrunk = {
+        agent: 'Chrome', started: '', baseImageBytes: real,
+        rungs: [rung(30, 1863, 30.2), rung(50, 9136, 50.8), rung(80, 13999, 40.0)],
+      } as never;
+      const shrunkVerdict = validate(shrunk);
+      note(`caught: ${shrunkVerdict.problems.join('; ')}`);
+      ok(!shrunkVerdict.ok, 'a rung whose fixture came out far under the size asked for is rejected');
+    },
+  },
   {
     name: 'The file ceiling sits below the size where the tab was measured to collapse',
     async run() {
