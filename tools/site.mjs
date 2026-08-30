@@ -104,9 +104,9 @@ export const PAGES = [
   },
   {
     slug: 'for-professionals', name: 'For firms', entry: 'for-professionals',
-    title: 'pdf-iq for firms — run it on your own network, $99 per user per year',
+    title: 'pdf-iq for firms — tell us what takes too long',
     description:
-      'The seven PDF tools licensed for a team and hostable on your own network, so documents never leave the building. Not on sale yet — register interest.',
+      'We build PDF tools that run on your own device and we are asking firms what to build next, before building it. Nothing is on sale; two questions and an email.',
   },
   {
     // A real route rather than a test-harness page, because it has to be reachable from a
@@ -182,6 +182,14 @@ export const PRO = {
    * whether the demand exists, with nothing behind the button but a record of who asked.
    */
   teamPrice: '$99',
+  /**
+   * NOTE — this contradicts the reason the firms page exists, and is set from the design
+   * rather than from the plan. The stated rationale was that one-time revenue does not
+   * compound and that firms renewing annually are the only compounding line; "bought once"
+   * removes exactly that. Changing this one string to 'per user per year' reverses it
+   * everywhere, because the page renders from here.
+   */
+  teamCadence: 'bought once',
   /** Kept prominent: it is not on sale, on either surface. */
   onSale: false,
 };
@@ -191,6 +199,7 @@ export const PRO_FEATURES = PRO.features;
 export const TOKENS = {
   proPrice: PRO.price,
   proTeamPrice: PRO.teamPrice,
+  proTeamCadence: PRO.teamCadence,
   proQualifier: PRO.qualifier,
   proCadence: PRO.cadence,
   proCovers: PRO.covers,

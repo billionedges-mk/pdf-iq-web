@@ -23,7 +23,7 @@ const button = $<HTMLButtonElement>('[data-interest-submit]');
 /** Why it failed, in the reader's terms. Never a shrug. */
 const MESSAGES: Record<string, string> = {
   'bad-email': 'That address does not look like an address — check it and try again.',
-  'bad-profession': 'The second field is the one that matters here, so it cannot be left empty.',
+  'bad-profession': '"What do you do?" is the field that tells us which market to talk to, so it cannot be left empty.',
   'bad-spends-too-long': 'That last answer is longer than the field can take — trim it and try again.',
   'not-configured':
     'Registering interest is not switched on yet — the store behind this button is not connected. ' +
@@ -58,8 +58,8 @@ async function submit(): Promise<void> {
   const spendsTooLong = String(data.get('spendsTooLong') ?? '').trim();
   const company = String(data.get('company') ?? '');
 
-  if (!email) return say('An email address is needed, or there is no way to come back to you.', 'bad');
   if (!profession) return say(MESSAGES['bad-profession'], 'bad');
+  if (!email) return say('A work email is needed, or there is no way to come back to you.', 'bad');
 
   const label = button.textContent ?? 'Register interest';
   button.disabled = true;
@@ -98,7 +98,7 @@ async function submit(): Promise<void> {
     // is never reached by a person.
     form.hidden = true;
     return say(
-      `Recorded — ${email} against "${profession}", and nothing else. ` +
+      `Thank you — recorded against "${profession}"${spendsTooLong ? ', with what you said takes too long' : ''}. ` +
       'We will write when there is something real to show you, and not otherwise. ' +
       'Ask at support@pdf-iq.com any time to have it deleted.',
       'ok'
