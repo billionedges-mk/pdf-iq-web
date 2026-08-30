@@ -17,6 +17,7 @@ import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURE
 import { LANGUAGES } from './langs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const NL = String.fromCharCode(10);
 const OUT = join(ROOT, 'dist');
 const WATCH = process.argv.includes('--watch');
 const SERVE = process.argv.includes('--serve');
@@ -307,6 +308,48 @@ async function bundle() {
 
 // ---------------------------------------------------------------- pages
 
+/**
+ * robots.txt — and what this file can and cannot do.
+ *
+ * WHAT SHIPS IS NOT WHAT IS SERVED. Cloudflare prepends a managed block ahead of this
+ * content, so the live file is its block first and this file's text afterwards. Measured
+ * on 30 August 2026 the managed block carried:
+ *
+ *     User-agent: *   Content-Signal: search=yes,ai-train=no,use=reference
+ *     Disallow: /     for Amazonbot, Applebot-Extended, Bytespider, CCBot, ClaudeBot,
+ *                     CloudflareBrowserRenderingCrawler, Google-Extended, GPTBot,
+ *                     meta-externalagent
+ *
+ * Those Disallows cannot be lifted from here. A named group is more specific than `*`, so
+ * Cloudflare's `ClaudeBot: Disallow` beats anything this file says through the wildcard,
+ * and adding a competing `ClaudeBot: Allow` group would leave two rules of equal path
+ * length whose resolution differs between parsers. Unblocking the training crawlers is a
+ * dashboard change, not a repo change.
+ *
+ * What this file usefully does is name the *search* crawlers, which the managed block does
+ * not mention at all: OAI-SearchBot, Claude-SearchBot and PerplexityBot are not blocked
+ * today, and naming them means a future managed-rule change cannot quietly remove them
+ * through the wildcard.
+ *
+ * The cost of a named group, worth knowing before adding a Disallow anywhere: a crawler
+ * with its own group obeys only that group and ignores `*` entirely. There are no Disallow
+ * rules here today — /memory-probe/ is kept out of search with a noindex meta and is absent
+ * from the sitemap — but any Disallow added to `*` later must be repeated into every named
+ * group below, or those crawlers will not see it.
+ *
+ * The live file is served with Cache-Control: max-age=14400, so a change takes up to four
+ * hours to reach a crawler that has already fetched it.
+ */
+const SEARCH_CRAWLERS = ['Googlebot', 'Bingbot', 'OAI-SearchBot', 'Claude-SearchBot', 'PerplexityBot'];
+
+function robots() {
+  const groups = [...SEARCH_CRAWLERS, '*']
+    .map((agent) => `User-agent: ${agent}` + NL + 'Allow: /')
+    .join(NL + NL);
+  return groups + NL + NL + `Sitemap: ${ORIGIN}/sitemap.xml` + NL;
+}
+
+
 function sitemap() {
   // noindex pages are not listed: a sitemap entry is a request to index, so listing one
   // while telling robots not to index it sends two opposite instructions.
@@ -387,10 +430,7 @@ async function build() {
   copyStatic();
 
   writeFileSync(join(OUT, 'sitemap.xml'), sitemap());
-  writeFileSync(
-    join(OUT, 'robots.txt'),
-    `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`
-  );
+  writeFileSync(join(OUT, 'robots.txt'), robots());
 
   console.log(`built ${ALL.length} routes -> dist/  (build ${BUILD_ID})`);
 }
