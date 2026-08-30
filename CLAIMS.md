@@ -657,3 +657,41 @@ places is three-quarters of a bug.
 resetting monthly, which happens however Pro is bought. A blind find-and-replace would have
 broken a true statement while claiming to fix false ones. Read what each hit asserts; the
 word is not the claim.
+
+### 20. A redirect is only correct if the destination exists
+
+A wildcard redirect that preserves the path is the obvious way to move a site, and it
+quietly assumes the two sites share a URL shape. When they do not, the failure is not a
+dropped path that anyone would notice — it is a *preserved* path that does not exist on the
+target. The rule looks right, the config passes its syntax check, and every request lands on
+a 404.
+
+**Found by:** the `billionedges.com/pdfiq` migration. The spec, **written in this file's own
+TECH_DEBT table by the session that is now recording the lesson**, was:
+
+    billionedges.com/pdfiq/*  ->  pdf-iq.com/*
+
+Measured before it was written, which is the only reason it was caught:
+
+    https://pdf-iq.com/privacy.html   404
+    https://pdf-iq.com/privacy/       200
+
+The old site is `.html` files; this one is extensionless with trailing slashes. So the
+wildcard would have sent `/pdfiq/privacy.html` to `/privacy.html` — a 404, and **the exact
+URL registered in Google Play Console as the app's privacy policy.** Four lines above the
+flawed spec, the same document says that URL "stays authoritative for the app". Knowing a
+URL matters is not the same as checking the rule that moves it.
+
+Only two files ever existed under `/pdfiq`, so the correct mapping is explicit rather than
+clever: two exact `location =` rules to the right slugs, a prefix rule for anything else,
+and the bare path. Verified single-hop with no chains, each ending 200, and the destination
+serving the corrected page.
+
+**The check:** never write a redirect against the source URLs alone. Enumerate what actually
+exists at the destination and request it. A migration is a claim that a URL will resolve,
+and the only evidence for it is a response code from the target. Where the two sides use
+different URL conventions, "preserve the path" is a guess dressed as a rule.
+
+**Corollary, and why generic beats clever here:** a wildcard silently covers URLs that were
+never audited. An explicit map fails loudly for anything unexpected, which on a two-file
+directory is the safer failure.

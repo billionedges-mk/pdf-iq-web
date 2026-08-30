@@ -20,7 +20,7 @@ until every item below is done.
 | 2 | Data safety deletion URL → `https://pdf-iq.com/privacy` | Play Console → Data safety | no |
 | 3 | Privacy and terms links → new domain | App Settings screen | **yes** |
 | 4 | Support email → `support@pdf-iq.com` | App Settings / contact action | **yes** |
-| 5 | Redirect `billionedges.com/pdfiq/*` → `pdf-iq.com/*` | billionedges VPS nginx | no |
+| 5 | ~~Redirect `billionedges.com/pdfiq/*` → `pdf-iq.com/*`~~ **Done**, per-file not wildcard | billionedges VPS nginx | no |
 
 **Ordering.** Item 5 first, so the old URL keeps resolving before anything points away from it.
 Then 1 and 2, which are console-only. Items 3 and 4 need an APK, so they ride with **1.1**
@@ -30,10 +30,17 @@ rather than justifying a release of their own.
 
 ### Also waiting on the app, unrelated to the domain
 
-- **`billionedges.com/pdfiq/privacy.html` is a stale duplicate.** `/privacy` here already covers both
-  surfaces and says so in its subtitle, so the app-side job is a redirect rather than a second page
-  to maintain. Until that redirect lands there are two pages describing the same app and one of them
-  describes a billing model that no longer exists. This is item 5 of the migration table above.
+- ~~**`billionedges.com/pdfiq/privacy.html` is a stale duplicate.**~~ Closed. The redirect is live and
+  verified single-hop: `/pdfiq/privacy.html` → `/privacy/`, `/pdfiq/terms.html` → `/terms/`, anything
+  else under `/pdfiq` → the homepage, `billionedges.com/` untouched. Each ends 200 and the
+  destination serves the corrected policy.
+
+  **This closes the wrong-pricing exposure without an APK.** The app still links to the old
+  billionedges URL in code, but that URL now resolves to the corrected page, so items 3 and 4 of the
+  table above are no longer urgent — they can ride with 1.1 as planned rather than forcing a release.
+
+  The wildcard in item 5 as originally specified would have 404'd the Play Console URL: the two
+  sites do not share a URL shape. See CLAIMS.md check 20.
 - **Data Safety re-check, with the app owner.** The declarations the pricing change touches:
   Financial info / Purchase history should now be *not collected*, because purchases happen on the
   website and outside the app; any Google Play billing or RevenueCat recipient should go; OCR adds
