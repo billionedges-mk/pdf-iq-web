@@ -91,10 +91,19 @@ worded so that it stays true if the measurement comes back badly.
   exercise exists to draw. The re-run with times reported **0.4 seconds of work at 30, 50, 60 and
   80 MB**: flat, impossible, and printed as a ceiling because nothing checked it. The same ladder
   on desktop produces 1.9s / 9.1s / 8.5s / 14.0s with correct fixture sizes, so the `?ladder=`
-  path is sound and the fault is iOS-specific and still undiagnosed. Most likely the canvas
-  produced blank or tiny source images under memory pressure, which would make every fixture
-  unrepresentative — the next run will say, because the built size and the source image sizes are
-  now printed on every line.
+  path is sound and the fault is iOS-specific.
+
+  The first cause was the canvas. A re-run built correct fixtures — six distinct ~2,495 KB source
+  images, files at 9.8 / 29.3 / 51.2 / 80.5 MB — and **still reported 0.2s / 0.4s / 0.4s / 0.4s**.
+  So generation works on iOS and the fault is downstream, in the pipeline. The probe now records
+  what the pipeline observed — pages parsed, images found, bytes written back out — and prints all
+  three on every line, which is the signal that should name it.
+
+  `validate()` did not fire on that run. Its growth check compared only the fastest rung to the
+  slowest, so a single quick 10 MB rung supplied 2x apparent growth against a flat 1.5x threshold
+  while 30, 50 and 80 MB sat identical. Growth is now measured against the ladder's span, a second
+  detector looks for consecutive rungs at the same time while the file grows, and the structural
+  checks never consult a clock. See CLAIMS.md check 16.
 
   `validate()` in `src/lib/probe-validity.ts` now refuses to report a ceiling from a run whose
   work does not grow with the file, whose fixture came out more than 25% under the size asked
