@@ -18,6 +18,11 @@ export interface Rung {
   stages?: Record<string, number>;
   heapMb?: number;
   builtBytes?: number;
+  /** What the pipeline actually observed. A structural signal that does not depend on
+   *  timing at all, so it survives a device whose clock or scheduler misleads us. */
+  pagesSeen?: number;
+  imagesSeen?: number;
+  savedBytes?: number;
 }
 
 export interface State {
@@ -91,19 +96,64 @@ export function validate(s: State): Validity {
     }
   }
 
-  // The headline check. Work must grow with the file. If a ladder spanning at least double
-  // the size shows essentially flat time, the pipeline is not doing what it claims to.
-  if (done.length >= 3) {
-    const sizes = done.map((r) => r.mb);
-    const span = Math.max(...sizes) / Math.min(...sizes);
-    const times = done.map((r) => r.pipeMs ?? 0);
-    const slowest = Math.max(...times);
-    const fastest = Math.min(...times);
-    if (span >= 2 && slowest < fastest * 1.5) {
+  // Work must grow with the file, and the growth must be worth the span.
+  //
+  // The first version of this compared only the fastest rung to the slowest, and passed a
+  // run of 0.2s, 0.4s, 0.4s, 0.4s across 10 to 80 MB: one quick small rung gave 2x apparent
+  // growth and satisfied a flat 1.5x threshold, while 30, 50 and 80 MB sat at an identical
+  // 0.4s. A single outlier could satisfy the whole check. It is now measured against how far
+  // the ladder actually spans.
+  const bySize = [...done].sort((a, b) => a.mb - b.mb);
+  if (bySize.length >= 3) {
+    const smallest = bySize[0];
+    const largest = bySize[bySize.length - 1];
+    const span = largest.mb / smallest.mb;
+    const ratio = (largest.pipeMs ?? 0) / Math.max(smallest.pipeMs ?? 0, 1);
+    const expected = Math.max(1.5, span * 0.5);
+    if (span >= 2 && ratio < expected) {
       problems.push(
         `work did not grow with the file: ${span.toFixed(1)}x the size changed the time only ` +
-        `${(slowest / Math.max(fastest, 1)).toFixed(2)}x (${(fastest / 1000).toFixed(1)}s to ${(slowest / 1000).toFixed(1)}s)`
+        `${ratio.toFixed(2)}x (${((smallest.pipeMs ?? 0) / 1000).toFixed(1)}s at ${smallest.mb} MB to ` +
+        `${((largest.pipeMs ?? 0) / 1000).toFixed(1)}s at ${largest.mb} MB), where at least ` +
+        `${expected.toFixed(1)}x was needed`
       );
+    }
+
+    // Independently of the ratio above: a run of rungs sitting at the same time while the
+    // file keeps growing is the shape a person spots instantly, so check for it directly
+    // rather than relying on one formula not to be gamed by an outlier.
+    for (let i = 0; i + 2 < bySize.length; i++) {
+      const group = bySize.slice(i);
+      const times = group.map((r) => r.pipeMs ?? 0);
+      const lo = Math.min(...times);
+      const hi = Math.max(...times);
+      const grew = group[group.length - 1].mb / group[0].mb;
+      if (group.length >= 3 && grew >= 2 && hi <= lo * 1.1) {
+        problems.push(
+          `${group.length} rungs from ${group[0].mb} to ${group[group.length - 1].mb} MB all took ` +
+          `essentially the same time (${(lo / 1000).toFixed(1)}s to ${(hi / 1000).toFixed(1)}s) while the ` +
+          `file grew ${grew.toFixed(1)}x`
+        );
+        break;
+      }
+    }
+  }
+
+  // Structural, and independent of any clock: the pipeline has to have seen a document, and
+  // writing it back out has to produce roughly what was read in. A pipeline that silently
+  // did nothing reports a plausible elapsed time for having done nothing.
+  for (const r of done) {
+    if (r.pagesSeen != null && r.pagesSeen === 0) {
+      problems.push(`${r.mb} MB: the pipeline parsed 0 pages, so it measured nothing`);
+    }
+    if (r.savedBytes != null && r.builtBytes != null) {
+      const out = r.savedBytes / r.builtBytes;
+      if (out < 0.5) {
+        problems.push(
+          `${r.mb} MB: writing it back out produced ${(r.savedBytes / 1048576).toFixed(1)} MB from ` +
+          `${(r.builtBytes / 1048576).toFixed(1)} MB in — the document did not survive the round trip`
+        );
+      }
     }
   }
 

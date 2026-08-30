@@ -518,5 +518,26 @@ instrument that reports confidently from a broken run is a false citation genera
 each time.
 
 `validate()` lives in `src/lib/probe-validity.ts` rather than inside the probe, so it can
-be driven with the two runs that actually happened — including the impossible one — instead
-of being trusted by reading.
+be driven with the runs that actually happened — including the impossible ones — instead of
+being trusted by reading.
+
+**And then the validator itself failed, which is the real lesson.** Written to reject flat
+ladders, it passed one: 0.2s, 0.4s, 0.4s, 0.4s across 10 to 80 MB. It compared only the
+fastest rung to the slowest, so a single quick small rung supplied 2x apparent growth and
+satisfied a flat 1.5x threshold, while 30, 50 and 80 MB sat at an identical 0.4s. The check
+was real, the data was exactly its target shape, and it returned ok.
+
+Three consequences, all of them the point:
+
+- **A check with one formula can be satisfied by one outlier.** Growth is now measured
+  against how far the ladder spans, and a second detector looks directly for the shape a
+  person spots instantly — consecutive rungs at the same time while the file keeps growing.
+  Two independent detectors, because one that can be gamed is one that will be.
+- **Prefer a signal that does not depend on the thing you suspect.** Every timing check
+  trusts the clock and the scheduler. The pipeline now records what it *observed* — pages
+  parsed, images found, bytes written back out — and a round trip that reads 80 MB and
+  writes 0.1 MB is caught without reference to time at all.
+- **Drive the validator with the failing data before believing it.** The test that proved
+  this asserts the recorded run is rejected, and it failed on first run, printing no
+  problems at all. A validator is code, and untested code that returns a verdict is worse
+  than no verdict.

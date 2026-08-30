@@ -147,6 +147,20 @@ const CASES: Case[] = [
       for (const p of good.problems) note(`WRONGLY caught: ${p}`);
       ok(good.ok, 'the real desktop run is still accepted');
 
+      // The second phone run: fixtures verified correct, six distinct ~2,495 KB source
+      // images, files built at 9.8 / 29.3 / 51.2 / 80.5 MB — and still 0.4s of work across
+      // an 8x range. This is the reading the growth check exists to reject.
+      const phone2 = {
+        agent: 'iPhone', started: '',
+        baseImageBytes: [2_554_880, 2_551_300, 2_557_100, 2_549_800, 2_556_400, 2_552_700],
+        rungs: [rung(10, 200, 9.8), rung(30, 400, 29.3), rung(50, 400, 51.2), rung(80, 400, 80.5)],
+      } as never;
+      const v2 = validate(phone2);
+      for (const p of v2.problems) note(`caught: ${p}`);
+      ok(!v2.ok, 'a run with correct fixtures but flat work times is still rejected');
+      ok(v2.problems.some((p) => /did not grow with the file/.test(p)),
+        'and the growth check is what rejects it, not the fixture checks');
+
       // A fixture that silently came out small must not pass either.
       const shrunk = {
         agent: 'Chrome', started: '', baseImageBytes: real,

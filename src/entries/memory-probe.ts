@@ -136,11 +136,18 @@ async function scanPdfOfSize(
  * at once — without paying to recompress a thousand images. The recompression sample is
  * capped because the peak is set by what is *held*, not by how many are processed.
  */
+interface Observed {
+  pagesSeen: number;
+  imagesSeen: number;
+  savedBytes: number;
+  detail: string;
+}
+
 async function pipeline(
   bytes: Uint8Array,
   onProgress: (p: string) => void,
   stages: Record<string, number>
-): Promise<string> {
+): Promise<Observed> {
   const timed = async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
     onProgress(name);
     const t = performance.now();
@@ -161,7 +168,12 @@ async function pipeline(
   });
 
   const saved = await timed('save', () => doc.save());
-  return `${pages} pages, ${a.images.length} images, save produced ${mb(saved.length)}, sample pass ${mb(r.afterBytes)}`;
+  return {
+    pagesSeen: pages,
+    imagesSeen: a.images.length,
+    savedBytes: saved.length,
+    detail: `${pages} pages, ${a.images.length} images, save produced ${mb(saved.length)}, sample pass ${mb(r.afterBytes)}`,
+  };
 }
 
 /**
@@ -231,7 +243,7 @@ async function run(): Promise<void> {
 
       const stages: Record<string, number> = {};
       const t1 = performance.now();
-      const detail = await pipeline(
+      const seen = await pipeline(
         bytes,
         (p) => {
           rung.phase = p;
@@ -242,6 +254,10 @@ async function run(): Promise<void> {
       );
       rung.pipeMs = Math.round(performance.now() - t1);
       rung.stages = stages;
+      rung.pagesSeen = seen.pagesSeen;
+      rung.imagesSeen = seen.imagesSeen;
+      rung.savedBytes = seen.savedBytes;
+      const detail = seen.detail;
 
       // Release before the next rung, so rungs do not accumulate on top of each other.
       bytes = new Uint8Array(0);
@@ -305,8 +321,10 @@ function report(s: State): void {
   for (const r of done) {
     const secs = ((r.pipeMs ?? 0) / 1000).toFixed(1);
     const built = r.builtBytes ? `${(r.builtBytes / 1048576).toFixed(1)} MB` : '?';
+    const out = r.savedBytes != null ? `${(r.savedBytes / 1048576).toFixed(1)} MB` : '?';
     say(`  ${String(r.mb).padStart(4)} MB asked  built ${built.padStart(9)}  work ${secs.padStart(7)}s` +
         `  heap ${String(r.heapMb ?? '?').padStart(5)} MB  ${(r.pipeMs ?? 0) > COLLAPSE_MS ? 'COLLAPSED' : 'usable'}`);
+    say(`          pipeline saw ${r.pagesSeen ?? '?'} pages, ${r.imagesSeen ?? '?'} images, wrote ${out} back out`);
   }
   if (failed) {
     say(`  ${String(failed.mb).padStart(4)} MB asked  ${failed.outcome === 'threw' ? 'refused' : 'KILLED'} during "${failed.phase}"`);
