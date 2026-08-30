@@ -137,7 +137,7 @@ function document_({ page, body, css, assets }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(page.title)}</title>
-<meta name="description" content="${esc(page.description)}">
+<meta name="description" content="${esc(page.description)}">${page.noindex ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
 <link rel="canonical" href="${url}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${url}">
@@ -307,10 +307,12 @@ async function bundle() {
 // ---------------------------------------------------------------- pages
 
 function sitemap() {
-  const urls = ALL.map(
+  // noindex pages are not listed: a sitemap entry is a request to index, so listing one
+  // while telling robots not to index it sends two opposite instructions.
+  const urls = ALL.filter((p) => !p.noindex).map(
     (p) => `  <url><loc>${ORIGIN}${href(p.slug)}</loc><changefreq>monthly</changefreq></url>`
   ).join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.w3.org/2000/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 }
 
 async function build() {

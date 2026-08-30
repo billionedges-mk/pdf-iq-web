@@ -1,0 +1,29 @@
+    <h1 class="page__title">Memory probe</h1>
+    <p class="page__lede">
+      Finds the largest PDF this device can actually get through, by building one and doing the work.
+      It is here so the ceiling on the tools is a measured number rather than a guess. Not linked from
+      anywhere and not indexed.
+    </p>
+
+    <section class="card" style="margin-top: 18px;">
+      <h2 class="kicker">Before you start</h2>
+      <p class="outcome__body">
+        This deliberately pushes the tab until it fails. It will go unresponsive for minutes at a time,
+        and on a phone it will probably be killed outright. That is the measurement, not a fault.
+      </p>
+      <p class="outcome__body">
+        Every rung is written down <em>before</em> it is attempted, so a crash loses nothing — reopen
+        this page afterwards and it will tell you where it died. Nothing is read from your files:
+        every test document is generated here, in the page.
+      </p>
+      <div class="actions" style="margin-top: 22px;">
+        <button type="button" class="btn btn--sm" id="probe-start">Start</button>
+        <button type="button" class="btn-quiet" id="probe-clear">Clear saved result</button>
+      </div>
+      <p class="hint" style="margin-top: 14px;">status: <span id="probe-status">loading</span></p>
+    </section>
+
+    <section class="card" style="margin-top: 18px;">
+      <h2 class="kicker">Log</h2>
+      <pre id="probe-out" style="white-space: pre-wrap; overflow-x: auto; font: 12px/1.55 ui-monospace, Consolas, monospace; margin: 0;">&nbsp;</pre>
+    </section>

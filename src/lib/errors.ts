@@ -136,9 +136,11 @@ export function tooBig(file: FileFacts, limitBytes: number): ToolError {
     kicker: 'Too large for this device',
     title: 'This file is bigger than this tab can hold in memory.',
     body:
-      `${file.name} is ${bytes(file.size)}, over the ${bytes(limitBytes)} ceiling this page sets. ` +
+      `${file.name} is ${bytes(file.size)}, over the ${bytes(limitBytes)} ceiling every tool here sets. ` +
       'Because the work happens on your device, the limit is your own memory rather than an upload cap. ' +
-      'Split it first — splitting reads one page at a time and copes with far larger files — then run each part through here.',
+      'Splitting it here first will not get round it — Split reads the whole document too, and applies the ' +
+      'same ceiling. Break it into parts in whatever produced it, or in a desktop PDF reader, and the parts ' +
+      'will run through here fine.',
     mono: `${bytes(file.size)} · over the ${bytes(limitBytes)} limit · ${sentSuffix}`,
   };
 }

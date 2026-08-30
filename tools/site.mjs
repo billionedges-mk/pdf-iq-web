@@ -102,6 +102,14 @@ export const PAGES = [
     title: 'Support — help with the pdf-iq PDF tools',
     description: 'Answers to what goes wrong, and how to reach a person about the pdf-iq tools and Android app.',
   },
+  {
+    // A real route rather than a test-harness page, because it has to be reachable from a
+    // phone to be worth anything, and Cloudflare only deploys what `npm run build` emits.
+    // noindex keeps it out of the sitemap and out of search; nothing links to it.
+    slug: 'memory-probe', name: 'Memory probe', entry: 'memory-probe', noindex: true,
+    title: 'Memory probe — measuring the file ceiling',
+    description: 'An internal probe that finds the largest PDF this device can actually process.',
+  },
 ];
 
 /**

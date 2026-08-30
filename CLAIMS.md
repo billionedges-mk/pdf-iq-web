@@ -455,3 +455,27 @@ stubbed and abandoned.
 
 The same rule applies to the two prior instances of this defect on the app side —
 `onSubscribe` and "Try smaller" — which is what makes it a class rather than a bug.
+
+### 15. A false citation is worse than no citation
+
+A number with no stated provenance invites checking. A number citing evidence that does
+not exist stops the checking, because the next reader believes the work was already done.
+
+**Found by:** the 200 MB file ceiling. Its comment in `src/lib/ui.ts` read: *"`tools/memory-probe.html`
+is what it was measured with; see the README for the figures it produced."* There was no
+`tools/memory-probe.html`, and the README carried no figures. The same comment also called
+the value a guess, two sentences earlier — so the file contradicted itself, and the half a
+reader would act on was the false half.
+
+`TECH_DEBT.md` and `README.md` both said plainly that the ceiling was a placeholder. The
+only artefact claiming otherwise was the one sitting next to the constant, which is the
+one anyone changing it would read first.
+
+**The check:** every citation in a comment names something that exists, and points at a
+real figure. Before shipping a comment that cites a file, open the file. Before citing
+"the figures", find them. If the provenance is "guessed", the comment says guessed and
+nothing else — an honest absence is checkable, an invented presence is not.
+
+**Corollary:** when the artefact is missing, the fix is to build it, not to delete the
+sentence. The probe that comment described is now real, at `/memory-probe/`, and the
+figures it produced are recorded in `TECH_DEBT.md`.

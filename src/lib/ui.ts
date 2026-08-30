@@ -19,11 +19,31 @@ export const $$ = <T extends HTMLElement = HTMLElement>(sel: string, root: Paren
 /**
  * The ceiling on what we will attempt.
  *
- * This is not an upload limit — there is no upload. It is a guess at the point where
- * holding the original bytes, the parsed object graph and a decoded page bitmap at the
- * same time will fail, and it is set well below where a desktop tab actually dies so
- * that phones are not pushed over. `tools/memory-probe.html` is what it was measured
- * with; see the README for the figures it produced.
+ * This is not an upload limit — there is no upload. It is the point past which holding the
+ * original bytes, the parsed object graph and the output at once stops being survivable.
+ *
+ * The value is still 200 MB and is still not the right one. It is left here only until the
+ * phone measurement lands, because lowering it on desktop evidence alone would repeat the
+ * mistake that produced it: one constant gates every device, and the phone is the binding
+ * one. iOS Safari reports neither `deviceMemory` nor a heap limit, so it cannot be inferred.
+ *
+ * What is measured, on Chrome 148 / 8 cores / 16 GB / 4096 MB heap limit, from /memory-probe/:
+ *
+ *     file     work    heap
+ *      10 MB    1.4s    52 MB
+ *      25 MB    2.8s    99 MB
+ *      50 MB    9.4s   200 MB
+ *      75 MB   10.1s   442 MB
+ *     100 MB    336s   397 MB     <- 33x the time for 1.33x the file
+ *
+ * The failure is not a crash. Heap runs at four to six times the file, so with a 4 GB limit
+ * the tab would not actually die until somewhere near 800 MB. It collapses long before that:
+ * at 100 MB the heap stops growing because the collector is thrashing, and the tab sits alive
+ * and answering nothing for five and a half minutes. Measuring for death would have justified
+ * raising this ceiling to 600 MB.
+ *
+ * The previous comment here cited a probe file and README figures, neither of which existed.
+ * See CLAIMS.md check 15. The probe is real now; run it rather than trusting this table.
  */
 export const MAX_BYTES = 200 * 1024 * 1024;
 

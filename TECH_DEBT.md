@@ -50,10 +50,39 @@ rather than justifying a release of their own.
 These are stated carefully on the site precisely because they are not yet measured. Each one is
 worded so that it stays true if the measurement comes back badly.
 
-- **File size ceiling.** `MAX_BYTES` in `src/lib/ui.ts` is **200 MB and is a placeholder.** No
-  probe has been run to find where a real tab actually dies, on desktop or on a phone. The
-  too-large message says "the ceiling this page sets" rather than claiming it is your device's
-  limit. Needs a real probe on both before launch.
+- **File size ceiling — desktop measured, phone outstanding.** `MAX_BYTES` in `src/lib/ui.ts` is
+  **still 200 MB and still wrong.** It is deliberately unchanged until the phone number lands:
+  one constant gates every device, the phone is the binding one, and iOS Safari reports neither
+  `deviceMemory` nor a heap limit, so it cannot be inferred from anything the browser will tell us.
+
+  Measured with `/memory-probe/` on Chrome 148, 8 cores, 16 GB, 4096 MB heap limit:
+
+  | file | work | heap | heap ÷ file |
+  |------|------|------|-------------|
+  | 10 MB | 1.4s | 52 MB | 5.5x |
+  | 25 MB | 2.8s | 99 MB | 3.9x |
+  | 50 MB | 9.4s | 200 MB | 3.9x |
+  | 75 MB | 10.1s | 442 MB | 5.9x |
+  | 100 MB | **336s** | 397 MB | 4.0x |
+
+  **The tab does not die; it collapses.** At 100 MB the heap stops growing — 442 MB down to
+  397 MB — because the collector is thrashing continuously, and the tab stays alive answering
+  nothing for five and a half minutes. Heap runs at four to six times the file, so against a
+  4 GB limit an actual crash is somewhere near 800 MB. Measuring for death would have justified
+  *raising* this ceiling to 600 MB, which is why "where does a tab die" was the wrong question.
+
+  The cliff is between 75 MB (10.1s) and 100 MB (336s): 33x the time for 1.33x the file. It has
+  not been narrowed further, because the ceiling will be set well below it and the phone will
+  almost certainly bind lower still.
+
+  Two caveats on these figures. The recompression stage is capped at six images, so the numbers
+  describe holding a large document rather than recompressing every image in one. And an earlier
+  run of the same ladder in a tab that had just run the e2e suite reported 120s at 75 MB against
+  10.1s from a fresh load — this table is from a fresh load, and a contaminated tab measures its
+  own history rather than the file.
+
+  **Outstanding:** run `/memory-probe/` on an iPhone, then set `MAX_BYTES` below the point where
+  that device collapses, not below where it crashes.
 - **Encrypted PDFs — resolved, with one gap.** A real locked file proved both halves wrong:
   detection never fired, and the pdf.js `saveDocument()` route does not decrypt at all. Both are
   fixed and tested end to end against a generated RC4 40-bit fixture. Remaining gap: **only RC4
