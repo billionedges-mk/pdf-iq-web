@@ -50,39 +50,45 @@ rather than justifying a release of their own.
 These are stated carefully on the site precisely because they are not yet measured. Each one is
 worded so that it stays true if the measurement comes back badly.
 
-- **File size ceiling — desktop measured, phone outstanding.** `MAX_BYTES` in `src/lib/ui.ts` is
-  **still 200 MB and still wrong.** It is deliberately unchanged until the phone number lands:
-  one constant gates every device, the phone is the binding one, and iOS Safari reports neither
-  `deviceMemory` nor a heap limit, so it cannot be inferred from anything the browser will tell us.
+- **File size ceiling — measured and set.** `MAX_BYTES` in `src/lib/ui.ts` is **60 MB**, down from
+  a 200 MB placeholder. Measured with `/memory-probe/` on Chrome 148, 8 cores, 16 GB, 4096 MB heap
+  limit. "work" excludes building the fixture:
 
-  Measured with `/memory-probe/` on Chrome 148, 8 cores, 16 GB, 4096 MB heap limit:
+  | file | work | of which `save()` | heap |
+  |------|------|-------------------|------|
+  | 10 MB | 1.4s | 0.1s | 52 MB |
+  | 25 MB | 2.8s | 0.3s | 99 MB |
+  | 50 MB | 9.4s | 1.3s | 200 MB |
+  | 60 MB | 2.5s | 0.5s | 238 MB |
+  | 70 MB | 9.9s | 1.5s | 276 MB |
+  | 80 MB | 13.0s | 4.2s | 315 MB |
+  | 85 MB | **172s** | **163.3s** | 340 MB |
+  | 100 MB | 336s | — | 397 MB |
 
-  | file | work | heap | heap ÷ file |
-  |------|------|------|-------------|
-  | 10 MB | 1.4s | 52 MB | 5.5x |
-  | 25 MB | 2.8s | 99 MB | 3.9x |
-  | 50 MB | 9.4s | 200 MB | 3.9x |
-  | 75 MB | 10.1s | 442 MB | 5.9x |
-  | 100 MB | **336s** | 397 MB | 4.0x |
+  **The tab does not die, and the stage that fails is serialisation.** `save()` goes from 4.2s to
+  163.3s between 80 and 85 MB — 39x for 6% more data — while parse and recompression stay flat
+  across the same step. The tab stays alive and answers nothing throughout.
 
-  **The tab does not die; it collapses.** At 100 MB the heap stops growing — 442 MB down to
-  397 MB — because the collector is thrashing continuously, and the tab stays alive answering
-  nothing for five and a half minutes. Heap runs at four to six times the file, so against a
-  4 GB limit an actual crash is somewhere near 800 MB. Measuring for death would have justified
-  *raising* this ceiling to 600 MB, which is why "where does a tab die" was the wrong question.
+  Death is far higher and irrelevant: heap runs at four to six times the file, so against a 4 GB
+  limit a crash is near 800 MB, and an iPhone completed 400 MB and was killed only at 600 MB.
+  **Measuring for death would have justified raising this ceiling to 600 MB.**
 
-  The cliff is between 75 MB (10.1s) and 100 MB (336s): 33x the time for 1.33x the file. It has
-  not been narrowed further, because the ceiling will be set well below it and the phone will
-  almost certainly bind lower still.
+  60 MB is the last rung where the whole operation stayed under three seconds — 25% below the last
+  usable size and 29% below the collapse. `MEASURED_COLLAPSE_BYTES` is exported alongside it and a
+  test asserts the ceiling stays meaningfully under it, so raising the number past the evidence
+  fails rather than acquiring a comment.
 
-  Two caveats on these figures. The recompression stage is capped at six images, so the numbers
-  describe holding a large document rather than recompressing every image in one. And an earlier
-  run of the same ladder in a tab that had just run the e2e suite reported 120s at 75 MB against
-  10.1s from a fresh load — this table is from a fresh load, and a contaminated tab measures its
-  own history rather than the file.
+  Caveats. The recompression stage is capped at six images, so these describe holding and writing a
+  large document rather than recompressing every image in one. Times are noisy at the low end
+  (60 MB measured faster than 50 MB, across different runs). And this is one strong desktop:
+  weaker machines will collapse lower, which is the reason for the margin.
 
-  **Outstanding:** run `/memory-probe/` on an iPhone, then set `MAX_BYTES` below the point where
-  that device collapses, not below where it crashes.
+  **Outstanding: the phone figures carry no timings.** The iPhone run reported survival to 400 MB
+  and a kill at 600 MB during fixture *generation*, not during the work — but the first version of
+  the probe's summary reported only completion and death, which is the distinction this whole
+  exercise established is the wrong one. 400 MB "completing" says nothing about whether it took
+  20 seconds or 20 minutes. The summary now leads with the largest size whose work stayed under
+  30 seconds; a re-run would say whether a phone collapses below 60 MB.
 - **Encrypted PDFs — resolved, with one gap.** A real locked file proved both halves wrong:
   detection never fired, and the pdf.js `saveDocument()` route does not decrypt at all. Both are
   fixed and tested end to end against a generated RC4 40-bit fixture. Remaining gap: **only RC4

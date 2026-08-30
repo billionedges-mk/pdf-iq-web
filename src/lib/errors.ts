@@ -130,18 +130,33 @@ export function empty(file: FileFacts): ToolError {
   };
 }
 
+/**
+ * The file's size, worded so it cannot contradict the limit printed beside it.
+ *
+ * Both are rounded to one decimal, so a file a few kilobytes over renders identically to
+ * the ceiling and the sentence reads "is 60.0 MB, over the 60.0 MB ceiling" — nonsense, at
+ * exactly the boundary where everybody meets this message.
+ */
+function sizeAgainst(size: number, limit: number): string {
+  const shown = bytes(size);
+  return shown === bytes(limit) ? `fractionally over ${shown}` : shown;
+}
+
 export function tooBig(file: FileFacts, limitBytes: number): ToolError {
   return {
     kind: 'too-big',
     kicker: 'Too large for this device',
-    title: 'This file is bigger than this tab can hold in memory.',
+    title: 'This file is bigger than a browser tab can finish.',
     body:
-      `${file.name} is ${bytes(file.size)}, over the ${bytes(limitBytes)} ceiling every tool here sets. ` +
-      'Because the work happens on your device, the limit is your own memory rather than an upload cap. ' +
-      'Splitting it here first will not get round it — Split reads the whole document too, and applies the ' +
-      'same ceiling. Break it into parts in whatever produced it, or in a desktop PDF reader, and the parts ' +
+      `${file.name} is ${sizeAgainst(file.size, limitBytes)}. The ceiling every tool here shares is ` +
+      `${bytes(limitBytes)}. ` +
+      'The work happens in this tab, so the limit is your device’s memory rather than an upload cap — ' +
+      'and it is measured rather than picked. Past it the tab does not crash: it stops being able to write ' +
+      'the finished file out and sits there answering nothing for minutes. Being turned away now is the ' +
+      'better of the two. Splitting it here first will not get round it, because Split reads the whole ' +
+      'document too. Break it into parts wherever it came from, or in a desktop PDF reader, and the parts ' +
       'will run through here fine.',
-    mono: `${bytes(file.size)} · over the ${bytes(limitBytes)} limit · ${sentSuffix}`,
+    mono: `${(file.size / 1048576).toFixed(2)} MB · limit ${(limitBytes / 1048576).toFixed(0)} MB · ${sentSuffix}`,
   };
 }
 

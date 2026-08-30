@@ -183,7 +183,25 @@ async function pipeline(
   return `${pages} pages, ${a.images.length} images, save produced ${mb(saved.length)}, sample pass ${mb(r.afterBytes)}`;
 }
 
-const LADDER = [10, 25, 50, 75, 100, 150, 200, 300, 400, 600, 800];
+/**
+ * How long a rung may take before the tab counts as collapsed rather than slow.
+ *
+ * This is the number the ceiling is set from. A tab that finishes in five and a half
+ * minutes has not passed — it has failed in the way that matters and stayed alive to
+ * hide it, which is why "did it complete" is not the question.
+ */
+const COLLAPSE_MS = 30_000;
+
+const DEFAULT_LADDER = [10, 25, 50, 75, 100, 150, 200, 300, 400, 600, 800];
+
+// ?ladder=60,70,80,90 narrows the search once the rough shape is known, without
+// re-measuring the rungs that already answered.
+const LADDER = (() => {
+  const raw = new URLSearchParams(location.search).get('ladder');
+  if (!raw) return DEFAULT_LADDER;
+  const parsed = raw.split(',').map((n) => Number(n.trim())).filter((n) => Number.isFinite(n) && n > 0);
+  return parsed.length ? parsed : DEFAULT_LADDER;
+})();
 
 // ---------------------------------------------------------------- run
 
@@ -278,16 +296,36 @@ async function run(): Promise<void> {
   report(state);
 }
 
+/**
+ * The summary block.
+ *
+ * The first version of this reported only what completed and what died, which is the
+ * question this whole exercise established was the wrong one — a rung that took five and
+ * a half minutes was reported as a pass. Every line here now carries its time, and the
+ * headline number is the last rung that was actually usable.
+ */
 function report(s: State): void {
-  const survived = s.rungs.filter((r) => r.outcome === 'survived').map((r) => r.mb);
-  const highest = survived.length ? Math.max(...survived) : 0;
+  const done = s.rungs.filter((r) => r.outcome === 'survived');
+  const usable = done.filter((r) => (r.pipeMs ?? 0) <= COLLAPSE_MS);
+  const collapsed = done.find((r) => (r.pipeMs ?? 0) > COLLAPSE_MS);
   const failed = s.rungs.find((r) => r.outcome !== 'survived');
+
   say('');
   say('════ RESULT ════');
-  say(`highest size that completed : ${highest} MB`);
-  say(`first size that did not     : ${failed ? `${failed.mb} MB — ${failed.outcome} during "${failed.phase}"` : 'none in this ladder'}`);
+  for (const r of done) {
+    const secs = ((r.pipeMs ?? 0) / 1000).toFixed(1);
+    say(`  ${String(r.mb).padStart(4)} MB  work ${secs.padStart(7)}s  heap ${String(r.heapMb ?? '?').padStart(5)} MB` +
+        `  ${(r.pipeMs ?? 0) > COLLAPSE_MS ? 'COLLAPSED' : 'usable'}`);
+  }
+  if (failed) {
+    say(`  ${String(failed.mb).padStart(4)} MB  ${failed.outcome === 'threw' ? 'refused' : 'KILLED'} during "${failed.phase}"`);
+  }
   say('');
-  say('Copy everything above.');
+  say(`largest usable size (work under ${COLLAPSE_MS / 1000}s) : ${usable.length ? Math.max(...usable.map((r) => r.mb)) + ' MB' : 'none'}`);
+  say(`first size that collapsed but stayed alive  : ${collapsed ? `${collapsed.mb} MB, ${(collapsed.pipeMs! / 1000).toFixed(0)}s` : 'none in this ladder'}`);
+  say(`first size that failed outright             : ${failed ? `${failed.mb} MB during "${failed.phase}"` : 'none in this ladder'}`);
+  say('');
+  say('Copy everything above. The first of those three is the one that sets the ceiling.');
 }
 
 // ---------------------------------------------------------------- entry
@@ -311,13 +349,10 @@ if (prior && unfinished && !prior.finished) {
         : `  ${String(r.mb).padStart(4)} MB  KILLED during "${r.phase}" — the tab never returned`
     );
   }
-  const survived = prior.rungs.filter((r) => r.outcome === 'survived').map((r) => r.mb);
-  say('');
-  say('════ RESULT ════');
-  say(`highest size that completed : ${survived.length ? Math.max(...survived) : 0} MB`);
+  report({ ...prior, finished: true });
   say(`the tab was killed at       : ${unfinished.mb} MB, during "${unfinished.phase}"`);
   say('');
-  say('Copy everything above. Start runs it again from scratch.');
+  say('Start runs it again from scratch.');
 } else {
   status.textContent = 'ready';
   say('Press Start.');

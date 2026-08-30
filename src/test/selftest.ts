@@ -13,6 +13,8 @@ import { PDFDocument } from 'pdf-lib';
 import { PRESETS, analyse, compress, explainNoGain, harderOffer, type Analysis, worthIt, worthShowing } from '../lib/compress.js';
 import { findImages, measurePlacements } from '../lib/pdf-inspect.js';
 import { readJpeg } from '../lib/jpeg.js';
+import { MAX_BYTES, MEASURED_COLLAPSE_BYTES } from '../lib/ui.js';
+import { tooBig } from '../lib/errors.js';
 import { formatBytes } from '../lib/format.js';
 
 type Log = (line: string) => void;
@@ -102,6 +104,38 @@ async function makeTextPdf(pages: number): Promise<Uint8Array> {
 // ---------------------------------------------------------------- cases
 
 const CASES: Case[] = [
+  {
+    name: 'The file ceiling sits below the size where the tab was measured to collapse',
+    async run() {
+      const limitMb = MAX_BYTES / 1048576;
+      const collapseMb = MEASURED_COLLAPSE_BYTES / 1048576;
+      note(`ceiling ${limitMb} MB, measured collapse ${collapseMb} MB, margin ${(100 - (limitMb / collapseMb) * 100).toFixed(0)}%`);
+      ok(MAX_BYTES < MEASURED_COLLAPSE_BYTES, 'the ceiling is below the measured collapse');
+      ok(MAX_BYTES <= MEASURED_COLLAPSE_BYTES * 0.8, 'and leaves at least a fifth as margin, since the measurement was on one strong desktop');
+
+      // The refusal has to state the real number, and must not send the reader to a tool
+      // with the identical gate. It used to recommend Split, which loads the whole file.
+      // Exactly at the boundary, which is where everybody meets this message. Both numbers
+      // round to one decimal, so a file a few KB over used to render as "is 60.0 MB, over
+      // the 60.0 MB ceiling" — a sentence that argues with itself.
+      const edge = tooBig({ name: 'scan.pdf', size: MAX_BYTES + 4096, type: 'application/pdf' }, MAX_BYTES);
+      note(`at the boundary: ${edge.body.split('. ').slice(0, 2).join('. ')}.`);
+      note(`mono: ${edge.mono}`);
+      ok(!/is ([\d.]+) MB\. The ceiling every tool here shares is  MB/.test(edge.body),
+        'the copy does not print the same number as both the file size and the ceiling');
+      ok(/fractionally over/.test(edge.body), 'it says the file is fractionally over instead');
+      ok(edge.mono !== null && /60\.00 MB · limit 60 MB/.test(edge.mono),
+        'and the technical line carries enough precision to show the difference');
+
+      const err = tooBig({ name: 'scan.pdf', size: MAX_BYTES * 2, type: 'application/pdf' }, MAX_BYTES);
+      note(`well over: ${err.body}`);
+      ok(err.body.includes(`${limitMb}.0 MB`), 'the copy states the ceiling actually in force');
+      ok(!/Split it first|copes with far larger|one page at a time/.test(err.body),
+        'it no longer recommends splitting here, which shares the same ceiling');
+      ok(/will not get round it/.test(err.body), 'it says outright that splitting here does not help');
+      ok(!err.action, 'and offers no button, because there is nothing here that would work');
+    },
+  },
   {
     // Both of these come from the reported file: one JPEG at quality 94 and 72 dpi. The
     // card offered "Try the Smallest setting anyway" and said, three lines apart, that
