@@ -620,3 +620,40 @@ outlives the conversation, and it is the thing the next assessment will be built
 **Corollary:** when the record is corrected, say what closed it and how it was confirmed,
 not just that it is closed. "Tested in both directions after the nameserver move" survives
 scrutiny; "done" does not, and invites the same item being reopened later.
+
+### 19. A decision on one surface expires claims published on another
+
+A price, a limit or a feature is decided in one place. The documents that describe it live
+somewhere else, sometimes in another repository, sometimes registered with a third party
+who will hold you to them. Nothing links the two, so the decision lands and the documents
+keep saying the old thing — accurately reflecting a world that stopped existing.
+
+**Found by:** PDFiq Pro moving from a $4.99/month Play subscription to a one-time $14.99
+Paddle purchase. That decision was made on the website side. It silently invalidated four
+separate statements in `/privacy` — the stored field described as "subscription tier", the
+purchases section, the recipients list naming Google Play and RevenueCat, and the deletion
+section explaining how to cancel through Google Play.
+
+None of that was cosmetic. That page is the privacy policy registered in Play Console and
+the one the Data Safety declaration was written against, so the stale model was a
+compliance document describing a billing arrangement that no longer existed. It was caught
+by a different session working on the app, not by the session that made the change.
+
+**And then the fix produced the same defect again, one document over.** With `/privacy`
+corrected, it contradicted `/terms`, which still said purchases could be made "inside the
+Android app by Google Play". Two published documents, both linked from the app, disagreeing
+about where money changes hands. The session correcting privacy could not have seen it —
+terms was not the file it was asked to change.
+
+**The check:** when a commercial or capability decision changes, enumerate every artefact
+that states it *before* editing any of them — both surfaces, both repositories, the store
+listing, the registered policy, the terms. Fix them in one pass and diff the whole set
+against each other afterwards. A single-file correction to a claim that appears in four
+places is three-quarters of a bug.
+
+**Corollary — a word sweep is not a claim review.** Correcting this meant hunting the word
+"subscription", and one line survived that hunt correctly: *"Current period and reset date
+— to know when the allowance renews."* It contains "renews" and it is about an allowance
+resetting monthly, which happens however Pro is bought. A blind find-and-replace would have
+broken a true statement while claiming to fix false ones. Read what each hit asserts; the
+word is not the claim.

@@ -30,6 +30,16 @@ rather than justifying a release of their own.
 
 ### Also waiting on the app, unrelated to the domain
 
+- **`billionedges.com/pdfiq/privacy.html` is a stale duplicate.** `/privacy` here already covers both
+  surfaces and says so in its subtitle, so the app-side job is a redirect rather than a second page
+  to maintain. Until that redirect lands there are two pages describing the same app and one of them
+  describes a billing model that no longer exists. This is item 5 of the migration table above.
+- **Data Safety re-check, with the app owner.** The declarations the pricing change touches:
+  Financial info / Purchase history should now be *not collected*, because purchases happen on the
+  website and outside the app; any Google Play billing or RevenueCat recipient should go; OCR adds
+  nothing, being on-device with no new data type. Everything else is unchanged.
+
+
 - **Controls that render and cannot act.** Two were found on the website (see CLAIMS.md
   check 14) and the same shape has now been seen three times on the app side: `onSubscribe`,
   "Try smaller", and these. Worth a sweep of the app for offers whose precondition is
