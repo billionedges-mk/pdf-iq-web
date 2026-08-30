@@ -50,72 +50,47 @@ rather than justifying a release of their own.
 These are stated carefully on the site precisely because they are not yet measured. Each one is
 worded so that it stays true if the measurement comes back badly.
 
-- **File size ceiling — measured and set.** `MAX_BYTES` in `src/lib/ui.ts` is **60 MB**, down from
-  a 200 MB placeholder. Measured with `/memory-probe/` on Chrome 148, 8 cores, 16 GB, 4096 MB heap
-  limit. "work" excludes building the fixture:
+- **File size ceiling — measured and set at 60 MB.** `MAX_BYTES` in `src/lib/ui.ts`, down from a
+  200 MB placeholder. Two costs, and only one is a reason to refuse a file.
 
-  | file | work | of which `save()` | heap |
-  |------|------|-------------------|------|
-  | 10 MB | 1.4s | 0.1s | 52 MB |
-  | 25 MB | 2.8s | 0.3s | 99 MB |
-  | 50 MB | 9.4s | 1.3s | 200 MB |
-  | 60 MB | 2.5s | 0.5s | 238 MB |
-  | 70 MB | 9.9s | 1.5s | 276 MB |
-  | 80 MB | 13.0s | 4.2s | 315 MB |
-  | 85 MB | **172s** | **163.3s** | 340 MB |
-  | 100 MB | 336s | — | 397 MB |
+  **Time is linear in image count and is not the ceiling's job.** With every image recompressed,
+  as the tool really does (Chrome 148, 8 cores, 16 GB):
 
-  **The tab does not die, and the stage that fails is serialisation.** `save()` goes from 4.2s to
-  163.3s between 80 and 85 MB — 39x for 6% more data — while parse and recompression stay flat
-  across the same step. The tab stays alive and answers nothing throughout.
+  | file | images | work | of which recompress |
+  |------|--------|------|---------------------|
+  | 10 MB | 6 | 1.3s | 1.1s |
+  | 20 MB | 13 | 11.4s | 11.1s |
+  | 30 MB | 19 | 22.8s | 22.4s |
+  | 40 MB | 25 | 29.7s | 29.1s |
 
-  Death is far higher and irrelevant: heap runs at four to six times the file, so against a 4 GB
-  limit a crash is near 800 MB, and an iPhone completed 400 MB and was killed only at 600 MB.
-  **Measuring for death would have justified raising this ceiling to 600 MB.**
+  About 1.17s per image here, 98% of the runtime. That work reports progress and checks for
+  cancellation once per image, so it is a visible, stoppable operation rather than a hang. And the
+  per-image cost varies by roughly **23x** between the two devices measured — an iPhone at about
+  50ms against this desktop's 1170ms. A single byte limit cannot express "will finish in reasonable
+  time" across that spread.
 
-  60 MB is the last rung where the whole operation stayed under three seconds — 25% below the last
-  usable size and 29% below the collapse. `MEASURED_COLLAPSE_BYTES` is exported alongside it and a
-  test asserts the ceiling stays meaningfully under it, so raising the number past the evidence
-  fails rather than acquiring a comment.
+  **Memory is what the ceiling is for**, because its failure mode is the one the interface cannot
+  rescue. Heap runs at four to six times the file. Past roughly 85 MB the collector thrashes and
+  `save()` — one uninterruptible call, no progress, no cancel — went from 4.2s to 163.3s for 6%
+  more data: three minutes of a live tab answering nothing. A crash is near 800 MB, and an iPhone
+  completed 400 MB, so measuring for death would have justified *raising* this to 600 MB.
 
-  Caveats. The recompression stage is capped at six images, so these describe holding and writing a
-  large document rather than recompressing every image in one. Times are noisy at the low end
-  (60 MB measured faster than 50 MB, across different runs). And this is one strong desktop:
-  weaker machines will collapse lower, which is the reason for the margin.
+  60 MB is 29% below the collapse, measured on one strong desktop.
 
-  **Outstanding: there is still no valid phone measurement.** The 60 MB ceiling rests on desktop
-  evidence alone.
+  **Worth revisiting: file size is a poor proxy for cost.** A 60 MB file with four large images is
+  trivial; a 20 MB file with 500 small ones is not. The image count is known immediately after
+  `analyse()`, before any work starts, so a cost estimate is available at the point the file is
+  accepted. Not built — the byte ceiling is the memory backstop and the progress bar handles the
+  rest — but it is the honest axis.
 
-  The first iPhone run reported survival to 400 MB and a kill at 600 MB during fixture
-  *generation* — but with a summary that carried no times, which is the distinction this whole
-  exercise exists to draw. The re-run with times reported **0.4 seconds of work at 30, 50, 60 and
-  80 MB**: flat, impossible, and printed as a ceiling because nothing checked it. The same ladder
-  on desktop produces 1.9s / 9.1s / 8.5s / 14.0s with correct fixture sizes, so the `?ladder=`
-  path is sound and the fault is iOS-specific.
+  **Corrections on the record.** The comment originally justifying 200 MB cited a probe file and
+  README figures, neither of which existed (CLAIMS.md check 15). And this probe's first figures
+  capped recompression at six images regardless of file size, so the heaviest stage did not scale;
+  every stage timing taken before that cap was removed understated the work, and four runs were
+  diagnosed against it (CLAIMS.md check 16).
 
-  The first cause was the canvas. A re-run built correct fixtures — six distinct ~2,495 KB source
-  images, files at 9.8 / 29.3 / 51.2 / 80.5 MB — and **still reported 0.2s / 0.4s / 0.4s / 0.4s**.
-  So generation works on iOS and the fault is downstream, in the pipeline. The probe now records
-  what the pipeline observed — pages parsed, images found, bytes written back out — and prints all
-  three on every line, which is the signal that should name it.
-
-  `validate()` did not fire on that run. Its growth check compared only the fastest rung to the
-  slowest, so a single quick 10 MB rung supplied 2x apparent growth against a flat 1.5x threshold
-  while 30, 50 and 80 MB sat identical. Growth is now measured against the ladder's span, a second
-  detector looks for consecutive rungs at the same time while the file grows, and the structural
-  checks never consult a clock. See CLAIMS.md check 16.
-
-  `validate()` in `src/lib/probe-validity.ts` now refuses to report a ceiling from a run whose
-  work does not grow with the file, whose fixture came out more than 25% under the size asked
-  for, whose six source images are all identical, or whose work took under 50ms. See CLAIMS.md
-  check 16.
-
-  **Superseded note — the phone figures carry no timings.** The iPhone run reported survival to 400 MB
-  and a kill at 600 MB during fixture *generation*, not during the work — but the first version of
-  the probe's summary reported only completion and death, which is the distinction this whole
-  exercise established is the wrong one. 400 MB "completing" says nothing about whether it took
-  20 seconds or 20 minutes. The summary now leads with the largest size whose work stayed under
-  30 seconds; a re-run would say whether a phone collapses below 60 MB.
+  **Outstanding:** no phone figure yet with the cap removed. The iPhone's earlier flat ladder was
+  the cap, not the device — decoding works there, and works fast.
 - **Encrypted PDFs — resolved, with one gap.** A real locked file proved both halves wrong:
   detection never fired, and the pdf.js `saveDocument()` route does not decrypt at all. Both are
   fixed and tested end to end against a generated RC4 40-bit fixture. Remaining gap: **only RC4

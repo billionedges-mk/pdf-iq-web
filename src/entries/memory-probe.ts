@@ -128,13 +128,19 @@ async function scanPdfOfSize(
 // ---------------------------------------------------------------- the work
 
 /**
- * What a tool actually does to a file, bounded so the probe finishes on a phone: hold the
- * original bytes, parse the object graph, walk every image, decode and re-encode a few,
- * and write the document back out.
+ * What a tool actually does to a file: hold the original bytes, parse the object graph,
+ * walk every image, recompress every one of them, and write the document back out.
  *
- * That is the shape of the peak — original bytes plus parsed graph plus output, all held
- * at once — without paying to recompress a thousand images. The recompression sample is
- * capped because the peak is set by what is *held*, not by how many are processed.
+ * The recompression used to be capped at six images, on the reasoning that the memory peak
+ * is set by what is held rather than by how many images are processed. That was true of
+ * memory and false of everything else, and it quietly broke the whole measurement: the
+ * heaviest stage stopped scaling with the file. Desktop recompression measured 7.7s at 50,
+ * 75, 80 and 85 MB — the same six images every time — so all the apparent growth came from
+ * parse and save. On an iPhone, where parse and save both round to zero, the total became
+ * the cap itself: 4 images at 10 MB took 0.2s, 6 images at 30 MB took 0.3s, and the file
+ * size barely entered into it. The flat ladder was the probe measuring its own limit.
+ *
+ * The cap is gone. This now does what Compress does, which is the only thing worth timing.
  */
 interface Observed {
   pagesSeen: number;
@@ -162,10 +168,9 @@ async function pipeline(
   const pages = doc.getPageCount();
   const a = await timed('analyse', () => analyse(doc, bytes.length));
 
-  const r = await timed('recompress sample', async () => {
+  const r = await timed('recompress', async () => {
     const sample = await PDFDocument.load(bytes, { updateMetadata: false });
     const sa = await analyse(sample, bytes.length);
-    sa.recompressible.length = Math.min(sa.recompressible.length, 6);
     return compress(sample, bytes.length, sa, { preset: PRESETS[0], stripMetadata: true });
   });
 
@@ -176,7 +181,7 @@ async function pipeline(
     savedBytes: saved.length,
     sampleRecompressed: r.imagesRecompressed,
     sampleSkipped: r.imagesSkipped,
-    detail: `${pages} pages, ${a.images.length} images, save produced ${mb(saved.length)}, sample pass ${mb(r.afterBytes)}`,
+    detail: `${pages} pages, ${a.images.length} images, save produced ${mb(saved.length)}, compress produced ${mb(r.afterBytes)}`,
   };
 }
 
@@ -335,7 +340,7 @@ function report(s: State): void {
       say(`          ${Object.entries(r.stages).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)}s`).join(', ')}`);
     }
     if (r.sampleRecompressed != null) {
-      say(`          recompressed ${r.sampleRecompressed} of the sample, skipped ${r.sampleSkipped ?? '?'}`);
+      say(`          recompressed ${r.sampleRecompressed} images, skipped ${r.sampleSkipped ?? '?'}`);
     }
   }
   if (failed) {

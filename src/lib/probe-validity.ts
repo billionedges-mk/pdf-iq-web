@@ -147,8 +147,22 @@ export function validate(s: State): Validity {
   for (const r of done) {
     if (r.sampleRecompressed === 0 && (r.sampleSkipped ?? 0) > 0) {
       problems.push(
-        `${r.mb} MB: recompressed 0 of ${r.sampleSkipped} sample images — the heaviest stage did ` +
+        `${r.mb} MB: recompressed 0 of ${r.sampleSkipped} images — the heaviest stage did ` +
         'nothing, so this time does not describe the work'
+      );
+    }
+  }
+
+  // The work must scale in *quantity*, not only in time. A capped sample made the heaviest
+  // stage size-independent and nothing noticed for four runs, so this is checked directly.
+  const withCounts = done.filter((r) => r.sampleRecompressed != null).sort((a, b) => a.mb - b.mb);
+  if (withCounts.length >= 2) {
+    const first = withCounts[0];
+    const last = withCounts[withCounts.length - 1];
+    if (last.mb >= first.mb * 2 && (last.sampleRecompressed ?? 0) <= (first.sampleRecompressed ?? 0)) {
+      problems.push(
+        `${last.mb} MB recompressed ${last.sampleRecompressed} images against ${first.sampleRecompressed} at ` +
+        `${first.mb} MB — the amount of work is not growing with the file, so the times describe a fixed quantity`
       );
     }
   }

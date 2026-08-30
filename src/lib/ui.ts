@@ -19,47 +19,43 @@ export const $$ = <T extends HTMLElement = HTMLElement>(sel: string, root: Paren
 /**
  * The ceiling on what we will attempt.
  *
- * Not an upload limit — there is no upload. It is the point past which this tab stops
- * being able to finish, and the number is measured. Run /memory-probe/ to reproduce it.
+ * Not an upload limit — there is no upload. Run /memory-probe/ to reproduce everything here.
  *
- * Chrome 148, 8 cores, 16 GB, 4096 MB heap limit. "work" excludes building the fixture:
+ * There are two different costs, and only one of them is a reason to refuse a file.
  *
- *     file    work     of which save    heap
- *      10 MB    1.4s          0.1s       52 MB
- *      25 MB    2.8s          0.3s       99 MB
- *      50 MB    9.4s          1.3s      200 MB
- *      60 MB    2.5s          0.5s      238 MB
- *      70 MB    9.9s          1.5s      276 MB
- *      80 MB   13.0s          4.2s      315 MB
- *      85 MB    172s        163.3s      340 MB   <- collapse
- *     100 MB    336s            --      397 MB
+ * TIME is linear in the number of images, and it is not the ceiling's job. Measured on
+ * Chrome 148 / 8 cores / 16 GB, with every image recompressed as the tool really does:
  *
- * The tab does not die. Heap runs at four to six times the file, so against a 4 GB limit
- * an actual crash is near 800 MB — an iPhone completed 400 MB and was only killed at 600.
- * Measuring for death would have justified *raising* this ceiling to 600 MB.
+ *     file    images   work    of which recompress
+ *      10 MB      6     1.3s          1.1s
+ *      20 MB     13    11.4s         11.1s
+ *      30 MB     19    22.8s         22.4s
+ *      40 MB     25    29.7s         29.1s
  *
- * What fails is `save()`: serialising the output goes from 4.2s to 163.3s between 80 and
- * 85 MB, a 39x jump for 6% more data, and the tab stays alive and answers nothing while it
- * happens. Parsing and recompression stay flat across the same step. A tab that is alive
- * and useless for three minutes is a worse outcome than a refusal, so the ceiling is set
- * from the collapse and not from the crash.
+ * About 1.17s per image here, and 98% of the runtime. But that work reports progress and
+ * checks for cancellation once per image, so it is a visible, stoppable operation rather
+ * than a hang, and the per-image cost varies enormously by device — an iPhone measured
+ * around 50ms against this machine's 1170ms, a factor of twenty-three. A single byte limit
+ * cannot express "will finish in a reasonable time" across that spread, and should not try.
  *
- * 60 MB is the last rung where the whole operation stayed under three seconds: 25% below
- * the last usable size and 29% below the measured collapse. The margin is deliberate —
- * this was measured on a 16 GB desktop, which is stronger than most machines that will
- * meet it, and the phone figures do not yet carry timings.
+ * MEMORY is what the ceiling is for, because its failure mode is the one the interface
+ * cannot rescue. Heap runs at four to six times the file. Past roughly 85 MB the collector
+ * thrashes continuously and `save()` — one uninterruptible call, with no progress and no
+ * cancel — went from 4.2s to 163.3s for 6% more data. Three minutes of a live tab that
+ * answers nothing. An actual crash is far higher, near 800 MB against a 4 GB limit, and an
+ * iPhone completed 400 MB: measuring for death would have justified raising this to 600 MB.
  *
- * The comment that stood here cited a probe file and README figures, neither of which
- * existed. See CLAIMS.md check 15.
+ * 60 MB is 29% below that collapse. The margin is deliberate: it was measured on one strong
+ * desktop, which is not the machine most people will meet it on.
+ *
+ * Two corrections are recorded here because both misled for several runs. The comment that
+ * originally stood here cited a probe file and README figures, neither of which existed —
+ * CLAIMS.md check 15. And the first figures this probe produced capped recompression at six
+ * images regardless of file size, so the heaviest stage did not scale and every stage timing
+ * taken before that cap was removed understated the work — CLAIMS.md check 16.
  */
 export const MAX_BYTES = 60 * 1024 * 1024;
 
-/**
- * Where the collapse above was measured to begin, so the ceiling can be checked against
- * the evidence rather than against someone's memory of it. Raising MAX_BYTES past this
- * fails a test, which is the point: the last time this number moved without a measurement
- * it acquired a comment citing a probe that did not exist.
- */
 export const MEASURED_COLLAPSE_BYTES = 85 * 1024 * 1024;
 
 export type ViewName = 'empty' | 'selected' | 'processing' | 'result' | 'nogain' | 'error';

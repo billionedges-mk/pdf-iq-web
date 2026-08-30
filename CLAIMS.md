@@ -537,6 +537,16 @@ Three consequences, all of them the point:
   trusts the clock and the scheduler. The pipeline now records what it *observed* — pages
   parsed, images found, bytes written back out — and a round trip that reads 80 MB and
   writes 0.1 MB is caught without reference to time at all.
+- **Beware the shortcut taken to make the instrument fast.** The probe capped recompression
+  at six images, reasoning that the memory peak depends on what is *held*, not how many
+  images are processed. True of memory, false of time — and it removed the size-dependence
+  of the heaviest stage. Desktop recompression measured 7.7s at 50, 75, 80 and 85 MB, the
+  same six images every time; on an iPhone, where parse and save round to zero, the total
+  became the cap itself and the ladder went flat. Four runs were diagnosed against numbers
+  that described the sample rather than the file. Uncapped, the same desktop goes 1.3s at
+  10 MB to 29.7s at 40 MB, linear in image count. **Every shortcut that makes a measurement
+  cheap is a hypothesis about what does not matter, and it has to be stated and checked.**
+  `validate()` now requires the quantity of work to grow with the file, not only the time.
 - **Drive the validator with the failing data before believing it.** The test that proved
   this asserts the recorded run is rejected, and it failed on first run, printing no
   problems at all. A validator is code, and untested code that returns a verdict is worse
