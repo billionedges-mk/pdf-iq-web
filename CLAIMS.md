@@ -695,3 +695,35 @@ different URL conventions, "preserve the path" is a guess dressed as a rule.
 **Corollary, and why generic beats clever here:** a wildcard silently covers URLs that were
 never audited. An explicit map fails loudly for anything unexpected, which on a two-file
 directory is the safer failure.
+
+### 21. A fact about someone else's platform has a shelf life, and you remember the previous version
+
+Rules that belong to a third party — a search engine's rich results, a store's review policy,
+an API's free tier — change without touching anything in your repository. Nothing goes red.
+The belief simply stops being true, and it keeps getting repeated because it was true when
+it was learned.
+
+**Found by:** an SEO audit recommending FAQPage structured data because "it earns Google rich
+results". That was checked rather than accepted, and the answer was worse than either version
+in the room:
+
+- The audit's belief: FAQ rich results are available and worth having.
+- **My correction, offered confidently: restricted since August 2023 to authoritative
+  government and health sites.** Two years newer, and also wrong.
+- What Google's own documentation says: FAQ rich results **stopped appearing entirely on
+  7 May 2026**, the Search Console report was removed that June, and the API data that
+  August. The documentation page now carries a deprecation notice.
+
+The feature had been gone for nearly four months. Two people each held a different stale
+version of the same fact, and the more recent one was still a year and a half out of date.
+Correcting someone with an older wrong answer feels exactly like knowing.
+
+**The check:** any claim about an external platform's current behaviour gets verified against
+that platform's own documentation, at the time of writing, before it is used to justify work.
+Not a blog post about the documentation — the documentation. This applies hardest to the
+things everyone knows, because those are the ones nobody re-reads.
+
+**What it did not change, which is the useful part:** FAQPage is still a valid Schema.org
+type, Google still parses it, and AI answer engines still read it. The work was worth doing;
+the stated reason for doing it was worth throwing away. A wrong justification for a right
+decision survives until it is used to justify the next one.

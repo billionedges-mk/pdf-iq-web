@@ -8,63 +8,63 @@ export const ORIGIN = 'https://pdf-iq.com';
 export const TOOLS = [
   {
     slug: 'merge', nav: 'Merge', name: 'Merge PDF', entry: 'merge',
-    title: 'Merge PDF — combine files in your browser, nothing uploaded',
+    title: 'Merge PDF free — no upload, no signup, works offline',
     description:
-      'Combine PDFs into one file, in the order you set. Runs entirely in your browser: the files never leave your device.',
+      'Merge PDF files free, without uploading them. Combine PDFs into one file in the order you set — it runs in your browser, so they never leave your device.',
     inApp: true,
     cardName: 'Merge',
     card: 'Several files into one, in the order you set.',
   },
   {
     slug: 'split', nav: 'Split', name: 'Split PDF', entry: 'split',
-    title: 'Split PDF — extract pages in your browser, nothing uploaded',
+    title: 'Split PDF free — no upload, no signup, works offline',
     description:
-      'Pull out a page range or cut one PDF into several. Runs entirely in your browser: the file never leaves your device.',
+      'Split a PDF free, without uploading it. Pull out a page range or cut one file into several — it runs in your browser, so the file stays on your device.',
     inApp: true,
     cardName: 'Split',
     card: 'Pull out a page range, or cut one file into parts.',
   },
   {
     slug: 'compress', nav: 'Compress', name: 'Compress PDF', entry: 'compress',
-    title: 'Compress PDF — make a PDF smaller in your browser, nothing uploaded',
+    title: 'Compress PDF free — no upload, no signup, works offline',
     description:
-      'Make a PDF smaller for email or a filing. Runs entirely in your browser: the file never leaves your device, and we say so when it cannot get smaller.',
+      'Compress a PDF free, without uploading it — for email or a filing. It runs in your browser, and we say so plainly when a file will not get any smaller.',
     inApp: true,
     cardName: 'Compress',
     card: 'Smaller for email, with the real before and after.',
   },
   {
     slug: 'images-to-pdf', nav: 'Images to PDF', name: 'Images to PDF', entry: 'images-to-pdf',
-    title: 'Images to PDF — photos and scans into one document, nothing uploaded',
+    title: 'Images to PDF free — no upload, no signup, offline',
     description:
-      'Turn photos or scans into one PDF. Runs entirely in your browser: the images never leave your device.',
+      'Turn photos or scans into a PDF free, without uploading them. It runs in your browser, so the images never leave your device.',
     inApp: true,
     cardName: 'Images to PDF',
     card: 'Phone photos and scans into one document.',
   },
   {
     slug: 'rotate', nav: 'Rotate', name: 'Rotate PDF', entry: 'rotate',
-    title: 'Rotate PDF — fix sideways scans in your browser, nothing uploaded',
+    title: 'Rotate PDF free — no upload, no signup, works offline',
     description:
-      'Turn PDF pages the right way up. Runs entirely in your browser: the file never leaves your device.',
+      'Rotate PDF pages free, without uploading the file. Turn sideways scans the right way up in your browser — nothing leaves your device.',
     inApp: true,
     cardName: 'Rotate',
     card: 'Fix sideways scans without re-encoding them.',
   },
   {
     slug: 'reorder', nav: 'Reorder', name: 'Reorder Pages', entry: 'reorder',
-    title: 'Reorder PDF pages in your browser — nothing uploaded',
+    title: 'Reorder PDF pages free — no upload, no account',
     description:
-      'Move or delete PDF pages on a grid of the real pages. Runs entirely in your browser: the file never leaves your device.',
+      'Reorder or delete PDF pages free, without uploading the file. Move pages on a grid of the real pages, in your browser — nothing leaves your device.',
     inApp: true,
     cardName: 'Reorder',
     card: 'Move or drop pages on a grid of real pages.',
   },
   {
     slug: 'ocr', nav: 'OCR', name: 'OCR PDF', entry: 'ocr',
-    title: 'OCR PDF — make a scan searchable in your browser, nothing uploaded',
+    title: 'OCR PDF free — searchable scans, no upload, offline',
     description:
-      'Read the text in a scanned PDF so you can search and copy it. Runs entirely in your browser: the file never leaves your device.',
+      'OCR a PDF free, without uploading it. Read the text in a scanned document so you can search and copy it — it runs in your browser, on your own device.',
     inApp: false,
     cardName: 'OCR',
     card: 'Make a scan searchable. Unlimited, free here.',
@@ -76,9 +76,9 @@ export const PAGES = [
   {
     // No page-specific bundle: the homepage is static, and net.js ships on every page.
     slug: '', name: 'Home', entry: null, shell: '1120px',
-    title: 'pdf-iq — seven PDF tools that run inside your browser tab',
+    title: 'Free PDF tools run in your browser — no upload, no signup',
     description:
-      'Compress, merge, split, rotate, reorder, convert and OCR PDFs without uploading them. The work happens on your device, so there is nothing to delete.',
+      'Free PDF tools that work without uploading anything — compress, merge, split, rotate, reorder, convert and OCR. The work happens on your own device.',
   },
   {
     slug: 'app', name: 'Android App', entry: null,
@@ -104,7 +104,7 @@ export const PAGES = [
   },
   {
     slug: 'for-professionals', name: 'For firms', entry: 'for-professionals',
-    title: 'pdf-iq for firms — tell us what takes too long',
+    title: 'PDF tools for law firms and accountants — nothing uploaded',
     description:
       'We build PDF tools that run on your own device and we are asking firms what to build next, before building it. Nothing is on sale; two questions and an email.',
   },
