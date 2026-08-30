@@ -143,15 +143,23 @@ worded so that it stays true if the measurement comes back badly.
   Preference is (1) with (2) as a side effect. Do not do (3) without also measuring accuracy
   against the model that actually ships.
 
-- **Chrome only.** No Safari or Firefox has run any of this. Safari matters most: it is the one
-  browser that decodes HEIC, and it has its own history with `OffscreenCanvas` and
-  `createImageBitmap`, both of which the compressor depends on.
+- **Safari on iPhone — walked and passed.** Four checks run on a real device: HEIC straight from
+  the camera roll, Compress producing a genuine before/after, the footer readout clean, and Save
+  opening the share sheet. Save was the one that would have made every tool useless on iPhone, and
+  it works. The memory probe has since run there too, confirming `createImageBitmap` decodes our
+  images fast (about 50ms each against this desktop's 1170ms).
+
+  Still unrun: **desktop Safari and Firefox.** Lower risk than iOS was, and iOS was the one that
+  mattered.
 
 ## Website operational
 
-- **Cloudflare log retention** is described on `/privacy` without a retention period, because the
-  setting has not been confirmed. Confirm it and state the real figure.
-- **`support@pdf-iq.com` must exist** before launch. It is referenced 12 times across the site.
+- ~~**Cloudflare log retention.**~~ Closed. Observability is a separate Cloudflare product and is
+  not enabled on this project, so nothing retains request logs. The privacy page's wording stands
+  as written — there is no retention period to state because there is no retention.
+- ~~**`support@pdf-iq.com` must exist.**~~ Closed. Created before the nameserver move and tested in
+  both directions afterwards — which is also how the MX carry-across was confirmed, the one step in
+  the DNS sequence that fails silently.
 - **`/app` store buttons are inert placeholders**, clearly labelled, because the app has no public
   Play listing yet. Replace with the real link when it is published.
 - **Language models are committed to the repo** (~49 MB across six files). The alternative — a

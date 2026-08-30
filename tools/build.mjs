@@ -353,6 +353,27 @@ async function build() {
     writeFileSync(join(dir, 'index.html'), document_({ page, body, css, assets }));
   }
 
+  // Cloudflare Pages serves this, with a real 404 status, for any path that matches no
+  // file. Without it every unknown URL returned 200 with the homepage — a typo, a dead
+  // link and an invented address all answered "here is the site", which is a soft 404: it
+  // asks Google to index unlimited duplicates of the homepage under arbitrary URLs, on a
+  // site whose whole commercial argument is search. It is also what returned 200 for
+  // /assets/home.js when that bundle did not exist, and the readout counted it.
+  {
+    const file = join(ROOT, 'src/pages/404.html');
+    if (!existsSync(file)) throw new Error('src/pages/404.html is missing — every unknown URL would fall back to the homepage');
+    let body = readFileSync(file, 'utf8');
+    body = body.replace(/[ 	]*<!--TOOL_GRID-->/, toolGrid());
+    if (body.includes('<!--TOOL_GRID-->')) throw new Error('TOOL_GRID marker survived substitution in 404.html');
+    body = substituteTokens(body, file);
+    const page = {
+      slug: '404', entry: null, noindex: true,
+      title: 'Page not found — pdf-iq',
+      description: 'Nothing at this address.',
+    };
+    writeFileSync(join(OUT, '404.html'), document_({ page, body, css, assets }));
+  }
+
   copyFonts();
   copyVendor();
   copyStatic();

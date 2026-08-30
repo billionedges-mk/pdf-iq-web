@@ -582,3 +582,30 @@ is honest about the browser. `imagesUndecodable` is now separate from `imagesSki
 **Corollary for offers, joining check 14:** a harder pass is not offered when nothing could
 be opened. Retrying a decode that failed is the clearest possible case of an offer that
 cannot work.
+
+### 18. A status list is a claim, and it goes stale in the direction that flatters
+
+Every other check here is about not asserting what was never verified. This one is the
+reverse: continuing to assert a problem that has since been solved.
+
+**Found by:** a launch assessment that named three blockers. Two were already closed, and
+had been closed for a while — the support mailbox existed and had been tested in both
+directions, and Safari on iPhone had been walked through four checks including the one that
+would have made every tool useless there. The third had an answer nobody had written down.
+The record said otherwise, so the assessment was confident, specific, and wrong about
+whether the site could ship.
+
+Stale debt fails asymmetrically. A closed item left open costs delay, rework, and — worse —
+it makes every other line in the list less believable, because the reader now has to check
+them all. Nobody is tempted to record a problem that does not exist; they are tempted to
+stop updating.
+
+**The check:** an open item is only open if it would still fail today. Before reporting
+status from a file, re-verify anything cheap enough to re-verify, and treat a stale entry as
+a defect in the record rather than a note that needs tidying. Where the answer arrived in
+conversation rather than in code, write it down at the time — the record is the thing that
+outlives the conversation, and it is the thing the next assessment will be built on.
+
+**Corollary:** when the record is corrected, say what closed it and how it was confirmed,
+not just that it is closed. "Tested in both directions after the nameserver move" survives
+scrutiny; "done" does not, and invites the same item being reopened later.
