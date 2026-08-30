@@ -124,10 +124,15 @@
         <li>Compressing a PDF</li>
         <li>Rotating, deleting, reordering and extracting pages</li>
         <li>Merging and splitting PDFs</li>
+        <li>Reading the text off a scanned document (OCR)</li>
         <li>Viewing, saving and sharing the results</li>
       </ul>
       <p>These work with no internet connection and without an account, and they are unlimited and
          not metered.</p>
+      <p>Reading a scan uses a text recogniser that Google Play Services fetches to your device
+         once. That is a download to you, not an upload from you: your document is never sent
+         anywhere, and after that first fetch it works with no connection like everything else in
+         this list.</p>
       <p>The app does not request storage permission — it uses Android's own photo and document
          pickers, so you choose exactly which files it can see. <strong>It also does not request
          camera permission:</strong> scanning hands the job to your existing camera app, which
@@ -165,7 +170,7 @@
          Google Firestore:</p>
       <ul>
         <li>Account identifier — to attach your counters to you</li>
-        <li>Subscription tier — to apply the correct limit</li>
+        <li>Whether you have bought Pro — to apply the correct limit</li>
         <li>Number of summaries used this month — to enforce the monthly allowance</li>
         <li>Current period and reset date — to know when the allowance renews</li>
         <li>Recent request timestamps — to apply an hourly rate limit and prevent abuse</li>
@@ -187,9 +192,10 @@
          marketing purposes.</p>
 
       <h3>Purchases and app integrity</h3>
-      <p>Subscriptions, when they are offered, are processed by Google Play. We never see or handle
-         your card details, billing address, or payment information — we receive only confirmation
-         of whether a subscription is active. We use RevenueCat to manage subscription status.</p>
+      <p>PDFiq Pro is a one-time purchase, not a subscription. It is sold through Paddle, who act
+         as the merchant of record and handle payment and any tax due. We never see or handle your
+         card details, billing address, or payment information — we receive only confirmation that
+         a purchase was made. Purchases are not made inside the Android app.</p>
       <p>We use Firebase App Check with Google Play Integrity to confirm that requests to our
          servers come from a genuine installation of PDFiq rather than an automated script. This
          protects our AI costs and does not involve your documents.</p>
@@ -213,10 +219,9 @@
             crash reports. Receives: account identifier, usage counts, diagnostic events.</li>
         <li><strong>Google (Gemini API)</strong> — generating summaries. Receives: the extracted
             text of a document you chose to summarise.</li>
-        <li><strong>Google Play</strong> — subscription billing. Receives: payment details, handled
-            entirely by Google.</li>
-        <li><strong>RevenueCat</strong> — subscription status. Receives: account identifier and
-            subscription state.</li>
+        <li><strong>Paddle</strong> — payment processing for the one-time Pro purchase, which is
+            made on pdf-iq.com rather than in the app. Receives: your payment details, handled
+            entirely by Paddle as merchant of record.</li>
       </ul>
       <p>We may also disclose information where we are legally required to, or where it is
          necessary to protect our rights or the safety of others.</p>
@@ -252,8 +257,8 @@
       </ul>
       <p>Deleting your account removes your account record and usage counters from our servers. It
          does not affect any PDF you have already saved — those files are yours and are not ours to
-         delete. Cancelling a subscription is separate from deleting an account, and is handled
-         through Google Play.</p>
+         delete. A one-time Pro purchase is not affected either: it is not a subscription, so
+         there is nothing to cancel, and deleting your account does not refund or revoke it.</p>
       <p>If you have only ever used this website, or have never used Summarise, we hold nothing
          about you and there is nothing to delete.</p>
 
