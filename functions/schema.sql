@@ -1,4 +1,4 @@
--- The whole record. Four columns, and the email is the identity so a second submission
+-- The whole record. Five columns, and the email is the identity so a second submission
 -- from the same person updates what they do rather than adding a row.
 --
 -- No IP address column, on purpose: Cloudflare hands the Function CF-Connecting-IP on every
@@ -12,6 +12,10 @@ CREATE TABLE IF NOT EXISTS interest (
   -- before this column existed were never asked, and NULL says that where an empty string
   -- would look like they had nothing to say. See migrations/001.
   spends_too_long TEXT,
+  -- Whether they would expect to buy it once or pay yearly. Free text, because a list would
+  -- only offer the two cadences we already thought of. Nullable for the same reason as
+  -- above. See migrations/002.
+  cadence_expected TEXT,
   at              TEXT NOT NULL
 );
 

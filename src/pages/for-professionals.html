@@ -7,16 +7,16 @@
           pay for, so we are asking before we build rather than guessing and shipping.
         </p>
         <p class="page__lede">
-          Nothing here is built and nothing is for sale. Two questions, and the first one is the whole
-          point of the page.
+          Nothing here is built and nothing is for sale. Three questions, and the first one is the
+          whole point of the page.
         </p>
 
         <hr class="askrule">
 
         <p class="askprice">
-          If we build it, we would expect it to cost around <strong>{{proTeamPrice}}, {{proTeamCadence}}</strong>
-          &mdash; the same way everything else here works. That is an indication, not a price. Tell us
-          if it is wrong.
+          If we build it, we would expect around <strong>{{proTeamPrice}}</strong>. We do not know
+          whether that is bought once or paid yearly &mdash; that depends on what you tell us it is.
+          Say which you would expect, in the last box.
         </p>
         <p class="askprice">The {{webToolCount}} tools stay free either way.</p>
       </div>
@@ -48,6 +48,14 @@
           <div aria-hidden="true" style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
             <label for="interest-company">Company</label>
             <input id="interest-company" name="company" type="text" tabindex="-1" autocomplete="off">
+          </div>
+
+          <div class="askfield">
+            <label class="askfield__label" for="interest-cadence">Once, or yearly?</label>
+            <input id="interest-cadence" name="cadence" type="text" class="askfield__input"
+              placeholder="e.g. once — it is a tool, not a service">
+            <p class="askfield__hint">Whatever you would expect, in your words. We genuinely have not
+              decided, and this is the answer that decides it.</p>
           </div>
 
           <button type="submit" class="btn askbutton" data-interest-submit>Tell us what to build</button>

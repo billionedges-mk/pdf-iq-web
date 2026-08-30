@@ -183,13 +183,21 @@ export const PRO = {
    */
   teamPrice: '$99',
   /**
-   * NOTE — this contradicts the reason the firms page exists, and is set from the design
-   * rather than from the plan. The stated rationale was that one-time revenue does not
-   * compound and that firms renewing annually are the only compounding line; "bought once"
-   * removes exactly that. Changing this one string to 'per user per year' reverses it
-   * everywhere, because the page renders from here.
+   * The cadence is a question, not a decision, and deliberately has no value here.
+   *
+   * NOTE, and it stands: one-time revenue does not compound, and this tier was meant to be
+   * the compounding line — sixty firms at $99 once is $5,940, once. "Bought once" removes
+   * exactly the property that justified building the page.
+   *
+   * It is not being reversed to per-year either, because we no longer know what we are
+   * selling. If the answers describe a tool, one-time is honest and a subscription would be
+   * rent for something that needs no maintaining. If they describe something ongoing,
+   * per-year fits. Asking is the only way to find out, so the page asks.
+   *
+   * If the answers point at a tool rather than a service, the compounding problem stays
+   * open. That is better known than papered over with a cadence nobody asked for.
    */
-  teamCadence: 'bought once',
+  teamCadenceIsAsked: true,
   /** Kept prominent: it is not on sale, on either surface. */
   onSale: false,
 };
@@ -199,7 +207,7 @@ export const PRO_FEATURES = PRO.features;
 export const TOKENS = {
   proPrice: PRO.price,
   proTeamPrice: PRO.teamPrice,
-  proTeamCadence: PRO.teamCadence,
+
   proQualifier: PRO.qualifier,
   proCadence: PRO.cadence,
   proCovers: PRO.covers,

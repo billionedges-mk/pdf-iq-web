@@ -62,18 +62,24 @@ console.log('interest endpoint');
 {
   const db = stubDb();
   const res = await post(
-    { email: 'A.Person@Example.COM', profession: 'solicitor', spendsTooLong: 'redacting client names by hand' },
+    {
+      email: 'A.Person@Example.COM',
+      profession: 'solicitor',
+      spendsTooLong: 'redacting client names by hand',
+      cadence: 'once — it is a tool',
+    },
     { DB: db }
   );
   const json = await res.json();
   ok(res.status === 200 && json.ok === true, 'a valid submission is accepted');
   ok(db.writes.length === 1, 'and is written exactly once');
   const [write] = db.writes;
-  ok(write.values.length === 4, `four values are bound, not more (got ${write.values.length})`);
+  ok(write.values.length === 5, `five values are bound, not more (got ${write.values.length})`);
   ok(write.values[0] === 'a.person@example.com', 'the address is stored lowercased, so it is one person');
   ok(write.values[1] === 'solicitor', 'the profession is stored verbatim');
   ok(write.values[2] === 'redacting client names by hand', 'the free text is stored verbatim, not categorised');
-  ok(!Number.isNaN(Date.parse(write.values[3])), 'the last value is a timestamp');
+  ok(write.values[3] === 'once — it is a tool', 'the cadence answer is stored verbatim too, not mapped to a choice');
+  ok(!Number.isNaN(Date.parse(write.values[4])), 'the last value is a timestamp');
   ok(
     !JSON.stringify(write.values).includes('203.0.113.42'),
     'the IP address we were handed is not among them'
@@ -88,6 +94,7 @@ console.log('interest endpoint');
   const res = await post({ email: 'b@c.co', profession: 'architect' }, { DB: db });
   ok(res.status === 200, 'a submission without the third field is still accepted');
   ok(db.writes[0].values[2] === null, 'and the missing answer is stored as NULL, not an empty string');
+  ok(db.writes[0].values[3] === null, 'as is a missing cadence answer');
 }
 
 // Too long is refused rather than silently truncated.
@@ -167,8 +174,9 @@ for (const [label, body] of [
   const schema = readFileSync(join(ROOT, 'functions/schema.sql'), 'utf8');
   const columns = [...schema.matchAll(/^\s{2}(\w+)\s+TEXT/gm)].map((m) => m[1]);
   console.log(`      schema columns: ${columns.join(', ')}`);
-  ok(columns.length === 4, `the table has four columns (got ${columns.length})`);
+  ok(columns.length === 5, `the table has five columns (got ${columns.length})`);
   ok(columns.includes('spends_too_long'), 'including the free-text answer');
+  ok(columns.includes('cadence_expected'), 'and the once-or-yearly answer');
   ok(!/ip|address|agent|referer/i.test(columns.join(' ')), 'and none of them is an IP or a user agent');
 }
 
