@@ -140,6 +140,8 @@ interface Observed {
   pagesSeen: number;
   imagesSeen: number;
   savedBytes: number;
+  sampleRecompressed: number;
+  sampleSkipped: number;
   detail: string;
 }
 
@@ -172,6 +174,8 @@ async function pipeline(
     pagesSeen: pages,
     imagesSeen: a.images.length,
     savedBytes: saved.length,
+    sampleRecompressed: r.imagesRecompressed,
+    sampleSkipped: r.imagesSkipped,
     detail: `${pages} pages, ${a.images.length} images, save produced ${mb(saved.length)}, sample pass ${mb(r.afterBytes)}`,
   };
 }
@@ -257,6 +261,8 @@ async function run(): Promise<void> {
       rung.pagesSeen = seen.pagesSeen;
       rung.imagesSeen = seen.imagesSeen;
       rung.savedBytes = seen.savedBytes;
+      rung.sampleRecompressed = seen.sampleRecompressed;
+      rung.sampleSkipped = seen.sampleSkipped;
       const detail = seen.detail;
 
       // Release before the next rung, so rungs do not accumulate on top of each other.
@@ -325,6 +331,12 @@ function report(s: State): void {
     say(`  ${String(r.mb).padStart(4)} MB asked  built ${built.padStart(9)}  work ${secs.padStart(7)}s` +
         `  heap ${String(r.heapMb ?? '?').padStart(5)} MB  ${(r.pipeMs ?? 0) > COLLAPSE_MS ? 'COLLAPSED' : 'usable'}`);
     say(`          pipeline saw ${r.pagesSeen ?? '?'} pages, ${r.imagesSeen ?? '?'} images, wrote ${out} back out`);
+    if (r.stages) {
+      say(`          ${Object.entries(r.stages).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)}s`).join(', ')}`);
+    }
+    if (r.sampleRecompressed != null) {
+      say(`          recompressed ${r.sampleRecompressed} of the sample, skipped ${r.sampleSkipped ?? '?'}`);
+    }
   }
   if (failed) {
     say(`  ${String(failed.mb).padStart(4)} MB asked  ${failed.outcome === 'threw' ? 'refused' : 'KILLED'} during "${failed.phase}"`);

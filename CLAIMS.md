@@ -541,3 +541,34 @@ Three consequences, all of them the point:
   this asserts the recorded run is rejected, and it failed on first run, printing no
   problems at all. A validator is code, and untested code that returns a verdict is worse
   than no verdict.
+
+### 17. A silent skip becomes an invented explanation downstream
+
+Code that cannot do something and quietly moves on does not stay quiet. Something further
+down reads the result, finds nothing wrong with it, and explains it — confidently, and
+wrongly, because the reason was discarded at the point it was known.
+
+**Found by:** an iPhone reporting 0.4s of work on an 80 MB file while parsing every page
+and writing every byte back. The missing stage was recompression, which does this:
+
+    const decoded = await decodeImage(doc, img);
+    if (!decoded) { skipped++; continue; }
+
+A decode failure landed in the same counter as "recompressing this would make it bigger".
+So on a browser that cannot decode our images, `compress()` returned a document identical
+to its input, and the nothing-to-gain card explained that the images were *"already JPEG at
+quality 94 and 300 dpi — close to what our Balanced setting would produce."*
+
+Every number in that sentence is real: they are read from the JPEG headers during analysis.
+The sentence is still a fabrication, because we never opened a single one of those images.
+It is the most convincing kind of false claim — accurate figures, invented conclusion.
+
+**The check:** when a step gives up on something, the *reason* travels with the count. A
+tally of "things that did not happen" merges causes that downstream copy must distinguish:
+"we chose not to" and "we were unable to" produce opposite sentences, and only one of them
+is honest about the browser. `imagesUndecodable` is now separate from `imagesSkipped`, and
+`explainNoGain` refuses to describe the quality of images it never decoded.
+
+**Corollary for offers, joining check 14:** a harder pass is not offered when nothing could
+be opened. Retrying a decode that failed is the clearest possible case of an offer that
+cannot work.

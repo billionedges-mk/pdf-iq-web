@@ -107,6 +107,36 @@ async function makeTextPdf(pages: number): Promise<Uint8Array> {
 const CASES: Case[] = [
   {
     /**
+     * A browser that cannot decode our images produced a document that looked optimal, and
+     * a card explaining that its images were already at a good quality — an explanation
+     * invented from header values, for images we never opened. Suspected live on iOS.
+     */
+    name: 'Images the browser could not open are not reported as already optimal',
+    async run() {
+      const base = {
+        pageCount: 1, totalBytes: 1, images: [{} as never], actionableBytes: 1, skippedBytes: 0,
+        skipReasons: new Map(), allJpeg: true, hasText: false, signed: false,
+        medianQuality: 94, medianDpi: 300,
+      };
+      const analysis = { ...base, recompressible: [{}, {}, {}] } as unknown as Analysis;
+      const result = (undecodable: number, recompressed: number) =>
+        ({ imagesUndecodable: undecodable, imagesRecompressed: recompressed, imagesSkipped: undecodable }) as never;
+
+      const honest = explainNoGain(analysis, PRESETS[0], result(3, 0));
+      note(`could not decode any: ${honest}`);
+      ok(/could be opened by this browser/.test(honest), 'it says the browser could not open them');
+      ok(!/already/.test(honest), 'and does not claim they were already at a good quality');
+      ok(/limit of the browser rather than of the file/.test(honest), 'and blames the browser, not the document');
+
+      // With nothing undecodable the existing explanation must be untouched.
+      const normal = explainNoGain(analysis, PRESETS[0], result(0, 3));
+      note(`decoded fine: ${normal}`);
+      ok(/already/.test(normal), 'a genuine already-optimal file still says so');
+      ok(explainNoGain(analysis, PRESETS[0]) === normal, 'and omitting the result changes nothing');
+    },
+  },
+  {
+    /**
      * Driven with the two runs that actually happened. The iPhone one reported 0.4s of
      * work at 30, 50, 60 and 80 MB — flat, impossible, and printed as a ceiling because
      * nothing checked it. On a device with no heap readout there was no second signal.

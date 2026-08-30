@@ -249,11 +249,13 @@ function renderNoGain(r: CompressResult, which: Preset): void {
   $('[data-nogain-pct]')!.textContent = saved > 0
     ? `${percent(saved / r.beforeBytes, 1)} smaller`
     : 'no smaller at all';
-  $('[data-nogain-why]')!.textContent = explainNoGain(analysis!, which);
+  $('[data-nogain-why]')!.textContent = explainNoGain(analysis!, which, r);
 
   // Only offer a harder pass when it would actually change this file. Both numbers the
   // decision rests on are the ones already used to write the sentence above the button.
-  const offer = harderOffer(analysis!, which);
+  const offer = r.imagesUndecodable > 0 && r.imagesRecompressed === 0
+    ? { preset: null, note: '', nothingLeft: '' }
+    : harderOffer(analysis!, which);
   const harder = $<HTMLButtonElement>('[data-harder]')!;
   const note = $('[data-nogain-harder-note]')!;
   harder.hidden = !offer.preset;

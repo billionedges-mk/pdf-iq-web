@@ -23,6 +23,8 @@ export interface Rung {
   pagesSeen?: number;
   imagesSeen?: number;
   savedBytes?: number;
+  sampleRecompressed?: number;
+  sampleSkipped?: number;
 }
 
 export interface State {
@@ -136,6 +138,18 @@ export function validate(s: State): Validity {
         );
         break;
       }
+    }
+  }
+
+  // The heaviest stage must actually have run. Recompression silently skips any image it
+  // cannot decode, so a platform where decoding fails measures a pipeline with its most
+  // expensive step removed — and reports a plausible time for having skipped it.
+  for (const r of done) {
+    if (r.sampleRecompressed === 0 && (r.sampleSkipped ?? 0) > 0) {
+      problems.push(
+        `${r.mb} MB: recompressed 0 of ${r.sampleSkipped} sample images — the heaviest stage did ` +
+        'nothing, so this time does not describe the work'
+      );
     }
   }
 

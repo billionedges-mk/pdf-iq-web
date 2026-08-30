@@ -66,6 +66,15 @@ export interface CompressResult {
   afterBytes: number;
   imagesRecompressed: number;
   imagesSkipped: number;
+  /**
+   * Images we could not decode or re-encode at all, as opposed to ones we decided against.
+   *
+   * These used to land in `imagesSkipped` beside "recompressing this would make it bigger",
+   * so a platform that cannot decode our images produced a document that looked optimal and
+   * a nothing-to-gain card explaining that the images were already at a good quality. That
+   * explanation is invented: we never saw them.
+   */
+  imagesUndecodable: number;
   /** Median quality and dpi actually written, for the result panel. */
   writtenQuality: number;
   writtenDpi: number | null;
@@ -317,6 +326,7 @@ export async function compress(
   const targets = analysis.recompressible;
   let recompressed = 0;
   let downscaled = 0;
+  let undecodable = 0;
   let skipped = analysis.images.length - targets.length;
   const writtenDpis: number[] = [];
 
@@ -328,7 +338,7 @@ export async function compress(
     onProgress?.(i, targets.length, 1);
 
     const decoded = await decodeImage(doc, img);
-    if (!decoded) { skipped++; continue; }
+    if (!decoded) { skipped++; undecodable++; continue; }
 
     // Scale only when the image is genuinely drawn finer than the target.
     const scale = img.dpi && img.dpi > preset.targetDpi ? preset.targetDpi / img.dpi : 1;
@@ -337,7 +347,7 @@ export async function compress(
 
     const jpeg = await toJpeg(decoded, targetW, targetH, preset.quality);
     if ('bitmap' in decoded) decoded.bitmap.close();
-    if (!jpeg) { skipped++; continue; }
+    if (!jpeg) { skipped++; undecodable++; continue; }
 
     // Rule 1: never hand back something bigger than what was already there.
     if (jpeg.length >= img.encodedBytes) { skipped++; continue; }
@@ -374,6 +384,7 @@ export async function compress(
     afterBytes: bytes.length,
     imagesRecompressed: recompressed,
     imagesSkipped: skipped,
+    imagesUndecodable: undecodable,
     writtenQuality: Math.round(preset.quality * 100),
     writtenDpi: median(writtenDpis),
     downscaled,
@@ -528,7 +539,19 @@ export function harderOffer(analysis: Analysis, current: Preset): HarderOffer {
  * The sentence that explains *why* a file cannot get smaller, built from what the
  * document actually contains. Never templated.
  */
-export function explainNoGain(analysis: Analysis, preset: Preset): string {
+export function explainNoGain(analysis: Analysis, preset: Preset, result?: CompressResult): string {
+  // If we could not decode the images, everything below this is a guess dressed as a
+  // finding. Say what actually happened instead: the numbers describing their quality come
+  // from reading the file's headers, not from anything we succeeded in opening.
+  if (result && result.imagesUndecodable > 0) {
+    const n = result.imagesUndecodable;
+    const all = n >= analysis.recompressible.length;
+    return `${all ? 'None' : `${n}`} of its ${analysis.recompressible.length === 1 ? 'image' : 'images'} could be ` +
+      `opened by this browser, so ${all ? 'nothing' : 'part of the file'} could be recompressed. This is a limit of ` +
+      'the browser rather than of the file — the same document may well compress on another one. We would rather ' +
+      'say so than hand you the original back and call it optimal.';
+  }
+
   const n = analysis.recompressible.length;
   const bits: string[] = [];
 
