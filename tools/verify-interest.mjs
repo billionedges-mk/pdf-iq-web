@@ -130,6 +130,62 @@ for (const [label, body] of [
   ok(res.status === 400 && db.writes.length === 0, `${label} is refused and nothing is written`);
 }
 
+// Cross-site submission. Measured against the live endpoint before the guard existed: a
+// text/plain POST from a foreign Origin was accepted and wrote a row.
+{
+  const db = stubDb();
+  const res = await onRequest({
+    request: new Request('https://pdf-iq.com/api/interest', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', Origin: 'https://evil.example' },
+      body: JSON.stringify({ email: 'a@b.co', profession: 'x' }),
+    }),
+    env: { DB: db },
+  });
+  const json = await res.json();
+  ok(res.status === 403 && json.error === 'cross-origin', 'a foreign Origin is refused');
+  ok(db.writes.length === 0, 'and writes nothing');
+}
+
+// A simple request — the shape that skips the preflight entirely.
+{
+  const db = stubDb();
+  const res = await onRequest({
+    request: new Request('https://pdf-iq.com/api/interest', {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      body: JSON.stringify({ email: 'a@b.co', profession: 'x' }),
+    }),
+    env: { DB: db },
+  });
+  const json = await res.json();
+  ok(res.status === 415 && json.error === 'bad-content-type', 'a non-JSON content type is refused');
+  ok(db.writes.length === 0, 'and writes nothing');
+}
+
+// Our own page must still work, and so must a preview deployment on another host.
+for (const [label, url, origin] of [
+  ['the production origin', 'https://pdf-iq.com/api/interest', 'https://pdf-iq.com'],
+  ['a preview deployment', 'https://abc.pdf-iq-web.pages.dev/api/interest', 'https://abc.pdf-iq-web.pages.dev'],
+]) {
+  const db = stubDb();
+  const res = await onRequest({
+    request: new Request(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', Origin: origin },
+      body: JSON.stringify({ email: 'a@b.co', profession: 'x' }),
+    }),
+    env: { DB: db },
+  });
+  ok(res.status === 200 && db.writes.length === 1, `${label} still works`);
+}
+
+// Every response carries nosniff: _headers does not reach Function responses.
+{
+  const res = await post({ email: 'a@b.co', profession: 'x' }, { DB: stubDb() });
+  ok(res.headers.get('x-content-type-options') === 'nosniff', 'responses carry nosniff');
+}
+
 // The honeypot answers like success and writes nothing.
 {
   const db = stubDb();

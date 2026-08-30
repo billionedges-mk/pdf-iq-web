@@ -98,6 +98,11 @@ export class ToolShell {
     set('[data-err-body]', err.body);
     set('[data-err-mono]', err.mono);
 
+    // Nothing currently produces an action: the two that existed were withdrawn because
+    // neither was implemented, and the markup is left in place on every tool page so the
+    // mechanism is ready rather than needing re-adding to seven templates. If you are
+    // reading this because you saw the button in the markup and assumed errors can offer
+    // one — they can, but no error does today. See CLAIMS.md check 14.
     const action = $<HTMLButtonElement>('[data-err-action]', this.root);
     if (action) {
       action.hidden = !err.action;
@@ -301,10 +306,6 @@ export class Progress {
 
 /** Yield to the browser so a paint can happen mid-job. */
 export const breathe = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
-
-export function describeFile(file: File, extra: string[] = []): string {
-  return [formatBytes(file.size), ...extra].join(' · ');
-}
 
 /** Guard the user against losing work by closing the tab mid-job. */
 export function warnWhileBusy(isBusy: () => boolean): void {

@@ -36,6 +36,9 @@ const json = (body, status = 200) =>
       'content-type': 'application/json; charset=utf-8',
       // Nothing here is cacheable and nothing here is cross-origin.
       'cache-control': 'no-store',
+      // _headers does not apply to Function responses, so the ones that matter here are
+      // set explicitly. Measured: the live API response carried no nosniff at all.
+      'x-content-type-options': 'nosniff',
     },
   });
 
@@ -49,6 +52,29 @@ export async function onRequest(context) {
   // wins up to the platform, and a router nobody can predict is not worth the brevity.
   if (request.method !== 'POST') {
     return json({ ok: false, error: 'method-not-allowed' }, 405);
+  }
+
+  // Cross-site submissions.
+  //
+  // Measured before this existed: a POST with Content-Type: text/plain and
+  // Origin: https://evil.example was accepted and wrote a row. That is a simple request,
+  // so the browser never sends a preflight and the absence of CORS headers never gets a
+  // chance to refuse it. The honeypot does not help — an attacker writes the body.
+  //
+  // The harm is not theft, it is poisoning: this table exists to be read as a signal
+  // about which professions turn up, and junk rows destroy exactly that.
+  //
+  // Two guards. Requiring JSON forces a preflight for any cross-origin caller, which then
+  // fails because nothing here answers OPTIONS with CORS headers. And an Origin that is
+  // present but foreign is refused outright. Origin is compared against the request URL
+  // rather than a hard-coded host so preview deployments work unchanged; a caller with no
+  // Origin at all is a non-browser client, which is not the vector being closed.
+  const origin = request.headers.get('Origin');
+  if (origin && origin !== new URL(request.url).origin) {
+    return json({ ok: false, error: 'cross-origin' }, 403);
+  }
+  if (!(request.headers.get('Content-Type') || '').includes('application/json')) {
+    return json({ ok: false, error: 'bad-content-type' }, 415);
   }
 
   if (!env.DB) {

@@ -131,15 +131,6 @@ input, button, select, textarea { font-family: inherit; }
 .footer-nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; }
 .footer-nav a { text-decoration: none; color: var(--ink-78); }
 .footer-nav a:hover { color: var(--amber-text); }
-.footer-android {
-  display: flex; align-items: center; gap: 8px; font-size: 13.5px;
-  text-decoration: none; color: var(--ink-78);
-}
-.footer-android:hover { color: var(--amber-text); }
-.footer-android__mark {
-  width: 13px; height: 13px; border-radius: 2px;
-  background: linear-gradient(135deg, var(--ink) 0 50%, var(--amber) 50% 100%);
-}
 
 /* ---------- type ---------- */
 
@@ -196,7 +187,6 @@ input, button, select, textarea { font-family: inherit; }
   gap: 18px; padding: 32px 24px; cursor: pointer; text-align: center;
 }
 .dropzone:hover { border-color: var(--amber); background: var(--card-hover); }
-.dropzone--sm { min-height: clamp(200px, 30vh, 300px); }
 .dropzone__ring {
   position: absolute; inset: -2px; border: 2px solid var(--amber);
   border-radius: 6px; background: var(--amber-wash); pointer-events: none;
@@ -401,10 +391,6 @@ input, button, select, textarea { font-family: inherit; }
 .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
 .sr-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
-.grid-cards {
-  margin-top: clamp(24px, 3.5vw, 36px); display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr)); gap: 12px;
-}
 .toolcard {
   border: 1px solid var(--line); border-radius: 6px; background: var(--card);
   padding: 18px 20px 20px; text-decoration: none; display: block;
@@ -465,6 +451,11 @@ textarea.askfield__input { resize: vertical; min-height: 104px; }
 .askprice { margin: 18px 0 0; font-size: 16px; line-height: 1.6; }
 .askbutton { display: block; width: 100%; margin-top: 18px; padding: 14px 18px; font-size: 16.5px; }
 .askmono { margin: 14px 0 0; font: 13px/1.6 ui-monospace, Consolas, monospace; color: var(--ink-78); }
+
+/* Added by pagegrid.ts when a page will not render. It was setting this class against no
+   rule at all, so a page that failed looked exactly like one still loading. */
+.pagecell--blank { background: repeating-linear-gradient(45deg, var(--paper), var(--paper) 6px, var(--card) 6px, var(--card) 12px); }
+.pagecell--blank .pagecell__canvas { visibility: hidden; }
 
 .atwork { margin: 14px 0 0; font-size: 14px; line-height: 1.5; color: var(--ink-60, var(--ink-78)); }
 .atwork a { color: inherit; text-underline-offset: 3px; }

@@ -19,9 +19,6 @@ export function percent(fraction: number, digits = 0): string {
 }
 
 /** "8.4 MB → 2.9 MB" */
-export function transition(before: number, after: number): string {
-  return `${formatBytes(before)} → ${formatBytes(after)}`;
-}
 
 export function seconds(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
