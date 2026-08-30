@@ -13,7 +13,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
-import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
+import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
 import { LANGUAGES } from './langs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -338,6 +338,13 @@ async function build() {
       body = body.replace(/[ \t]*<!--TOOL_GRID-->/, toolGrid());
       if (body.includes('<!--TOOL_GRID-->')) {
         throw new Error(`TOOL_GRID marker survived substitution in ${file}`);
+      }
+    }
+    if (body.includes('<!--PRO_FEATURES-->')) {
+      const items = PRO_FEATURES.map((f) => `            <li>${esc(f)}</li>`).join('\n');
+      body = body.replace(/[ \t]*<!--PRO_FEATURES-->/, `          <ul class=\"price__list\">\n${items}\n          </ul>`);
+      if (body.includes('<!--PRO_FEATURES-->')) {
+        throw new Error(`PRO_FEATURES marker survived substitution in ${file}`);
       }
     }
     if (body.includes('<!--APP_FEATURES-->')) {

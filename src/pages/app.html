@@ -30,10 +30,11 @@
         </div>
         <div class="price">
           <p class="kicker">Pro &mdash; not yet</p>
-          <p class="price__amount">$4.99<span>/mo</span></p>
-          <p class="price__sub">or $29.99/year · same price in the app and on the web</p>
-          <p class="price__note">Unlimited OCR, 100 AI summaries a month, batch processing, and one
-            account across phone, tablet and web. Not on sale yet on either surface.</p>
+          <p class="price__amount">{{proPrice}}<span>{{proQualifier}}</span></p>
+          <p class="price__sub">paid once, not a subscription · covers {{proCovers}}</p>
+          <p class="price__note">A PDF tool gets used a few times a year. Everyone else rents theirs by
+            the month; this is bought once and kept. Not on sale yet on either surface.</p>
+          <!--PRO_FEATURES-->
           <p class="price__sub" style="margin-top: 12px;">payment placeholder — nothing to buy on
             this page today.</p>
         </div>
@@ -57,7 +58,20 @@
       <div>
         <h2>What Pro will pay for</h2>
         <p>The parts that do cost money: AI summaries, the heavier OCR work, and keeping this
-          maintained. You will hear about it from the app rather than from a banner here.</p>
+          maintained. Paid once, not rented — a PDF tool gets used a few times a year, and every
+          competitor bills monthly for it. You will hear about it from the app rather than from a
+          banner here.</p>
+      </div>
+      <div>
+        <h2>Why summaries are only ever in the app</h2>
+        <p>Summarising means sending the text of your document to Google's Gemini API, and it needs
+          an account to meter. Both of those are fine in an app you chose to install. Neither is fine
+          on the website, whose whole argument is that nothing leaves your device — and which prints
+          a live count of bytes sent at the bottom of every page so you can check that claim
+          yourself.</p>
+        <p>Putting summaries on the web would break the one promise the site makes checkable, in the
+          exact place it is checkable, and would need sign-in on a site whose position is that it has
+          none. So they are not coming to the web. That is a decision, not a roadmap gap.</p>
       </div>
     </section>
 

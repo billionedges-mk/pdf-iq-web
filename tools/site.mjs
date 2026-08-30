@@ -95,7 +95,7 @@ export const PAGES = [
   {
     slug: 'terms', name: 'Terms', entry: null,
     title: 'Terms of use — pdf-iq PDF tools',
-    description: 'The terms covering use of the pdf-iq website, the seven browser tools, and the PDFiq Android app, including subscriptions and liability.',
+    description: 'The terms covering use of the pdf-iq website, the seven browser tools, and the PDFiq Android app, including how Pro is bought and liability.',
   },
   {
     slug: 'support', name: 'Support', entry: null,
@@ -144,7 +144,40 @@ const list = (items) =>
  * Substituted into page bodies at build time. An unknown token, or one left behind,
  * fails the build — a count that silently stays literal is the failure this replaces.
  */
+/**
+ * Pro: the price, and what it buys.
+ *
+ * One source, because this was written by hand into the homepage price card and again into
+ * the app page's, and a pricing change has to land in both or the site quotes two prices.
+ * The tool count and the app feature list are single-sourced here for the same reason and
+ * for the same past failure.
+ *
+ * A one-time price is the position, not an implementation detail: a PDF utility gets used a
+ * few times a year and every competitor rents. It is stated plainly wherever price appears.
+ */
+export const PRO = {
+  price: '$14.99',
+  cadence: 'one-time',
+  /** Rendered next to the amount. Not "/mo" — there is no recurring charge to describe. */
+  qualifier: 'once',
+  covers: 'both the web tools and the Android app',
+  features: [
+    'Batch processing across every tool',
+    'Searchable-PDF output from OCR',
+    'Advanced compression — target a file size or a dpi',
+    'Password protect and password remove',
+  ],
+  /** Kept prominent: it is not on sale, on either surface. */
+  onSale: false,
+};
+
+export const PRO_FEATURES = PRO.features;
+
 export const TOKENS = {
+  proPrice: PRO.price,
+  proQualifier: PRO.qualifier,
+  proCadence: PRO.cadence,
+  proCovers: PRO.covers,
   webToolCount: word(WEB_TOOLS.length),
   webToolCountCap: cap(word(WEB_TOOLS.length)),
   appToolCount: word(APP_TOOLS.length),
