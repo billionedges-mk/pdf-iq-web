@@ -600,6 +600,17 @@ it makes every other line in the list less believable, because the reader now ha
 them all. Nobody is tempted to record a problem that does not exist; they are tempted to
 stop updating.
 
+**The mechanism, which is the part worth remembering.** Both corrections had been made, and
+both were *told to me in conversation*. Neither reached the file. The next assessment read
+the file, because that is what an assessment does — the conversation is gone, the file is
+what remains. So the failure is not that the record was wrong; it is that there was a moment
+where the truth existed only in a place with no future readers, and nobody wrote it down.
+
+That path is always open. Anything settled in discussion — a value confirmed, a check run on
+a device, a question answered from a dashboard — is unrecorded by default. `TECH_DEBT.md` is
+exactly as exposed to this as any status list, and more so, because it is the file consulted
+precisely when nobody remembers.
+
 **The check:** an open item is only open if it would still fail today. Before reporting
 status from a file, re-verify anything cheap enough to re-verify, and treat a stale entry as
 a defect in the record rather than a note that needs tidying. Where the answer arrived in
