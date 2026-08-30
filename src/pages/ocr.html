@@ -58,7 +58,7 @@
         </label>
         <p class="hint" data-lang-note>&nbsp;</p>
 
-        <div class="card card--flag" style="margin-top: 16px;" data-hastext hidden>
+        <div class="card" style="margin-top: 16px;" data-hastext hidden>
           <p class="outcome__body" style="margin: 0;" data-hastext-note>&nbsp;</p>
         </div>
 
@@ -81,9 +81,10 @@
         <p class="kicker" style="margin-top: 24px;">Here vs. the app</p>
         <p class="hint">On this page OCR is unlimited and needs no account, one file at a time. The
            Android app does not have OCR yet.</p>
-        <p class="hint">The reason for the difference: an app can count what it has done without asking who
-           you are, and a website cannot — counting here would mean asking who you are, and we would
-           rather not put that in front of a free tool. So the web version is the place to bring a long batch.</p>
+          <p class="hint">Free here means all of it, one file at a time, with no account: reading a
+           document of any length, as many documents as you like. What Pro adds is a different
+           capability rather than a bigger allowance &mdash; doing many files in one go, and writing
+           the words back into the PDF so the file itself is searchable.</p>
       </div>
     </section>
 
@@ -131,23 +132,30 @@
         <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
         <p class="outcome__head" data-result-head>&nbsp;</p>
         <p class="outcome__body" data-result-detail>&nbsp;</p>
-        <div class="actions" style="margin-top: 24px;">
-          <button type="button" class="btn" data-save>Save</button>
-          <button type="button" class="btn-quiet" data-save-text>Save the plain text instead</button>
+        <label class="sr-only" for="ocr-text">The text read out of this document</label>
+        <textarea id="ocr-text" data-text-out readonly spellcheck="false"
+          style="width: 100%; min-height: 260px; margin-top: 18px; padding: 14px; box-sizing: border-box;
+                 border: 1px solid var(--line); border-radius: 6px; background: var(--paper);
+                 color: var(--ink); font: 13.5px/1.65 ui-monospace, Consolas, monospace; resize: vertical;"></textarea>
+        <div class="actions" style="margin-top: 18px;">
+          <button type="button" class="btn" data-copy>Copy all the text</button>
+          <button type="button" class="btn-quiet" data-save-text>Download it as a .txt file</button>
           <button type="button" class="btn-quiet" data-again>Read another</button>
         </div>
         <dl class="facts">
-          <div><dt>size</dt><dd data-fact-size>&mdash;</dd></div>
           <div><dt>words found</dt><dd data-fact-words>&mdash;</dd></div>
-          <div><dt>appearance</dt><dd>unchanged, text sits behind the scan</dd></div>
+          <div><dt>characters</dt><dd data-fact-chars>&mdash;</dd></div>
+          <div><dt>your file</dt><dd>untouched &mdash; nothing was written back into it</dd></div>
           <div><dt>time taken</dt><dd data-fact-time>&mdash;</dd></div>
         </dl>
       </div>
-      <div class="nextup">
-        <span class="nextup__label">Next, with the searchable file:</span>
-        <a href="/compress/">Compress it</a>
-        <a href="/split/">Split it</a>
-        <a href="/reorder/">Drop the blank pages</a>
+      <div class="card card--flag" style="margin-top: 18px;">
+        <h2 class="kicker">Wanting a searchable PDF instead?</h2>
+        <p class="outcome__body">That is a different thing from the text above: the same words written
+          back into the document as an invisible layer, so the file itself becomes searchable in any
+          reader while looking exactly as it does now. It is what Pro will do with this page, and Pro
+          is not on sale yet, on either surface. There is no button here for it because there is
+          nothing behind the button &mdash; when it exists, it will appear.</p>
       </div>
     </section>
 

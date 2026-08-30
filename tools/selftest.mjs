@@ -18,7 +18,7 @@ pre{white-space:pre-wrap;margin:0}</style></head>
 <body><pre id="out"></pre><script type="module" src="/${name}.js"></script></body></html>
 `;
 
-for (const name of ['selftest', 'tools-selftest', 'ocr-probe', 'readout-selftest', 'e2e-selftest']) {
+for (const name of ['selftest', 'tools-selftest', 'ocr-probe', 'readout-selftest', 'e2e-selftest', 'ocr-text-probe']) {
   await esbuild.build({
     entryPoints: [join(ROOT, `src/test/${name}.ts`)],
     bundle: true, format: 'esm', target: ['es2022'],

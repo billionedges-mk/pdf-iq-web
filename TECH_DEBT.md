@@ -122,6 +122,24 @@ worded so that it stays true if the measurement comes back badly.
 
 ## Test coverage
 
+- **OCR free/Pro split.** Free OCR now gives the reader the text: on screen to read and copy, and
+  downloadable as `.txt`. The searchable PDF — those words written back into the file as an
+  invisible layer — is the Pro output, and Pro is not on sale. There is no control for it on the
+  free screen, only a statement of what it is, because a control that cannot act is this project's
+  most repeated defect (CLAIMS.md check 14).
+
+  `src/lib/textlayer.ts` is therefore unreachable from the UI, deliberately, and its header says so
+  in detail. `src/entries/ocr.ts` keeps `writeLayer()` uncalled for the same reason: it is the
+  finished call site, and rewriting it later against a library nothing had run in months is the
+  failure being avoided. **The round-trip test in `tools-selftest.ts` is the whole safety net** —
+  it drives `textlayer.ts` directly rather than through the page, so it survives the feature being
+  behind Pro. Deleting it as "covering an unused feature" would leave the Pro path unverified with
+  nothing to say so.
+
+  A page that already carries a text layer is now **read rather than recognised** — instant, and
+  the document's own characters instead of a guess at a picture of them. That case used to be an
+  amber warning ("running OCR anyway will add a second layer"), which was correct when the output
+  was a layer and backwards once the output became text.
 - **OCR is not in the automated pass.** `e2e-selftest.ts` drives the other six tools end to
   end; OCR is excluded because a run needs a 6–11 MB language model fetch and roughly ten
   seconds, which would make every local test run slow enough that people stop running it. It

@@ -82,3 +82,29 @@ export async function pageHasText(page: PDFPageProxy): Promise<boolean> {
   );
   return chars > 12;
 }
+
+/**
+ * The text a page already carries, read rather than recognised.
+ *
+ * `pageHasText` above counts these characters and throws them away. A page that already
+ * has a text layer does not need OCR at all: the words are in the file, exact, and reading
+ * them is instant where recognising them costs a 300 dpi render and a second of Tesseract
+ * per page — and would return a guess at characters the document already knows.
+ *
+ * pdf.js marks the end of a line with `hasEOL`, which is the only structure worth keeping;
+ * everything else about position is layout, and this output is meant to be read.
+ */
+export async function pageText(page: PDFPageProxy): Promise<string> {
+  const content = await page.getTextContent();
+  let out = '';
+  for (const item of content.items) {
+    if (!('str' in item)) continue;
+    out += item.str;
+    if ((item as { hasEOL?: boolean }).hasEOL) out += '\n';
+    else if (item.str && !item.str.endsWith(' ')) out += ' ';
+  }
+  return out
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}

@@ -15,7 +15,7 @@
 import { PDFDocument } from 'pdf-lib';
 import { OcrPool, poolSize } from '../lib/ocr-pool.js';
 import { openPdf } from '../lib/open-pdf.js';
-import { openDocument, renderPage, pageHasText } from '../lib/pdfjs.js';
+import { openDocument, renderPage, pageHasText, pageText } from '../lib/pdfjs.js';
 import { LANGUAGES } from '../lib/langs.generated.js';
 import {
   TextLayerFont, buildTextOperators, attachFont, appendContentStream,
@@ -23,10 +23,10 @@ import {
 } from '../lib/textlayer.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, describeRanges, seconds } from '../lib/format.js';
-import { wireNextLinks, claimIncoming } from '../lib/handoff.js';
+import { claimIncoming } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
 
-const STAGES = ['Loading the language model', 'Reading each page', 'Writing the text behind the scan'];
+const STAGES = ['Loading the language model', 'Reading each page', 'Collecting the text'];
 
 /** Tesseract wants roughly 300 dpi; below about 200 accuracy falls off sharply. */
 const OCR_DPI = 300;
@@ -41,6 +41,13 @@ interface PageResult {
   words: OcrWord[];
   confidence: number;
   text: string;
+  /**
+   * Where the text came from. A page that already carries a text layer is *read*, not
+   * recognised: the characters are in the file, so reading them is instant and exact where
+   * recognising them costs a 300 dpi render and returns a guess at words the document
+   * already knows. That used to be reported as a warning, which had it backwards.
+   */
+  source: 'ocr' | 'layer';
   skipped: null | 'no-text' | 'low-confidence';
 }
 
@@ -57,9 +64,9 @@ const pageScale = new Map<number, number>();
 
 warnWhileBusy(() => busy);
 
-/** The finished file, so the "next" links can carry it to the following tool. */
-let lastResult: { bytes: Uint8Array; name: string } | null = null;
-wireNextLinks(document, () => lastResult);
+// No "next tool" links here any more: this page's output is text, and there is no PDF to
+// carry into Compress or Split. Handing on the *original* would look like a handoff of
+// something we produced, which it is not.
 
 const input = $<HTMLInputElement>('[data-file-input]')!;
 wireDropzone($('[data-dropzone]')!, input, (files) => void take(files[0]));
@@ -134,10 +141,13 @@ async function parse(password?: string): Promise<void> {
   if (pagesWithText.length) {
     const all = pagesWithText.length >= Math.min(pageCount, 40);
     $('[data-hastext-note]')!.textContent = all
-      ? 'Every page checked already has a text layer — this document is probably already searchable. ' +
-        'Running OCR anyway will add a second layer of words behind the first, which usually makes searching worse, not better.'
-      : `${plural(pagesWithText.length, 'page')} already ${pagesWithText.length === 1 ? 'has' : 'have'} selectable text ` +
-        `(${describeRanges(pagesWithText)}). Those will be left alone; only the rest are read.`;
+      ? 'Every page checked already carries its own text, so nothing here needs recognising. ' +
+        'We will read the words straight out of the file — instant, and exactly what the document says ' +
+        'rather than our best guess at a picture of it.'
+      : `${plural(pagesWithText.length, 'page')} already ${pagesWithText.length === 1 ? 'carries' : 'carry'} selectable text ` +
+        `(${describeRanges(pagesWithText)}), so ${pagesWithText.length === 1 ? 'it is' : 'those are'} read straight out of the file — ` +
+        `exact, and instant. Only the remaining ${plural(pageCount - pagesWithText.length, 'page')} ` +
+        `${pageCount - pagesWithText.length === 1 ? 'needs' : 'need'} recognising.`;
     box.hidden = false;
   } else {
     box.hidden = true;
@@ -239,6 +249,7 @@ async function run(): Promise<void> {
           words,
           confidence,
           text: (data.text ?? '').trim(),
+          source: 'ocr' as const,
           skipped: !words.length ? 'no-text' : confidence < CONFIDENCE_FLOOR ? 'low-confidence' : null,
         };
       },
@@ -246,7 +257,7 @@ async function run(): Promise<void> {
       (index, result) => {
         const entry: PageResult = result
           ? { ...result, index }
-          : { index, words: [], confidence: 0, text: '', skipped: 'no-text' };
+          : { index, words: [], confidence: 0, text: '', source: 'ocr', skipped: 'no-text' };
         results.push(entry);
         markBlock(index, entry.skipped === null);
 
@@ -261,6 +272,24 @@ async function run(): Promise<void> {
       signal
     );
 
+    // Pages that already carry a text layer are read straight out of the file. This is the
+    // whole reason an existing layer is a shortcut rather than a problem: it is instant, and
+    // it returns the document's own characters rather than a recognition of a picture of
+    // them. Done after recognition so the two sets can be merged in page order.
+    for (const index of pagesWithText) {
+      const page = await proxy.doc.getPage(index + 1);
+      const text = await pageText(page);
+      page.cleanup();
+      results.push({
+        index,
+        words: [],
+        confidence: 100,
+        text,
+        source: 'layer',
+        skipped: text ? null : 'no-text',
+      });
+    }
+
     await proxy.close();
     await pool.terminate();
     pool = null;
@@ -274,15 +303,11 @@ async function run(): Promise<void> {
     }
 
     results.sort((a, b) => a.index - b.index);
-
-    progress.set(1, 1, 2, 'writing the text layer');
-    await breathe();
-    const bytes = await writeLayer();
     const took = performance.now() - started;
 
     progress.stop();
     busy = false;
-    renderResult(bytes, took);
+    renderResult(took);
   } catch (err) {
     progress.stop();
     busy = false;
@@ -318,6 +343,16 @@ function classifyOcr(err: unknown, facts: E.FileFacts): E.ToolError {
 
 // ---------------------------------------------------------------- text layer
 
+/**
+ * Write the recognised words back into the PDF as an invisible layer — the searchable-PDF
+ * output, which is the Pro deliverable and is not on sale yet.
+ *
+ * Nothing calls this today. It is kept rather than deleted because it works: it is the
+ * finished, tested call site for `textlayer.ts`, whose header explains why the test that
+ * covers it must keep running. Deleting this would mean rewriting it later against a
+ * library nothing had exercised in months, which is the exact failure that file warns about.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function writeLayer(): Promise<Uint8Array> {
   const doc = await PDFDocument.load(sourceBytes!, { updateMetadata: false });
   const pages = doc.getPages();
@@ -376,7 +411,7 @@ function markBlock(index: number, good: boolean): void {
 
 // ---------------------------------------------------------------- result
 
-function renderResult(bytes: Uint8Array, took: number): void {
+function renderResult(took: number): void {
   const read = results.filter((r) => !r.skipped);
   const skipped = results.filter((r) => r.skipped);
   const words = read.reduce((n, r) => n + r.words.length, 0);
@@ -409,25 +444,42 @@ function renderResult(bytes: Uint8Array, took: number): void {
   }
   $('[data-result-detail]')!.textContent = detail.join(' ');
 
-  const grew = bytes.length - file!.size;
-  $('[data-fact-size]')!.textContent =
-    `${formatBytes(file!.size)} → ${formatBytes(bytes.length)} (${grew >= 0 ? '+' : '−'}${formatBytes(Math.abs(grew), { precise: true })} of text layer)`;
-  $('[data-fact-words]')!.textContent = words.toLocaleString();
+  // The text itself is the deliverable now, so it is on the screen rather than only behind
+  // a download. Page markers are kept: a reader scanning for one page needs them, and they
+  // survive a copy into anything else.
+  const joined = results
+    .filter((r) => !r.skipped)
+    .map((r) => `--- page ${r.index + 1} ---\n${r.text}`)
+    .join('\n\n');
+
+  const area = $<HTMLTextAreaElement>('[data-text-out]')!;
+  area.value = joined;
+
+  $('[data-fact-words]')!.textContent = words ? words.toLocaleString() : joined.split(/\s+/).filter(Boolean).length.toLocaleString();
+  $('[data-fact-chars]')!.textContent = joined.length.toLocaleString();
   $('[data-fact-time]')!.textContent =
     `${seconds(took)} on this device (${(took / Math.max(1, results.length) / 1000).toFixed(1)}s a page)`;
 
-  const outName = suffixName(file!.name, '-searchable');
-  lastResult = { bytes, name: outName };
-  const save = $<HTMLButtonElement>('[data-save]')!;
-  save.textContent = `Save ${outName}`;
-  save.onclick = () => saveFile(bytes, outName);
+  const copy = $<HTMLButtonElement>('[data-copy]')!;
+  copy.textContent = 'Copy all the text';
+  copy.onclick = async () => {
+    // The clipboard API needs a permission some browsers refuse; selecting the textarea
+    // always works, so the fallback leaves the text selected for the reader to copy.
+    try {
+      await navigator.clipboard.writeText(joined);
+      copy.textContent = 'Copied';
+      shell.announce('The text has been copied.');
+    } catch {
+      area.focus();
+      area.select();
+      copy.textContent = 'Selected — press Ctrl+C';
+      shell.announce('Copying was refused by the browser. The text is selected instead.');
+    }
+    setTimeout(() => { copy.textContent = 'Copy all the text'; }, 4000);
+  };
 
   $('[data-save-text]')!.onclick = () => {
-    const text = results
-      .filter((r) => !r.skipped)
-      .map((r) => `--- page ${r.index + 1} ---\n${r.text}`)
-      .join('\n\n');
-    saveFile(new Blob([text], { type: 'text/plain' }), suffixName(file!.name, '', '.txt'), 'text/plain');
+    saveFile(new Blob([joined], { type: 'text/plain' }), suffixName(file!.name, '', '.txt'), 'text/plain');
   };
 
   shell.show('result');

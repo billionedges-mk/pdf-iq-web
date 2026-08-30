@@ -1,4 +1,29 @@
 /**
+ * The invisible text layer: what makes a scan searchable.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * READ THIS BEFORE DELETING ANYTHING HERE AS DEAD CODE.
+ *
+ * Nothing on the free path calls this any more. Free OCR gives the reader the extracted
+ * text; writing that text back into the PDF as an invisible layer is the Pro deliverable,
+ * and Pro is not on sale yet. So this file looks unreachable, and it is — from the UI.
+ *
+ * It is exercised by `src/test/tools-selftest.ts`, which drives it directly rather than
+ * through the OCR page, on purpose. That test round-trips "Zażółć gęślą jaźń Ünicode naïve
+ * PDF £42.50" through a real PDF and back out via pdf.js, and it is the only thing standing
+ * between us and shipping months-old unexecuted code the day Pro opens.
+ *
+ * If you delete that test because it appears to cover a feature nobody uses, this file
+ * stops being verified and nothing will tell you. The failure it guards against is not
+ * hypothetical: the first version of this wrote simple Type1 fonts, and extraction returned
+ * a single stray character, because byte codes resolve through glyph names before
+ * /ToUnicode. It has been Type0/Identity-H with a /ToUnicode CMap ever since, and that is
+ * only demonstrably still true because the test runs.
+ *
+ * Implemented, correct and unreachable is this project's most repeated defect. This file is
+ * deliberately in that state, with the test as the thing that makes it survivable.
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ *
  * The invisible text layer.
  *
  * OCR output is written behind the scan in text rendering mode 3, which draws nothing.
