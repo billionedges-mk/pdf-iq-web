@@ -78,6 +78,7 @@ function footer() {
         <span data-netreadout-text>0 bytes sent &middot; 0 third-party requests</span>
       </p>
       <nav class="footer-nav" aria-label="Site">
+        <a href="/for-professionals/">Using this at work?</a>
         <a href="/privacy/">Privacy</a>
         <a href="/terms/">Terms</a>
         <a href="/support/">Support</a>

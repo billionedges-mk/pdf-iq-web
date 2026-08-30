@@ -24,6 +24,7 @@ const button = $<HTMLButtonElement>('[data-interest-submit]');
 const MESSAGES: Record<string, string> = {
   'bad-email': 'That address does not look like an address — check it and try again.',
   'bad-profession': 'The second field is the one that matters here, so it cannot be left empty.',
+  'bad-spends-too-long': 'That last answer is longer than the field can take — trim it and try again.',
   'not-configured':
     'Registering interest is not switched on yet — the store behind this button is not connected. ' +
     'Nothing was recorded, so please try again later rather than assuming we have your address.',
@@ -54,6 +55,7 @@ async function submit(): Promise<void> {
   const data = new FormData(form);
   const email = String(data.get('email') ?? '').trim();
   const profession = String(data.get('profession') ?? '').trim();
+  const spendsTooLong = String(data.get('spendsTooLong') ?? '').trim();
   const company = String(data.get('company') ?? '');
 
   if (!email) return say('An email address is needed, or there is no way to come back to you.', 'bad');
@@ -69,7 +71,7 @@ async function submit(): Promise<void> {
     response = await fetch('/api/interest', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, profession, company }),
+      body: JSON.stringify({ email, profession, spendsTooLong, company }),
     });
   } catch {
     button.disabled = false;

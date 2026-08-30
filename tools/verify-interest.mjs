@@ -61,20 +61,45 @@ console.log('interest endpoint');
 // A good submission.
 {
   const db = stubDb();
-  const res = await post({ email: 'A.Person@Example.COM', profession: 'solicitor' }, { DB: db });
+  const res = await post(
+    { email: 'A.Person@Example.COM', profession: 'solicitor', spendsTooLong: 'redacting client names by hand' },
+    { DB: db }
+  );
   const json = await res.json();
   ok(res.status === 200 && json.ok === true, 'a valid submission is accepted');
   ok(db.writes.length === 1, 'and is written exactly once');
   const [write] = db.writes;
-  ok(write.values.length === 3, `three values are bound, not more (got ${write.values.length})`);
+  ok(write.values.length === 4, `four values are bound, not more (got ${write.values.length})`);
   ok(write.values[0] === 'a.person@example.com', 'the address is stored lowercased, so it is one person');
   ok(write.values[1] === 'solicitor', 'the profession is stored verbatim');
-  ok(!Number.isNaN(Date.parse(write.values[2])), 'the third value is a timestamp');
+  ok(write.values[2] === 'redacting client names by hand', 'the free text is stored verbatim, not categorised');
+  ok(!Number.isNaN(Date.parse(write.values[3])), 'the last value is a timestamp');
   ok(
     !JSON.stringify(write.values).includes('203.0.113.42'),
     'the IP address we were handed is not among them'
   );
   ok(/ON CONFLICT\(email\) DO UPDATE/.test(write.sql), 'a repeat from the same address updates rather than duplicates');
+}
+
+// The third field is optional, and an absent one is stored as NULL rather than an empty
+// string: nobody who was never asked should look like they had nothing to say.
+{
+  const db = stubDb();
+  const res = await post({ email: 'b@c.co', profession: 'architect' }, { DB: db });
+  ok(res.status === 200, 'a submission without the third field is still accepted');
+  ok(db.writes[0].values[2] === null, 'and the missing answer is stored as NULL, not an empty string');
+}
+
+// Too long is refused rather than silently truncated.
+{
+  const db = stubDb();
+  const res = await post(
+    { email: 'a@b.co', profession: 'solicitor', spendsTooLong: 'x'.repeat(2000) },
+    { DB: db }
+  );
+  const json = await res.json();
+  ok(res.status === 400 && json.error === 'bad-spends-too-long', 'an over-long answer is refused');
+  ok(db.writes.length === 0, 'and nothing is written');
 }
 
 // The binding is missing — the case that will be true until D1 is bound.
@@ -142,7 +167,8 @@ for (const [label, body] of [
   const schema = readFileSync(join(ROOT, 'functions/schema.sql'), 'utf8');
   const columns = [...schema.matchAll(/^\s{2}(\w+)\s+TEXT/gm)].map((m) => m[1]);
   console.log(`      schema columns: ${columns.join(', ')}`);
-  ok(columns.length === 3, 'the table has three columns');
+  ok(columns.length === 4, `the table has four columns (got ${columns.length})`);
+  ok(columns.includes('spends_too_long'), 'including the free-text answer');
   ok(!/ip|address|agent|referer/i.test(columns.join(' ')), 'and none of them is an IP or a user agent');
 }
 

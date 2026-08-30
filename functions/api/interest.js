@@ -23,6 +23,10 @@
 
 const MAX_EMAIL = 254; // RFC 5321
 const MAX_PROFESSION = 200;
+// Longer, deliberately: this is the answer the page exists to collect and the one nobody
+// should feel clipped writing. Both fields are free text — a dropdown only ever returns
+// the answers we already thought of, and learning the ones we did not is the whole point.
+const MAX_SPENDS_TOO_LONG = 1200;
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -67,6 +71,7 @@ export async function onRequest(context) {
 
   const email = typeof payload.email === 'string' ? payload.email.trim() : '';
   const profession = typeof payload.profession === 'string' ? payload.profession.trim() : '';
+  const spendsTooLong = typeof payload.spendsTooLong === 'string' ? payload.spendsTooLong.trim() : '';
 
   if (!looksLikeEmail(email) || email.length > MAX_EMAIL) {
     return json({ ok: false, error: 'bad-email' }, 400);
@@ -74,15 +79,22 @@ export async function onRequest(context) {
   if (!profession || profession.length > MAX_PROFESSION) {
     return json({ ok: false, error: 'bad-profession' }, 400);
   }
+  // Not required. A demand test wants the contact; this is the part that teaches us
+  // something, and losing the whole submission because someone had nothing to add would
+  // trade the lead away for the lesson.
+  if (spendsTooLong.length > MAX_SPENDS_TOO_LONG) {
+    return json({ ok: false, error: 'bad-spends-too-long' }, 400);
+  }
 
   try {
     // A second submission from the same address updates what they do rather than adding a
     // row, so the count means distinct people.
     await env.DB.prepare(
-      'INSERT INTO interest (email, profession, at) VALUES (?, ?, ?)\n' +
-      'ON CONFLICT(email) DO UPDATE SET profession = excluded.profession, at = excluded.at'
+      'INSERT INTO interest (email, profession, spends_too_long, at) VALUES (?, ?, ?, ?)\n' +
+      'ON CONFLICT(email) DO UPDATE SET profession = excluded.profession, ' +
+      'spends_too_long = excluded.spends_too_long, at = excluded.at'
     )
-      .bind(email.toLowerCase(), profession, new Date().toISOString())
+      .bind(email.toLowerCase(), profession, spendsTooLong || null, new Date().toISOString())
       .run();
   } catch (err) {
     return json({ ok: false, error: 'store-failed', detail: String(err && err.message).slice(0, 200) }, 500);

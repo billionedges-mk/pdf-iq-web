@@ -78,6 +78,17 @@
           <p class="hint" style="margin-top: 6px;">In your own words. This is the answer we actually care about.</p>
         </div>
 
+        <div style="margin-top: 16px;">
+          <label for="interest-slow" style="display: block; font-weight: 600; font-size: 15px;">What do you spend too long on?</label>
+          <textarea id="interest-slow" name="spendsTooLong" rows="4"
+            placeholder="The document job that eats an afternoon. Anything at all &mdash; we would rather hear something we had not thought of."
+            style="width: 100%; max-width: 560px; margin-top: 6px; padding: 10px 12px; box-sizing: border-box;
+                   border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink);
+                   font: 15px/1.55 inherit; font-family: inherit; resize: vertical;"></textarea>
+          <p class="hint" style="margin-top: 6px;">Optional, and the most useful thing on this page. There is no
+            list to pick from on purpose &mdash; a list only returns the answers we already thought of.</p>
+        </div>
+
         <!-- Not for people. Anything that fills this in is not one. -->
         <div aria-hidden="true" style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
           <label for="interest-company">Company</label>
@@ -85,7 +96,7 @@
         </div>
 
         <p class="hint" style="margin-top: 18px; max-width: 640px;">
-          Pressing this sends those two fields to this site, and nothing else &mdash; no name, no
+          Pressing this sends those fields to this site, and nothing else &mdash; no name, no
           company, and not your IP address, which we are handed and choose not to write down. It is the
           only thing on pdf-iq that ever sends anything. <strong>Watch the counter at the bottom of
           this page:</strong> it will go from zero to a few hundred bytes, and stay at zero
@@ -103,8 +114,8 @@
     <section class="card" style="margin-top: 18px;">
       <h2 class="kicker">What happens to the address</h2>
       <p class="outcome__body">
-        It is stored on this site's own infrastructure, in a table with three columns: the address,
-        what you said you do, and the date. Nobody else receives it. There is no mailing list, no
+        It is stored on this site's own infrastructure, in a table with four columns: the address,
+        what you said you do, what you said takes too long, and the date. Nobody else receives it. There is no mailing list, no
         analytics on this page, and no third-party form service &mdash; the site's content security
         policy would block one, which is how we know rather than how we hope.
       </p>
