@@ -103,6 +103,12 @@ export const PAGES = [
     description: 'Answers to what goes wrong, and how to reach a person about the pdf-iq tools and Android app.',
   },
   {
+    slug: 'for-professionals', name: 'For firms', entry: 'for-professionals',
+    title: 'pdf-iq for firms — run it on your own network, $99 per user per year',
+    description:
+      'The seven PDF tools licensed for a team and hostable on your own network, so documents never leave the building. Not on sale yet — register interest.',
+  },
+  {
     // A real route rather than a test-harness page, because it has to be reachable from a
     // phone to be worth anything, and Cloudflare only deploys what `npm run build` emits.
     // noindex keeps it out of the sitemap and out of search; nothing links to it.
@@ -167,6 +173,15 @@ export const PRO = {
     'Advanced compression — target a file size or a dpi',
     'Password protect and password remove',
   ],
+  /**
+   * The team tier, priced per user per year rather than once.
+   *
+   * The recurrence is the whole point and is not a contradiction of the one-time individual
+   * price: one-time revenue does not compound, and a firm renewing annually is the only
+   * compounding line in the plan. It is also not on sale — /for-professionals is a test of
+   * whether the demand exists, with nothing behind the button but a record of who asked.
+   */
+  teamPrice: '$99',
   /** Kept prominent: it is not on sale, on either surface. */
   onSale: false,
 };
@@ -175,6 +190,7 @@ export const PRO_FEATURES = PRO.features;
 
 export const TOKENS = {
   proPrice: PRO.price,
+  proTeamPrice: PRO.teamPrice,
   proQualifier: PRO.qualifier,
   proCadence: PRO.cadence,
   proCovers: PRO.covers,

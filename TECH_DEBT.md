@@ -170,6 +170,26 @@ worded so that it stays true if the measurement comes back badly.
   Still unrun: **desktop Safari and Firefox.** Lower risk than iOS was, and iOS was the one that
   mattered.
 
+- **`/for-professionals` is a demand test, not a product.** $99 per user per year, nothing purchasable,
+  and the button records an email and a free-text profession to a Cloudflare D1 table through a
+  same-origin Pages Function. Of the four things the page describes, **redaction that removes rather
+  than covers is not built and is the expensive one** — the page says so in those words rather than
+  promising it and costing it later. Self-hosting, Bates numbering and seats-on-one-invoice are the
+  other three; self-hosting is nearly free because the site is already static and proven working with
+  its server off.
+
+  Same-origin is not a preference: the CSP is `connect-src 'self'`, so a hosted form service is
+  blocked by the browser, and using one would put a third party in the path of the only thing that
+  ever leaves a visitor's device. No Turnstile for the same reason — it loads a third-party script on
+  the one page where the footer readout matters most. Abuse is a honeypot, length caps and a unique
+  index, with edge rate limiting left to a WAF rule.
+
+  **The IP is deliberately not stored.** Cloudflare hands it to the Function on every request and the
+  schema has no column for it; `tools/verify-interest.mjs` asserts both. `/privacy` describes the
+  table in the same three terms, scoped explicitly to the website, because that page is the app's
+  registered Play policy and an unscoped "we collect email addresses" would be out of step with the
+  Data Safety declaration.
+
 ## Website operational
 
 - ~~**Cloudflare log retention.**~~ Closed. Observability is a separate Cloudflare product and is

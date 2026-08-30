@@ -1,0 +1,93 @@
+/**
+ * Registering interest in professional access.
+ *
+ * This is the only endpoint on the site, and the only thing anywhere that receives data
+ * from a visitor. Everything about it is shaped by that.
+ *
+ * Same origin, deliberately. The site's Content-Security-Policy is `connect-src 'self'`,
+ * so a hosted form service — Formspree, Google Forms, Tally — is blocked by the browser
+ * before it is blocked by judgement. Using one would mean widening the CSP on every page
+ * of the site and putting a third party in the path of the one thing that ever leaves a
+ * visitor's device. The footer readout would also have to report a third-party request on
+ * the one page where it matters most.
+ *
+ * No Turnstile for the same reason: it loads challenges.cloudflare.com, which is a
+ * third-party script and a third-party request. Abuse is handled here instead — a honeypot,
+ * length caps, and a unique index that makes a repeat submission an update rather than a
+ * row — with a WAF rate-limit rule at the edge.
+ *
+ * We are handed CF-Connecting-IP on every request. It is deliberately not written down.
+ * Three columns are stored: the address, what the person does, and when. That is the whole
+ * record, and /privacy says so in the same terms.
+ */
+
+const MAX_EMAIL = 254; // RFC 5321
+const MAX_PROFESSION = 200;
+
+const json = (body, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      // Nothing here is cacheable and nothing here is cross-origin.
+      'cache-control': 'no-store',
+    },
+  });
+
+/** Deliberately permissive. Rejecting valid addresses is worse than accepting a typo. */
+const looksLikeEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
+
+export async function onRequest(context) {
+  const { request, env } = context;
+
+  // One handler rather than onRequest plus onRequestPost: exporting both leaves which one
+  // wins up to the platform, and a router nobody can predict is not worth the brevity.
+  if (request.method !== 'POST') {
+    return json({ ok: false, error: 'method-not-allowed' }, 405);
+  }
+
+  if (!env.DB) {
+    // Fail loudly rather than accepting the address and dropping it. A button that thanks
+    // you and discards what you typed is the exact failure this project keeps removing.
+    return json({ ok: false, error: 'not-configured' }, 503);
+  }
+
+  let payload;
+  try {
+    payload = await request.json();
+  } catch {
+    return json({ ok: false, error: 'bad-request' }, 400);
+  }
+
+  // The honeypot is hidden from people and invisible to assistive technology; anything
+  // that fills it in is not a person. Answer as though it worked.
+  if (typeof payload.company === 'string' && payload.company.trim() !== '') {
+    return json({ ok: true, recorded: false });
+  }
+
+  const email = typeof payload.email === 'string' ? payload.email.trim() : '';
+  const profession = typeof payload.profession === 'string' ? payload.profession.trim() : '';
+
+  if (!looksLikeEmail(email) || email.length > MAX_EMAIL) {
+    return json({ ok: false, error: 'bad-email' }, 400);
+  }
+  if (!profession || profession.length > MAX_PROFESSION) {
+    return json({ ok: false, error: 'bad-profession' }, 400);
+  }
+
+  try {
+    // A second submission from the same address updates what they do rather than adding a
+    // row, so the count means distinct people.
+    await env.DB.prepare(
+      'INSERT INTO interest (email, profession, at) VALUES (?, ?, ?)\n' +
+      'ON CONFLICT(email) DO UPDATE SET profession = excluded.profession, at = excluded.at'
+    )
+      .bind(email.toLowerCase(), profession, new Date().toISOString())
+      .run();
+  } catch (err) {
+    return json({ ok: false, error: 'store-failed', detail: String(err && err.message).slice(0, 200) }, 500);
+  }
+
+  return json({ ok: true, recorded: true });
+}
+

@@ -12,7 +12,8 @@
     "verify:pdflib": "node tools/verify-pdflib-errors.mjs",
     "contrast": "node tools/contrast.mjs",
     "selftest": "node tools/selftest.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:interest": "node tools/verify-interest.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

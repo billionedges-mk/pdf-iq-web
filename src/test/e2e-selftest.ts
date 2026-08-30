@@ -109,6 +109,16 @@ async function smallScanPdf(px: number, py: number, q: number): Promise<Uint8Arr
   return doc.save();
 }
 
+/**
+ * Every indexable route, injected at build time from site.mjs.
+ *
+ * This was a hand-written list, which meant a new page was simply not swept: the suite
+ * stayed green and the page went out unchecked. Deriving it is the same fix as the tool
+ * count and the app feature list, for the same reason and after the same failure.
+ */
+declare const __ROUTES__: string[];
+const ROUTES: string[] = __ROUTES__;
+
 const fileOf = (bytes: Uint8Array, name: string, type = 'application/pdf') =>
   new File([bytes as BlobPart], name, { type });
 
@@ -671,7 +681,7 @@ const A11Y_CASES: Case[] = [
   {
     name: 'Every page has one h1, a skip link, a main landmark and a live region',
     async run() {
-      for (const route of ['/', '/compress/', '/merge/', '/split/', '/images-to-pdf/', '/rotate/', '/reorder/', '/ocr/', '/app/', '/privacy/', '/terms/', '/support/']) {
+      for (const route of ROUTES) {
         const p = await open(route);
         const d = p.doc;
         ok(d.querySelectorAll('h1').length === 1, `${route}: exactly one h1`);

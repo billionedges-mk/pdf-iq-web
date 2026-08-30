@@ -4,6 +4,7 @@
 import * as esbuild from 'esbuild';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { buildEncryptedPdf } from './encrypt-fixture.mjs';
+import { ALL, href } from './site.mjs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,6 +23,10 @@ for (const name of ['selftest', 'tools-selftest', 'ocr-probe', 'readout-selftest
   await esbuild.build({
     entryPoints: [join(ROOT, `src/test/${name}.ts`)],
     bundle: true, format: 'esm', target: ['es2022'],
+    // The a11y and SEO sweeps used to carry a hand-written list of routes, so a page added
+    // to the site was simply not checked and the suite stayed green while missing it. The
+    // list now comes from the same place the site is built from.
+    define: { __ROUTES__: JSON.stringify(ALL.filter((p) => !p.noindex).map((p) => href(p.slug))) },
     outfile: join(OUT, `${name}.js`), logLevel: 'warning',
   });
   writeFileSync(join(OUT, `${name}.html`), page(name));
