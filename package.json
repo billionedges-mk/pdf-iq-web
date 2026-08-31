@@ -1,6 +1,7 @@
 {
   "name": "pdf-iq-web",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "description": "pdf-iq.com - client-side PDF tools. Files never leave the device.",
   "type": "module",

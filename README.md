@@ -137,6 +137,9 @@ is *conveyed* to the visitor's browser, which would put this entire site under s
 obligations. Compression is therefore an object-level image walk with pdf-lib rather than a port
 of any of them.
 
+This project is MIT licensed — see `LICENSE`. The bundled OCR language models are Apache-2.0
+from the Tesseract project and the fonts are OFL-1.1; both carry their own terms.
+
 Current tree: 27 packages, zero copyleft. pdf-lib (MIT), pdfjs-dist (Apache-2.0), tesseract.js
 (Apache-2.0), fonts OFL-1.1. The bundled OCR language models are Apache-2.0 from the Tesseract
 project.
