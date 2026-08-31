@@ -617,6 +617,25 @@ a defect in the record rather than a note that needs tidying. Where the answer a
 conversation rather than in code, write it down at the time — the record is the thing that
 outlives the conversation, and it is the thing the next assessment will be built on.
 
+**The sharpest instance of this, and it ran the other way.** A draft of a Privacy Guides
+post — a document whose entire purpose was volunteering limitations to the audience most
+likely to check them — correctly said "desktop Safari and Firefox are untested". I corrected
+it to "desktop Firefox is untested", citing release notes I had written an hour earlier.
+
+Those release notes said "Tested on Chrome and on Safari, desktop and iPhone". Nobody had
+tested desktop Safari. The phrase came from a passing line in conversation, was written
+into a release artefact without being checked, and was then quoted back as evidence against
+an accurate document. The README, three feet away, said it correctly the whole time.
+
+That is worse than a stale record, because the artefact was fresh. **A claim can launder
+itself: unverified in conversation, written down, then cited as a source.** Writing something
+down does not make it true, and being the one who wrote it is not evidence — it is the
+opposite, because it means the claim has been checked exactly once, by someone who was
+guessing.
+
+The direction is the tell. The error made the project look better tested than it was, in the
+document that existed to say how well tested it was.
+
 **Corollary:** when the record is corrected, say what closed it and how it was confirmed,
 not just that it is closed. "Tested in both directions after the nameserver move" survives
 scrutiny; "done" does not, and invites the same item being reopened later.
