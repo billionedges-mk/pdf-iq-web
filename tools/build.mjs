@@ -311,20 +311,26 @@ async function bundle() {
 /**
  * robots.txt — and what this file can and cannot do.
  *
- * WHAT SHIPS IS NOT WHAT IS SERVED. Cloudflare prepends a managed block ahead of this
- * content, so the live file is its block first and this file's text afterwards. Measured
- * on 30 August 2026 the managed block carried:
+ * WHAT SHIPS WAS NOT WHAT WAS SERVED, until the dashboard setting behind it was turned off.
+ *
+ * RESOLVED 30 August 2026: Cloudflare's "Managed robots.txt" toggle was prepending a block
+ * ahead of this content, so the live file was its block first and this file's text second.
+ * With the toggle off, the served file is now byte-for-byte this one — verified from the
+ * served file rather than the repo: 237 bytes, no managed block, no Disallow anywhere.
+ *
+ * Kept because the shape recurs and the next person to edit this file should know the
+ * served copy can differ from the built one. What the managed block had carried:
  *
  *     User-agent: *   Content-Signal: search=yes,ai-train=no,use=reference
  *     Disallow: /     for Amazonbot, Applebot-Extended, Bytespider, CCBot, ClaudeBot,
  *                     CloudflareBrowserRenderingCrawler, Google-Extended, GPTBot,
  *                     meta-externalagent
  *
- * Those Disallows cannot be lifted from here. A named group is more specific than `*`, so
- * Cloudflare's `ClaudeBot: Disallow` beats anything this file says through the wildcard,
- * and adding a competing `ClaudeBot: Allow` group would leave two rules of equal path
- * length whose resolution differs between parsers. Unblocking the training crawlers is a
- * dashboard change, not a repo change.
+ * Those Disallows could not be lifted from here, which was the point worth recording: a
+ * named group is more specific than `*`, so Cloudflare's `ClaudeBot: Disallow` beat anything
+ * this file said through the wildcard, and a competing `ClaudeBot: Allow` group would have
+ * left two rules of equal path length whose resolution differs between parsers. It was a
+ * dashboard change, and no amount of editing here would have substituted for it.
  *
  * What this file usefully does is name the *search* crawlers, which the managed block does
  * not mention at all: OAI-SearchBot, Claude-SearchBot and PerplexityBot are not blocked
