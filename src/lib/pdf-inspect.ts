@@ -98,7 +98,7 @@ function nameOf(obj: PDFObject | undefined): string | null {
 }
 
 /** ColorSpace can be a name, or an array like [/Indexed /DeviceRGB 255 <stream>]. */
-export function colorSpaceOf(doc: PDFDocument, dict: PDFDict): { name: string | null; components: number } {
+function colorSpaceOf(doc: PDFDocument, dict: PDFDict): { name: string | null; components: number } {
   const cs = dict.lookup(PDFName.of('ColorSpace'));
   const direct = nameOf(cs);
   if (direct) return { name: direct, components: componentsFor(direct) };

@@ -16,6 +16,7 @@ import * as esbuild from 'esbuild';
 import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
 import { faqBlock } from './faq.mjs';
 import { icon } from './icons.mjs';
+import { ogImage } from './og-images.mjs';
 import { LANGUAGES } from './langs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -147,6 +148,11 @@ function substituteTokens(body, file) {
 
 function document_({ page, body, css, assets }) {
   const url = ORIGIN + href(page.slug);
+  // Titles and descriptions go through the same substitution as the body, and the same
+  // leftover assertion. Without this a {{token}} in page metadata shipped verbatim into
+  // <meta name="description"> — which it just did, because the check only ran on the body.
+  const title = substituteTokens(page.title, `${page.slug || "index"} title`);
+  const description = substituteTokens(page.description, `${page.slug || "index"} description`);
   const shell = page.shell ? ` style="--shell: ${page.shell}"` : '';
   const script = page.entry ? `\n  <script type="module" src="/assets/${assets.get(page.entry)}"></script>` : '';
   return `<!doctype html>
@@ -154,13 +160,21 @@ function document_({ page, body, css, assets }) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(page.title)}</title>
-<meta name="description" content="${esc(page.description)}">${page.noindex ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(description)}">${page.noindex ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
 <link rel="canonical" href="${url}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${url}">
-<meta property="og:title" content="${esc(page.title)}">
-<meta property="og:description" content="${esc(page.description)}">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(description)}">
+<meta property="og:image" content="${ORIGIN}/og/${page.slug || 'home'}.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="pdf-iq">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(description)}">
+<meta name="twitter:image" content="${ORIGIN}/og/${page.slug || 'home'}.png">
 <meta name="theme-color" content="#FAF8F4">
 <meta name="pdfiq-build" content="${BUILD_ID}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -410,6 +424,24 @@ async function build() {
         throw new Error(`TOOL_GRID marker survived substitution in ${file}`);
       }
     }
+    // The homepage describes the application itself. Not added elsewhere: a tool page is a
+    // page about one feature, and claiming each is a separate application would be untrue.
+    if (page.slug === '') {
+      const app = {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'pdf-iq',
+        url: ORIGIN + '/',
+        applicationCategory: 'UtilitiesApplication',
+        operatingSystem: 'Any browser',
+        description: page.description,
+        isAccessibleForFree: true,
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        featureList: HOME_TOOLS.map((t) => t.cardName ?? t.name),
+      };
+      body += `
+      <script type="application/ld+json">${JSON.stringify(app).replace(/</g, '\\u003c')}</script>`;
+    }
     if (body.includes('<!--FAQ-->')) {
       const tool = TOOLS.find((t) => t.slug === page.slug);
       if (!tool) throw new Error(`${page.slug} has a FAQ marker but is not a tool`);
@@ -462,6 +494,15 @@ async function build() {
   copyStatic();
 
   writeFileSync(join(OUT, 'sitemap.xml'), sitemap());
+  // Share images, drawn straight to PNG. Every indexed route gets one; a route that
+  // somehow produced nothing would ship a bare grey link, so it throws instead.
+  mkdirSync(join(OUT, 'og'), { recursive: true });
+  for (const page of ALL.filter((p) => !p.noindex)) {
+    const png = ogImage(page.slug);
+    if (!png || png.length < 500) throw new Error(`share image for /${page.slug} came out empty`);
+    writeFileSync(join(OUT, 'og', `${page.slug || 'home'}.png`), png);
+  }
+
   writeFileSync(join(OUT, 'robots.txt'), robots());
 
   console.log(`built ${ALL.length} routes -> dist/  (build ${BUILD_ID})`);
@@ -475,6 +516,7 @@ if (SERVE) {
     '.css': 'text/css', '.woff2': 'font/woff2', '.wasm': 'application/wasm',
     '.svg': 'image/svg+xml', '.xml': 'application/xml', '.txt': 'text/plain',
     '.json': 'application/json', '.traineddata': 'application/octet-stream',
+    '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon',
     '.gz': 'application/gzip', '.bcmap': 'application/octet-stream', '.pfb': 'application/octet-stream',
   };
   createServer((req, res) => {

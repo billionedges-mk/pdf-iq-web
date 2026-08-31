@@ -98,7 +98,7 @@ export const PAGES = [
     slug: 'app', name: 'Android App', entry: null,
     title: 'pdf-iq for Android — the same tools, offline, on your phone',
     description:
-      'The pdf-iq Android app runs the same tools on your device, with share-sheet support and camera scanning. Free while we are new.',
+      'The pdf-iq Android app runs {{appOfWeb}} tools on your device, offline, with share-sheet support and camera scanning. In testing, not yet on Play.',
   },
   {
     slug: 'privacy', name: 'Privacy', entry: null,

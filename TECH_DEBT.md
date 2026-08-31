@@ -209,6 +209,17 @@ worded so that it stays true if the measurement comes back badly.
 
 ## Website operational
 
+- **Share images carry no text.** The 1200x630 images are drawn straight to PNG by
+  `tools/png.mjs`, a small encoder written for the purpose, because rasterising SVG in Node
+  needs a native dependency and both the licence gate and the README's "27 packages, zero
+  copyleft" argue against adding one for a decorative asset. Rasterising through the browser
+  was tried and abandoned: the images come back at 53-85 KB each and the only route to disk
+  is a tool result. A font rasteriser is the part that genuinely needs a library, so the
+  images are the brand seam and the tool's own mark, and og:title and og:description carry
+  the words. Five non-tool routes share the same wordless card. If a text renderer is ever
+  worth a dependency, `tools/og-images.mjs` is where it goes.
+
+
 - ~~**Cloudflare log retention.**~~ Closed. Observability is a separate Cloudflare product and is
   not enabled on this project, so nothing retains request logs. The privacy page's wording stands
   as written — there is no retention period to state because there is no retention.

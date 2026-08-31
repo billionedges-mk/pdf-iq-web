@@ -68,7 +68,9 @@ input, button, select, textarea { font-family: inherit; }
   padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
+/* Only visible on focus, but it is the first thing a keyboard or switch user reaches. */
 .skip-link {
+  min-height: 44px; display: inline-flex; align-items: center;
   position: absolute; left: 8px; top: -48px; z-index: 40;
   background: var(--ink); color: var(--paper); padding: 10px 14px;
   border-radius: 5px; font-size: 15px; font-weight: 700; text-decoration: none;
@@ -87,7 +89,7 @@ input, button, select, textarea { font-family: inherit; }
   max-width: var(--shell); margin: 0 auto; padding: 10px 20px;
   display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
 }
-.brand { display: flex; align-items: center; gap: 9px; text-decoration: none; flex: 0 0 auto; }
+.brand { display: flex; align-items: center; gap: 9px; text-decoration: none; flex: 0 0 auto; min-height: 44px; }
 .brand:hover { color: var(--ink); }
 .brand__mark {
   width: 22px; height: 22px; border-radius: 3px;
@@ -99,9 +101,21 @@ input, button, select, textarea { font-family: inherit; }
   flex: 1 1 320px; min-width: 0; display: flex; gap: 2px;
   overflow-x: auto; white-space: nowrap; padding-bottom: 2px;
 }
+/* The nav scrolls sideways on a narrow screen rather than collapsing into a menu button.
+   Seven short labels stay one tap away; a menu would put every one of them two taps away and
+   cost the drop zone its place above the fold. What it needed was a real tap target — these
+   were 29px tall — and an edge fade so it is discoverable that there is more to the right. */
 .toolnav a {
   padding: 6px 10px; border-radius: 4px; font-size: 14.5px;
   text-decoration: none; color: var(--ink-78);
+  display: inline-flex; align-items: center; min-height: 44px;
+}
+@media (max-width: 700px) {
+  .toolnav {
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  }
+  .toolnav a { padding: 6px 12px; }
 }
 .toolnav a:hover { background: var(--wash); color: var(--ink); }
 .toolnav a[aria-current="page"] {
@@ -129,7 +143,7 @@ input, button, select, textarea { font-family: inherit; }
 }
 .netreadout--dirty .netreadout__dot { animation: none; background: var(--ink); }
 .footer-nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; }
-.footer-nav a { text-decoration: none; color: var(--ink-78); }
+.footer-nav a { text-decoration: none; color: var(--ink-78); display: inline-flex; align-items: center; min-height: 40px; }
 .footer-nav a:hover { color: var(--amber-text); }
 
 /* ---------- type ---------- */
@@ -304,8 +318,7 @@ input, button, select, textarea { font-family: inherit; }
 .nextup__label { font-size: 14.5px; color: var(--ink-76); }
 .nextup a {
   padding: 8px 13px; border: 1px solid rgba(30, 42, 56, .2); border-radius: 4px;
-  font-size: 14.5px; text-decoration: none;
-}
+  font-size: 14.5px; text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
 .nextup a:hover { border-color: var(--amber); color: var(--ink); }
 
 /* ---------- outcome blocks (no-gain, error) ---------- */
@@ -453,11 +466,15 @@ input, button, select, textarea { font-family: inherit; }
 .askfield { margin-top: 18px; }
 .askfield:first-child { margin-top: 0; }
 .askfield__label { display: block; font-weight: 700; font-size: 15.5px; margin-bottom: 7px; }
+/* `font: 15.5px/1.5 inherit` is not a valid shorthand — "inherit" is not a font-family — so
+   the whole declaration was dropped and these rendered at the UA default of 13.3px. Under
+   16px, iOS Safari zooms the page in when the field is focused, on the one page that
+   captures anything. Set longhand, and never below 16. */
 .askfield__input {
-  width: 100%; box-sizing: border-box; padding: 11px 13px;
+  width: 100%; box-sizing: border-box; padding: 13px 13px;
   border: 1px solid var(--line); border-radius: 6px;
   background: var(--paper); color: var(--ink);
-  font: 15.5px/1.5 inherit; font-family: inherit;
+  font-family: inherit; font-size: 16px; line-height: 1.5;
 }
 textarea.askfield__input { resize: vertical; min-height: 104px; }
 .askfield__input:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
