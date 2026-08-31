@@ -461,7 +461,23 @@ input, button, select, textarea { font-family: inherit; }
 .askgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px 52px; align-items: start; margin-top: 6px; }
 .askgrid__pitch .page__title { margin-top: 8px; }
 .askgrid__form { padding: 26px 28px; }
-@media (max-width: 860px) { .askgrid { grid-template-columns: minmax(0, 1fr); gap: 22px; } }
+/* On a phone the pitch stacks above the form, and the price block on its own would put the
+   first field roughly 1,500px down — a lot of scrolling before the one page that captures
+   anything asks for anything. The headline stays first because it is the question that makes
+   someone want to answer; the price is reference and reads just as well underneath. */
+@media (max-width: 860px) {
+  .askgrid { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .askgrid__pitch { order: 1; }
+  .askgrid__form  { order: 2; }
+  .askgrid__price { order: 3; }
+}
+@media (min-width: 861px) {
+  /* Two columns: the pitch and the price stack on the left, the form fills the right. */
+  .askgrid { grid-template-areas: 'pitch form' 'price form'; grid-template-rows: auto 1fr; align-items: start; }
+  .askgrid__pitch { grid-area: pitch; }
+  .askgrid__price { grid-area: price; }
+  .askgrid__form  { grid-area: form; }
+}
 
 .askfield { margin-top: 18px; }
 .askfield:first-child { margin-top: 0; }
