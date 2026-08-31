@@ -15,7 +15,8 @@
     "contrast": "node tools/contrast.mjs",
     "selftest": "node tools/selftest.mjs",
     "typecheck": "tsc --noEmit",
-    "verify:interest": "node tools/verify-interest.mjs"
+    "verify:interest": "node tools/verify-interest.mjs",
+    "verify:states": "node tools/verify-state-styles.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

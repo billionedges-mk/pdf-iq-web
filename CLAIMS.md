@@ -776,3 +776,47 @@ cheaply, ask. The three recurring shapes, all of which appeared more than once:
 - **A design that renders live instrumentation as static text.** A number drawn into a mockup
   is a picture of a number. Twice now a bundle has shown the network readout as fixed copy,
   and once it also reverted the metric to a wording that had already been wrong three times.
+
+### 23. Code that looks dead next to code that is dead
+
+Deleting genuinely unused code is safe and worth doing. The danger is the rule sitting
+beside it that is indistinguishable by eye and is not dead at all — and the reason it is
+dangerous is that removing it breaks nothing you can see.
+
+**Found by:** replacing the homepage's bordered readout card with a plain line. Five CSS
+rules were left behind. Four were dead. The fifth was:
+
+    .netreadout--dirty .checkit__dot--live { animation: none; background: var(--ink); }
+
+`netreadout--dirty` is toggled by `net.ts` the moment bytes are sent or a third-party request
+appears. That rule is **how the readout shows it has stopped reading zero** — the failure
+state of the element the entire site rests on. Renaming the dot to `.home-proof__dot--live`
+orphaned it silently.
+
+Nothing would have looked broken. The readout keeps rendering. It keeps showing zero. It
+quietly loses the ability to tell you when it isn't — and a monitor that cannot show a
+failure is worse than no monitor, because it is trusted.
+
+**The tell was reading the five rules rather than counting references to them, and reading
+does not scale.** So the finding is not "read your CSS carefully"; it is that the property
+needed to be made checkable.
+
+**The check, `npm run verify:states`:** for every class the code toggles at runtime, every
+CSS rule mentioning it must target classes something actually produces — present in the built
+HTML, toggled from code, or written by code. A rule keyed on a state class but pointing at a
+class nothing creates is a state that can be entered and can no longer be seen.
+
+Validated the only way worth trusting: the orphaned rule was reintroduced and the check
+failed with exit 1, then removed and it passed with exit 0.
+
+**Two false positives it produced first, both worth keeping in mind when writing this kind of
+check.** It read class names out of CSS comments — its own explanatory prose mentioning
+`pagegrid.ts` parsed as a selector containing `.ts`. And it only understood `classList.add`,
+so elements built entirely in JavaScript with `el.className = '...'`, which never appear in
+any built HTML, looked orphaned. A checker that cries wolf gets switched off, so both were
+fixed before it was wired in.
+
+**The CSS corollary, and the same shape one layer down:** `.home-title { max-width: 15ch }`
+was correct while the title sat in a narrow column beside the card, and became the only thing
+forcing the headline onto two lines the moment the card left. A style is a description of a
+layout, and it goes stale exactly like a comment does — see check 18.

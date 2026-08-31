@@ -36,6 +36,8 @@ thing claims and what it does. The ones that come up most:
   success; that has happened ten times here. `dist/` is what ships.
 - **Run a regression test against the broken code first** and watch it fail. A test that
   passes before the fix proves nothing.
+- `npm run verify:states` — a CSS rule keyed on a runtime state class must target something
+  that exists. Catches a state that can be entered and can no longer be seen.
 - Suites: `npm run typecheck`, `npm run build`, `npm run selftest` then open
   `/selftest.html`, `/tools-selftest.html`, `/ocr-text-probe.html`, `/e2e-selftest.html`
   in a browser; `npm run verify:interest`, `npm run verify:pdflib`, `npm run contrast`.
