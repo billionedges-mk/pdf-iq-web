@@ -4,9 +4,13 @@ Seven PDF tools that run inside the browser tab. No upload, no account, no serve
 processing — not as a policy, as an architecture. The file is opened by the browser, changed on
 the device, and saved back to disk.
 
-The footer of every page carries a live readout of requests made and bytes sent since load. It is
-real instrumentation (`src/entries/net.ts`), not decoration. If it ever shows bytes sent, that is
-a bug worth chasing.
+The footer of every page carries a live readout of bytes sent and third-party requests. It is
+real instrumentation (`src/entries/net.ts`), not decoration.
+
+One page sends something: `/for-professionals`, which asks firms what to build and stores three
+answers and an email. It says so before you press anything, and the counter moving is the point.
+Everywhere else, bytes sent should read zero, and third-party requests should read zero on every
+page including that one. If either is non-zero anywhere else, that is a bug worth chasing.
 
 ---
 
@@ -44,6 +48,7 @@ src/lib/             the actual work: compress, outline, textlayer, ocr-pool, ..
 src/test/            in-browser self-tests
 tools/build.mjs      the static site generator
 tools/site.mjs       routes, nav order and page metadata — single source of truth
+functions/api/       the one server endpoint: /for-professionals' form, on Cloudflare D1
 vendor-tessdata/     OCR language models, committed (~49 MB, see TECH_DEBT.md)
 ```
 
@@ -56,9 +61,11 @@ because a search engine reading these pages is the entire commercial argument.
 
 ### Why Pages rather than the existing VPS
 
-Measured footprint: **98 MB built, 245 files, largest single file 10.9 MB.** Of that, 49 MB is
+Measured footprint: **98 MB built, 255 files, largest single file 10.4 MB.** Of that, 49 MB is
 OCR language models and ~24 MB is tesseract wasm core variants (only one of which any given
-browser fetches). A tool page first-loads in **131 KB**.
+browser fetches). A tool page first-loads in **206 KB transferred** — measured against the live
+site with brotli, counting the page, its entry bundle and every shared chunk the entry imports.
+Nearly all of it is one 178 KB chunk, which is pdf-lib.
 
 Three reasons Pages wins:
 
@@ -136,14 +143,43 @@ project.
 
 ---
 
+## Limitations
+
+The full list is `TECH_DEBT.md`. These are the ones worth knowing before you trust it with
+anything:
+
+**Files over 60 MB are refused.** The ceiling is measured, not guessed, and it is set from the
+point where the work stops being *usable* rather than where the tab crashes — those are far apart.
+On the machine it was measured on, `save()` went from 4.2s at 80 MB to 163s at 85 MB while the tab
+stayed alive and answered nothing; an actual crash is nearer 800 MB, and an iPhone completed 400 MB.
+Measuring for the crash would have justified raising the limit to 600 MB. Reproduce it at
+`/memory-probe/`, which refuses to report a figure from a run that cannot be true.
+
+Two caveats on that number, both real: it comes from one desktop, and no valid phone measurement
+was ever obtained — three attempts produced impossible readings, and the probe now rejects them
+rather than printing them.
+
+**Encrypted PDFs: RC4 40-bit is the only handler tested against a real file.** RC4 128-bit,
+AES-128 and AES-256 are implemented from the specification and have never met a document. Both the
+user and owner password paths work; the owner path exists because the first real locked file to
+arrive carried a correct owner password and was rejected.
+
+**CMYK, JPEG 2000, JBIG2 and CCITT images are detected and skipped**, with a specific reason given
+to the user. That logic is tested; it has never run against a real file of any of those kinds.
+
+**OCR accuracy is measured only against clean synthetic type** — 95% mean confidence there, which
+says nothing about a phone photo of a contract. Pages that already carry a text layer are read
+rather than recognised, which is both faster and exact.
+
+**Browsers:** everything is exercised in Chrome, and Safari on iPhone has been walked through the
+four things most likely to break there. Desktop Safari and Firefox have not been tested.
+
 ## Claim review
 
-Every design bundle is read against `CLAIMS.md` before any code is written, and every conflict
-is reported before implementation. The first bundle produced fifteen corrections that way. The
-governing rule is that a number which cannot be measured does not ship — cut, not softened.
+`CLAIMS.md` holds twenty-one checks, each written after a specific failure and naming it. It is
+worth reading before the code: most of the interesting bugs in this project were not crashes but
+gaps between what something claimed and what it did — a button that ran and discarded its result,
+a comment citing a probe file that did not exist, a measuring tool that reported an impossible
+number four times.
 
-## Known gaps
-
-See `TECH_DEBT.md`. The short version: the 200 MB file ceiling is a placeholder, encrypted PDFs
-are written but untested, the CMYK/JPX/JBIG2/CCITT skip paths have never met a real file of those
-kinds, and OCR accuracy is measured only against clean synthetic type.
+The governing rule is that a number which cannot be measured does not ship — cut, not softened.
