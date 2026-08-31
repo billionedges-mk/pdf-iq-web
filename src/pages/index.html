@@ -1,31 +1,26 @@
-    <section class="home-hero" aria-label="Seven PDF tools">
-      <div class="home-hero__top">
-        <div class="home-hero__lede">
-          <p class="home-eyebrow">Runs in this tab &middot; nothing uploaded</p>
-          <h1 class="home-title">{{webToolCountCap}} PDF tools that never see your file.</h1>
-          <p class="home-sub">Your file is opened by your browser, changed on your device, and
-            saved back to your disk. There is no upload step because there is nowhere to upload
-            to.</p>
-        </div>
+    <section class="home-hero" aria-label="{{webToolCountCap}} PDF tools">
+      <p class="home-eyebrow">Runs in this tab &middot; nothing uploaded</p>
+      <h1 class="home-title">{{webToolCountCap}} PDF tools that never see your file.</h1>
+      <p class="home-sub">Your file is opened by your browser, changed on your device, and
+        saved back to your disk. There is no upload step because there is nowhere to upload
+        to.</p>
 
-        <div class="checkit netreadout" data-netreadout>
-          <p class="kicker">Check it yourself</p>
-          <ul>
-            <li>
-              <span class="checkit__dot checkit__dot--live" aria-hidden="true"></span>
-              <span data-netreadout-text>0 bytes sent &middot; 0 third-party requests</span>
-            </li>
-            <li>
-              <span class="checkit__dot" aria-hidden="true"></span>
-              <span>turn off your wifi &mdash; the tools still work</span>
-            </li>
-            <li>
-              <span class="checkit__dot" aria-hidden="true"></span>
-              <span>no account, no queue, no watermark</span>
-            </li>
-          </ul>
-        </div>
-      </div>
+      <!-- Item one is live instrumentation, not copy. Do not change the metric or add a
+           time boundary to it without reading src/entries/net.ts first. -->
+      <ul class="home-proof" data-netreadout>
+        <li>
+          <span class="home-proof__dot home-proof__dot--live" aria-hidden="true"></span>
+          <span data-netreadout-text>0 bytes sent &middot; 0 third-party requests</span>
+        </li>
+        <li>
+          <span class="home-proof__dot" aria-hidden="true"></span>
+          <span>turn off your wifi &mdash; {{offlineNow}} still work</span>
+        </li>
+        <li>
+          <span class="home-proof__dot" aria-hidden="true"></span>
+          <span>no account, no queue, no watermark</span>
+        </li>
+      </ul>
 
       <div class="home-grid">
         <!--TOOL_GRID-->
@@ -49,8 +44,8 @@
         <div class="price price--mark">
           <p class="kicker">Android app</p>
           <p class="price__amount">Free</p>
-          <p class="price__note">Free while we're new. Share-sheet support, camera scanning, and
-            {{appOfWeb}} tools with no tab open.</p>
+          <p class="price__note">Share-sheet support, camera scanning, and {{appOfWeb}} tools with
+            no tab open. In testing, not on Play yet.</p>
           <a class="btn" href="/app/">See the app</a>
         </div>
         <div class="price">

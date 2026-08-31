@@ -11,6 +11,7 @@ export const TOOLS = [
     title: 'Merge PDF free — no upload, no signup, works offline',
     description:
       'Merge PDF files free, without uploading them. Combine PDFs into one file in the order you set — it runs in your browser, so they never leave your device.',
+    needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Merge',
     card: 'Several files into one, in the order you set.',
@@ -20,6 +21,7 @@ export const TOOLS = [
     title: 'Split PDF free — no upload, no signup, works offline',
     description:
       'Split a PDF free, without uploading it. Pull out a page range or cut one file into several — it runs in your browser, so the file stays on your device.',
+    needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Split',
     card: 'Pull out a page range, or cut one file into parts.',
@@ -29,6 +31,7 @@ export const TOOLS = [
     title: 'Compress PDF free — no upload, no signup, works offline',
     description:
       'Compress a PDF free, without uploading it — for email or a filing. It runs in your browser, and we say so plainly when a file will not get any smaller.',
+    needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Compress',
     card: 'Smaller for email, with the real before and after.',
@@ -38,6 +41,7 @@ export const TOOLS = [
     title: 'Images to PDF free — no upload, no signup, offline',
     description:
       'Turn photos or scans into a PDF free, without uploading them. It runs in your browser, so the images never leave your device.',
+    needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Images to PDF',
     card: 'Phone photos and scans into one document.',
@@ -47,6 +51,7 @@ export const TOOLS = [
     title: 'Rotate PDF free — no upload, no signup, works offline',
     description:
       'Rotate PDF pages free, without uploading the file. Turn sideways scans the right way up in your browser — nothing leaves your device.',
+    needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Rotate',
     card: 'Fix sideways scans without re-encoding them.',
@@ -56,6 +61,7 @@ export const TOOLS = [
     title: 'Reorder PDF pages free — no upload, no account',
     description:
       'Reorder or delete PDF pages free, without uploading the file. Move pages on a grid of the real pages, in your browser — nothing leaves your device.',
+    needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Reorder',
     card: 'Move or drop pages on a grid of real pages.',
@@ -65,9 +71,10 @@ export const TOOLS = [
     title: 'OCR PDF free — searchable scans, no upload, offline',
     description:
       'OCR a PDF free, without uploading it. Read the text in a scanned document so you can search and copy it — it runs in your browser, on your own device.',
+    needsFirstRunDownload: true,
     inApp: false,
     cardName: 'OCR',
-    card: 'Make a scan searchable. Unlimited, free here.',
+    card: 'Read the text off a scan, free and unlimited.',
   },
 ];
 
@@ -131,6 +138,9 @@ export const PAGES = [
 for (const t of TOOLS) {
   if (typeof t.inApp !== 'boolean') {
     throw new Error(`${t.slug} does not declare inApp — say whether the Android app has it`);
+  }
+  if (typeof t.needsFirstRunDownload !== 'boolean') {
+    throw new Error(`${t.slug} does not declare needsFirstRunDownload — say whether it works offline on first use`);
   }
 }
 
@@ -204,6 +214,8 @@ export const PRO = {
 
 export const PRO_FEATURES = PRO.features;
 
+const OFFLINE_NOW = WEB_TOOLS.filter((t) => !t.needsFirstRunDownload);
+
 export const TOKENS = {
   proPrice: PRO.price,
   proTeamPrice: PRO.teamPrice,
@@ -220,6 +232,14 @@ export const TOKENS = {
   webOnlyTools: list(WEB_ONLY_TOOLS.map((t) => t.cardName)),
   webOnlyVerb: WEB_ONLY_TOOLS.length === 1 ? 'is' : 'are',
   webOnlyPronoun: WEB_ONLY_TOOLS.length === 1 ? 'it' : 'they',
+  /**
+   * How many tools work with the network off from the very first use.
+   *
+   * Six today, and six for a different reason than the app's six: OCR fetches a language
+   * model once before it can run. Deriving this from `appOfWeb` because both happen to be
+   * six would break the day OCR ships in the app, so it has its own source.
+   */
+  offlineNow: `${word(OFFLINE_NOW.length)} of the ${word(WEB_TOOLS.length)}`,
 };
 
 /**
@@ -262,7 +282,7 @@ export const HOME_APP_CARD = {
   // Not "the same tools": the app has six of the seven. Its OCR package is committed and
   // wired into DI but has no route in Screen.kt, no entry in PdfiqNavHost and no home
   // tile, so no user can reach it. See CLAIMS.md.
-  card: "Six of these seven, on a phone. Free while we're new.",
+  card: 'Six of these seven, on a phone. In testing, not yet on Play.',
   outline: true,
 };
 

@@ -746,3 +746,33 @@ things everyone knows, because those are the ones nobody re-reads.
 type, Google still parses it, and AI answer engines still read it. The work was worth doing;
 the stated reason for doing it was worth throwing away. A wrong justification for a right
 decision survives until it is used to justify the next one.
+
+### 22. A design bundle will carry false claims — it is a property, not an incident
+
+Three design bundles have been reviewed against this file. Each one carried **six** claims
+that were not true of the build: six, six, and six.
+
+That is not a criticism of the design work, and reading it as one is how the check gets
+skipped. A design tool draws what *ought* to be true. It has no access to the build, no way
+to know that OCR now returns text rather than a searchable PDF, that the app has six of the
+seven tools rather than all of them, or that a metric was replaced because the previous
+wording was wrong three times. Confident, specific, plausible copy is exactly what a good
+design produces, and plausibility is the problem: every false claim in all three bundles read
+perfectly well.
+
+The consistency is the useful part. Six, six and six is a rate, and a rate can be planned
+for. The review is not a precaution against a badly-made bundle; it is a required stage that
+will find something every time, and a bundle that appears to have nothing wrong with it has
+probably not been checked hard enough.
+
+**The check:** no design bundle is implemented before every claim in it is read against the
+build, and every conflict is reported before any code. Where a claim cannot be checked
+cheaply, ask. The three recurring shapes, all of which appeared more than once:
+
+- **A claim that was true when the design was drawn.** The design is a snapshot; the build
+  moved. Everything in check 18 applies, and hardest to the claims nobody thinks to re-read.
+- **A claim that will need walking back.** True today, false the day something ships. "Free
+  while we're new" and "unlimited, free here" both dated themselves.
+- **A design that renders live instrumentation as static text.** A number drawn into a mockup
+  is a picture of a number. Twice now a bundle has shown the network readout as fixed copy,
+  and once it also reverted the metric to a wording that had already been wrong three times.
