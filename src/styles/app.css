@@ -502,36 +502,21 @@ textarea.askfield__input { resize: vertical; min-height: 104px; }
   gap: clamp(16px, 2.6vh, 32px);
   padding: clamp(16px, 3vh, 38px) 0;
 }
-.home-hero__top { display: flex; flex-wrap: wrap; gap: 22px 40px; align-items: flex-end; }
-.home-hero__lede { flex: 1 1 620px; min-width: 0; }
 .home-eyebrow {
   margin: 0; font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
   text-transform: uppercase; color: var(--amber-text);
 }
 .home-title {
   margin: 10px 0 0; font-size: clamp(30px, 4.6vw, 50px); line-height: 1.04;
-  font-weight: 800; letter-spacing: -.032em; max-width: 15ch;
+  font-weight: 800; letter-spacing: -.032em; text-wrap: balance;
 }
 .home-sub {
   margin: 14px 0 0; font-size: clamp(16px, 1.4vw, 18px); line-height: 1.5;
-  color: var(--ink-78); max-width: 700px; text-wrap: pretty;
+  color: var(--ink-78); max-width: 62ch; text-wrap: pretty;
 }
 
-.checkit {
-  flex: 0 1 340px; border: 1px solid rgba(30, 42, 56, .18); border-radius: 6px;
-  background: var(--card); padding: 16px 18px;
-}
-.checkit ul {
-  margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 9px;
-  font-family: var(--mono); font-size: 12.5px; line-height: 1.45; color: var(--ink-80);
-}
-.checkit li { display: flex; gap: 10px; }
-.checkit__dot {
-  flex: 0 0 auto; width: 7px; height: 7px; margin-top: 5px; border-radius: 50%;
-  background: rgba(30, 42, 56, .3);
-}
-.checkit__dot--live { background: var(--amber); animation: pdfiq-pulse 2.4s ease-in-out infinite; }
-.netreadout--dirty .checkit__dot--live { animation: none; background: var(--ink); }
+/* The readout has gone non-zero. The live dot stops signalling 'all clear'. */
+.netreadout--dirty .home-proof__dot--live { animation: none; background: var(--ink); }
 
 .home-grid {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 30px;
