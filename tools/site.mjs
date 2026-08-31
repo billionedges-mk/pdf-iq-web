@@ -74,7 +74,7 @@ export const TOOLS = [
   },
   {
     slug: 'ocr', nav: 'OCR', name: 'OCR PDF', entry: 'ocr',
-    title: 'OCR PDF free — searchable scans, no upload, offline',
+    title: 'OCR PDF free — read the text off a scan, no upload',
     description:
       'OCR a PDF free, without uploading it. Read the text in a scanned document so you can search and copy it — it runs in your browser, on your own device.',
     faqAction: 'read the text off',

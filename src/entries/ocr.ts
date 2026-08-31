@@ -1,5 +1,5 @@
 /**
- * OCR — make a scan searchable.
+ * OCR — read the text off a scan.
  *
  * Three things this page will not do:
  *
@@ -24,6 +24,7 @@ import {
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, describeRanges, seconds } from '../lib/format.js';
 import { claimIncoming } from '../lib/handoff.js';
+import { describeOcr } from '../lib/ocr-result.js';
 import * as E from '../lib/errors.js';
 
 const STAGES = ['Loading the language model', 'Reading each page', 'Collecting the text'];
@@ -417,8 +418,16 @@ function renderResult(took: number): void {
   const words = read.reduce((n, r) => n + r.words.length, 0);
   const untouched = pagesWithText.length;
 
-  $('[data-result-head]')!.textContent =
-    `${read.length} of ${pageCount} pages are now searchable.`;
+  // Generated from what the run produced, not written beside the operation. See
+  // src/lib/ocr-result.ts: the free path hands over text, and the describe function refuses
+  // to return a sentence claiming a file it did not write.
+  const said = describeOcr({
+    produced: 'text',
+    pagesRead: read.length,
+    pageCount,
+    fromLayer: read.filter((r) => r.source === 'layer').length,
+  });
+  $('[data-result-head]')!.textContent = said.head;
 
   // Name what was skipped rather than averaging it away.
   const detail: string[] = [];
@@ -483,7 +492,7 @@ function renderResult(took: number): void {
   };
 
   shell.show('result');
-  shell.announce(`${read.length} of ${pageCount} pages are searchable.`);
+  shell.announce(said.announce);
 }
 
 $('[data-replace]')?.addEventListener('click', reset);

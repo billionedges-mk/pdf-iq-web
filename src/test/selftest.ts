@@ -14,6 +14,7 @@ import { PRESETS, analyse, compress, explainNoGain, harderOffer, type Analysis, 
 import { findImages, measurePlacements } from '../lib/pdf-inspect.js';
 import { readJpeg } from '../lib/jpeg.js';
 import { validate } from '../lib/probe-validity.js';
+import { describeOcr } from '../lib/ocr-result.js';
 import { MAX_BYTES, MEASURED_COLLAPSE_BYTES } from '../lib/ui.js';
 import { tooBig } from '../lib/errors.js';
 import { formatBytes } from '../lib/format.js';
@@ -105,6 +106,43 @@ async function makeTextPdf(pages: number): Promise<Uint8Array> {
 // ---------------------------------------------------------------- cases
 
 const CASES: Case[] = [
+  {
+    /**
+     * The result screen said "16 of 16 pages are now searchable" directly above buttons
+     * offering to copy text and download a .txt. Nothing had been made searchable — the free
+     * path was re-scoped and this one sentence kept describing the old behaviour.
+     */
+    name: 'A run that produced text cannot describe itself as having written a file',
+    async run() {
+      const text = describeOcr({ produced: 'text', pagesRead: 16, pageCount: 16, fromLayer: 0 });
+      note(`text run head:     ${text.head}`);
+      note(`text run announce: ${text.announce}`);
+      ok(!/searchable/i.test(text.head), 'the heading does not claim the scan is now searchable');
+      ok(!/searchable/i.test(text.announce), 'and neither does the screen-reader announcement');
+      ok(/read from 16 of 16/.test(text.head), 'it says what actually happened');
+
+      // The Pro path is allowed to say it, because it does it.
+      const pdf = describeOcr({ produced: 'searchable-pdf', pagesRead: 16, pageCount: 16, fromLayer: 0 });
+      note(`pro run head:      ${pdf.head}`);
+      ok(/searchable/.test(pdf.head), 'a run that writes the layer may say so');
+
+      // Pages read from an existing layer are named in the announcement, not averaged away.
+      const mixed = describeOcr({ produced: 'text', pagesRead: 10, pageCount: 12, fromLayer: 4 });
+      note(`mixed:             ${mixed.announce}`);
+      ok(/4 came from the document/.test(mixed.announce), 'pages read rather than recognised are named');
+
+      ok(/No text could be read/.test(describeOcr({ produced: 'text', pagesRead: 0, pageCount: 5, fromLayer: 0 }).head),
+        'a run that read nothing says so rather than reporting 0 of 5 as a result');
+
+      // The guard itself: prove it throws rather than trusting that it would.
+      let threw = '';
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (describeOcr as any)({ produced: 'text', pagesRead: 1, pageCount: 1, fromLayer: 0, __forceClaim: true });
+      } catch (e) { threw = String(e); }
+      ok(threw === '', 'the normal text path does not throw');
+    },
+  },
   {
     /**
      * A browser that cannot decode our images produced a document that looked optimal, and

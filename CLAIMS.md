@@ -820,3 +820,39 @@ fixed before it was wired in.
 was correct while the title sat in a narrow column beside the card, and became the only thing
 forcing the headline onto two lines the moment the card left. A style is a description of a
 layout, and it goes stale exactly like a comment does — see check 18.
+
+### 24. Result copy is derived from what ran, not written beside it
+
+A re-scope changes what an operation produces. The code changes, and so does most of the
+copy. One sentence somewhere goes on describing the old behaviour, and it is always found by
+a person reading the screen.
+
+**Five times, on both surfaces.** The one that forced this entry: the OCR free path was
+changed to hand the reader the text rather than write a searchable PDF, and the result screen
+went on saying *"16 of 16 pages are now searchable"* — directly above three buttons offering
+to copy text, download a `.txt` and start again. The buttons described the truth and the
+heading did not. On the app side the same re-scope left a method still named
+`makeSearchable()` while it made nothing searchable.
+
+Keeping copy in step by hand is the failure. Nobody forgets on purpose; they change the thing
+that produces the output and do not think of the sentence three files away that describes it.
+
+**The check:** a result sentence is generated from the outcome, and the generator refuses to
+describe an artefact the run did not produce. `describeOcr()` takes what was actually handed
+over — `'text'` or `'searchable-pdf'` — and **throws** if a text run would render a sentence
+claiming a file. Not a lint, not a convention: the build fails.
+
+Proved by reintroducing the exact string that shipped:
+
+    the OCR heading claims a file was written, but this run produced text only:
+    "16 of 16 pages are now searchable."
+
+**The limit, stated because it matters.** The guard checks vocabulary, not truth. It cannot
+know whether a sentence is accurate; it knows that a sentence claiming a file came from a run
+that made none. That is narrow — and it is exactly the mistake that has actually happened
+five times, which is a better thing to catch than a general one that never fires.
+
+**Where it does not reach:** copy read before the operation. The same re-scope left an H1
+promising "make a scan searchable" and a title tag selling "searchable scans", both read
+before anyone clicks, and no runtime guard can see them. Those are check 18's territory and
+were found the usual way — by reading.
