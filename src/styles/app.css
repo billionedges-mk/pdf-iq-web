@@ -472,6 +472,28 @@ textarea.askfield__input { resize: vertical; min-height: 104px; }
 .pagecell--blank { background: repeating-linear-gradient(45deg, var(--paper), var(--paper) 6px, var(--card) 6px, var(--card) 12px); }
 .pagecell--blank .pagecell__canvas { visibility: hidden; }
 
+/* Questions. Closed by default: the tool has to stay above the fold, and six open prose
+   answers would make a tool page read like an article. */
+.faq { margin-top: 34px; border-top: 1px solid var(--line); padding-top: 20px; }
+.faq__title { margin: 0 0 4px; font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--ink-74); }
+.faq__item { border-bottom: 1px solid var(--line); }
+.faq__item summary {
+  cursor: pointer; padding: 11px 0; font-size: 15.5px; font-weight: 600;
+  list-style: none; display: flex; align-items: baseline; gap: 10px;
+}
+.faq__item summary::-webkit-details-marker { display: none; }
+.faq__item summary::before {
+  content: '+'; color: var(--amber-text); font-family: var(--mono); font-weight: 700;
+  flex: 0 0 auto; line-height: 1;
+}
+.faq__item[open] summary::before { content: '2'; }
+.faq__item summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.faq__item p {
+  margin: 0 0 14px; padding-left: 20px; font-size: 15px; line-height: 1.6;
+  color: var(--ink-78); max-width: 68ch;
+}
+
 .atwork { margin: 14px 0 0; font-size: 14px; line-height: 1.5; color: var(--ink-60, var(--ink-78)); }
 .atwork a { color: inherit; text-underline-offset: 3px; }
 .atwork a:hover { color: var(--ink); }

@@ -11,6 +11,7 @@ export const TOOLS = [
     title: 'Merge PDF free — no upload, no signup, works offline',
     description:
       'Merge PDF files free, without uploading them. Combine PDFs into one file in the order you set — it runs in your browser, so they never leave your device.',
+    faqAction: 'merge',
     needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Merge',
@@ -21,6 +22,7 @@ export const TOOLS = [
     title: 'Split PDF free — no upload, no signup, works offline',
     description:
       'Split a PDF free, without uploading it. Pull out a page range or cut one file into several — it runs in your browser, so the file stays on your device.',
+    faqAction: 'split',
     needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Split',
@@ -31,6 +33,7 @@ export const TOOLS = [
     title: 'Compress PDF free — no upload, no signup, works offline',
     description:
       'Compress a PDF free, without uploading it — for email or a filing. It runs in your browser, and we say so plainly when a file will not get any smaller.',
+    faqAction: 'compress',
     needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Compress',
@@ -41,6 +44,7 @@ export const TOOLS = [
     title: 'Images to PDF free — no upload, no signup, offline',
     description:
       'Turn photos or scans into a PDF free, without uploading them. It runs in your browser, so the images never leave your device.',
+    faqAction: 'turn images into',
     needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Images to PDF',
@@ -51,6 +55,7 @@ export const TOOLS = [
     title: 'Rotate PDF free — no upload, no signup, works offline',
     description:
       'Rotate PDF pages free, without uploading the file. Turn sideways scans the right way up in your browser — nothing leaves your device.',
+    faqAction: 'rotate',
     needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Rotate',
@@ -61,6 +66,7 @@ export const TOOLS = [
     title: 'Reorder PDF pages free — no upload, no account',
     description:
       'Reorder or delete PDF pages free, without uploading the file. Move pages on a grid of the real pages, in your browser — nothing leaves your device.',
+    faqAction: 'reorder',
     needsFirstRunDownload: false,
     inApp: true,
     cardName: 'Reorder',
@@ -71,6 +77,7 @@ export const TOOLS = [
     title: 'OCR PDF free — searchable scans, no upload, offline',
     description:
       'OCR a PDF free, without uploading it. Read the text in a scanned document so you can search and copy it — it runs in your browser, on your own device.',
+    faqAction: 'read the text off',
     needsFirstRunDownload: true,
     inApp: false,
     cardName: 'OCR',
@@ -138,6 +145,9 @@ export const PAGES = [
 for (const t of TOOLS) {
   if (typeof t.inApp !== 'boolean') {
     throw new Error(`${t.slug} does not declare inApp — say whether the Android app has it`);
+  }
+  if (typeof t.faqAction !== 'string') {
+    throw new Error(`${t.slug} does not declare faqAction — the FAQ asks "is it safe to <verb> a PDF online?"`);
   }
   if (typeof t.needsFirstRunDownload !== 'boolean') {
     throw new Error(`${t.slug} does not declare needsFirstRunDownload — say whether it works offline on first use`);
@@ -215,6 +225,45 @@ export const PRO = {
 export const PRO_FEATURES = PRO.features;
 
 const OFFLINE_NOW = WEB_TOOLS.filter((t) => !t.needsFirstRunDownload);
+
+/**
+ * The questions people actually type, answered in the site's own voice.
+ *
+ * One source for all seven tool pages: the answers are claims about the build, and seven
+ * hand-written copies is how a correction lands in six of them. `{action}` is the tool's own
+ * verb and `{size}` is read from MAX_BYTES at build time.
+ *
+ * Every answer here has to be true of the shipping build. The size answer is deliberately
+ * specific about the failure mode — a tab that stops being usable is not a tab that crashes,
+ * and saying so is what makes the rest of the page worth believing.
+ */
+export const FAQ = [
+  {
+    q: 'Is it safe to {action} a PDF online?',
+    a: 'Nothing is uploaded, so there is no copy on a server to trust. The counter at the foot of this page shows bytes sent, and it stays at zero.',
+  },
+  {
+    q: 'Does this work offline?',
+    a: 'Yes. Turn off your wifi and reload the page — it keeps working.',
+    ocr: 'After the first run, yes. The language model is downloaded once, and then it works with the network off like everything else here.',
+  },
+  {
+    q: 'Is there a file size limit?',
+    a: '{size}. Past that a browser tab stops being able to write the finished file out and sits unresponsive for minutes — it does not crash, it stops being usable — so we refuse rather than hang.',
+  },
+  {
+    q: 'Do I need an account?',
+    a: 'No. There is nothing to sign in to, and no limit on how many files you run through it.',
+  },
+  {
+    q: 'Is there a watermark?',
+    a: 'No. Nothing is added to the file.',
+  },
+  {
+    q: 'What happens to my file?',
+    a: 'It stays on your device. The counter at the foot of every page shows bytes sent and third-party requests, so you can check that rather than take our word for it.',
+  },
+];
 
 export const TOKENS = {
   proPrice: PRO.price,

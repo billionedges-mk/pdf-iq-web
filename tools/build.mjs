@@ -14,10 +14,25 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
 import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
+import { faqBlock } from './faq.mjs';
 import { LANGUAGES } from './langs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const NL = String.fromCharCode(10);
+
+/**
+ * The file ceiling, read out of the constant that enforces it.
+ *
+ * Copy that states a limit and code that applies one are the same claim in two places, and
+ * this project has watched that drift twice. Parsing it means the FAQ and the drop zone
+ * cannot say 60 MB while ui.ts refuses at something else.
+ */
+function maxFileSizeMb() {
+  const ui = readFileSync(join(ROOT, 'src/lib/ui.ts'), 'utf8');
+  const m = ui.match(/export const MAX_BYTES = (\d+) \* 1024 \* 1024;/);
+  if (!m) throw new Error('could not read MAX_BYTES from src/lib/ui.ts — the size claims would go stale silently');
+  return Number(m[1]);
+}
 const OUT = join(ROOT, 'dist');
 const WATCH = process.argv.includes('--watch');
 const SERVE = process.argv.includes('--serve');
@@ -370,6 +385,10 @@ async function build() {
   mkdirSync(OUT, { recursive: true });
 
   const css = fontCss() + '\n' + read('src/styles/app.css');
+  const sizeMb = maxFileSizeMb();
+  // Not a literal in site.mjs: the number is read from the constant that enforces it, so
+  // the copy and the gate cannot disagree.
+  TOKENS.maxFileSize = `${sizeMb} MB`;
 
   // Bundle first: the pages need the content-hashed filenames to point at.
   const assets = await bundle();
@@ -389,6 +408,12 @@ async function build() {
       if (body.includes('<!--TOOL_GRID-->')) {
         throw new Error(`TOOL_GRID marker survived substitution in ${file}`);
       }
+    }
+    if (body.includes('<!--FAQ-->')) {
+      const tool = TOOLS.find((t) => t.slug === page.slug);
+      if (!tool) throw new Error(`${page.slug} has a FAQ marker but is not a tool`);
+      body = body.replace(/[ \t]*<!--FAQ-->/, faqBlock(tool, sizeMb));
+      if (body.includes('<!--FAQ-->')) throw new Error(`FAQ marker survived substitution in ${file}`);
     }
     if (body.includes('<!--PRO_FEATURES-->')) {
       const items = PRO_FEATURES.map((f) => `            <li>${esc(f)}</li>`).join('\n');
