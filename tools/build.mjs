@@ -15,6 +15,7 @@ import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
 import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
 import { faqBlock } from './faq.mjs';
+import { icon } from './icons.mjs';
 import { LANGUAGES } from './langs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -119,7 +120,7 @@ const FONT_PRELOADS = [
 // within a day, which is exactly how a corrected claim comes back.
 function toolGrid() {
   const card = (t) => `      <a class="toolcard${t.outline ? ' toolcard--outline' : ''}" href="${href(t.slug)}">
-        <span class="toolcard__mark" aria-hidden="true"></span>
+        ${icon(t.slug)}
         <span class="toolcard__name">${esc(t.cardName ?? t.name)}</span>
         <span class="toolcard__note">${esc(t.card)}</span>
       </a>`;

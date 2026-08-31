@@ -396,10 +396,12 @@ input, button, select, textarea { font-family: inherit; }
   padding: 18px 20px 20px; text-decoration: none; display: block;
 }
 .toolcard:hover { border-color: var(--amber); background: var(--card-hover); color: var(--ink); }
-.toolcard__mark {
-  display: block; width: 26px; height: 26px; border-radius: 3px;
-  background: linear-gradient(135deg, var(--ink) 0 50%, var(--amber) 50% 100%);
-}
+/* One mark per tool, from tools/icons.mjs. Ink follows the card's colour; the single amber
+   shape in each is the accent. The seam this replaced was half amber by area and repeated
+   eight times, so this spends less of the amber budget, not more. */
+.toolcard__mark { display: block; width: 26px; height: 26px; color: var(--ink); }
+.toolcard__mark .tm-a { fill: var(--amber); }
+.toolcard--outline .toolcard__mark { color: var(--ink-60, var(--ink-78)); }
 .toolcard__name {
   display: block; margin-top: 14px; font-size: 19px; font-weight: 700;
   letter-spacing: -.015em; color: var(--ink);
@@ -546,7 +548,7 @@ textarea.askfield__input { resize: vertical; min-height: 104px; }
 @media (max-width: 1000px) { .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .home-grid { grid-template-columns: minmax(0, 1fr); } }
 .home-grid .toolcard { padding: 15px 16px 16px; }
-.home-grid .toolcard__mark { width: 20px; height: 20px; }
+.home-grid .toolcard__mark { width: 24px; height: 24px; }
 .home-grid .toolcard__name { margin-top: 11px; font-size: 17.5px; }
 .home-grid .toolcard__note { margin-top: 4px; font-size: 14px; line-height: 1.45; }
 
