@@ -856,3 +856,36 @@ five times, which is a better thing to catch than a general one that never fires
 promising "make a scan searchable" and a title tag selling "searchable scans", both read
 before anyone clicks, and no runtime guard can see them. Those are check 18's territory and
 were found the usual way — by reading.
+
+### 25. A claim that was never checked reads exactly like one that was
+
+Check 18 is about a record going stale: something was true, the world moved, the record did
+not. This is the other half, and it is harder to see, because there is no moment where the
+claim becomes wrong.
+
+**Found by:** the privacy page's account of what the Android app contacts. It named neither
+RevenueCat nor Google Play while the app reached both on every launch. That was wrong for
+weeks. It is right now — **because the app changed to match the page**, not because anyone
+checked the page.
+
+So the page was never verified. It was lucky. And a lucky claim and a verified one are
+indistinguishable from the outside: both read as true, both survive review, and only one of
+them will still be true after the next change to the thing it describes.
+
+**The check:** "is this true?" is the weaker question. Ask **"when was this last compared
+against the thing it describes, and by what?"** A claim with no answer to that is unverified
+regardless of whether it currently happens to hold. Where the answer is "the code moved to
+meet it", that is not a verification and should not be recorded as one.
+
+**The corroboration trap, which is the same failure wearing a second coat.** The correction
+that prompted this arrived from another session with the finding already worked out. Agreeing
+would have been effortless and would have felt like confirmation. It is not: **two sessions
+agreeing is not evidence when one is quoting the other.** The claim was re-derived from the
+app source instead — no `firebase_analytics_collection_enabled` flag, `google-services.json`
+present so auto-init runs, and no `setAnalyticsCollectionEnabled` call anywhere — which
+confirmed it and additionally established a second claim in the draft, that nothing in the app
+can switch collection off, that nobody had checked because nobody had thought to doubt it.
+
+**The asymmetry worth keeping:** verifying something that turns out to be true costs minutes.
+Publishing something that was never checked costs whatever it costs, later, and you will not
+know which claims those are.
