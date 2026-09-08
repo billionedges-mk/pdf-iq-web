@@ -889,3 +889,74 @@ can switch collection off, that nobody had checked because nobody had thought to
 **The asymmetry worth keeping:** verifying something that turns out to be true costs minutes.
 Publishing something that was never checked costs whatever it costs, later, and you will not
 know which claims those are.
+
+---
+
+### 26. Adding a page is a better stale-copy detector than reading the pages
+
+Paddle held seller approval because the site had terms and a privacy notice but no refund
+policy. Writing that one page found two defects in two files nobody had opened.
+
+`terms.html` said Paddle's refund terms would apply. `support.html` said Google Play handled
+payments made inside the Android app — a model that stopped existing when we moved to Paddle,
+while both terms and privacy already said nothing is purchasable in the app.
+
+Neither was found by reading. Both had been read many times. They were found because the new
+page had to state the same two facts, and **two sentences about one fact is where the stale
+one becomes visible.** On its own each sentence is just a sentence; next to a second one it is
+either agreement or a contradiction, and a contradiction cannot hide.
+
+No check could have caught either. `verify:states` knows a class must style something;
+`licenses` knows the tree has no copyleft; the build throws on an unknown token. Not one of
+them knows that "Google Play handles payments" stopped being true, because nothing in the
+repository records that it was ever true, or when it stopped. It is a fact about the world,
+and the world is where this project keeps failing.
+
+**The check:** when you write a page, list the facts it asserts, then grep for every other
+place that asserts the same fact. Do not read those places for correctness — compare them to
+what you just wrote. The differences are the findings, and you get them for free, which is
+why this is worth doing every time rather than as an audit nobody schedules.
+
+The general form, and the reason this outranks reading: **you cannot proofread a claim you
+already believe.** You can only collide it with another one.
+
+---
+
+### 27. A check that prints FAIL and exits 0 is worse than no check
+
+`tools/contrast.mjs` ended with `process.exitCode = 0;` and had printed two FAIL lines for
+months. Every run looked like this: two failures, green exit, nobody acts. That is a check
+training its readers to skim past its own alarm, so that when it fires on something real the
+line scrolls by unread — which is worse than not having it, because the absence of a check is
+at least honestly absent.
+
+Two things were wrong under it, and the order matters.
+
+**The measurement was wrong, so the FAILs were false.** There are two ambers: `--amber` is the
+drawn brand colour for borders, bars, dots and focus rings, and `--amber-text` is the same hue
+darkened for text. The script held `--amber` to the 4.5:1 text threshold at a job it never
+does. Those two FAILs were ratios for colour combinations the stylesheet does not produce.
+The right threshold for a border is WCAG 1.4.11 non-text contrast, 3:1, which both clear.
+
+**The licence for that was a naming convention, and a convention is not a check.** So the fix
+is not to relax the threshold, it is to earn it: the script now refuses `color`,
+`text-decoration-color` and `-webkit-text-fill-color` set to `var(--amber)` anywhere in `src`,
+including styles set from TypeScript, and fails the build if one appears. `--amber` gets the
+3:1 bar because a check enforces the thing that makes 3:1 correct.
+
+**What the fixed check found on its first run.** Suppressing the false failures was not the
+end of it. Measuring the pairs the stylesheet *does* produce showed `--amber-text` at
+**4.45:1 on `--paper`** — under the bar, on the background `html, body` actually use. It had
+been tuned against `--card` (4.65:1) and never measured against paper, so every hovered link
+in prose had been failing by four hundredths since the two-amber split. Now `#A45F13`: 4.69:1
+on paper, 4.89:1 on card.
+
+That is the argument in one line. **The noise was hiding a real failure of the same kind**,
+and it was hiding it in the only place nobody would look — the output everyone had learned to
+ignore. The script also hardcoded the four palette hexes rather than reading `app.css`, so it
+would have gone on reporting the old palette's ratios after any change to the real one; see
+`tools/og.mjs`, which had this same reasoning applied to it earlier.
+
+**The check:** a check that cannot fail the build is a comment. If a failure is acceptable,
+the threshold is wrong or the pair is wrong — fix the check so it is green and means it.
+Never leave it printing a failure it does not act on.

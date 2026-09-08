@@ -1,10 +1,13 @@
 /* pdf-iq design system — extracted from the design bundle.
    Palette is the Android app's: ink navy, paper, amber.
 
-   Two ambers on purpose: --amber is the drawn brand colour, used only for borders, bars,
-   rules, focus rings and large display text (>=19px bold), where WCAG needs 3:1 and it
-   measures 3.16–3.30:1. --amber-text is the same hue darkened to 4.65:1 for normal-size
-   text such as link hover, which #C87A1E fails at 3.30:1. See tools/contrast.mjs. */
+   Two ambers on purpose. --amber is the drawn brand colour and never touches text: borders,
+   bars, rules, focus rings, dots, tool-mark accents — WCAG 1.4.11 asks 3:1, it measures
+   3.16–3.30:1, and tools/contrast.mjs fails the build if it is ever used as a text colour,
+   which is what earns it that bar. --amber-text is the same hue darkened to clear 4.5:1 as
+   normal text on both grounds (4.69:1 on paper, 4.89:1 on card); #C87A1E fails at 3.30:1.
+   It was #A96214 until paper measured 4.455:1 — see CLAIMS 27.
+*/
 
 :root {
   --paper: #FAF8F4;
@@ -21,7 +24,7 @@
   --line-strong: rgba(30, 42, 56, .28);
   --wash: rgba(30, 42, 56, .06);
   --amber: #C87A1E;
-  --amber-text: #A96214;
+  --amber-text: #A45F13;
   --amber-wash: rgba(200, 122, 30, .05);
   --shell: 1080px;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

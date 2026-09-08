@@ -15,7 +15,7 @@ anything about pricing, tiers, paywalls or monetisation — those are decided.
 
 ## How this is enforced
 
-`CLAIMS.md` holds 18 checks, each written after a specific failure and naming it. Read it
+`CLAIMS.md` holds 27 checks, each written after a specific failure and naming it. Read it
 before writing copy or adding a control — most of them are about the gap between what a
 thing claims and what it does. The ones that come up most:
 
@@ -27,6 +27,11 @@ thing claims and what it does. The ones that come up most:
 - **Check 18** — a status list goes stale in the direction that flatters. Anything settled
   in conversation is unrecorded by default; write it down or the next reader inherits the
   old answer.
+- **Check 26** — when you write a page, grep for every other place asserting the same fact
+  and compare rather than proofread. Two sentences about one fact is where the stale one
+  shows. Writing the refunds page found two defects in files nobody was editing.
+- **Check 27** — a check that cannot fail the build is a comment. `contrast` printed FAIL
+  and exited 0 for months; the noise was hiding a real failure of the same kind.
 
 `TECH_DEBT.md` is the open list. Re-verify anything cheap before reporting from it.
 
@@ -43,6 +48,20 @@ thing claims and what it does. The ones that come up most:
   in a browser; `npm run verify:interest`, `npm run verify:pdflib`, `npm run contrast`.
 - `/memory-probe/` measures the file ceiling. It refuses to report a figure from a run that
   cannot be true.
+
+## Deploying
+
+**`git push origin main` is the deploy.** Cloudflare Pages builds from the repository; there
+is no workflow file in this repo because the build command and output directory are set in
+the Cloudflare dashboard, not here.
+
+`npx wrangler pages deploy` does not work from this machine. There is no `CLOUDFLARE_API_TOKEN`
+in the environment and no `wrangler.toml`, so wrangler stops with a non-interactive-environment
+error before it does anything. Do not spend time on it; push instead.
+
+Then **verify from the served files, not from `dist/`** — a 200 is not proof the right page is
+there. Fetch the URL, grep it for a sentence you just wrote, and fetch a path that should not
+exist to confirm 404s are still 404s and the 200 means something.
 
 ## Things that are not what they look like
 
