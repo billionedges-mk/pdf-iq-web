@@ -219,6 +219,77 @@ function fontCss() {
   ].join('');
 }
 
+/**
+ * Drop CSS comments on the way into the page.
+ *
+ * app.css is inlined in a <style> block on every page, comments and all, so 4.4 KB of
+ * commentary shipped 16 times for a reader who cannot see it. The comments are worth
+ * keeping — they explain why there are two ambers and why the repeated seam went. They are
+ * worth keeping in the source. Dropping them on the way out is what a build is for.
+ *
+ * A scan rather than a regex, because a comment delimiter is legal inside a string or a
+ * url(), and a regex that ate one would silently emit broken CSS that still reads fine in a
+ * diff. Nothing in app.css does that today. The point is that it may, and this is the file
+ * that would not notice.
+ *
+ * The assertion at the bottom went through two versions and the first one was worthless.
+ * It compared brace and semicolon counts, which a scan that swallows one character past
+ * every comment leaves untouched — so a deliberately broken stripper passed it. Counting
+ * proxies cannot see a character disappear unless it happens to be punctuation the proxy
+ * counts. This version records the spans it removed and reconstructs the input without
+ * them, then requires the reconstruction and the output to agree character for character
+ * once whitespace is normalised. Anything the scan ate that was not a comment shows up.
+ *
+ * Whitespace-insensitive on purpose, and that was checked rather than assumed: whitespace
+ * outside a string is not significant in CSS, so a scan that swallows the newline after a
+ * comment is not a defect and this does not fire on one. Butt a comment against a selector
+ * so the swallowed character is significant, and it does. Both directions were run.
+ */
+function stripCssComments(css) {
+  const removed = [];
+  let out = '';
+  let i = 0;
+  while (i < css.length) {
+    const c = css[i];
+    if (c === '"' || c === "'") {
+      const quote = c;                       // copy the string whole, escapes included
+      out += c; i++;
+      while (i < css.length && css[i] !== quote) {
+        if (css[i] === '\\') { out += css[i]; i++; }
+        if (i < css.length) { out += css[i]; i++; }
+      }
+      if (i < css.length) { out += css[i]; i++; }
+      continue;
+    }
+    if (c === '/' && css[i + 1] === '*') {
+      const end = css.indexOf('*/', i + 2);
+      if (end === -1) throw new Error('unterminated comment in app.css');
+      removed.push([i, end + 2]);
+      i = end + 2;
+      if (out && !out.endsWith('\n')) out += '\n';   // keep rules from running together
+      continue;
+    }
+    out += c; i++;
+  }
+  out = out.replace(/\n{3,}/g, '\n\n');
+
+  // Stripping must remove the comments and nothing else. Rebuild the input with exactly the
+  // spans the scan claims it removed, and require the two to match once whitespace is
+  // normalised — so any other character it consumed is a failure, wherever it was.
+  let rebuilt = '';
+  let at = 0;
+  for (const [a, b] of removed) { rebuilt += css.slice(at, a); at = b; }
+  rebuilt += css.slice(at);
+  const bare = (t) => t.replace(/\s+/g, ' ').trim();
+  if (bare(rebuilt) !== bare(out)) {
+    throw new Error(
+      'stripping CSS comments changed the stylesheet, not just its size — ' +
+      `${removed.length} comment(s) removed, but the remainder does not match`
+    );
+  }
+  return out;
+}
+
 function copyFonts() {
   mkdirSync(join(OUT, 'fonts'), { recursive: true });
   for (const [from, to] of FONT_FILES) {
@@ -400,7 +471,7 @@ async function build() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
 
-  const css = fontCss() + '\n' + read('src/styles/app.css');
+  const css = fontCss() + '\n' + stripCssComments(read('src/styles/app.css'));
   const sizeMb = maxFileSizeMb();
   // Not a literal in site.mjs: the number is read from the constant that enforces it, so
   // the copy and the gate cannot disagree.
