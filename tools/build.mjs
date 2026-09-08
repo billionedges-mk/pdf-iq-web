@@ -99,6 +99,7 @@ function footer() {
         <a href="/for-professionals/">Using this at work?</a>
         <a href="/privacy/">Privacy</a>
         <a href="/terms/">Terms</a>
+        <a href="/refunds/">Refunds</a>
         <a href="/support/">Support</a>
         <a href="/app/">Android app</a>
       </nav>

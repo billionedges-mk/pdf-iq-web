@@ -112,6 +112,14 @@ export const PAGES = [
     description: 'The terms covering use of the pdf-iq website, the seven browser tools, and the PDFiq Android app, including how Pro is bought and liability.',
   },
   {
+    // Paddle requires a seller's site to carry terms, a privacy notice and a refund policy.
+    // Ours is a real page rather than a line in the terms, because a buyer looking for it
+    // looks for a page called Refunds.
+    slug: 'refunds', name: 'Refunds', entry: null,
+    title: 'Refunds — pdf-iq Pro',
+    description: 'Thirty days from purchase, for any reason. Paddle is the merchant of record and issues the refund. The seven web tools are free and unaffected.',
+  },
+  {
     slug: 'support', name: 'Support', entry: null,
     title: 'Support — help with the pdf-iq PDF tools',
     description: 'Answers to what goes wrong, and how to reach a person about the pdf-iq tools and Android app.',
