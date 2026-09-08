@@ -15,7 +15,9 @@ anything about pricing, tiers, paywalls or monetisation — those are decided.
 
 ## How this is enforced
 
-`CLAIMS.md` holds 27 checks, each written after a specific failure and naming it. Read it
+`CLAIMS.md` holds the checks, each written after a specific failure and naming it.
+Its index is generated (`node tools/claims-index.mjs`) and verified in `prebuild`, so there is
+no count written down anywhere to go stale. Read it
 before writing copy or adding a control — most of them are about the gap between what a
 thing claims and what it does. The ones that come up most:
 
