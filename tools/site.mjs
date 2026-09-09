@@ -16,6 +16,8 @@ export const TOOLS = [
     inApp: true,
     cardName: 'Merge',
     card: 'Several files into one, in the order you set.',
+    ogSubject: 'Merge PDFs',
+    ogLine: 'Nothing leaves your device',
   },
   {
     slug: 'split', nav: 'Split', name: 'Split PDF', entry: 'split',
@@ -27,6 +29,8 @@ export const TOOLS = [
     inApp: true,
     cardName: 'Split',
     card: 'Pull out a page range, or cut one file into parts.',
+    ogSubject: 'Split a PDF',
+    ogLine: 'Nothing leaves your device',
   },
   {
     slug: 'compress', nav: 'Compress', name: 'Compress PDF', entry: 'compress',
@@ -38,6 +42,8 @@ export const TOOLS = [
     inApp: true,
     cardName: 'Compress',
     card: 'Smaller for email, with the real before and after.',
+    ogSubject: 'Compress a PDF',
+    ogLine: 'Nothing leaves your device',
   },
   {
     slug: 'images-to-pdf', nav: 'Images to PDF', name: 'Images to PDF', entry: 'images-to-pdf',
@@ -49,6 +55,8 @@ export const TOOLS = [
     inApp: true,
     cardName: 'Images to PDF',
     card: 'Phone photos and scans into one document.',
+    ogSubject: 'Images to PDF',
+    ogLine: 'Nothing leaves your device',
   },
   {
     slug: 'rotate', nav: 'Rotate', name: 'Rotate PDF', entry: 'rotate',
@@ -60,6 +68,8 @@ export const TOOLS = [
     inApp: true,
     cardName: 'Rotate',
     card: 'Fix sideways scans without re-encoding them.',
+    ogSubject: 'Rotate pages',
+    ogLine: 'Nothing leaves your device',
   },
   {
     slug: 'reorder', nav: 'Reorder', name: 'Reorder Pages', entry: 'reorder',
@@ -71,6 +81,8 @@ export const TOOLS = [
     inApp: true,
     cardName: 'Reorder',
     card: 'Move or drop pages on a grid of real pages.',
+    ogSubject: 'Reorder pages',
+    ogLine: 'Nothing leaves your device',
   },
   {
     slug: 'ocr', nav: 'OCR', name: 'OCR PDF', entry: 'ocr',
@@ -82,6 +94,8 @@ export const TOOLS = [
     inApp: false,
     cardName: 'OCR',
     card: 'Read the text off a scan, free and unlimited.',
+    ogSubject: 'Read a scan',
+    ogLine: 'Nothing leaves your device',
   },
 ];
 
@@ -93,23 +107,30 @@ export const PAGES = [
     title: 'Free PDF tools run in your browser — no upload, no signup',
     description:
       'Free PDF tools that work without uploading anything — compress, merge, split, rotate, reorder, convert and OCR. The work happens on your own device.',
+    ogLine: 'Nothing leaves your device',
   },
   {
     slug: 'app', name: 'Android App', entry: null,
     title: 'pdf-iq for Android — the same tools, offline, on your phone',
     description:
       'The pdf-iq Android app runs {{appOfWeb}} tools on your device, offline, with share-sheet support and camera scanning. In testing, not yet on Play.',
+    ogSubject: 'Android app',
+    ogLine: 'The same tools, on your phone',
   },
   {
     slug: 'privacy', name: 'Privacy', entry: null,
     title: 'Privacy — what pdf-iq and the PDFiq app collect',
     description:
       'What the pdf-iq website and Android app do and do not collect, stated precisely, including the app’s server-side features.',
+    ogSubject: 'Privacy',
+    ogLine: 'Nothing leaves your device',
   },
   {
     slug: 'terms', name: 'Terms', entry: null,
     title: 'Terms of use — pdf-iq PDF tools',
     description: 'The terms covering use of the pdf-iq website, the seven browser tools, and the PDFiq Android app, including how Pro is bought and liability.',
+    ogSubject: 'Terms',
+    ogLine: 'Nothing leaves your device',
   },
   {
     // Paddle requires a seller's site to carry terms, a privacy notice and a refund policy.
@@ -118,17 +139,23 @@ export const PAGES = [
     slug: 'refunds', name: 'Refunds', entry: null,
     title: 'Refunds — pdf-iq Pro',
     description: 'Thirty days from purchase, for any reason. Paddle is the merchant of record and issues the refund. The seven web tools are free and unaffected.',
+    ogSubject: 'Refunds',
+    ogLine: 'Nothing leaves your device',
   },
   {
     slug: 'support', name: 'Support', entry: null,
     title: 'Support — help with the pdf-iq PDF tools',
     description: 'Answers to what goes wrong, and how to reach a person about the pdf-iq tools and Android app.',
+    ogSubject: 'Support',
+    ogLine: 'Nothing leaves your device',
   },
   {
     slug: 'for-professionals', name: 'For firms', entry: 'for-professionals',
     title: 'PDF tools for law firms and accountants — nothing uploaded',
     description:
       'We build PDF tools that run on your own device and we are asking firms what to build next, before building it. Nothing is on sale; two questions and an email.',
+    ogSubject: 'For firms',
+    ogLine: 'Two questions, and an email',
   },
   {
     // A real route rather than a test-harness page, because it has to be reachable from a
@@ -137,6 +164,8 @@ export const PAGES = [
     slug: 'memory-probe', name: 'Memory probe', entry: 'memory-probe', noindex: true,
     title: 'Memory probe — measuring the file ceiling',
     description: 'An internal probe that finds the largest PDF this device can actually process.',
+    ogSubject: 'Memory probe',
+    ogLine: 'Internal',
   },
 ];
 
@@ -298,6 +327,12 @@ export const TOKENS = {
    */
   offlineNow: `${word(OFFLINE_NOW.length)} of the ${word(WEB_TOOLS.length)}`,
 };
+
+// The homepage card says how many tools there are, counted rather than written. Three
+// hand-written counts have already drifted from WEB_TOOLS on this site; a share image is
+// the worst place for the fourth, because it travels and cannot be corrected in place.
+PAGES.find((p) => p.slug === '').ogSubject = `${TOKENS.webToolCountCap} PDF tools`;
+
 
 /**
  * The app's feature list, so the page cannot restate the split by hand.

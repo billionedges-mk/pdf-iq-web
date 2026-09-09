@@ -40,7 +40,8 @@ the work is done.
 24. [Result copy is derived from what ran, not written beside it](#24-result-copy-is-derived-from-what-ran-not-written-beside-it)  
 25. [A claim that was never checked reads exactly like one that was](#25-a-claim-that-was-never-checked-reads-exactly-like-one-that-was)  
 26. [Adding a page is a better stale-copy detector than reading the pages](#26-adding-a-page-is-a-better-stale-copy-detector-than-reading-the-pages)  
-27. [A check that cries wolf is where a real failure goes to hide](#27-a-check-that-cries-wolf-is-where-a-real-failure-goes-to-hide)
+27. [A check that cries wolf is where a real failure goes to hide](#27-a-check-that-cries-wolf-is-where-a-real-failure-goes-to-hide)  
+28. [An absent element and an intended one look the same](#28-an-absent-element-and-an-intended-one-look-the-same)
 
 <!-- /index -->
 
@@ -1000,3 +1001,50 @@ have gone on reporting the old palette's ratios after any change to the real one
 **The check:** a check that cannot fail the build is a comment. If a failure is acceptable,
 the threshold is wrong or the pair is wrong — fix the check so it is green and means it.
 Never leave it printing a failure it does not act on.
+
+---
+
+### 28. An absent element and an intended one look the same
+
+The share images drew the route's mark inside `if (shapes)`, reading from `ICONS`. Six routes
+had no entry — home, terms, privacy, support, refunds, for-professionals — so the branch
+quietly did nothing and their card was a rule, a seam and a short bar on an empty ground. All
+six files were byte-identical. The homepage, the most-shared URL on the site, was one of them,
+and it shipped that way for weeks.
+
+**The defect was not the missing icons.** It was that *missing was indistinguishable from
+intended.* The card still looked deliberate: a considered amount of white space, a mark, a
+rule. Nothing about it said "the subject failed to draw" rather than "this design is
+minimal". I had even reported the six-way sharing and had it accepted, because I checked
+which file each route pointed at and never opened one.
+
+**No check could fail.** The build asserted `png.length >= 500`; the empty card was 3,623
+bytes. It had the right dimensions, was a valid PNG, was correctly referenced from correctly
+formed `og:image` tags, and was served with a 200. Every check passed. The one that would have
+caught it measures the only thing opening it would have told you: `inkedFraction`, how much of
+the card is not background. The old layout scores **2.5%**; the guard fires under 4%.
+
+**The second half is that I priced the wrong option.** The images were wordless because a font
+rasteriser "genuinely needs a library" and a native module was not worth breaking the tree's
+licence claim for a decorative asset. Two errors in one sentence. The asset was not decorative
+— it is the largest element in every share. And the native module was never the only route:
+`@fontsource` ships `.woff` beside the `.woff2` the browser gets, WOFF1 is zlib, Node has
+zlib, and 190 lines get from there to filled glyph outlines. **The cost I quoted was the cost
+of the option I had thought of**, presented as the cost of the goal.
+
+**The checks:**
+
+1. A branch that skips when data is missing must throw instead, wherever "missing" and
+   "deliberately absent" would render the same. `ICONS[slug]` has no default and no fallback
+   mark — a fallback would have re-created the bug inside its own fix.
+2. For a generated asset, assert something about the *content*, not the artefact. Bytes,
+   dimensions and validity are all satisfied by a blank.
+3. When rejecting an approach on cost, say which implementation you priced. "Not worth a
+   native module" is a fact about one route to the goal and reads as a fact about the goal.
+
+**Two more found by opening it.** `Bitmap.rect` ignored the icons' `rx`, so every mark
+rasterised as hard blocks rather than the drawn shape — the marks had never looked like
+themselves. And `drawText` passed a hex string to `blend`, which indexes `[0][1][2]`: `'#'`
+and `'E'` multiplied to `NaN` and stored as 0, so the first rendering came out in
+`rgb(0,1,0)`. Readable, correctly placed, entirely the wrong colour — caught by sampling a
+pixel rather than by reading the words. `blend` now refuses a string and names the mistake.

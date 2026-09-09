@@ -66,6 +66,58 @@ export const ICONS = {
     <rect x="3" y="13.9" width="16" height="2.6" rx="1.3" fill="currentColor"/>
     <rect x="3" y="19.1" width="9" height="2.6" rx="1.3" fill="currentColor"/>`,
 
+  // ---- the routes that are not tools ----
+  // These exist because a share card without its subject is what shipped for six routes:
+  // ICONS had no entry, the drawing was skipped, and the missing mark looked exactly like a
+  // mark that was meant to be absent. Every route has one now and the build throws otherwise.
+  // Same rules as above: 24x24, nothing thinner than 2 units, one amber shape.
+
+  // The grid, for the homepage: several tools, one of them lit.
+  home: `
+    <rect x="2.5" y="2.5" width="8.5" height="8.5" rx="1.5" fill="currentColor"/>
+    <rect x="13" y="2.5" width="8.5" height="8.5" rx="1.5" fill="currentColor"/>
+    <rect x="2.5" y="13" width="8.5" height="8.5" rx="1.5" fill="currentColor"/>
+    <rect x="13" y="13" width="8.5" height="8.5" rx="1.5" class="tm-a"/>`,
+
+  // A closed padlock: shackle as a stroked square above a solid body.
+  privacy: `
+    <rect x="7" y="3" width="10" height="10" rx="5" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <rect x="3.5" y="11" width="17" height="10.5" rx="2" fill="currentColor"/>
+    <rect x="10.75" y="14.5" width="2.5" height="4" rx="1.25" class="tm-a"/>`,
+
+  // A signed sheet: full-width lines and a short one where a name goes.
+  terms: `
+    <rect x="3.5" y="2.5" width="17" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <rect x="7" y="7" width="10" height="2.2" rx="1.1" fill="currentColor"/>
+    <rect x="7" y="11.4" width="10" height="2.2" rx="1.1" fill="currentColor"/>
+    <rect x="7" y="15.8" width="5" height="2.2" rx="1.1" class="tm-a"/>`,
+
+  // Money going back: a coin, and a bar returning to the left of it.
+  refunds: `
+    <circle cx="15.5" cy="8.5" r="6" fill="currentColor"/>
+    <rect x="2.5" y="14.5" width="19" height="2.8" rx="1.4" fill="currentColor"/>
+    <rect x="2.5" y="14.5" width="7" height="2.8" rx="1.4" class="tm-a"/>
+    <rect x="2.5" y="19" width="11" height="2.8" rx="1.4" fill="currentColor"/>`,
+
+  // A message and a reply: two stacked panels, the second shorter and set in.
+  support: `
+    <rect x="2.5" y="3.5" width="19" height="9" rx="2" fill="currentColor"/>
+    <rect x="7" y="14.5" width="14.5" height="7" rx="2" class="tm-a"/>`,
+
+  // A building, for firms: two columns and a lintel.
+  'for-professionals': `
+    <rect x="2.5" y="4" width="19" height="3.4" rx="1.5" class="tm-a"/>
+    <rect x="4.5" y="9" width="4" height="9.5" rx="1.5" fill="currentColor"/>
+    <rect x="15.5" y="9" width="4" height="9.5" rx="1.5" fill="currentColor"/>
+    <rect x="2.5" y="20" width="19" height="2.6" rx="1.3" fill="currentColor"/>`,
+
+  // The probe route is noindex and gets no share image, but the build asks every route for a
+  // mark and a route that is exempt-by-accident is the pattern this file exists to stop.
+  'memory-probe': `
+    <rect x="2.5" y="15" width="4.5" height="6.5" rx="1.5" fill="currentColor"/>
+    <rect x="9.75" y="9" width="4.5" height="12.5" rx="1.5" fill="currentColor"/>
+    <rect x="17" y="2.5" width="4.5" height="19" rx="1.5" class="tm-a"/>`,
+
   // A handset.
   app: `
     <rect x="6" y="2.5" width="12" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/>

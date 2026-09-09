@@ -50,6 +50,9 @@ const hex = (c) => {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
 
+/** '#RRGGBB' -> [r,g,b]. Exported so per-pixel callers convert once, outside the loop. */
+export const rgb = hex;
+
 export class Bitmap {
   constructor(width, height, background) {
     this.w = width;
@@ -71,10 +74,46 @@ export class Bitmap {
     this.px[i + 2] = rgb[2];
   }
 
+  /**
+   * Composite `rgb` — a [r,g,b] triple, NOT a hex string — over `x,y` with coverage `a`.
+   *
+   * The triple is deliberate: this runs per pixel per glyph edge and must not re-parse a
+   * colour each time. It is also the one method here that differs from its siblings, which
+   * all take hex, so it checks. Passing '#1E2A38' indexes the string: '#' and 'E' multiply
+   * to NaN and store as 0, and the text renders in rgb(0,1,0) — a readable card in the
+   * wrong colour, which looks like a working card until someone samples a pixel.
+   */
+  blend(x, y, rgb, a) {
+    if (!Array.isArray(rgb)) {
+      throw new TypeError(`blend() takes [r,g,b], not ${JSON.stringify(rgb)} — use rgb() to convert once, outside the loop`);
+    }
+    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return;
+    const i = (y * this.w + x) * 3;
+    for (let k = 0; k < 3; k++) this.px[i + k] = Math.round(rgb[k] * a + this.px[i + k] * (1 - a));
+  }
+
   rect(x, y, w, h, colour) {
     const rgb = hex(colour);
     for (let yy = Math.round(y); yy < Math.round(y + h); yy++) {
       for (let xx = Math.round(x); xx < Math.round(x + w); xx++) this.set(xx, yy, rgb);
+    }
+  }
+
+  /** A filled rectangle with corner radius `r`. The tool marks are drawn with rx and the
+   *  share images ignored it, so every mark rasterised as hard blocks — the same shape as
+   *  the drawn icon in outline only. */
+  roundRect(x, y, w, h, r, colour) {
+    const rgb = hex(colour);
+    const rad = Math.min(r, w / 2, h / 2);
+    const x0 = Math.round(x), y0 = Math.round(y);
+    const x1 = Math.round(x + w), y1 = Math.round(y + h);
+    for (let yy = y0; yy < y1; yy++) {
+      for (let xx = x0; xx < x1; xx++) {
+        // Distance from the nearest corner circle's centre, only inside the corner boxes.
+        const cx = xx < x0 + rad ? x0 + rad : xx >= x1 - rad ? x1 - rad : xx;
+        const cy = yy < y0 + rad ? y0 + rad : yy >= y1 - rad ? y1 - rad : yy;
+        if ((xx - cx) ** 2 + (yy - cy) ** 2 <= rad * rad + rad) this.set(xx, yy, rgb);
+      }
     }
   }
 

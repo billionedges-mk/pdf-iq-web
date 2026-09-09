@@ -147,6 +147,14 @@ function substituteTokens(body, file) {
   return out;
 }
 
+/**
+ * Which routes get a share image. Used both by the <head> and by the loop that writes the
+ * files, because they were separate: the head emitted an og:image for every route and the
+ * loop skipped noindex ones, so /memory-probe advertised a card that 404s. One predicate,
+ * and an assertion at the end of the build that every advertised card exists on disk.
+ */
+const hasShareImage = (page) => !page.noindex;
+
 function document_({ page, body, css, assets }) {
   const url = ORIGIN + href(page.slug);
   // Titles and descriptions go through the same substitution as the body, and the same
@@ -168,9 +176,9 @@ function document_({ page, body, css, assets }) {
 <meta property="og:url" content="${url}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
-<meta property="og:image" content="${ORIGIN}/og/${page.slug || 'home'}.png">
+${hasShareImage(page) ? `<meta property="og:image" content="${ORIGIN}/og/${page.slug || 'home'}.png">
 <meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image:height" content="630">` : ''}
 <meta property="og:site_name" content="pdf-iq">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
@@ -569,15 +577,34 @@ async function build() {
   // Share images, drawn straight to PNG. Every indexed route gets one; a route that
   // somehow produced nothing would ship a bare grey link, so it throws instead.
   mkdirSync(join(OUT, 'og'), { recursive: true });
-  for (const page of ALL.filter((p) => !p.noindex)) {
-    const png = ogImage(page.slug);
+  for (const page of ALL.filter(hasShareImage)) {
+    const png = ogImage(page);
     if (!png || png.length < 500) throw new Error(`share image for /${page.slug} came out empty`);
     writeFileSync(join(OUT, 'og', `${page.slug || 'home'}.png`), png);
   }
 
   writeFileSync(join(OUT, 'robots.txt'), robots());
 
-  console.log(`built ${ALL.length} routes -> dist/  (build ${BUILD_ID})`);
+  // Grep what shipped: every og:image a page advertises must be a file that exists. The two
+  // used to be decided in different places and one route advertised a card that was never
+  // written.
+  let advertised = 0;
+  for (const page of ALL) {
+    const html = readFileSync(join(OUT, page.slug, 'index.html'), 'utf8');
+    for (const m of html.matchAll(/property="og:image" content="([^"]+)"/g)) {
+      advertised++;
+      const file = join(OUT, m[1].replace(ORIGIN, ''));
+      if (!existsSync(file)) {
+        throw new Error(`/${page.slug} advertises ${m[1]} and no such file was written`);
+      }
+    }
+  }
+  const written = readdirSync(join(OUT, 'og')).length;
+  if (advertised !== written) {
+    throw new Error(`${advertised} share images advertised but ${written} written — one is orphaned`);
+  }
+
+  console.log(`built ${ALL.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images`);
 }
 
 await build();
