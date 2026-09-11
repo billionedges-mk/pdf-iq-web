@@ -117,6 +117,10 @@ export class ToolShell {
     if (pw) pw.hidden = !err.password;
     const pwInput = $<HTMLInputElement>('[data-password-input]', this.root);
     if (pwInput && err.password) pwInput.value = '';
+    // Which password the field wants. Under PASSWORD_RULE.md only the owner password may be
+    // used on a file whose author set limits, so the label says so.
+    const pwLabel = $('[data-password-label]', this.root);
+    if (pwLabel) pwLabel.textContent = err.ownerPasswordNeeded ? 'Owner password' : 'Password';
 
     this.show('error');
     if (pwInput && err.password) pwInput.focus();

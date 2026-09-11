@@ -22,6 +22,7 @@
 export type ErrorKind =
   | 'locked'
   | 'wrong-password'
+  | 'restricted'
   | 'damaged'
   | 'not-pdf'
   | 'not-image'
@@ -52,6 +53,12 @@ export interface ToolError {
   action?: { label: string; run: () => void };
   /** Show the password field. */
   password?: boolean;
+  /**
+   * The field asks for the owner password specifically. Set when the author limited the
+   * file: under PASSWORD_RULE.md only the owner password may be used to make anything from
+   * it here, so the label says so instead of leaving the user to try the wrong one first.
+   */
+  ownerPasswordNeeded?: boolean;
 }
 
 export interface FileFacts {
@@ -174,17 +181,75 @@ export function locked(file: FileFacts, detail: string): ToolError {
   };
 }
 
-export function wrongPassword(file: FileFacts): ToolError {
+export function wrongPassword(file: FileFacts, restricts = false): ToolError {
   return {
     kind: 'wrong-password',
     kicker: 'Password not accepted',
     title: 'That password did not open the file.',
-    body:
-      'The document rejected it. Passwords are case sensitive, and a leading or trailing space counts as ' +
-      'part of one. A PDF can carry two — the open password and the owner password — and either will unlock ' +
-      'it here, so if you have both, the other one is worth a try.',
+    body: restricts
+      ? 'The document rejected it. Passwords are case sensitive, and a leading or trailing space counts as ' +
+        'part of one. Its author limited printing, copying or editing, so the owner password is the one ' +
+        'that works here — the one that only opens it would take those limits off.'
+      : 'The document rejected it. Passwords are case sensitive, and a leading or trailing space counts as ' +
+        'part of one. A PDF can carry two — the open password and the owner password — and either will unlock ' +
+        'it here, so if you have both, the other one is worth a try.',
     mono: `password rejected on this device · ${sentSuffix}`,
     password: true,
+    ownerPasswordNeeded: restricts,
+  };
+}
+
+/**
+ * The file needs a password to open, and /P says its author also set limits. Announced
+ * before anything is typed, because /P can be read without a password (PASSWORD_RULE.md,
+ * "what the user is told — when they choose, not afterwards").
+ */
+export function lockedRestricted(file: FileFacts, detail: string): ToolError {
+  return {
+    kind: 'locked',
+    kicker: 'Locked file',
+    title: 'This PDF is encrypted, and its author also limited it.',
+    body:
+      `${file.name} needs a password to open, and its author also limited printing, copying or editing. ` +
+      'The owner password opens it and lifts those limits, so that is the one that works here. The password ' +
+      'that only opens it cannot: anything made from it here would lose the author\'s limits, and only the ' +
+      'owner password may lift them. We have no server that could try passwords for you, and no way to see ' +
+      'the one you type.',
+    mono: `${detail} · ${bytes(file.size)} · limited by its author · ${sentSuffix}`,
+    password: true,
+    ownerPasswordNeeded: true,
+  };
+}
+
+/** Opens with no password, but restricted: refused on choosing, not stripped. */
+export function ownerOnly(file: FileFacts, detail: string): ToolError {
+  return {
+    kind: 'restricted',
+    kicker: 'Limited by its author',
+    title: 'This file already opens without a password, but its author limited it.',
+    body:
+      `${file.name}'s author limited printing, copying or editing, and lifting that needs the owner password. ` +
+      'Anything made from it here would not carry those limits, so this page needs the owner password to go ' +
+      'on. Without it your original is unchanged, and nothing was sent anywhere.',
+    mono: `${detail} · no open password · limited by its author · ${sentSuffix}`,
+    password: true,
+    ownerPasswordNeeded: true,
+  };
+}
+
+/** The typed password opened the file, but it was not the owner's and the file is restricted. */
+export function restrictedNeedsOwner(file: FileFacts, detail: string): ToolError {
+  return {
+    kind: 'restricted',
+    kicker: 'Owner password needed',
+    title: 'That password opens the file, but it cannot lift its author\'s limits.',
+    body:
+      `${file.name}'s author limited printing, copying or editing. Anything made from it here would lose ` +
+      'those limits, and only the owner password may lift them — so this page needs that one. Your original ' +
+      'is unchanged, and nothing was sent anywhere.',
+    mono: `${detail} · opened with the user password, refused · ${sentSuffix}`,
+    password: true,
+    ownerPasswordNeeded: true,
   };
 }
 

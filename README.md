@@ -162,10 +162,16 @@ Two caveats on that number, both real: it comes from one desktop, and no valid p
 was ever obtained — three attempts produced impossible readings, and the probe now rejects them
 rather than printing them.
 
-**Encrypted PDFs: RC4 40-bit is the only handler tested against a real file.** RC4 128-bit,
-AES-128 and AES-256 are implemented from the specification and have never met a document. Both the
-user and owner password paths work; the owner path exists because the first real locked file to
-arrive carried a correct owner password and was rejected.
+**Encrypted PDFs: RC4 40 and 128-bit, AES-128 and AES-256 (R6) are tested against files another
+implementation wrote.** `npm run verify:crypto` runs 25 cases through the real open path against
+PdfBox-made fixtures and reads every output back with MuPDF. Until 11 September 2026 only RC4 40-bit
+had met a real file, and the first run against PdfBox's found AES-128 output silently corrupt and
+AES-256 not working at all — both fixed, see CLAIMS 30. AES-256 **R5**, the deprecated Adobe
+variant, is implemented and has no fixture, so it is untested.
+
+Removing a password follows the rule shared with the Android app: an author's print, copy or edit
+limits are lifted only by the owner password. A restricted file opened with the password that
+only opens it — or opening with no password at all — is refused, never silently stripped.
 
 **CMYK, JPEG 2000, JBIG2 and CCITT images are detected and skipped**, with a specific reason given
 to the user. That logic is tested; it has never run against a real file of any of those kinds.

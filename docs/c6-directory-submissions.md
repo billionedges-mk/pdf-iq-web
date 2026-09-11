@@ -192,8 +192,8 @@ first rather than being caught by them:
 > - The project is new and has had no independent review. That is partly why I am posting.
 >
 > **Known limitations**, all in the README rather than buried: files over 60 MB are refused
-> because past that a tab stops being able to finish; only RC4 40-bit encrypted PDFs have been
-> tested against a real file, with AES implemented from spec but never exercised; CMYK, JPEG
+> because past that a tab stops being able to finish; encrypted PDFs are tested against files
+> another implementation wrote (RC4 and AES, from PdfBox), except the rare AES-256 R5 variant; CMYK, JPEG
 > 2000, JBIG2 and CCITT images are detected and skipped but that path has never met a real
 > file; OCR accuracy is measured only against synthetic type; desktop Safari and Firefox are
 > untested.

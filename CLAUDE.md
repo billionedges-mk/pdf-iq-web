@@ -45,6 +45,10 @@ thing claims and what it does. The ones that come up most:
   passes before the fix proves nothing.
 - `npm run verify:states` — a CSS rule keyed on a runtime state class must target something
   that exists. Catches a state that can be entered and can no longer be seen.
+- `npm run verify:crypto` — every locked-file case in the app repo's PASSWORD_RULE.md, run
+  through the real `openPdf` against PdfBox-made fixtures in `tools/fixtures/crypto/`, with
+  every output read back by MuPDF. Needs python with PyMuPDF. Until it existed the only
+  encrypted fixture was our own RC4 file, the one case the code handled correctly.
 - Suites: `npm run typecheck`, `npm run build`, `npm run selftest` then open
   `/selftest.html`, `/tools-selftest.html`, `/ocr-text-probe.html`, `/e2e-selftest.html`
   in a browser; `npm run verify:interest`, `npm run verify:pdflib`, `npm run contrast`.

@@ -13,6 +13,12 @@
  *   and called `saveDocument()`. That preserves encryption — measured: the output was the
  *   same size, still carried `/Encrypt`, and pdf-lib refused it. Decryption is now done
  *   directly, in decrypt.ts.
+ *
+ * And one thing was wrong on purpose, which was worse: every locked file came out unlocked
+ * and unrestricted, including one whose author had limited printing or copying and which
+ * had been opened with the password that only opens it — or with no password at all.
+ * PASSWORD_RULE.md forbids that for both products (TECH_DEBT 27). decrypt.ts now refuses
+ * those cases, and this maps each refusal to what the user is told, as they choose the file.
  */
 
 import { PDFDocument } from 'pdf-lib';
@@ -46,22 +52,32 @@ export async function openPdf(bytes: Uint8Array, facts: FileFacts, password?: st
   }
 
   if (encrypted) {
-    // A file carrying only an owner password opens with an empty user password. That is
-    // very common — "protected" usually means printing is restricted, not that anyone
-    // was ever given a password — so try it before asking.
-    const candidate = password ?? '';
-    const result = await decryptPdf(bytes, candidate);
+    // A file carrying only an owner password opens with an empty user password, so that is
+    // tried before asking. If its author restricted nothing, it simply opens. If they did,
+    // this is the owner-only case, and it is refused on choosing rather than stripped.
+    const typed = password !== undefined;
+    let result: Awaited<ReturnType<typeof decryptPdf>>;
+    try {
+      result = await decryptPdf(bytes, password ?? '');
+    } catch (err) {
+      // Every failure comes back as a value. A throw here used to escape the tool's error
+      // panel entirely — an AES-256 file with the right password did exactly that.
+      return { ok: false, error: E.classify(err, facts) };
+    }
 
     if (!result.ok) {
       if (result.reason === 'unsupported') {
         return { ok: false, error: unsupportedEncryption(facts, result.detail) };
       }
-      // Wrong password, or none supplied yet.
+      if (result.reason === 'restricted') {
+        return { ok: false, error: typed ? E.restrictedNeedsOwner(facts, result.detail) : E.ownerOnly(facts, result.detail) };
+      }
+      // Wrong password, or none supplied yet. /P is readable without one, so a file whose
+      // author set limits says so before the user types anything.
+      if (typed) return { ok: false, error: E.wrongPassword(facts, result.restricts) };
       return {
         ok: false,
-        error: password === undefined
-          ? E.locked(facts, result.detail)
-          : E.wrongPassword(facts),
+        error: result.restricts ? E.lockedRestricted(facts, result.detail) : E.locked(facts, result.detail),
       };
     }
 

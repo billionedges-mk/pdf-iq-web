@@ -38,6 +38,8 @@ mkdirSync(join(OUT, 'fixtures'), { recursive: true });
 writeFileSync(join(OUT, 'fixtures', 'encrypted-rc4.pdf'),
   buildEncryptedPdf({ userPassword: 'correct-horse', pages: 3 }));
 console.log('encrypted fixture -> dist/fixtures/encrypted-rc4.pdf');
-console.log('  user password: correct-horse   owner password: correct-horse-owner (both must open it)');
+// /P is 0xFFFFF0C0, so under PASSWORD_RULE.md the tools refuse the user password here — it
+// authenticates, but using it would strip the author's limits. Only the owner password opens it for a tool.
+console.log('  user password: correct-horse (authenticates; the tools refuse it, /P restricts)   owner password: correct-horse-owner (opens and lifts)');
 
 console.log('selftests built -> dist/selftest.html, dist/tools-selftest.html');

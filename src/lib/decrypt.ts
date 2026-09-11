@@ -128,21 +128,28 @@ const equal = (a: Uint8Array, b: Uint8Array, n = Math.min(a.length, b.length)) =
 };
 
 async function aesCbcNoPadDecrypt(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
-  // WebCrypto's AES-CBC always strips PKCS#7 padding and rejects a bad pad. PDF streams
-  // are padded that way, but a corrupt or short block would throw where we want to fail
-  // softly, so decryption is done block by block through a zero-IV trick instead.
-  const k = await crypto.subtle.importKey('raw', key as BufferSource, 'AES-CBC', false, ['decrypt']);
-  // Append a block encrypted from a known padding so the built-in unpadding succeeds,
-  // then discard it. Simpler: decrypt with padding disabled by adding a dummy block.
-  const padded = concat(data, new Uint8Array(16));
-  try {
-    const out = await crypto.subtle.decrypt({ name: 'AES-CBC', iv: iv as BufferSource }, k, padded as BufferSource);
-    return new Uint8Array(out);
-  } catch {
-    // Fall back: decrypt without the dummy block and accept whatever unpadding gives.
-    const out = await crypto.subtle.decrypt({ name: 'AES-CBC', iv: iv as BufferSource }, k, data as BufferSource);
-    return new Uint8Array(out);
-  }
+  // AES-CBC with nothing removed. WebCrypto always strips PKCS#7 and throws on a bad pad,
+  // and PDF has two kinds of AES data: streams and strings, which are PKCS#7-padded, and
+  // the AES-256 key material (/UE, /OE, /Perms), which is not padded at all. So a final
+  // block is appended whose decryption is exactly one full block of padding — sixteen
+  // 0x10 — WebCrypto strips that, and what is left is the ciphertext decrypted byte for
+  // byte. Callers remove PKCS#7 themselves, once, where it applies.
+  //
+  // This used to append sixteen zero bytes. Their decryption is random, so WebCrypto
+  // rejected the pad and threw — uncaught, on every AES-256 file's /UE — or, about once
+  // in 256 blocks, accepted it and returned the block with trailing garbage.
+  if (data.length === 0 || data.length % 16 !== 0) throw new Error('AES data is not a whole number of blocks');
+  const k = await crypto.subtle.importKey('raw', key as BufferSource, 'AES-CBC', false, ['encrypt', 'decrypt']);
+  const last = data.subarray(data.length - 16);
+  const target = new Uint8Array(16).fill(16);
+  for (let i = 0; i < 16; i++) target[i] ^= last[i];
+  // CBC under a zero IV over one block is AES-ECB of that block. WebCrypto appends its own
+  // padding block to the ciphertext; only the first block is wanted.
+  const extra = new Uint8Array(
+    await crypto.subtle.encrypt({ name: 'AES-CBC', iv: new Uint8Array(16) as BufferSource }, k, target as BufferSource)
+  ).subarray(0, 16);
+  const out = await crypto.subtle.decrypt({ name: 'AES-CBC', iv: iv as BufferSource }, k, concat(data, extra) as BufferSource);
+  return new Uint8Array(out);
 }
 
 // ---------------------------------------------------------------- the handler
@@ -168,6 +175,8 @@ interface EncryptInfo {
   id: Uint8Array;
   cipher: 'rc4' | 'aes';
   encryptMetadata: boolean;
+  /** R6 only: an encrypted copy of /P, which is the only thing protecting /P on R6. */
+  Perms: Uint8Array | null;
 }
 
 const bytesOf = (o: PDFObject | undefined): Uint8Array | null =>
@@ -216,6 +225,7 @@ function readEncryptDict(doc: PDFDocument): EncryptInfo | null {
     id,
     cipher,
     encryptMetadata: !(meta && String(meta) === 'false'),
+    Perms: bytesOf(dict.lookup(PDFName.of('Perms'))),
   };
 }
 
@@ -310,45 +320,48 @@ async function hash2B(password: Uint8Array, salt: Uint8Array, extra: Uint8Array,
     const algo = which === 0 ? 'SHA-256' : which === 1 ? 'SHA-384' : 'SHA-512';
     k = new Uint8Array(await crypto.subtle.digest(algo, encrypted as BufferSource));
 
-    if (round >= 63 && encrypted[encrypted.length - 1] <= round - 32) break;
+    // Stop once at least 64 rounds are done and the last byte of E is at most the round
+    // count minus 32 — counting rounds from one, as the spec and qpdf do. `round` here counts
+    // from zero, so the bound is round - 31. It said round - 32, which ran an extra round
+    // whenever the byte landed exactly on the boundary: a correct password then failed, on
+    // some files and not others, depending only on the bytes.
+    if (round >= 63 && encrypted[encrypted.length - 1] <= round - 31) break;
   }
   return k.subarray(0, 32);
 }
 
-/** Algorithms 2.A / 8 / 9: the AES-256 file key. */
+/**
+ * Algorithms 2.A / 8 / 9: the AES-256 file key.
+ *
+ * The owner password is tried first, as Algorithm 2.A and PdfBox both do. Which password
+ * authenticated decides whether an author's limits may be lifted (PASSWORD_RULE.md), and a
+ * file whose two passwords are the same must count as opened by its owner.
+ *
+ * Two defects lived here, both unseen because the only fixture was RC4. The owner check
+ * passed U as part of the salt instead of as the hash's third input; for R5 that is the
+ * same bytes, but R6 mixes that input into every round, so no owner password ever matched.
+ * And /UE and /OE were decrypted with a trick that threw on unpadded data — which they
+ * always are — so the right user password crashed the tool instead of opening the file.
+ */
 async function aes256Key(info: EncryptInfo, password: string): Promise<{ key: Uint8Array; role: 'user' | 'owner' } | null> {
   const pw = latin1(password).subarray(0, 127);
   const U = info.U;
   if (U.length < 48) return null;
+  const zeroIv = new Uint8Array(16);
 
-  const validation = U.subarray(32, 40);
-  const keySalt = U.subarray(40, 48);
-  const check = await hash2B(pw, validation, new Uint8Array(0), info.r);
-  if (equal(check, U.subarray(0, 32), 32)) {
-    const intermediate = await hash2B(pw, keySalt, new Uint8Array(0), info.r);
-    if (!info.UE) return null;
-    const k = await crypto.subtle.importKey('raw', intermediate as BufferSource, 'AES-CBC', false, ['decrypt']);
-    const out = await crypto.subtle.decrypt(
-      { name: 'AES-CBC', iv: new Uint8Array(16) as BufferSource }, k,
-      concat(info.UE.subarray(0, 32), new Uint8Array(16)) as BufferSource
-    );
-    return { key: new Uint8Array(out).subarray(0, 32), role: 'user' };
+  if (info.O.length >= 48 && info.OE && info.OE.length >= 32) {
+    const oCheck = await hash2B(pw, info.O.subarray(32, 40), U.subarray(0, 48), info.r);
+    if (equal(oCheck, info.O.subarray(0, 32), 32)) {
+      const intermediate = await hash2B(pw, info.O.subarray(40, 48), U.subarray(0, 48), info.r);
+      return { key: await aesCbcNoPadDecrypt(intermediate, zeroIv, info.OE.subarray(0, 32)), role: 'owner' };
+    }
   }
 
-  // Try it as the owner password.
-  if (info.O.length >= 48 && info.OE) {
-    const oValidation = info.O.subarray(32, 40);
-    const oKeySalt = info.O.subarray(40, 48);
-    const oCheck = await hash2B(pw, concat(oValidation, U.subarray(0, 48)), new Uint8Array(0), info.r);
-    if (equal(oCheck, info.O.subarray(0, 32), 32)) {
-      const intermediate = await hash2B(pw, concat(oKeySalt, U.subarray(0, 48)), new Uint8Array(0), info.r);
-      const k = await crypto.subtle.importKey('raw', intermediate as BufferSource, 'AES-CBC', false, ['decrypt']);
-      const out = await crypto.subtle.decrypt(
-        { name: 'AES-CBC', iv: new Uint8Array(16) as BufferSource }, k,
-        concat(info.OE.subarray(0, 32), new Uint8Array(16)) as BufferSource
-      );
-      return { key: new Uint8Array(out).subarray(0, 32), role: 'owner' };
-    }
+  const check = await hash2B(pw, U.subarray(32, 40), new Uint8Array(0), info.r);
+  if (equal(check, U.subarray(0, 32), 32)) {
+    if (!info.UE || info.UE.length < 32) return null;
+    const intermediate = await hash2B(pw, U.subarray(40, 48), new Uint8Array(0), info.r);
+    return { key: await aesCbcNoPadDecrypt(intermediate, zeroIv, info.UE.subarray(0, 32)), role: 'user' };
   }
   return null;
 }
@@ -373,22 +386,69 @@ async function decryptBytes(handler: Handler, key: Uint8Array, data: Uint8Array)
   if (body.length % 16 !== 0) return new Uint8Array(0);
   try {
     const out = await aesCbcNoPadDecrypt(key, iv, body);
-    // Strip PKCS#7 if WebCrypto left it on.
+    // PKCS#7, removed exactly once and only when it is well formed. This used to let
+    // WebCrypto strip it and then strip again by the last byte of what remained, so any
+    // stream or string whose real final byte was 0x01-0x10 — a newline is 0x0A — lost up
+    // to sixteen bytes of content. That is how AES-128 files came out with page streams
+    // cut short: they opened, pdf-lib accepted them, and the text was gone.
     const pad = out[out.length - 1];
-    return pad >= 1 && pad <= 16 && pad <= out.length ? out.subarray(0, out.length - pad) : out;
+    if (pad >= 1 && pad <= 16 && pad <= out.length && out.subarray(out.length - pad).every((b) => b === pad)) {
+      return out.subarray(0, out.length - pad);
+    }
+    return out;
   } catch {
     return new Uint8Array(0);
   }
 }
 
-export type DecryptResult =
-  | { ok: true; bytes: Uint8Array; handler: string; role: 'user' | 'owner' }
-  | { ok: false; reason: 'wrong-password' | 'unsupported'; detail: string };
+/**
+ * The eight standard permissions in /P — 1-based bits 3, 4, 5, 6, 9, 10, 11 and 12 of PDF
+ * 32000-1 Table 22: print, modify, copy, annotate, fill forms, extract for accessibility,
+ * assemble, print at full quality. All of them set means the author restricted nothing.
+ */
+const STANDARD_PERMISSIONS = 0xf3c;
+export const allPermissions = (p: number): boolean => (p & STANDARD_PERMISSIONS) === STANDARD_PERMISSIONS;
 
 /**
- * Decrypt a protected document and return bytes pdf-lib can open normally.
- * `password` is the user (open) password; an empty string covers the very common case of
- * a file that only carries an owner password to restrict printing.
+ * R6 protects /P only through /Perms, an AES-encrypted copy of it. Returns the /P it
+ * carries, or null when it does not verify. PASSWORD_RULE.md asks for this rather than
+ * trusting the plaintext, which anyone can edit on an R6 file without breaking the key.
+ */
+async function permsP(info: EncryptInfo, key: Uint8Array): Promise<number | null> {
+  if (!info.Perms || info.Perms.length < 16) return null;
+  const block = await aesCbcNoPadDecrypt(key, new Uint8Array(16), info.Perms.subarray(0, 16));
+  if (block[9] !== 0x61 || block[10] !== 0x64 || block[11] !== 0x62) return null; // "adb"
+  return new DataView(block.buffer, block.byteOffset, 4).getInt32(0, true);
+}
+
+const describe = (info: EncryptInfo): string =>
+  info.v === 5 ? `AES-256 (R${info.r})` : info.cipher === 'aes' ? 'AES-128' : `RC4 ${info.length || 40}-bit`;
+
+export type DecryptResult =
+  | { ok: true; bytes: Uint8Array; handler: string; role: 'user' | 'owner' }
+  /** `restricts` is read from /P as declared, so a notice can be shown before any password. */
+  | { ok: false; reason: 'wrong-password'; detail: string; restricts: boolean }
+  /**
+   * The password opened the file, but the author set limits and it was not the owner
+   * password. Every tool here writes an unencrypted copy, so using it would strip those
+   * limits — which PASSWORD_RULE.md forbids. Refused rather than stripped.
+   */
+  | { ok: false; reason: 'restricted'; detail: string }
+  | { ok: false; reason: 'unsupported'; detail: string };
+
+/**
+ * Decrypt a protected document and return bytes pdf-lib can open normally — only when the
+ * rule allows the result to be unrestricted.
+ *
+ * The rule, decided 11 September 2026 for Android and the web alike: removing a password
+ * never lifts an author's print/copy/edit limits without the owner password. It reduces to
+ * one predicate, checked after authenticating and before anything is stripped:
+ *
+ *     may lift = the password authenticated as the owner, OR /P restricts nothing
+ *
+ * An empty `password` is how a file with only an owner password opens — and a file like
+ * that with restricted /P is exactly the case the rule refuses. Stripping it silently is
+ * what this function did until TECH_DEBT 27 was fixed.
  */
 export async function decryptPdf(bytes: Uint8Array, password: string): Promise<DecryptResult> {
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false });
@@ -405,32 +465,39 @@ export async function decryptPdf(bytes: Uint8Array, password: string): Promise<D
     return { ok: false, reason: 'unsupported', detail: `${filter} security handler` };
   }
 
+  const detail = describe(info);
+  const wrong = { ok: false as const, reason: 'wrong-password' as const, detail, restricts: !allPermissions(info.P) };
+
   let handler: Handler;
-  let role: 'user' | 'owner' = 'user';
+  let role: 'user' | 'owner';
   if (info.v === 5) {
     const result = await aes256Key(info, password);
-    if (!result) return { ok: false, reason: 'wrong-password', detail: `AES-256 (R${info.r})` };
+    if (!result) return wrong;
     handler = { key: result.key, cipher: 'aes', perObject: false };
     role = result.role;
   } else if (info.v >= 1 && info.v <= 4) {
-    const asUser = legacyKey(info, password);
-    if (legacyKeyMatches(info, asUser)) {
-      handler = { key: asUser, cipher: info.cipher, perObject: true };
-      role = 'user';
-    } else {
-      // Not the user password — it may still be the owner password, which also opens the
-      // document. Checking only the first of the two rejects a password that works.
-      const recovered = userPasswordFromOwner(info, password);
-      const asOwner = legacyKeyFromPadded(info, recovered);
-      if (!legacyKeyMatches(info, asOwner)) {
-        return { ok: false, reason: 'wrong-password', detail: info.cipher === 'aes' ? 'AES-128' : `RC4 ${info.length || 40}-bit` };
-      }
+    // Owner first, as PdfBox does: which password authenticated decides what may be
+    // lifted, so a password that is both must count as the owner's.
+    const asOwner = legacyKeyFromPadded(info, userPasswordFromOwner(info, password));
+    if (legacyKeyMatches(info, asOwner)) {
       handler = { key: asOwner, cipher: info.cipher, perObject: true };
       role = 'owner';
+    } else {
+      const asUser = legacyKey(info, password);
+      if (!legacyKeyMatches(info, asUser)) return wrong;
+      handler = { key: asUser, cipher: info.cipher, perObject: true };
+      role = 'user';
     }
   } else {
     return { ok: false, reason: 'unsupported', detail: `V${info.v} handler` };
   }
+
+  // The rule. On R2-R4 /P is mixed into the key, so an edited /P does not open at all; on
+  // R6 only /Perms protects it, so the authentic value comes from there, and a /Perms that
+  // does not verify counts as restricted — failing closed.
+  const p = info.v === 5 ? await permsP(info, handler.key) : info.P;
+  const mayLift = role === 'owner' || (p !== null && allPermissions(p));
+  if (!mayLift) return { ok: false, reason: 'restricted', detail };
 
   // Walk the object graph and decrypt every string and stream in place. The structure is
   // already plaintext, which is why this works without a parser of our own.
@@ -458,10 +525,7 @@ export async function decryptPdf(bytes: Uint8Array, password: string): Promise<D
   if (encryptRef instanceof PDFRef) doc.context.delete(encryptRef);
 
   const out = await doc.save({ useObjectStreams: false });
-  const cipherName = info.v === 5 ? `AES-256 (R${info.r})`
-    : info.cipher === 'aes' ? 'AES-128'
-    : `RC4 ${info.length || 40}-bit`;
-  return { ok: true, bytes: out, handler: `${cipherName}, ${role} password`, role };
+  return { ok: true, bytes: out, handler: `${detail}, ${role} password`, role };
 }
 
 /** Strings live inside dictionaries and arrays, at any depth. */

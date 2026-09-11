@@ -523,6 +523,8 @@ const ENCRYPTED_CASES: Case[] = [
       ok(!/did not anticipate|Unexpected failure/i.test(title + kicker), 'did not fall through to the catch-all');
       ok(/RC4/.test(mono), 'the technical line names the handler it found');
       ok(!p.doc.querySelector<HTMLElement>('[data-err-password]')!.hidden, 'the password field is shown');
+      ok(p.doc.querySelector('[data-password-label]')?.textContent === 'Owner password',
+        'the field asks for the owner password, because the author limited this file (/P 0xFFFFF0C0)');
       p.frame.remove();
     },
   },
@@ -548,49 +550,48 @@ const ENCRYPTED_CASES: Case[] = [
     },
   },
   {
-    name: 'The right password unlocks it and the tool then works end to end',
+    // PASSWORD_RULE.md, decided 11 September 2026: removing a password never lifts an
+    // author's limits without the owner password. This fixture restricts printing and
+    // copying (/P 0xFFFFF0C0), and every tool here writes an unencrypted copy, so the
+    // password that only opens it must be refused rather than used to strip the limits.
+    //
+    // This case used to be "The right password unlocks it and the tool then works end to
+    // end", typed the user password, and asserted the output carried no encryption
+    // dictionary. The suite encoded the behaviour the rule forbids. Fails against the code
+    // as it was: that code opened the file.
+    name: 'The opening password is refused on a file whose author limited it',
     async run() {
       const p = await open('/compress/');
       const bytes = new Uint8Array(await (await fetch('/fixtures/encrypted-rc4.pdf')).arrayBuffer());
       feed(p, [fileOf(bytes, 'board-minutes.pdf')]);
       await waitFor(p.doc, 'error', 10000);
+      const before = p.doc.querySelector('[data-err-title]')!.textContent;
 
       const input = p.doc.querySelector<HTMLInputElement>('[data-password-input]')!;
       input.value = 'correct-horse';
       p.doc.querySelector<HTMLFormElement>('[data-err-password]')!
         .dispatchEvent(new (p.win as unknown as { Event: typeof Event }).Event('submit', { bubbles: true, cancelable: true }));
-      await waitFor(p.doc, 'selected', 12000);
-
-      const meta = p.doc.querySelector('[data-file-meta]')!.textContent!;
-      note(`unlocked: ${meta}`);
-      ok(/3 pages/.test(meta), 'the unlocked document reports its 3 pages');
-
-      // And it has to be genuinely usable afterwards, not merely opened.
-      click(p.doc, '[data-start]');
-      await waitFor(p.doc, 'result', 25000).catch(async () => {
-        await waitFor(p.doc, 'nogain', 5000);
-      });
-      const views = visible(p.doc);
-      note(`after compressing: ${views.join(',')}`);
-      ok(views.includes('result') || views.includes('nogain'), 'compression completed on the unlocked file');
-
-      if (views.includes('result')) {
-        const out = await capture(p);
-        const doc = await reopen(out, 'unlocked compress');
-        ok(doc.getPageCount() === 3, 'the saved output has all 3 pages');
-        const raw = new TextDecoder('latin1').decode(out);
-        ok(!/\/Encrypt/.test(raw), 'the output carries no encryption dictionary');
+      const deadline = Date.now() + 10000;
+      while (Date.now() < deadline && p.doc.querySelector('[data-err-title]')!.textContent === before) {
+        await new Promise((r) => setTimeout(r, 100));
       }
-      ok(clean(p), 'nothing sent while unlocking');
+
+      const kicker = p.doc.querySelector('[data-err-kicker]')!.textContent!;
+      const title = p.doc.querySelector('[data-err-title]')!.textContent!;
+      note(`"${kicker}" — ${title}`);
+      ok(/Owner password needed/i.test(kicker), 'refused, and says the owner password is what is needed');
+      ok(!visible(p.doc).includes('selected'), 'the file was not opened for the tool');
+      ok(p.doc.querySelector('[data-password-label]')?.textContent === 'Owner password', 'the field asks for the owner password');
+      ok(clean(p), 'nothing sent');
       p.frame.remove();
     },
   },
   {
     // The first real locked file to reach this code was rejected with the correct
     // password, because the password was the *owner* one and only the user password was
-    // ever checked. A PDF has two, either opens it, and the fixture's differ — so this
-    // case fails against the code as it was.
-    name: 'The owner password unlocks it too, not just the user password',
+    // ever checked. It is also the only password that may lift this fixture's limits, so it
+    // is now the end-to-end case: it opens, the tool works, and the copy is unrestricted.
+    name: 'The owner password opens it, lifts the limits, and the tool then works end to end',
     async run() {
       const p = await open('/compress/');
       const bytes = new Uint8Array(await (await fetch('/fixtures/encrypted-rc4.pdf')).arrayBuffer());
@@ -598,7 +599,6 @@ const ENCRYPTED_CASES: Case[] = [
       await waitFor(p.doc, 'error', 10000);
 
       const input = p.doc.querySelector<HTMLInputElement>('[data-password-input]')!;
-      // Deliberately not the user password this fixture also carries.
       input.value = 'correct-horse-owner';
       p.doc.querySelector<HTMLFormElement>('[data-err-password]')!
         .dispatchEvent(new (p.win as unknown as { Event: typeof Event }).Event('submit', { bubbles: true, cancelable: true }));
@@ -607,6 +607,21 @@ const ENCRYPTED_CASES: Case[] = [
       const meta = p.doc.querySelector('[data-file-meta]')!.textContent!;
       note(`unlocked with the owner password: ${meta}`);
       ok(/3 pages/.test(meta), 'the owner password opens all 3 pages');
+
+      click(p.doc, '[data-start]');
+      await waitFor(p.doc, 'result', 25000).catch(async () => {
+        await waitFor(p.doc, 'nogain', 5000);
+      });
+      const views = visible(p.doc);
+      note(`after compressing: ${views.join(',')}`);
+      ok(views.includes('result') || views.includes('nogain'), 'compression completed on the unlocked file');
+      if (views.includes('result')) {
+        const out = await capture(p);
+        const doc = await reopen(out, 'owner-unlocked compress');
+        ok(doc.getPageCount() === 3, 'the saved output has all 3 pages');
+        const raw = new TextDecoder('latin1').decode(out);
+        ok(!/\/Encrypt/.test(raw), 'the owner password lifts the limits, so the copy carries no encryption');
+      }
       ok(clean(p), 'nothing sent while unlocking');
       p.frame.remove();
     },

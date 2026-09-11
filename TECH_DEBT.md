@@ -108,15 +108,21 @@ worded so that it stays true if the measurement comes back badly.
 
   **Outstanding:** no phone figure yet with the cap removed. The iPhone's earlier flat ladder was
   the cap, not the device — decoding works there, and works fast.
-- **Encrypted PDFs — resolved, with one gap.** A real locked file proved both halves wrong:
-  detection never fired, and the pdf.js `saveDocument()` route does not decrypt at all. Both are
-  fixed and tested end to end against a generated RC4 40-bit fixture. Remaining gap: **only RC4
-  40-bit has been exercised against a real file.** `src/lib/decrypt.ts` also implements RC4
-  128-bit, AES-128 (/AESV2) and AES-256 (/AESV3, R5 and R6), and those paths are written from the
-  specification but have never met a document. `tools/encrypt-fixture.mjs` only emits RC4 40-bit;
-  extending it to AES would close this. The owner-password route (Algorithm 7), added after the
-  same real file was rejected while carrying a *correct* owner password, is exercised for RC4 by
-  the fixture; its AES-256 equivalent shares the same untested status as the rest of V5.
+- **Encrypted PDFs — resolved, with two gaps.** A real locked file first proved detection and the
+  pdf.js route wrong; both were fixed against a generated RC4 40-bit fixture. That fixture was the
+  only one, and it was the one case the code got right. `npm run verify:crypto` now runs RC4
+  40/128, AES-128 and AES-256 R6 against PdfBox-made files (`tools/fixtures/crypto/`, from the app
+  repo) with every output read back by MuPDF. Its first run found AES-128 output silently corrupt,
+  AES-256 unusable — three defects — and TECH_DEBT 27 in the app repo's list: restricted files
+  stripped of their limits. All fixed 11 September 2026; CLAIMS 30. **Gaps:** AES-256 **R5**
+  (deprecated Adobe extension level 3) is implemented and has no fixture. And the *kept-limits copy*
+  PASSWORD_RULE.md allows — open password removed, limits kept — is not written here: the web
+  refuses that case until an AES-256 writer exists, which is the Pro password-protect work.
+- **Merge shows a password field that does nothing.** `merge.html` carries the shared password
+  form, and a locked file there raises an error with `password: true`, but `merge.ts` passes no
+  password to `openPdf` and binds no submit handler — the other five PDF tools each do. Typing a
+  password and pressing Unlock does nothing: CLAIMS 14's dead-control class. Found while fixing
+  TECH_DEBT 27, left for its own change: Merge's tray needs a decision on how a locked file joins.
 - **Recovering the readable pages of a damaged PDF.** The damaged-file error used to render
   "Continue with the N readable pages". Nothing was ever bound to that button, so it did
   nothing at all; the offer has been withdrawn rather than left as a lie. Salvaging the
