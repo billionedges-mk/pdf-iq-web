@@ -91,7 +91,7 @@ export const TOOLS = [
       'OCR a PDF free, without uploading it. Read the text in a scanned document so you can search and copy it — it runs in your browser, on your own device.',
     faqAction: 'read the text off',
     needsFirstRunDownload: true,
-    inApp: false,
+    inApp: true,
     cardName: 'OCR',
     card: 'Read the text off a scan, free and unlimited.',
     ogSubject: 'Read a scan',
@@ -313,17 +313,24 @@ export const TOKENS = {
   webToolCountCap: cap(word(WEB_TOOLS.length)),
   appToolCount: word(APP_TOOLS.length),
   appToolCountCap: cap(word(APP_TOOLS.length)),
-  appOfWeb: `${word(APP_TOOLS.length)} of the ${word(WEB_TOOLS.length)}`,
-  appOfWebCap: `${cap(word(APP_TOOLS.length))} of the ${word(WEB_TOOLS.length)}`,
+  // "all seven" when the app has every tool. Flipping ocr.inApp would otherwise have put
+  // "Seven of the seven tools" on the /app lede, the homepage card and the meta description.
+  appOfWeb: APP_TOOLS.length === WEB_TOOLS.length
+    ? `all ${word(WEB_TOOLS.length)}`
+    : `${word(APP_TOOLS.length)} of the ${word(WEB_TOOLS.length)}`,
+  appOfWebCap: APP_TOOLS.length === WEB_TOOLS.length
+    ? `All ${word(WEB_TOOLS.length)}`
+    : `${cap(word(APP_TOOLS.length))} of the ${word(WEB_TOOLS.length)}`,
   webOnlyTools: list(WEB_ONLY_TOOLS.map((t) => t.cardName)),
   webOnlyVerb: WEB_ONLY_TOOLS.length === 1 ? 'is' : 'are',
   webOnlyPronoun: WEB_ONLY_TOOLS.length === 1 ? 'it' : 'they',
   /**
    * How many tools work with the network off from the very first use.
    *
-   * Six today, and six for a different reason than the app's six: OCR fetches a language
-   * model once before it can run. Deriving this from `appOfWeb` because both happen to be
-   * six would break the day OCR ships in the app, so it has its own source.
+   * Six, because OCR fetches a language model once before it can run. It used to equal the
+   * app's count too, six of seven, for an unrelated reason. Deriving one from the other would
+   * have broken when Read a scan shipped in the app in vc14 — which it would have, silently —
+   * so this has its own source.
    */
   offlineNow: `${word(OFFLINE_NOW.length)} of the ${word(WEB_TOOLS.length)}`,
 };
@@ -349,6 +356,9 @@ export const APP_FEATURES = [
   ...(WEB_ONLY_TOOLS.length
     ? [`${list(WEB_ONLY_TOOLS.map((t) => t.cardName))} ${WEB_ONLY_TOOLS.length === 1 ? 'is' : 'are'} not in the app yet — on the web ${WEB_ONLY_TOOLS.length === 1 ? 'it is' : 'they are'} unlimited.`]
     : []),
+  // Text only. The searchable-PDF writer and batch OCR are Pro and in no shipped release;
+  // TEST_MATRIX SG1 in the app repo confirms the writer is stripped from the free build.
+  'Read a scan puts the text on screen, to copy or save as a .txt file. Its recogniser downloads once, through Google Play services.',
   'Opens PDFs from the share sheet and from chat apps.',
   'Multi-page camera scanning straight to PDF.',
   'No ads, and no advertising SDK in the build.',
@@ -371,10 +381,12 @@ export const HOME_ORDER = ['compress', 'merge', 'split', 'images-to-pdf', 'rotat
 export const HOME_APP_CARD = {
   slug: 'app',
   cardName: 'Android app',
-  // Not "the same tools": the app has six of the seven. Its OCR package is committed and
-  // wired into DI but has no route in Screen.kt, no entry in PdfiqNavHost and no home
-  // tile, so no user can reach it. See CLAIMS.md.
-  card: 'Six of these seven, on a phone. In testing, not yet on Play.',
+  // Derived. This was the one app count on the site written by hand — "Six of these
+  // seven" — so flipping ocr.inApp when Read a scan shipped in vc14 would have moved every
+  // other count and left this one saying six.
+  card: APP_TOOLS.length === WEB_TOOLS.length
+    ? `All ${word(WEB_TOOLS.length)} of these, on a phone. In testing, not yet on Play.`
+    : `${cap(word(APP_TOOLS.length))} of these ${word(WEB_TOOLS.length)}, on a phone. In testing, not yet on Play.`,
   outline: true,
 };
 
