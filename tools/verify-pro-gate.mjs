@@ -17,11 +17,12 @@
  *   npm run verify:pro-gate
  */
 import { spawnSync } from 'node:child_process';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, dirname, relative, sep, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { applyProBlocks } from './pro-blocks.mjs';
 import { ALL } from './site.mjs';
+import { AUTH } from './auth-config.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -57,6 +58,7 @@ function scan() {
   const hits = [];
   const pages = [];
   const assets = [];
+  const all = [];
   for (const f of walk(DIST)) {
     if (!TEXT.test(f)) continue;
     const s = readFileSync(f, 'utf8');
@@ -64,8 +66,9 @@ function scan() {
     if (s.includes(SENTINEL)) hits.push(rel);
     if (rel.endsWith('.html')) pages.push({ rel, s });
     if (rel.startsWith('assets/') && rel.endsWith('.js')) assets.push({ rel, s });
+    all.push({ rel, s });
   }
-  return { hits, pages, assets, robots: readFileSync(join(DIST, 'robots.txt'), 'utf8') };
+  return { hits, pages, assets, all, robots: readFileSync(join(DIST, 'robots.txt'), 'utf8'), headers: readFileSync(join(DIST, '_headers'), 'utf8') };
 }
 // The 404 page declares noindex inline in build.mjs rather than in the route list.
 const declaredNoindex = new Set([...ALL.filter((p) => p.noindex).map((p) => `${p.slug}/index.html`), '404.html']);
@@ -98,6 +101,11 @@ ok(s.pages.every((p) => !p.s.includes('data-pdfiq-pro')), 'no page carries the p
 ok(!/^Disallow: \/\s*$/m.test(s.robots), 'robots.txt allows crawling');
 const offNoindex = s.pages.filter((p) => hasNoindex(p.s)).map((p) => p.rel);
 ok(offNoindex.every((rel) => declaredNoindex.has(rel)), `noindex only where a page declares it (${offNoindex.join(', ') || 'none'})`);
+ok(!existsSync(join(DIST, 'account')), 'there is no /account/ page');
+ok(!s.headers.includes('/account/'), '_headers has no account rule — it is public/_headers as written');
+const offCsp = (s.headers.match(/Content-Security-Policy: (.+)/) ?? [])[1];
+const authLeaks = s.all.filter((f) => f.s.includes(new URL(AUTH.identityToolkit).host) || f.s.includes(AUTH.clientId)).map((f) => f.rel);
+ok(authLeaks.length === 0, `no sign-in host or client ID anywhere in dist${authLeaks.length ? ` — found in ${authLeaks.slice(0, 5).join(', ')}` : ''}`);
 
 // ---------------------------------------------------------------- 3. flag on, locally
 console.log('\n— flag on (a local preview build)');
@@ -114,6 +122,18 @@ if (core) {
 ok(s.pages.length > 0 && s.pages.every((p) => p.s.includes('data-pdfiq-pro')), `every page carries the preview banner (${s.pages.length} pages)`);
 ok(s.pages.every((p) => hasNoindex(p.s)), 'every page is noindex');
 ok(/^Disallow: \/\s*$/m.test(s.robots), 'robots.txt disallows crawling');
+const account = s.pages.find((p) => p.rel === 'account/index.html');
+ok(Boolean(account) && hasNoindex(account.s), 'the /account/ page exists, noindex');
+const onCsp = (s.headers.match(/Content-Security-Policy: (.+)/) ?? [])[1];
+ok(Boolean(offCsp) && onCsp === offCsp, 'the site-wide CSP is identical to the flag-off build');
+const acctRule = /\/account\/\*\s*\n\s*! Content-Security-Policy\s*\n\s*Content-Security-Policy: ([^\n]+)/.exec(s.headers);
+const acctConnect = acctRule ? (/connect-src ([^;]+)/.exec(acctRule[1]) ?? [])[1] ?? '' : '';
+ok(Boolean(acctRule) && AUTH.hosts.every((h) => acctConnect.includes(h)) && acctConnect.split(/\s+/).filter((t) => t.startsWith('https://')).length === AUTH.hosts.length,
+  `/account/ alone may connect to ${AUTH.hosts.map((h) => new URL(h).host).join(' and ')}, and to nothing else new`);
+const privacy = s.pages.find((p) => p.rel === 'privacy/index.html')?.s ?? '';
+for (const name of [AUTH.sessionKey, AUTH.pendingKey, ...AUTH.sessionFields, ...AUTH.pendingFields, ...AUTH.hosts.map((h) => new URL(h).host)]) {
+  ok(privacy.includes(name), `/privacy names ${name}, which the sign-in code stores or contacts`);
+}
 
 // ---------------------------------------------------------------- 4. flag on, production
 console.log('\n— flag on for production');

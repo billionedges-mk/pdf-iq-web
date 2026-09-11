@@ -14,7 +14,8 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
 import { applyProBlocks } from './pro-blocks.mjs';
-import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
+import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
+import { AUTH } from './auth-config.mjs';
 import { faqBlock } from './faq.mjs';
 import { icon } from './icons.mjs';
 import { ogImage } from './og-images.mjs';
@@ -65,6 +66,14 @@ if (PRO && PRODUCTION) {
 }
 /** Every module under src/pro/ carries a string with this prefix; see src/pro/core.ts. */
 const PRO_SENTINEL_PREFIX = 'pdfiq-pro:';
+/**
+ * The routes this build emits. Pro-only pages (site.mjs PRO_PAGES) join only when the flag is on:
+ * in any other build they are absent — no page, no bundle, no link — not hidden.
+ */
+const ROUTES = PRO ? [...ALL, ...PRO_PAGES] : ALL;
+if (PRO && !AUTH.apiKey) {
+  console.warn('  (pro) no PDFIQ_FIREBASE_WEB_KEY: /account/ will say signing in is not set up, and make no request');
+}
 const PREVIEW_BANNER =
   '<div data-pdfiq-pro="pdfiq-pro:preview" role="note" style="background:#1E2A38;color:#FAF8F4;' +
   'font:600 14px/1.45 system-ui,sans-serif;padding:9px 16px;text-align:center">' +
@@ -389,6 +398,31 @@ function copyVendor() {
 function copyStatic() {
   const pub = join(ROOT, 'public');
   if (existsSync(pub)) cpSync(pub, OUT, { recursive: true });
+  if (PRO) writeFileSync(join(OUT, '_headers'), readFileSync(join(OUT, '_headers'), 'utf8') + accountHeaders());
+}
+
+/**
+ * The account page is the one page that talks to Google, so it alone gets a policy that adds
+ * exactly the hosts in tools/auth-config.mjs to connect-src. Derived from the site-wide policy
+ * rather than written out a second time, so the two cannot drift apart; everything else in it is
+ * identical. Two CSP headers intersect rather than widen, so the site-wide one is detached for this
+ * path first (`! Content-Security-Policy`). Appended only in a Pro-flag build: production's
+ * _headers is public/_headers, byte for byte.
+ */
+function accountHeaders() {
+  const site = readFileSync(join(ROOT, 'public/_headers'), 'utf8');
+  const m = site.match(/^\s*Content-Security-Policy: (.+)$/m);
+  if (!m) throw new Error('public/_headers has no Content-Security-Policy to derive the account policy from');
+  const policy = m[1].replace(/connect-src ([^;]+)/, (_, v) => `connect-src ${v} ${AUTH.hosts.join(' ')}`);
+  if (policy === m[1]) throw new Error('the site-wide CSP has no connect-src to extend for /account/');
+  return [
+    '',
+    '# Pro-flag build only: the account page, and nothing else, may reach the Google sign-in hosts.',
+    '/account/*',
+    '  ! Content-Security-Policy',
+    `  Content-Security-Policy: ${policy}`,
+    '',
+  ].join(NL);
 }
 
 // ---------------------------------------------------------------- scripts
@@ -400,9 +434,9 @@ async function bundle() {
   // and src/entries/home.ts was never written, so every build shipped a page pointing at a
   // bundle that did not exist. Locally that 404s; on Cloudflare Pages it returns 200 with
   // the HTML index, cached immutable for a year, and the footer readout counted it.
-  for (const page of ALL) {
+  for (const page of ROUTES) {
     if (!page.entry) continue;
-    const file = join(ROOT, `src/entries/${page.entry}.ts`);
+    const file = join(ROOT, `src/${page.entryDir ?? 'entries'}/${page.entry}.ts`);
     if (!existsSync(file)) {
       throw new Error(`/${page.slug} declares entry '${page.entry}' but ${file} does not exist`);
     }
@@ -410,7 +444,7 @@ async function bundle() {
 
   const entries = [
     join(ROOT, 'src/entries/net.ts'),
-    ...ALL.filter((p) => p.entry).map((p) => join(ROOT, `src/entries/${p.entry}.ts`)),
+    ...ROUTES.filter((p) => p.entry).map((p) => join(ROOT, `src/${p.entryDir ?? 'entries'}/${p.entry}.ts`)),
   ];
 
   // Entry filenames carry a content hash. Without one, `immutable` on /assets/* is a
@@ -434,7 +468,7 @@ async function bundle() {
     sourcemap: WATCH,
     logLevel: 'warning',
     metafile: true,
-    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false' },
+    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null' },
   });
 
   const hashed = new Map();
@@ -443,7 +477,7 @@ async function bundle() {
     const name = meta.entryPoint.replace(/^.*[\/]/, '').replace(/\.ts$/, '');
     hashed.set(name, outPath.replace(/^.*[\/]/, ''));
   }
-  for (const page of ALL) {
+  for (const page of ROUTES) {
     const need = page.entry ?? null;
     if (need && !hashed.has(need)) throw new Error(`no bundle emitted for entry '${need}'`);
   }
@@ -506,7 +540,7 @@ function robots() {
 function sitemap() {
   // noindex pages are not listed: a sitemap entry is a request to index, so listing one
   // while telling robots not to index it sends two opposite instructions.
-  const urls = ALL.filter((p) => !p.noindex).map(
+  const urls = ROUTES.filter((p) => !p.noindex).map(
     (p) => `  <url><loc>${ORIGIN}${href(p.slug)}</loc><changefreq>monthly</changefreq></url>`
   ).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
@@ -525,7 +559,7 @@ async function build() {
   // Bundle first: the pages need the content-hashed filenames to point at.
   const assets = await bundle();
 
-  for (const page of ALL) {
+  for (const page of ROUTES) {
     const file = join(ROOT, 'src/pages', `${page.slug || 'index'}.html`);
     if (!existsSync(file)) {
       console.warn(`  (skip) no page body for /${page.slug} — expected src/pages/${page.slug || 'index'}.html`);
@@ -614,7 +648,7 @@ async function build() {
   // Share images, drawn straight to PNG. Every indexed route gets one; a route that
   // somehow produced nothing would ship a bare grey link, so it throws instead.
   mkdirSync(join(OUT, 'og'), { recursive: true });
-  for (const page of ALL.filter(hasShareImage)) {
+  for (const page of ROUTES.filter(hasShareImage)) {
     const png = ogImage(page);
     if (!png || png.length < 500) throw new Error(`share image for /${page.slug} came out empty`);
     writeFileSync(join(OUT, 'og', `${page.slug || 'home'}.png`), png);
@@ -626,7 +660,7 @@ async function build() {
   // used to be decided in different places and one route advertised a card that was never
   // written.
   let advertised = 0;
-  for (const page of ALL) {
+  for (const page of ROUTES) {
     const html = readFileSync(join(OUT, page.slug, 'index.html'), 'utf8');
     for (const m of html.matchAll(/property="og:image" content="([^"]+)"/g)) {
       advertised++;
@@ -659,7 +693,7 @@ async function build() {
     throw new Error('the Pro flag is on, but no Pro module reached the bundle');
   }
 
-  console.log(`built ${ALL.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images${PRO ? '  — PRO PREVIEW' : ''}`);
+  console.log(`built ${ROUTES.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images${PRO ? '  — PRO PREVIEW' : ''}`);
 }
 
 await build();

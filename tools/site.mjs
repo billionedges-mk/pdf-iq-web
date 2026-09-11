@@ -2,6 +2,8 @@
 // Every entry here becomes a real HTML document at its own URL — people arrive on a
 // specific tool from search, so there is no client-side router anywhere on this site.
 
+import { AUTH } from './auth-config.mjs';
+
 export const ORIGIN = 'https://pdf-iq.com';
 
 /** The seven tools, in nav order. `nav` is the short label in the header. */
@@ -333,6 +335,15 @@ export const TOKENS = {
    * so this has its own source.
    */
   offlineNow: `${word(OFFLINE_NOW.length)} of the ${word(WEB_TOOLS.length)}`,
+  // Sign-in, from tools/auth-config.mjs: the same object the code stores by. /privacy and
+  // /account/ are written with these, so neither can name a key, field or host the code does not use.
+  authSessionKey: `<code>${AUTH.sessionKey}</code>`,
+  authPendingKey: `<code>${AUTH.pendingKey}</code>`,
+  authSessionFields: AUTH.sessionFields.map((f) => `<code>${f}</code>`).join(', '),
+  authPendingFields: AUTH.pendingFields.map((f) => `<code>${f}</code>`).join(', '),
+  authIdentityHost: new URL(AUTH.identityToolkit).host,
+  authTokenHost: new URL(AUTH.secureToken).host,
+  authScope: `<code>${AUTH.scope}</code>`,
 };
 
 // The homepage card says how many tools there are, counted rather than written. Three
@@ -365,6 +376,20 @@ export const APP_FEATURES = [
 ];
 
 export const ALL = [...PAGES, ...TOOLS];
+
+/**
+ * Routes that exist only in a Pro-flag build. tools/build.mjs adds them when the flag is on; in
+ * every other build they are absent. Their entry scripts live under src/pro/.
+ */
+export const PRO_PAGES = [
+  {
+    slug: 'account', name: 'Account', entry: 'account', entryDir: 'pro', noindex: true,
+    title: 'Your account — pdf-iq',
+    description: 'Sign in for Pro. None of the tools needs an account.',
+    ogSubject: 'Your account',
+    ogLine: 'Only for Pro',
+  },
+];
 
 /**
  * Order of the tool grid on the homepage, which is not the nav order.

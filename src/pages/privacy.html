@@ -44,6 +44,8 @@
 
       <h3>What we collect on this site</h3>
       <p><strong>No account for the tools.</strong> None of them asks you to sign in.</p>
+      <!--PRO--><p><strong>An account, only if you sign in for Pro.</strong> It is described in full under
+         <a href="#if-you-sign-in">If you sign in</a>, below.</p><!--/PRO-->
       <p><strong>No cookies.</strong> We set none, for any purpose, including analytics.</p>
       <p><strong>No analytics and no tracking.</strong> There is no analytics SDK, no tag manager,
          no pixel and no third-party script of any kind on this site. Nothing here reports back
@@ -54,13 +56,18 @@
          <a href="/for-professionals/">the firms page</a> sends an email address and a description of
          what you do, when you fill it in and press the button. It is described in full below. No tool
          on this site sends anything, ever.</p>
+      <!--PRO--><p><strong>Also only if you choose it:</strong> signing in on <a href="/account/">the account
+         page</a>, which exists only for Pro, hands Google's statement of who you are to the Firebase
+         service our accounts are kept in. It is described in full under <a href="#if-you-sign-in">If you
+         sign in</a>.</p><!--/PRO-->
 
       <h3>Only if you choose it: the form on the firms page</h3>
       <p><strong>This applies to the website only. The Android app does nothing of the kind</strong> —
          it has no such form, and nothing in this section is part of the app's Google Play Data Safety
          declaration.</p>
       <p><a href="/for-professionals/">/for-professionals</a> asks whether firms would want a team
-         licence, and it is the only place on this site that receives anything from you. If you use
+         licence, and <!--FREE-->it is the only place on this site that receives anything from you<!--/FREE--><!--PRO-->apart from
+         signing in for Pro, it is the only place on this site that receives anything from you<!--/PRO-->. If you use
          that form we store exactly five things:</p>
       <ul>
         <li><strong>The email address you type</strong> — so we can reply</li>
@@ -82,8 +89,8 @@
       <p>Ask at <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> and it is deleted. Using any
          of the {{webToolCount}} tools never involves this form, and none of them asks you for anything.</p>
 
-      <h3>Three things stored in your browser</h3>
-      <p>These stay on your device and are never sent to us. You can clear all of them at any time
+      <h3>Three things stored in your browser<!--PRO-->, and two more if you sign in<!--/PRO--></h3>
+      <p><!--FREE-->These stay<!--/FREE--><!--PRO-->The first three stay<!--/PRO--> on your device and are never sent to us. You can clear all of them at any time
          through your browser's "clear site data" control.</p>
       <ul>
         <li>The OCR page records a single flag noting that a language model has already been
@@ -98,13 +105,21 @@
             ten minutes. This is the only time a document of yours is written to storage rather
             than only held in memory, it never leaves your device, and it does not happen unless
             you click one of those links.</li>
+        <!--PRO--><li><strong>If you sign in for Pro: your sign-in</strong>, under {{authSessionKey}}, and — only
+            while you are away at Google's sign-in page — a check under {{authPendingKey}}. Unlike the three
+            above, part of your sign-in is sent to Google each time it is renewed. Both are described
+            under <a href="#if-you-sign-in">If you sign in</a>.</li><!--/PRO-->
       </ul>
 
-      <h3>The one request this site makes</h3>
+      <h3><!--FREE-->The one request this site makes<!--/FREE--><!--PRO-->Requests this site makes<!--/PRO--></h3>
       <p>OCR needs a language recognition model, which is between 6 MB and 11 MB depending on the
          language. It is served from this domain, downloaded once, and then cached. That download
          is a request for a file; it does not carry any part of your document, and no other tool on
          this site fetches anything at all after the page has loaded.</p>
+      <!--PRO--><p>Signing in for Pro is the other exception, and it happens on the account page only: that
+         page contacts {{authIdentityHost}} when you sign in, and {{authTokenHost}} when it renews a sign-in
+         that is about to expire. Both are Google's, and both are described under <a href="#if-you-sign-in">If
+         you sign in</a>.</p><!--/PRO-->
 
       <h3>Server logs</h3>
       <p>The site is static files served by Cloudflare Pages. Asking for a web page necessarily
@@ -113,6 +128,40 @@
          string. We do not combine those records with anything else, and the tools give us nothing
          to combine them with: no account, no cookie, no identifier.</p>
       <p>Your documents are not in those logs, because your documents are never sent.</p>
+
+      <!--PRO-->
+      <h3 id="if-you-sign-in">If you sign in</h3>
+      <p>An account exists only for Pro. None of the {{webToolCount}} tools needs one, and signing in changes
+         nothing about how they work. It is the same account the Android app uses: signing in here or in
+         the app reaches the same record.</p>
+      <p><strong>What happens.</strong> The <a href="/account/">account page</a> sends you to Google's own
+         sign-in page and asks Google for {{authScope}} only: your email address and a Google account
+         identifier, not your name or photo. Google sends you back with a signed statement of those two
+         things. The page hands that statement to {{authIdentityHost}} &mdash; Firebase Authentication, the
+         Google service our accounts are kept in &mdash; which returns a sign-in for this browser. None of
+         this goes to pdf-iq's own servers.</p>
+      <p><strong>What Firebase keeps:</strong> an account record with your email address, your Google
+         account identifier, and when the account was created and last signed in.</p>
+      <p><strong>What this browser keeps</strong>, in its local storage under {{authSessionKey}}:
+         {{authSessionFields}}. In that order: the account identifier, your email address, a proof of
+         sign-in that lasts about an hour, when that proof expires, and the refresh token that renews it.
+         When the proof is within five minutes of expiring, the account page renews it at {{authTokenHost}},
+         sending the refresh token.</p>
+      <p>While you are away at Google's sign-in page it also keeps {{authPendingFields}} under
+         {{authPendingKey}}, in session storage: two random values that let the page check that Google's
+         answer belongs to a sign-in it started, and the time it started. The two random values travel to
+         Google in the sign-in link. All three are deleted when you come back, or when the tab is closed.</p>
+      <p><strong>The refresh token can be read by any script that runs on pdf-iq.com.</strong> Whoever holds
+         it can act as your pdf-iq account. It does not expire on its own; it stops working if the account
+         is switched off or deleted. That is why this site allows scripts from its own address and nowhere
+         else &mdash; the <code>script-src 'self'</code> rule in its content security policy &mdash; and loads
+         no third-party script on any page: the only code that can read it is this site's own. If that ever
+         changed, this storage would have to change with it. None of this uses a cookie.</p>
+      <p><strong>Signing out</strong>, on the account page, deletes the sign-in from this browser. It does not
+         sign you out of the Android app or of Google. To end every sign-in on every device, write to
+         <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> and we will switch the account off; to
+         remove it entirely, see <a href="#deleting-your-account">Deleting your account</a>.</p>
+      <!--/PRO-->
 
       <!-- ================================================================ app -->
       <h2>Part two — the PDFiq Android app</h2>
@@ -218,8 +267,11 @@
 
       <!-- ============================================================= shared -->
       <h2>Who your data is shared with</h2>
-      <p>Nothing from this website is shared with anyone, because nothing from this website is
-         collected. The app uses a small number of providers, each for a specific purpose:</p>
+      <p>Nothing from this website is shared with anyone for their own purposes. What it collects —
+         the form on the firms page, if you use it, and the server logs described above — stays with
+         this site and Cloudflare, which hosts it.<!--PRO--> Signing in for Pro uses Google Firebase, the
+         same as the app; see <a href="#if-you-sign-in">If you sign in</a>.<!--/PRO--> The app uses a small
+         number of providers, each for a specific purpose:</p>
       <ul>
         <li><strong>Google Firebase</strong> — sign-in, usage counters, hosting, analytics and
             crash reports. Receives: account identifier, usage counts, diagnostic events.</li>
@@ -253,8 +305,9 @@
             straight to your own disk.</li>
       </ul>
 
-      <h2>Deleting your account and data</h2>
-      <p>If you signed in for Summarise, you can delete your account and everything associated with
+      <h2 id="deleting-your-account">Deleting your account and data</h2>
+      <p><!--FREE-->If you signed in for Summarise<!--/FREE--><!--PRO-->If you have signed in — for Summarise in the app,
+         or for Pro on this website<!--/PRO-->, you can delete your account and everything associated with
          it at any time.</p>
       <ul>
         <li>In the app: <strong>Settings &rarr; Delete account</strong>.</li>
@@ -265,7 +318,8 @@
          does not affect any PDF you have already saved — those files are yours and are not ours to
          delete. A one-time Pro purchase is not affected either: it is not a subscription, so
          there is nothing to cancel, and deleting your account does not refund or revoke it.</p>
-      <p>If you have only ever used this website, or have never used Summarise, we hold nothing
+      <p><!--FREE-->If you have only ever used this website, or have never used Summarise<!--/FREE--><!--PRO-->If you
+         have never signed in, in the app or on this website<!--/PRO-->, we hold nothing
          about you and there is nothing to delete.</p>
 
       <h2>Your rights</h2>

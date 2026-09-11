@@ -11,9 +11,8 @@ anything about pricing, tiers, paywalls or monetisation — those are decided.
 - **The site's whole position is that nothing leaves the device.** Never add analytics,
   tracking, telemetry, or anything requiring a cookie or consent banner.
 - **Every tool must keep working with the network off.**
-- **No tool page ever sends anything.** Only `/for-professionals` does, and — once sign-in
-  exists behind the Pro flag — `/account/`. Nothing else may. The account page is named in
-  the future tense because it does not exist yet; this rule describes the build.
+- **No tool page ever sends anything.** Only `/for-professionals` does, and `/account/` in a
+  Pro-flag build — it exists in no other. Nothing else may.
 
 ## How this is enforced
 
@@ -51,6 +50,13 @@ thing claims and what it does. The ones that come up most:
   through the real `openPdf` against MuPDF-written fixtures in `tools/fixtures/crypto/`, with
   every output read back by MuPDF and pypdf. Needs python with PyMuPDF and pypdf. Until it existed the only
   encrypted fixture was our own RC4 file, the one case the code handled correctly.
+- `npm run verify:auth` — web sign-in in Node against a scripted Google and Firebase: the
+  sign-in URL, state and nonce, the exact storage shape /privacy describes, refresh, and every
+  error code sorted into a kind. It cannot prove a real sign-in, Cloudflare honouring the
+  account page's CSP, or what Firebase returns when App Check is enforced — see TECH_DEBT.
+- **Read a failed Node process's `Error:` line, never its tail.** Node prints the message first,
+  then the stack trace and its version banner, so the last lines of a failed build are never the
+  reason. The Pro gate failed a correct build twice by matching against the tail.
 - Suites: `npm run typecheck`, `npm run build`, `npm run selftest` then open
   `/selftest.html`, `/tools-selftest.html`, `/ocr-text-probe.html`, `/e2e-selftest.html`
   in a browser; `npm run verify:interest`, `npm run verify:pdflib`, `npm run contrast`.

@@ -19,7 +19,8 @@
     "verify:states": "node tools/verify-state-styles.mjs",
     "claims": "node tools/claims-index.mjs",
     "verify:crypto": "node tools/verify-crypto.mjs",
-    "verify:pro-gate": "node tools/verify-pro-gate.mjs"
+    "verify:pro-gate": "node tools/verify-pro-gate.mjs",
+    "verify:auth": "node tools/verify-auth.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

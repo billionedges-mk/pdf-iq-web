@@ -252,3 +252,20 @@ Recorded so they are not repeatedly rediscovered as gaps.
   `npm run licenses` fails the build if anything copyleft enters the tree.
 - **No analytics on the website.** Not "anonymised analytics" — none. It is the only way the
   zero-requests readout can be honest.
+
+## Web sign-in (Pro preview): what only a real preview can prove
+
+`npm run verify:auth` covers what Node can show. Three things it cannot, all to be checked on the
+preview deployment before Pro ships, and each stated as unverified until then:
+
+- **The same account on both surfaces.** /privacy says a web sign-in reaches the same account as the
+  Android app. That follows from the design — the same OAuth web client, the same Firebase project —
+  and has not been observed. Check: sign in on the preview and in the app with one Google account and
+  compare the Firebase uid (`localId` on the web, `FirebaseAuth.currentUser.uid` in the app).
+- **Cloudflare honouring the account page's CSP.** `/account/*` detaches the site-wide policy
+  (`! Content-Security-Policy`) and sets one that adds the two Google hosts to connect-src. Two CSP
+  headers intersect rather than widen, so if the detach is not honoured, sign-in fails with the
+  `unknown` kind ("the request did not reach Google"). Check the response headers on the preview.
+- **The named App Check error.** App Check on Firebase Auth is monitoring, not enforced. The
+  `app-check` kind matches any error that mentions App Check, because the real response to enforcement
+  has never been seen. If it is ever enforced, confirm the wording that comes back is caught.

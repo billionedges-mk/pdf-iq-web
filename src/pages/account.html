@@ -1,0 +1,42 @@
+    <div class="tool-head">
+      <h1 class="page-title">Your account</h1>
+      <p class="page-lede">Only for Pro. None of the {{webToolCount}} tools needs it, and signing in changes nothing about how they work.</p>
+    </div>
+
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-account="working" hidden>
+      <p class="kicker">One moment</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">Checking for a sign-in kept in this browser.</p>
+    </section>
+
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-account="out" hidden>
+      <p class="kicker">Not signed in</p>
+      <ol style="margin: 12px 0 0; padding-left: 20px; font-size: 15.5px; line-height: 1.6; color: var(--ink-78);">
+        <li><strong>This page sends you to Google's own sign-in page.</strong> That visit is between you
+          and Google. The counter at the foot of this page cannot see it, and does not pretend to.</li>
+        <li style="margin-top: 8px;"><strong>Google sends you back here</strong> with a signed statement of
+          your email address and Google account identifier. This site asks for nothing more than that.</li>
+        <li style="margin-top: 8px;"><strong>This page hands that statement to Firebase</strong>, the Google
+          service where pdf-iq accounts are kept, and gets back a sign-in for this browser. The counter
+          shows that request: a third-party request, to {{authIdentityHost}}. It is the same account the
+          Android app uses.</li>
+      </ol>
+      <p style="margin: 14px 0 0; font-size: 15px; line-height: 1.6;">What is kept, where, and what can read
+        it is set out under <a href="/privacy/#if-you-sign-in">If you sign in</a> on the privacy page.</p>
+      <p style="margin: 18px 0 0;"><button class="btn" type="button" data-signin>Sign in with Google</button></p>
+    </section>
+
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-account="in" hidden>
+      <p class="kicker">Signed in</p>
+      <p style="margin: 10px 0 0; font-size: 16px; line-height: 1.6;">Signed in as <strong data-account-email></strong> in this browser.</p>
+      <p style="margin: 16px 0 0;"><button class="btn-quiet" type="button" data-signout>Sign out in this browser</button></p>
+      <p class="hint" style="margin-top: 10px;">Signing out deletes this browser's copy of the sign-in. It does
+        not sign you out of the Android app, or of Google.</p>
+    </section>
+
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-account="error" hidden>
+      <p class="kicker">Not signed in</p>
+      <h2 style="margin: 10px 0 0; font-size: clamp(19px, 2.6vw, 24px); font-weight: 700;" data-account-error-title>&nbsp;</h2>
+      <p style="margin: 12px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--ink-78);" data-account-error-body>&nbsp;</p>
+      <p style="margin: 16px 0 0;"><button class="btn" type="button" data-account-retry>Try signing in again</button></p>
+      <p class="outcome__mono" style="margin-top: 14px;" data-account-error-code>&nbsp;</p>
+    </section>
