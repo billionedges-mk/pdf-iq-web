@@ -39,7 +39,7 @@ the work is done.
 23. [Code that looks dead next to code that is dead](#23-code-that-looks-dead-next-to-code-that-is-dead)  
 24. [Result copy is derived from what ran, not written beside it](#24-result-copy-is-derived-from-what-ran-not-written-beside-it)  
 25. [A claim that was never checked reads exactly like one that was](#25-a-claim-that-was-never-checked-reads-exactly-like-one-that-was)  
-26. [Adding a page is a better stale-copy detector than reading the pages](#26-adding-a-page-is-a-better-stale-copy-detector-than-reading-the-pages)  
+26. [To find a stale claim, write a second one about the same fact](#26-to-find-a-stale-claim-write-a-second-one-about-the-same-fact)  
 27. [A check that cries wolf is where a real failure goes to hide](#27-a-check-that-cries-wolf-is-where-a-real-failure-goes-to-hide)  
 28. [An absent element and an intended one look the same](#28-an-absent-element-and-an-intended-one-look-the-same)  
 29. [Fix what generates the sentence, and read everything else it generates](#29-fix-what-generates-the-sentence-and-read-everything-else-it-generates)  
@@ -927,33 +927,39 @@ know which claims those are.
 
 ---
 
-### 26. Adding a page is a better stale-copy detector than reading the pages
+### 26. To find a stale claim, write a second one about the same fact
 
-Paddle held seller approval because the site had terms and a privacy notice but no refund
-policy. Writing that one page found two defects in two files nobody had opened.
+A technique, not an observation. Auditing does not find stale claims, because you read what you
+expect a page to say, and a sentence you already believe reads as true every time. What finds
+them is writing a second sentence about the same fact somewhere else. Two sentences about one
+fact are either in agreement or in contradiction, and a contradiction cannot hide.
 
-`terms.html` said Paddle's refund terms would apply. `support.html` said Google Play handled
-payments made inside the Android app — a model that stopped existing when we moved to Paddle,
-while both terms and privacy already said nothing is purchasable in the app.
+It has worked three times, each time on a page nobody was editing:
 
-Neither was found by reading. Both had been read many times. They were found because the new
-page had to state the same two facts, and **two sentences about one fact is where the stale
-one becomes visible.** On its own each sentence is just a sentence; next to a second one it is
-either agreement or a contradiction, and a contradiction cannot hide.
+- **Terms.** Writing the refund policy Paddle required meant stating who issues refunds.
+  `terms.html` said "Paddle's refund terms will apply" — which the new page would have
+  contradicted.
+- **Support.** The same page had to say where Pro is bought. `support.html` said Google Play
+  handled payments inside the Android app, a model that stopped existing with the move to Paddle
+  while terms and privacy already said nothing is purchasable in the app.
+- **Privacy.** Writing what sign-in stores meant saying what the website collects. `privacy.html`
+  said "Nothing from this website is shared with anyone, because nothing from this website is
+  collected" — false since the firms form shipped, and contradicted by the server-log paragraph a
+  few inches above it on the same page. Every reading of that page had gone past it.
 
-No check could have caught either. `verify:states` knows a class must style something;
-`licenses` knows the tree has no copyleft; the build throws on an unknown token. Not one of
-them knows that "Google Play handles payments" stopped being true, because nothing in the
-repository records that it was ever true, or when it stopped. It is a fact about the world,
-and the world is where this project keeps failing.
+No check could have caught any of them. `verify:states` knows a class must style something;
+`licenses` knows the tree has no copyleft; the build throws on an unknown token. None of them
+knows that "Google Play handles payments" stopped being true, or that a form collects, because
+nothing in the repository records what is true of the world. That is where this project keeps
+failing, and it is the one place a check cannot reach.
 
-**The check:** when you write a page, list the facts it asserts, then grep for every other
-place that asserts the same fact. Do not read those places for correctness — compare them to
-what you just wrote. The differences are the findings, and you get them for free, which is
-why this is worth doing every time rather than as an audit nobody schedules.
+**The technique:** whenever you write a sentence that states a fact about the product, grep for
+every other place that states the same fact — the same noun, the same number, the same promise —
+and set them side by side. Do not read those places for correctness; compare them with what you
+just wrote. The differences are the findings. It costs a grep per fact and needs no schedule,
+which is why it keeps working where audits do not.
 
-The general form, and the reason this outranks reading: **you cannot proofread a claim you
-already believe.** You can only collide it with another one.
+**You cannot proofread a claim you already believe.** You can only collide it with another one.
 
 ---
 
