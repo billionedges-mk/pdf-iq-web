@@ -41,7 +41,8 @@ the work is done.
 25. [A claim that was never checked reads exactly like one that was](#25-a-claim-that-was-never-checked-reads-exactly-like-one-that-was)  
 26. [Adding a page is a better stale-copy detector than reading the pages](#26-adding-a-page-is-a-better-stale-copy-detector-than-reading-the-pages)  
 27. [A check that cries wolf is where a real failure goes to hide](#27-a-check-that-cries-wolf-is-where-a-real-failure-goes-to-hide)  
-28. [An absent element and an intended one look the same](#28-an-absent-element-and-an-intended-one-look-the-same)
+28. [An absent element and an intended one look the same](#28-an-absent-element-and-an-intended-one-look-the-same)  
+29. [Fix what generates the sentence, and read everything else it generates](#29-fix-what-generates-the-sentence-and-read-everything-else-it-generates)
 
 <!-- /index -->
 
@@ -1048,3 +1049,31 @@ themselves. And `drawText` passed a hex string to `blend`, which indexes `[0][1]
 and `'E'` multiplied to `NaN` and stored as 0, so the first rendering came out in
 `rgb(0,1,0)`. Readable, correctly placed, entirely the wrong colour — caught by sampling a
 pixel rather than by reading the words. `blend` now refuses a string and names the mistake.
+
+---
+
+### 29. Fix what generates the sentence, and read everything else it generates
+
+/app/ said "OCR is not in the app yet" after Read a scan shipped in the app in vc14. The
+sentence was not written anywhere: `APP_FEATURES` builds it from `ocr.inApp`, and the same
+flag feeds every app count on the site. So the fix was the flag, not the sentence — and before
+building, a scratch copy of `tools/site.mjs` with the flag flipped printed every consumer's
+rendered output.
+
+That dry run found three things an edit to the sentence would have left standing:
+
+- **"Seven of the seven tools"** on the /app lede, the homepage card and the meta
+  description — the degenerate case a derived count has and a hand-written one does not.
+- **A new claim.** "All seven web tools, offline" became true of the list and not quite of the
+  app, whose recogniser Google Play services downloads once. The new Read a scan line says so.
+- **"Six of these seven" on the homepage app card — typed by hand.** The one app count on the
+  site the flag could not reach. It would have kept saying six while everything around it said
+  seven. It is derived now.
+
+A fourth was hand-written and unconnected: /ocr/ said "The Android app does not have OCR yet",
+on a page nobody was editing (check 26).
+
+**The check:** when copy is derived, change its source, then render every consumer with the
+change applied before building. Look for N-of-N and empty-list degenerate cases, for claims the
+change newly implies, and for hand-written siblings the source does not reach — then make those
+derived, so the next change moves them too.
