@@ -4,9 +4,10 @@
  * ─────────────────────────────────────────────────────────────────────────────────────
  * READ THIS BEFORE DELETING ANYTHING HERE AS DEAD CODE.
  *
- * Nothing on the free path calls this any more. Free OCR gives the reader the extracted
- * text; writing that text back into the PDF as an invisible layer is the Pro deliverable,
- * and Pro is not on sale yet. So this file looks unreachable, and it is — from the UI.
+ * Nothing on the free path calls this. Free OCR gives the reader the extracted text;
+ * writing that text back into the PDF as an invisible layer is the Pro deliverable,
+ * reached only in a Pro-flag build, through src/pro/searchable.ts. A production build never
+ * reaches it, so there it looks dead — and from the free UI, it is.
  *
  * It is exercised by `src/test/tools-selftest.ts`, which drives it directly rather than
  * through the OCR page, on purpose. That test round-trips "Zażółć gęślą jaźń Ünicode naïve
@@ -20,8 +21,9 @@
  * /ToUnicode. It has been Type0/Identity-H with a /ToUnicode CMap ever since, and that is
  * only demonstrably still true because the test runs.
  *
- * Implemented, correct and unreachable is this project's most repeated defect. This file is
- * deliberately in that state, with the test as the thing that makes it survivable.
+ * Implemented, correct and unreachable is this project's most repeated defect. In production
+ * this file is deliberately in that state, with the test as the thing that makes it survivable
+ * (and tools/verify-pro-features.mjs checking the Pro writer end to end).
  * ─────────────────────────────────────────────────────────────────────────────────────
  *
  * The invisible text layer.

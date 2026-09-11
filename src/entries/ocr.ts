@@ -12,15 +12,11 @@
  *    time from the file that will actually be downloaded.
  */
 
-import { PDFDocument } from 'pdf-lib';
 import { OcrPool, poolSize } from '../lib/ocr-pool.js';
 import { openPdf } from '../lib/open-pdf.js';
 import { openDocument, renderPage, pageHasText, pageText } from '../lib/pdfjs.js';
 import { LANGUAGES } from '../lib/langs.generated.js';
-import {
-  TextLayerFont, buildTextOperators, attachFont, appendContentStream,
-  type OcrWord, type PageGeometry,
-} from '../lib/textlayer.js';
+import type { OcrWord } from '../lib/textlayer.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, describeRanges, seconds } from '../lib/format.js';
 import { claimIncoming } from '../lib/handoff.js';
@@ -342,54 +338,6 @@ function classifyOcr(err: unknown, facts: E.FileFacts): E.ToolError {
   return E.classify(err, facts);
 }
 
-// ---------------------------------------------------------------- text layer
-
-/**
- * Write the recognised words back into the PDF as an invisible layer — the searchable-PDF
- * output, which is the Pro deliverable and is not on sale yet.
- *
- * Nothing calls this today. It is kept rather than deleted because it works: it is the
- * finished, tested call site for `textlayer.ts`, whose header explains why the test that
- * covers it must keep running. Deleting this would mean rewriting it later against a
- * library nothing had exercised in months, which is the exact failure that file warns about.
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function writeLayer(): Promise<Uint8Array> {
-  const doc = await PDFDocument.load(sourceBytes!, { updateMetadata: false });
-  const pages = doc.getPages();
-
-  const font = new TextLayerFont();
-  for (const result of results) {
-    if (result.skipped) continue;
-    for (const word of result.words) font.register(word.text.trim());
-  }
-  const fontRef = font.embed(doc);
-  const fontName = 'PdfiqOcr';
-
-  for (const result of results) {
-    if (result.skipped) continue;
-    const page = pages[result.index];
-    if (!page) continue;
-
-    const { width, height } = page.getSize();
-    const rotation = ((page.getRotation().angle % 360) + 360) % 360;
-    const geometry: PageGeometry = {
-      widthPt: width,
-      heightPt: height,
-      rotation,
-      scale: pageScale.get(result.index) ?? OCR_DPI / 72,
-    };
-
-    const ops = buildTextOperators(result.words, geometry, font, fontName);
-    if (!ops) continue;
-
-    attachFont(page, fontRef, fontName);
-    appendContentStream(doc, page, ops);
-  }
-
-  return doc.save({ useObjectStreams: true });
-}
-
 // ---------------------------------------------------------------- blocks
 
 function buildBlocks(): void {
@@ -493,6 +441,30 @@ function renderResult(took: number): void {
 
   shell.show('result');
   shell.announce(said.announce);
+
+  // Pro: a searchable PDF, written from these same results. Absent from a flag-off build: the
+  // build defines __PDFIQ_PRO__ false, esbuild drops this branch, and src/pro/ never reaches the
+  // bundle. The writer is src/pro/searchable.ts, which used to live on this page.
+  if (__PDFIQ_PRO__) {
+    const host = $('[data-pro-searchable]');
+    if (host) {
+      const counts = { pagesRead: read.length, pageCount, fromLayer: read.filter((r) => r.source === 'layer').length };
+      const fileName = file!.name;
+      const bytes = sourceBytes!;
+      const pages = results.map((r) => ({ index: r.index, words: r.words, skipped: r.skipped }));
+      void import('../pro/searchable-offer.js').then((m) => m.offerSearchable(host as HTMLElement, {
+        fileName,
+        sourceBytes: bytes,
+        pages,
+        scaleFor: (index) => pageScale.get(index) ?? OCR_DPI / 72,
+        counts,
+        onWritten: (next) => {
+          $('[data-result-head]')!.textContent = next.head;
+          shell.announce(next.announce);
+        },
+      }));
+    }
+  }
 }
 
 $('[data-replace]')?.addEventListener('click', reset);

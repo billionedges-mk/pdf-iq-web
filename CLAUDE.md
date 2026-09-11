@@ -109,8 +109,14 @@ everyone — there is no entitlement check yet, which is acceptable only because
   that App Check on Auth is monitoring, not enforced: if it is ever enforced, web sign-in must fail
   with its own named error, not a generic one.
 
-- `src/lib/textlayer.ts` is unreachable from the UI on purpose — it is the Pro deliverable.
-  Its header says what covers it. Do not delete it, or its test, as dead code.
-- `writeLayer()` in `src/entries/ocr.ts` is uncalled for the same reason.
+- `src/lib/textlayer.ts` is unreachable from the free UI on purpose — it is the Pro deliverable,
+  reached only in a Pro-flag build through `src/pro/searchable.ts` (which was `writeLayer()` in
+  `src/entries/ocr.ts` until 12 September 2026). A production build never calls it. Its header
+  says what covers it. Do not delete it, or its test, as dead code.
 - The served `robots.txt` is not the repo file. Cloudflare prepends a managed block ahead
   of it that blocks several AI crawlers; editing the repo file only changes the tail.
+- **`--watch` does not watch.** In `tools/build.mjs` it only turns off whitespace and identifier
+  minification and turns on sourcemaps; the dev server builds once at start and then serves that.
+  Restart the server after every source edit, and grep `dist/` for the change before a browser
+  check — otherwise the check runs the old code and passes. (Found 12 September 2026, when a
+  fixed string was in no built bundle.)

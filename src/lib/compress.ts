@@ -53,11 +53,23 @@ export interface Analysis {
   signed: boolean;
 }
 
+/** What to do with one image: bring it to a resolution and quality, or leave it byte for byte. */
+export type ImagePlan = { targetDpi: number; quality: number } | 'keep';
+
+/** What happened to one image, by its PdfImage key. */
+export type ImageOutcome = 'replaced' | 'kept' | 'not-smaller' | 'undecodable';
+
 export interface CompressOptions {
   preset: Preset;
   stripMetadata: boolean;
   signal?: AbortSignal;
   onProgress?: (done: number, total: number, stage: number) => void;
+  /**
+   * A decision per image in place of the preset's single setting. The presets never pass one.
+   * Pro's target modes do (src/pro/compress-target.ts), so they run this same compressor —
+   * with its rules — rather than a second copy of it that could drift.
+   */
+  plan?: (img: PdfImage) => ImagePlan;
 }
 
 export interface CompressResult {
@@ -81,6 +93,8 @@ export interface CompressResult {
   downscaled: number;
   metadataStripped: boolean;
   signed: boolean;
+  /** What happened to each image the compressor could act on, by PdfImage key. */
+  outcomes: Map<string, ImageOutcome>;
 }
 
 export const STAGES = [
@@ -329,6 +343,8 @@ export async function compress(
   let undecodable = 0;
   let skipped = analysis.images.length - targets.length;
   const writtenDpis: number[] = [];
+  const writtenQualities: number[] = [];
+  const outcomes = new Map<string, ImageOutcome>();
 
   onProgress?.(0, targets.length, 0);
 
@@ -337,23 +353,28 @@ export async function compress(
     const img = targets[i];
     onProgress?.(i, targets.length, 1);
 
+    const decided: ImagePlan = opts.plan ? opts.plan(img) : { targetDpi: preset.targetDpi, quality: preset.quality };
+    if (decided === 'keep') { skipped++; outcomes.set(img.key, 'kept'); continue; }
+
     const decoded = await decodeImage(doc, img);
-    if (!decoded) { skipped++; undecodable++; continue; }
+    if (!decoded) { skipped++; undecodable++; outcomes.set(img.key, 'undecodable'); continue; }
 
     // Scale only when the image is genuinely drawn finer than the target.
-    const scale = img.dpi && img.dpi > preset.targetDpi ? preset.targetDpi / img.dpi : 1;
+    const scale = img.dpi && img.dpi > decided.targetDpi ? decided.targetDpi / img.dpi : 1;
     const targetW = Math.max(1, Math.round(img.width * scale));
     const targetH = Math.max(1, Math.round(img.height * scale));
 
-    const jpeg = await toJpeg(decoded, targetW, targetH, preset.quality);
+    const jpeg = await toJpeg(decoded, targetW, targetH, decided.quality);
     if ('bitmap' in decoded) decoded.bitmap.close();
-    if (!jpeg) { skipped++; undecodable++; continue; }
+    if (!jpeg) { skipped++; undecodable++; outcomes.set(img.key, 'undecodable'); continue; }
 
     // Rule 1: never hand back something bigger than what was already there.
-    if (jpeg.length >= img.encodedBytes) { skipped++; continue; }
+    if (jpeg.length >= img.encodedBytes) { skipped++; outcomes.set(img.key, 'not-smaller'); continue; }
 
     replaceImage(doc, img, jpeg, targetW, targetH);
     recompressed++;
+    outcomes.set(img.key, 'replaced');
+    writtenQualities.push(Math.round(decided.quality * 100));
     if (scale < 1) downscaled++;
     if (img.dpi) writtenDpis.push(Math.round(img.dpi * scale));
 
@@ -385,11 +406,12 @@ export async function compress(
     imagesRecompressed: recompressed,
     imagesSkipped: skipped,
     imagesUndecodable: undecodable,
-    writtenQuality: Math.round(preset.quality * 100),
+    writtenQuality: median(writtenQualities) ?? Math.round(preset.quality * 100),
     writtenDpi: median(writtenDpis),
     downscaled,
     metadataStripped: stripMetadata,
     signed: analysis.signed,
+    outcomes,
   };
 }
 

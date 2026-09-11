@@ -122,7 +122,7 @@ const CASES: Case[] = [
       ok(/read from 16 of 16/.test(text.head), 'it says what actually happened');
 
       // The Pro path is allowed to say it, because it does it.
-      const pdf = describeOcr({ produced: 'searchable-pdf', pagesRead: 16, pageCount: 16, fromLayer: 0 });
+      const pdf = describeOcr({ produced: 'searchable-pdf', pagesRead: 16, pageCount: 16, fromLayer: 0, layered: 16 });
       note(`pro run head:      ${pdf.head}`);
       ok(/searchable/.test(pdf.head), 'a run that writes the layer may say so');
 

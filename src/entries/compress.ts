@@ -87,6 +87,53 @@ function renderSelected(): void {
 
   renderPresets();
   renderPlan();
+
+  // Pro: compress to a target resolution or size (docs/compress-to-target.md). Absent from a
+  // flag-off build: the branch is dropped, and with it everything under src/pro/.
+  if (__PDFIQ_PRO__) {
+    const host = $('[data-pro-target]');
+    if (host) {
+      void import('../pro/compress-target-ui.js').then((m) => m.mountTarget(host as HTMLElement, {
+        state: () => (file && analysis ? { fileName: file.name, fileSize: file.size, analysis } : null),
+        pass: async ({ preset: which, plan, label, signal }) => {
+          // Every pass from the original file: a previous pass mutated its own copy.
+          const fresh = await PDFDocument.load(sourceBytes!, { updateMetadata: false });
+          const freshAnalysis = await analyse(fresh, file!.size);
+          const r = await compress(fresh, file!.size, freshAnalysis, {
+            preset: which,
+            plan,
+            stripMetadata: $<HTMLInputElement>('[data-strip-meta]')!.checked,
+            signal,
+            onProgress: (done, total, stage) => {
+              const detail = stage === 1 && total ? `image ${Math.min(done + 1, total)} of ${total}` : STAGES[stage] ?? '';
+              progress.set(done, total, stage, `${label} · ${detail}`);
+            },
+          });
+          return { result: r, analysis: freshAnalysis };
+        },
+        begin: () => {
+          controller = new AbortController();
+          busy = true;
+          shell.show('processing');
+          progress.start();
+          shell.announce('Compressing to a target.');
+          return controller.signal;
+        },
+        end: () => {
+          progress.stop();
+          busy = false;
+        },
+        showResult: (r, note) => {
+          result = r;
+          renderResult(r);
+          const line = $('[data-pro-target-note]');
+          if (line) { line.textContent = note; line.hidden = false; }
+        },
+        back: () => shell.show('selected'),
+        fail: (err) => shell.fail(E.classify(err, { name: file!.name, size: file!.size, type: file!.type })),
+      }));
+    }
+  }
 }
 
 function renderPresets(): void {
@@ -213,6 +260,8 @@ $('[data-stop]')?.addEventListener('click', () => {
 // ---------------------------------------------------------------- outcomes
 
 function renderResult(r: CompressResult): void {
+  const targetNote = $('[data-pro-target-note]');
+  if (targetNote) targetNote.hidden = true;
   const saved = r.beforeBytes - r.afterBytes;
   $('[data-before]')!.textContent = formatBytes(r.beforeBytes);
   $('[data-after]')!.textContent = formatBytes(r.afterBytes);

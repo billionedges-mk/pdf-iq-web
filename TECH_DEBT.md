@@ -269,3 +269,15 @@ preview deployment before Pro ships, and each stated as unverified until then:
 - **The named App Check error.** App Check on Firebase Auth is monitoring, not enforced. The
   `app-check` kind matches any error that mentions App Check, because the real response to enforcement
   has never been seen. If it is ever enforced, confirm the wording that comes back is caught.
+
+## The searchable layer's font is not embedded
+
+`src/lib/textlayer.ts` writes the invisible text layer with a Type0 / Identity-H font and no font
+program. Readers extract the words correctly through `/ToUnicode` — MuPDF and pypdf both do, in
+`npm run verify:pro-features` — and the glyphs are never drawn (text render mode 3), so the page
+renders unchanged. But MuPDF warns `non-embedded font using identity encoding`, and a PDF/A or
+preflight check would flag the unembedded font. Tesseract avoids this by embedding a tiny glyphless
+TrueType font with a CIDToGIDMap that sends every character to its one blank glyph. Do the same
+before the searchable PDF is sold. Until then `verify:pro-features` accepts exactly that one
+warning, by its text, and fails on any other.
+
