@@ -71,7 +71,37 @@ Then **verify from the served files, not from `dist/`** — a 200 is not proof t
 there. Fetch the URL, grep it for a sentence you just wrote, and fetch a path that should not
 exist to confirm 404s are still 404s and the 200 means something.
 
+## The Pro flag
+
+Sign-in and the Pro features sit behind one build-time flag, `PDFIQ_PRO`. It turns Pro on for
+everyone — there is no entitlement check yet, which is acceptable only because nothing is for sale.
+
+- **Absent, not hidden.** With the flag off, Pro is not in the build: not greyed, not stubbed, not in
+  the HTML or the JavaScript. The JavaScript this site ships is its source, so a runtime flag would
+  put Pro in every visitor's download and let the console switch it on.
+- **How code reaches Pro:** only through `if (__PDFIQ_PRO__) await import('../pro/…')`, with the Pro
+  code under `src/pro/`. The build replaces the constant with `false`; esbuild drops the branch and
+  never writes the chunk. Page markup uses `<!--PRO-->…<!--/PRO-->`. A claim that is true only while
+  sign-in does not exist goes in `<!--FREE-->…<!--/FREE-->` beside its replacement, so the copy and
+  the build cannot disagree (`tools/pro-blocks.mjs`; malformed markers fail the build).
+- **Sentinels.** Every module under `src/pro/` exports a string starting `pdfiq-pro:` and uses it.
+  Every build checks its own output: a sentinel in a flag-off build fails it, and so does a flag-on
+  build with no Pro module in the bundle.
+- **Preview only.** A Cloudflare build of `main` with the flag set throws by name, and so does a
+  Cloudflare build that reports no branch. Set `PDFIQ_PRO=1` in the Cloudflare **Preview**
+  environment only. Locally: `PDFIQ_PRO=1 npm run build`. A flag-on build is noindex on every page,
+  disallows crawling in robots.txt, and carries a preview banner.
+- **`npm run verify:pro-gate`** builds with the flag off, on, and on-for-production, and proves each.
+
 ## Things that are not what they look like
+
+- **Firebase App Check's Authentication metrics are not a signal.** They show roughly 85% of Auth
+  calls unverified. The app's backend checks every request with `verifyIdToken(token, true)`, whose
+  revocation check is a server-side call to Auth that carries no App Check token, and debug builds
+  add their own. So the split says nothing about whether real installs attest — do not read it as
+  one. Deliberately not confirmed against the console; it is harmless either way. What matters is
+  that App Check on Auth is monitoring, not enforced: if it is ever enforced, web sign-in must fail
+  with its own named error, not a generic one.
 
 - `src/lib/textlayer.ts` is unreachable from the UI on purpose — it is the Pro deliverable.
   Its header says what covers it. Do not delete it, or its test, as dead code.

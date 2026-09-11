@@ -71,6 +71,10 @@ export class ToolShell {
       this.views.set(el.dataset.view!, el);
       el.hidden = el.dataset.view !== 'empty';
     }
+    // Pro reaches a page only through a branch like this. With the flag off the build
+    // replaces __PDFIQ_PRO__ with false, esbuild drops the branch, and the chunk is never
+    // written — tools/build.mjs fails if a Pro sentinel turns up in a flag-off build.
+    if (__PDFIQ_PRO__) void import('../pro/core.js').then((m) => m.markPreview());
   }
 
   show(view: ViewName): void {

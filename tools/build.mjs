@@ -13,6 +13,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
+import { applyProBlocks } from './pro-blocks.mjs';
 import { TOOLS, PAGES, ALL, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
 import { faqBlock } from './faq.mjs';
 import { icon } from './icons.mjs';
@@ -38,6 +39,36 @@ function maxFileSizeMb() {
 const OUT = join(ROOT, 'dist');
 const WATCH = process.argv.includes('--watch');
 const SERVE = process.argv.includes('--serve');
+
+/**
+ * The Pro flag: sign-in and the Pro features, on only in a preview build.
+ *
+ * A build constant, not a runtime setting, because the JavaScript this site ships is its
+ * source — a runtime flag would put Pro in every visitor's download and let the console turn
+ * it on. The same problem the Android app solved with a source-set split. See CLAUDE.md,
+ * "The Pro flag", and src/pro/core.ts.
+ *
+ * Mirrors the Android release rule: nothing can turn it on in production. A Cloudflare build of
+ * the production branch with the flag set throws, and so does a Cloudflare build that does not
+ * say which branch it is — unknown counts as production. It turns Pro on for everyone; there is
+ * no entitlement check yet, which is acceptable only because nothing is for sale.
+ */
+const PRO = /^(1|true|on)$/i.test(process.env.PDFIQ_PRO ?? '');
+const ON_CLOUDFLARE = Boolean(process.env.CF_PAGES);
+const PRODUCTION = ON_CLOUDFLARE && (process.env.CF_PAGES_BRANCH ?? 'main') === 'main';
+if (PRO && PRODUCTION) {
+  throw new Error(
+    'PDFIQ_PRO is set on a production build (Cloudflare Pages, branch ' +
+    `${process.env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}). Pro and sign-in are preview-only until ` +
+    'payment is live. Remove PDFIQ_PRO from the Production environment variables.'
+  );
+}
+/** Every module under src/pro/ carries a string with this prefix; see src/pro/core.ts. */
+const PRO_SENTINEL_PREFIX = 'pdfiq-pro:';
+const PREVIEW_BANNER =
+  '<div data-pdfiq-pro="pdfiq-pro:preview" role="note" style="background:#1E2A38;color:#FAF8F4;' +
+  'font:600 14px/1.45 system-ui,sans-serif;padding:9px 16px;text-align:center">' +
+  'Preview build with the Pro flag on \u2014 not the live site, and nothing here is for sale.</div>';
 
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 
@@ -170,7 +201,7 @@ function document_({ page, body, css, assets }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<meta name="description" content="${esc(description)}">${page.noindex ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
+<meta name="description" content="${esc(description)}">${page.noindex || PRO ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
 <link rel="canonical" href="${url}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${url}">
@@ -191,7 +222,7 @@ ${FONT_PRELOADS}
 <style>${css}</style>
 </head>
 <body${shell}>
-<a class="skip-link" href="#main">Skip to the tool</a>
+${PRO ? PREVIEW_BANNER + '\n' : ''}<a class="skip-link" href="#main">Skip to the tool</a>
 ${header(page.slug)}
   <main class="site-main${page.slug === '' ? ' site-main--home' : ''}" id="main">
 ${body}
@@ -395,11 +426,15 @@ async function bundle() {
     target: ['es2022'],
     entryNames: '[name]-[hash]',
     outdir: join(OUT, 'assets'),
-    minify: !WATCH,
+    // Syntax minification stays on in every mode: it is what folds `if (false)` away, and
+    // with it the dynamic import of a Pro module. Only whitespace and names follow WATCH.
+    minifySyntax: true,
+    minifyWhitespace: !WATCH,
+    minifyIdentifiers: !WATCH,
     sourcemap: WATCH,
     logLevel: 'warning',
     metafile: true,
-    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID) },
+    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false' },
   });
 
   const hashed = new Map();
@@ -459,6 +494,8 @@ async function bundle() {
 const SEARCH_CRAWLERS = ['Googlebot', 'Bingbot', 'OAI-SearchBot', 'Claude-SearchBot', 'PerplexityBot'];
 
 function robots() {
+  // A preview build is not for search engines. Its pages are noindex as well; this stops the crawl.
+  if (PRO) return 'User-agent: *' + NL + 'Disallow: /' + NL;
   const groups = [...SEARCH_CRAWLERS, '*']
     .map((agent) => `User-agent: ${agent}` + NL + 'Allow: /')
     .join(NL + NL);
@@ -494,7 +531,7 @@ async function build() {
       console.warn(`  (skip) no page body for /${page.slug} — expected src/pages/${page.slug || 'index'}.html`);
       continue;
     }
-    let body = readFileSync(file, 'utf8');
+    let body = applyProBlocks(readFileSync(file, 'utf8'), PRO, file);
     // The page supplies the grid container; this fills it. Asserting the marker was
     // actually consumed, rather than assuming replace() matched, is the same discipline
     // as grepping the built output — a replace that hits nothing returns success.
@@ -557,7 +594,7 @@ async function build() {
   {
     const file = join(ROOT, 'src/pages/404.html');
     if (!existsSync(file)) throw new Error('src/pages/404.html is missing — every unknown URL would fall back to the homepage');
-    let body = readFileSync(file, 'utf8');
+    let body = applyProBlocks(readFileSync(file, 'utf8'), PRO, file);
     body = body.replace(/[ 	]*<!--TOOL_GRID-->/, toolGrid());
     if (body.includes('<!--TOOL_GRID-->')) throw new Error('TOOL_GRID marker survived substitution in 404.html');
     body = substituteTokens(body, file);
@@ -604,7 +641,25 @@ async function build() {
     throw new Error(`${advertised} share images advertised but ${written} written — one is orphaned`);
   }
 
-  console.log(`built ${ALL.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images`);
+  // The Pro flag, checked against what was written rather than against intentions. With the
+  // flag off, no Pro sentinel may appear anywhere in dist — that is what "absent, not hidden"
+  // means, and a guarded import that esbuild failed to drop would show up here. With it on, a
+  // Pro module must actually have reached the bundle.
+  const TEXTLIKE = /\.(html|js|css|txt|xml|json|svg)$/;
+  const carrying = [];
+  for (const rel of readdirSync(OUT, { recursive: true })) {
+    const name = String(rel);
+    if (!TEXTLIKE.test(name)) continue;
+    if (readFileSync(join(OUT, name), 'utf8').includes(PRO_SENTINEL_PREFIX)) carrying.push(name.split(/[\\/]/).join('/'));
+  }
+  if (!PRO && carrying.length) {
+    throw new Error(`Pro code reached a flag-off build: ${carrying.slice(0, 8).join(', ')}`);
+  }
+  if (PRO && !carrying.some((f) => f.startsWith('assets/'))) {
+    throw new Error('the Pro flag is on, but no Pro module reached the bundle');
+  }
+
+  console.log(`built ${ALL.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images${PRO ? '  — PRO PREVIEW' : ''}`);
 }
 
 await build();
