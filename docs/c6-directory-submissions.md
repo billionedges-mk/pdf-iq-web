@@ -193,7 +193,7 @@ first rather than being caught by them:
 >
 > **Known limitations**, all in the README rather than buried: files over 60 MB are refused
 > because past that a tab stops being able to finish; encrypted PDFs are tested against files
-> another implementation wrote (RC4 and AES, from PdfBox), except the rare AES-256 R5 variant; CMYK, JPEG
+> another implementation wrote (RC4 and AES, written by MuPDF), except the rare AES-256 R5 variant; CMYK, JPEG
 > 2000, JBIG2 and CCITT images are detected and skipped but that path has never met a real
 > file; OCR accuracy is measured only against synthetic type; desktop Safari and Firefox are
 > untested.

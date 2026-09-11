@@ -333,7 +333,7 @@ async function hash2B(password: Uint8Array, salt: Uint8Array, extra: Uint8Array,
 /**
  * Algorithms 2.A / 8 / 9: the AES-256 file key.
  *
- * The owner password is tried first, as Algorithm 2.A and PdfBox both do. Which password
+ * The owner password is tried first, as Algorithm 2.A specifies. Which password
  * authenticated decides whether an author's limits may be lifted (PASSWORD_RULE.md), and a
  * file whose two passwords are the same must count as opened by its owner.
  *
@@ -476,7 +476,7 @@ export async function decryptPdf(bytes: Uint8Array, password: string): Promise<D
     handler = { key: result.key, cipher: 'aes', perObject: false };
     role = result.role;
   } else if (info.v >= 1 && info.v <= 4) {
-    // Owner first, as PdfBox does: which password authenticated decides what may be
+    // Owner first: which password authenticated decides what may be
     // lifted, so a password that is both must count as the owner's.
     const asOwner = legacyKeyFromPadded(info, userPasswordFromOwner(info, password));
     if (legacyKeyMatches(info, asOwner)) {

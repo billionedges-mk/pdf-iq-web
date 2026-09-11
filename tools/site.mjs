@@ -17,7 +17,7 @@ export const TOOLS = [
     cardName: 'Merge',
     card: 'Several files into one, in the order you set.',
     ogSubject: 'Merge PDFs',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     slug: 'split', nav: 'Split', name: 'Split PDF', entry: 'split',
@@ -30,7 +30,7 @@ export const TOOLS = [
     cardName: 'Split',
     card: 'Pull out a page range, or cut one file into parts.',
     ogSubject: 'Split a PDF',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     slug: 'compress', nav: 'Compress', name: 'Compress PDF', entry: 'compress',
@@ -43,7 +43,7 @@ export const TOOLS = [
     cardName: 'Compress',
     card: 'Smaller for email, with the real before and after.',
     ogSubject: 'Compress a PDF',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     slug: 'images-to-pdf', nav: 'Images to PDF', name: 'Images to PDF', entry: 'images-to-pdf',
@@ -56,7 +56,7 @@ export const TOOLS = [
     cardName: 'Images to PDF',
     card: 'Phone photos and scans into one document.',
     ogSubject: 'Images to PDF',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     slug: 'rotate', nav: 'Rotate', name: 'Rotate PDF', entry: 'rotate',
@@ -69,7 +69,7 @@ export const TOOLS = [
     cardName: 'Rotate',
     card: 'Fix sideways scans without re-encoding them.',
     ogSubject: 'Rotate pages',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     slug: 'reorder', nav: 'Reorder', name: 'Reorder Pages', entry: 'reorder',
@@ -82,7 +82,7 @@ export const TOOLS = [
     cardName: 'Reorder',
     card: 'Move or drop pages on a grid of real pages.',
     ogSubject: 'Reorder pages',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     slug: 'ocr', nav: 'OCR', name: 'OCR PDF', entry: 'ocr',
@@ -95,7 +95,7 @@ export const TOOLS = [
     cardName: 'OCR',
     card: 'Read the text off a scan, free and unlimited.',
     ogSubject: 'Read a scan',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
 ];
 
@@ -107,7 +107,7 @@ export const PAGES = [
     title: 'Free PDF tools run in your browser — no upload, no signup',
     description:
       'Free PDF tools that work without uploading anything — compress, merge, split, rotate, reorder, convert and OCR. The work happens on your own device.',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     slug: 'app', name: 'Android App', entry: null,
@@ -123,14 +123,14 @@ export const PAGES = [
     description:
       'What the pdf-iq website and Android app do and do not collect, stated precisely, including the app’s server-side features.',
     ogSubject: 'Privacy',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     slug: 'terms', name: 'Terms', entry: null,
     title: 'Terms of use — pdf-iq PDF tools',
     description: 'The terms covering use of the pdf-iq website, the seven browser tools, and the PDFiq Android app, including how Pro is bought and liability.',
     ogSubject: 'Terms',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     // Paddle requires a seller's site to carry terms, a privacy notice and a refund policy.
@@ -140,14 +140,14 @@ export const PAGES = [
     title: 'Refunds — pdf-iq Pro',
     description: 'Thirty days from purchase, for any reason. Paddle is the merchant of record and issues the refund. The seven web tools are free and unaffected.',
     ogSubject: 'Refunds',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     slug: 'support', name: 'Support', entry: null,
     title: 'Support — help with the pdf-iq PDF tools',
     description: 'Answers to what goes wrong, and how to reach a person about the pdf-iq tools and Android app.',
     ogSubject: 'Support',
-    ogLine: 'Nothing leaves your device',
+    ogLine: 'Your files never leave your device',
   },
   {
     slug: 'for-professionals', name: 'For firms', entry: 'for-professionals',
@@ -290,7 +290,7 @@ export const FAQ = [
   },
   {
     q: 'Do I need an account?',
-    a: 'No. There is nothing to sign in to, and no limit on how many files you run through it.',
+    a: 'No. It needs no account to use, and there is no limit on how many files you run through it.',
   },
   {
     q: 'Is there a watermark?',

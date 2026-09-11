@@ -164,8 +164,8 @@ rather than printing them.
 
 **Encrypted PDFs: RC4 40 and 128-bit, AES-128 and AES-256 (R6) are tested against files another
 implementation wrote.** `npm run verify:crypto` runs 25 cases through the real open path against
-PdfBox-made fixtures and reads every output back with MuPDF. Until 11 September 2026 only RC4 40-bit
-had met a real file, and the first run against PdfBox's found AES-128 output silently corrupt and
+MuPDF-written fixtures and reads every output back with both MuPDF and pypdf. Until 11 September 2026 only RC4 40-bit
+had met a real file, and the first run against those found AES-128 output silently corrupt and
 AES-256 not working at all — both fixed, see CLAIMS 30. AES-256 **R5**, the deprecated Adobe
 variant, is implemented and has no fixture, so it is untested.
 

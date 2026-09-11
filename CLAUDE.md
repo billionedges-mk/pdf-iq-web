@@ -11,7 +11,9 @@ anything about pricing, tiers, paywalls or monetisation — those are decided.
 - **The site's whole position is that nothing leaves the device.** Never add analytics,
   tracking, telemetry, or anything requiring a cookie or consent banner.
 - **Every tool must keep working with the network off.**
-- **`/for-professionals` is the only page that sends anything.** Keep it that way.
+- **No tool page ever sends anything.** Only `/for-professionals` does, and — once sign-in
+  exists behind the Pro flag — `/account/`. Nothing else may. The account page is named in
+  the future tense because it does not exist yet; this rule describes the build.
 
 ## How this is enforced
 
@@ -46,8 +48,8 @@ thing claims and what it does. The ones that come up most:
 - `npm run verify:states` — a CSS rule keyed on a runtime state class must target something
   that exists. Catches a state that can be entered and can no longer be seen.
 - `npm run verify:crypto` — every locked-file case in the app repo's PASSWORD_RULE.md, run
-  through the real `openPdf` against PdfBox-made fixtures in `tools/fixtures/crypto/`, with
-  every output read back by MuPDF. Needs python with PyMuPDF. Until it existed the only
+  through the real `openPdf` against MuPDF-written fixtures in `tools/fixtures/crypto/`, with
+  every output read back by MuPDF and pypdf. Needs python with PyMuPDF and pypdf. Until it existed the only
   encrypted fixture was our own RC4 file, the one case the code handled correctly.
 - Suites: `npm run typecheck`, `npm run build`, `npm run selftest` then open
   `/selftest.html`, `/tools-selftest.html`, `/ocr-text-probe.html`, `/e2e-selftest.html`

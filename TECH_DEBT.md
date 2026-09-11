@@ -111,8 +111,8 @@ worded so that it stays true if the measurement comes back badly.
 - **Encrypted PDFs — resolved, with two gaps.** A real locked file first proved detection and the
   pdf.js route wrong; both were fixed against a generated RC4 40-bit fixture. That fixture was the
   only one, and it was the one case the code got right. `npm run verify:crypto` now runs RC4
-  40/128, AES-128 and AES-256 R6 against PdfBox-made files (`tools/fixtures/crypto/`, from the app
-  repo) with every output read back by MuPDF. Its first run found AES-128 output silently corrupt,
+  40/128, AES-128 and AES-256 R6 against MuPDF-written files (`tools/fixtures/crypto/`, from the app
+  repo) with every output read back by MuPDF and pypdf. Its first run found AES-128 output silently corrupt,
   AES-256 unusable — three defects — and TECH_DEBT 27 in the app repo's list: restricted files
   stripped of their limits. All fixed 11 September 2026; CLAIMS 30. **Gaps:** AES-256 **R5**
   (deprecated Adobe extension level 3) is implemented and has no fixture. And the *kept-limits copy*

@@ -122,6 +122,12 @@ export function ogImage(route) {
   while (size > 46 && measureText(f.bold, ogSubject, size) > room) size -= 2;
   drawText(bmp, f.bold, ogSubject, { x: LEFT, y: 360, size, colour: p.ink });
 
+  // The claim line is never shrunk to fit: a claim set smaller than its neighbours reads as a
+  // footnote. If it does not fit it is too long, and the build says so.
+  const lineWidth = measureText(f.mid, ogLine, 38);
+  if (lineWidth > room) {
+    throw new Error(`the card line for '${slug}' is ${Math.round(lineWidth)}px and the room is ${room}px — shorten the words`);
+  }
   drawText(bmp, f.mid, ogLine, { x: LEFT, y: 440, size: 38, colour: p.ink });
 
   // Supporting, not the subject: right, vertically centred, a third of its old size.
