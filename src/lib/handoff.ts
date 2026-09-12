@@ -126,6 +126,11 @@ export function wireNextLinks(root: ParentNode, current: () => Handoff | null): 
       if (!result) return; // nothing to carry: behave as an ordinary link
       event.preventDefault();
       const href = link.getAttribute('href')!;
+      // Say something before the navigation. Copying a large document into IndexedDB takes a
+      // moment, and the page it happens on showed nothing at all: a reader clicked and watched
+      // an unchanged screen, unable to tell a slow handoff from a broken link.
+      const where = link.textContent?.trim() || 'the next tool';
+      say(link.closest('.nextup') ?? link.parentElement, `Taking ${result.name} to ${where}…`);
       void stash(result.bytes, result.name).then((key) => {
         location.href = key ? `${href}?from=${encodeURIComponent(key)}` : href;
       });
@@ -142,7 +147,49 @@ export async function claimIncoming(): Promise<File | null> {
   const key = new URLSearchParams(location.search).get('from');
   if (!key) return null;
   history.replaceState(null, '', location.pathname);
-  const handed = await claim(key);
-  if (!handed) return null;
-  return new File([handed.bytes as BlobPart], handed.name, { type: 'application/pdf' });
+  // And say something on arrival. The file still has to be read out of storage and parsed by the
+  // tool that receives it, which on a large document is seconds of a page that looks empty and
+  // idle — the same silence, on the other side of the navigation.
+  const note = say(document.querySelector('main'), 'Bringing your file over from the last tool…', true);
+  try {
+    const handed = await claim(key);
+    if (!handed) {
+      note?.replaceChildren('That file was not there to collect. It may have been used already, or left too long — choose it from your device instead.');
+      return null;
+    }
+    return new File([handed.bytes as BlobPart], handed.name, { type: 'application/pdf' });
+  } finally {
+    // The tool takes over from here: the note goes when it shows the file, or on its own if
+    // nothing happens, so a stuck intake is never hidden by a message about it.
+    if (note) untilFileShows(note);
+  }
+}
+
+/** A plain line, inserted where the reader is already looking. */
+function say(host: Element | null, words: string, first = false): HTMLElement | null {
+  if (!host) return null;
+  const p = document.createElement('p');
+  p.className = 'hint';
+  p.dataset.handoffNote = '1';
+  p.setAttribute('role', 'status');
+  p.textContent = words;
+  if (first) host.prepend(p);
+  else host.append(p);
+  return p;
+}
+
+/** Remove the arrival note once the receiving tool has something on screen. */
+function untilFileShows(note: HTMLElement): void {
+  const shown = () =>
+    Array.from(document.querySelectorAll<HTMLElement>('[data-view]'))
+      .some((v) => !v.hidden && v.dataset.view !== 'empty');
+  const stop = (): void => {
+    observer.disconnect();
+    clearTimeout(timer);
+    note.remove();
+  };
+  const observer = new MutationObserver(() => { if (shown()) stop(); });
+  observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['hidden'] });
+  const timer = setTimeout(stop, 60_000);
+  if (shown()) stop();
 }

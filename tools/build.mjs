@@ -6,7 +6,7 @@
 // a third-party origin, so the tools keep working with the network disconnected
 // and the footer readout can honestly say zero.
 
-import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync, readdirSync, statSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
@@ -261,7 +261,7 @@ ${header(page.slug)}
 ${body}
   </main>
 ${footer()}
-  <script type="module" src="/assets/${assets.get('net')}"></script>${script}
+  <script type="module" src="/assets/${assets.get('net')}"></script>${LOCAL ? `\n  <script type="module" src="/assets/${assets.get('local-badge')}"></script>` : ''}${script}
 </body>
 </html>
 `;
@@ -468,6 +468,10 @@ async function bundle() {
 
   const entries = [
     join(ROOT, 'src/entries/net.ts'),
+    // Local builds only: the badge that says whether this browser is in a Pro session. Not an
+    // entry of any route — it loads on every page, like net.ts, because the question it answers
+    // follows you between tools.
+    ...(LOCAL ? [join(ROOT, 'src/pro/local-badge.ts')] : []),
     ...ROUTES.filter((p) => p.entry).map((p) => join(ROOT, `src/${p.entryDir ?? 'entries'}/${p.entry}.ts`)),
   ];
 
@@ -731,18 +735,29 @@ if (SERVE) {
     '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon',
     '.gz': 'application/gzip', '.bcmap': 'application/octet-stream', '.pfb': 'application/octet-stream',
   };
+  const isFile = (path) => existsSync(path) && statSync(path).isFile();
   createServer((req, res) => {
-    let p = decodeURIComponent((req.url || '/').split('?')[0]);
-    let file = join(OUT, p);
-    if (p.endsWith('/')) file = join(file, 'index.html');
-    if (!existsSync(file)) {
-      // Cloudflare Pages serves /compress and /compress/ alike; match that locally.
-      const alt = join(OUT, p, 'index.html');
-      if (existsSync(alt)) file = alt;
-      else { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+    try {
+      const p = decodeURIComponent((req.url || '/').split('?')[0]);
+      let file = join(OUT, p);
+      // A path that exists is not necessarily a file. dist/fixtures is a directory, and
+      // readFileSync on a directory throws EISDIR — uncaught, inside the request handler, which
+      // killed the dev server mid-session on 12 September 2026. The process reported exit 0, so
+      // it read as a clean stop; the next request simply found nothing listening.
+      if (!isFile(file)) {
+        // Cloudflare Pages serves /compress and /compress/ alike; match that locally.
+        const alt = join(OUT, p, 'index.html');
+        if (isFile(alt)) file = alt;
+        else { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+      }
+      const ext = file.slice(file.lastIndexOf('.'));
+      res.writeHead(200, { 'content-type': types[ext] || 'application/octet-stream' });
+      res.end(readFileSync(file));
+    } catch (e) {
+      // One odd request must not take the session's server with it.
+      console.warn(`  (serve) ${req.url}: ${e.message}`);
+      if (!res.headersSent) res.writeHead(500, { 'content-type': 'text/plain' });
+      res.end('error');
     }
-    const ext = file.slice(file.lastIndexOf('.'));
-    res.writeHead(200, { 'content-type': types[ext] || 'application/octet-stream' });
-    res.end(readFileSync(file));
   }).listen(4321, () => console.log('serving http://localhost:4321'));
 }

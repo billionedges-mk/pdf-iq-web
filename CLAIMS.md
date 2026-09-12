@@ -45,7 +45,8 @@ the work is done.
 29. [Fix what generates the sentence, and read everything else it generates](#29-fix-what-generates-the-sentence-and-read-everything-else-it-generates)  
 30. [A generator and a consumer that share an author agree with each other](#30-a-generator-and-a-consumer-that-share-an-author-agree-with-each-other)  
 31. [A gate that reasons about files cannot see a conditional inside a file that ships anyway](#31-a-gate-that-reasons-about-files-cannot-see-a-conditional-inside-a-file-that-ships-anyway)  
-32. [A command that did nothing reports success](#32-a-command-that-did-nothing-reports-success)
+32. [A command that did nothing reports success](#32-a-command-that-did-nothing-reports-success)  
+33. [The instruments have been wrong twelve times; the product has been sound](#33-the-instruments-have-been-wrong-twelve-times-the-product-has-been-sound)
 
 <!-- /index -->
 
@@ -1235,3 +1236,51 @@ index was generated with `\n` whatever the file used, so `--check` failed any ch
 on a file nobody had edited. Nothing in this machine's normal workflow touches a fresh checkout;
 the next clone would have hit it, and the deploy that fails is not always the one you are
 looking at.
+
+---
+
+### 33. The instruments have been wrong twelve times; the product has been sound
+
+Kept as a running count until 12 September 2026, which is the wrong place for it. The useful fact
+is the base rate: **when a measurement disagrees with the thing it measures, the measurement is
+the more likely to be wrong here** — and acting on the reading without checking it has cost more
+time than any defect in the code.
+
+Twelve, by kind:
+
+- **A check that could not fail.** `contrast` printed FAIL and exited 0 for months (check 27).
+- **A proxy that could not see what it counted.** Brace counting passed a CSS stripper that had
+  eaten a character.
+- **A counter gated on the event it existed to observe.** The readout counted requests only after
+  a load flag that preloaded fonts beat, and read zero through the exact case it was built for.
+- **A reader that included what the reader cannot see.** `textContent` returns hidden nodes, so a
+  walk of the compress page reported a "digital signature" claim about an unsigned file. The note
+  was `hidden` and the product was right. `innerText` is what a person sees.
+- **A comparison that ignored line endings.** The claims index was generated with `\n` against a
+  CRLF checkout, failing a file nobody had edited (check 32).
+- **A list of forbidden strings that forbade free code.** A live check for Pro leakage listed
+  `AESV3` — which is how `decrypt.ts` detects a cipher, and reading locked files is free (check 31).
+- **A parser too narrow for its own subject.** The stage-list check read only each entry's own
+  `STAGES`, so `/compress/`, which imports them, was reported as declaring none.
+- **Provenance taken from where files were used.** Six crypto fixtures were called PdfBox-made for
+  a day, in five places, by two sessions. Each file's third line says MuPDF (check 30).
+- **A fixture written by the code's own author**, exercising only the variant that already worked
+  (check 30).
+- **A test that encoded the defect** it existed to catch, and would have failed the fix (check 30).
+- **A command reporting success for doing nothing** — a build wrapper on a failed build, a push of
+  an unchanged ref (check 32).
+- **Evidence truncated before it was judged.** `| head -4` on a live check turned a passing run
+  into an exit code from a broken pipe, and it was read as a failure.
+
+**What follows.**
+
+1. A disagreement between an instrument and the product is a finding about the instrument until
+   shown otherwise. Check the reading before changing the code.
+2. An instrument needs its own fail-first, exactly as a fix does: run it against the broken state
+   and watch it fail (check 16). Roughly half of the twelve were caught that way; the rest were
+   caught by a person reading output nobody had asked to be checked.
+3. Do not truncate the evidence you are about to judge.
+
+The product's own defects over the same period were real and fewer — and each was found by
+something other than the check that should have found it: a grep of the live bundle, a person
+opening the site and trying to get something done, a reader that had not written the file.

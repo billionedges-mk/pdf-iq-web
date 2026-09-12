@@ -127,6 +127,8 @@ ok(wordingLeaks.length === 0, `no Pro wording in any flag-off bundle${wordingLea
  * that can never fail is not what is being run here.
  */
 const STUB_KEY = 'pdfiq.local-pro';
+/** The badge that tells a local reader whether this browser is in a Pro session. */
+const BADGE = 'pdfiq-pro:local-badge';
 const stubOff = s.all.filter((f) => f.s.includes(STUB_KEY)).map((f) => f.rel);
 ok(stubOff.length === 0, `no local Pro stub anywhere in a flag-off build${stubOff.length ? ` — found in ${stubOff.slice(0, 4).join(', ')}` : ''}`);
 
@@ -168,6 +170,8 @@ for (const w of PRO_WORDING) {
 
 const stubOn = s.all.filter((f) => f.s.includes(STUB_KEY)).map((f) => f.rel);
 ok(stubOn.length === 0, `no local Pro stub in a Pro build that is not local${stubOn.length ? ` — found in ${stubOn.slice(0, 4).join(', ')}` : ''}`);
+const badgeOn = s.all.filter((f) => f.s.includes(BADGE)).map((f) => f.rel);
+ok(badgeOn.length === 0, `and no session badge${badgeOn.length ? ` — found in ${badgeOn.slice(0, 4).join(', ')}` : ''}`);
 
 // ---------------------------------------------------------------- 3b. the local stub
 console.log('\n— the local stub (only in a build served from a developer machine)');
@@ -178,6 +182,14 @@ const stubLocal = s.assets.filter((a) => a.s.includes(STUB_KEY));
 ok(stubLocal.length > 0,
   `the stub is present in a local build${stubLocal.length ? ` (${stubLocal.map((a) => a.rel).slice(0, 2).join(', ')})` : ' — IT IS NOWHERE, so the absence checks above prove nothing'}`);
 ok(stubLocal.every((a) => a.s.includes(SENTINEL)), 'and only in bundles that carry a Pro sentinel');
+const badgeAsset = s.assets.find((a) => a.s.includes(BADGE));
+ok(Boolean(badgeAsset), `the session badge is built${badgeAsset ? ` (${badgeAsset.rel})` : ' — IT IS NOWHERE, so the absence checks prove nothing'}`);
+if (badgeAsset) {
+  const name = basename(badgeAsset.rel);
+  const missing = s.pages.filter((p) => !p.s.includes(name)).map((p) => p.rel);
+  ok(missing.length === 0,
+    `and every page loads it, so the answer follows you between tools${missing.length ? ` — missing from ${missing.slice(0, 3).join(', ')}` : ` (${s.pages.length} pages)`}`);
+}
 // A deployed build must not be able to carry it, whichever branch it is built for. On main the
 // production refusal fires first, which is why either name is accepted.
 const refusalText = (res) => `${res.stderr || ''}${res.stdout || ''}`;
