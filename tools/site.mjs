@@ -390,6 +390,15 @@ export const PRO_PAGES = [
     ogLine: 'Only for Pro',
   },
   {
+    // Batch is the feature that carries the tier: a few things done properly across many files.
+    // docs/batch.md is its contract, written before the code.
+    slug: 'batch', name: 'Batch', nav: 'Batch', entry: 'batch-page', entryDir: 'pro', noindex: true,
+    title: 'Batch — one operation across many PDFs — pdf-iq',
+    description: 'Compress, read the text from, or rotate many PDFs at once, on your device. Part of Pro.',
+    ogSubject: 'Batch',
+    ogLine: 'Nothing leaves your device',
+  },
+  {
     // `nav` puts it in the tool bar of a flag-on build. Without it the page existed and nothing
     // on the site led to it: someone looking for the feature found no trace of it (12 September
     // 2026). A route nobody can reach is the same as a route that is not there.

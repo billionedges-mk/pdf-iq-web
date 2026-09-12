@@ -24,7 +24,8 @@
     "verify:pro-features": "node tools/verify-pro-features.mjs",
     "verify:password": "node tools/verify-password.mjs",
     "verify:stages": "node tools/verify-stages.mjs",
-    "verify:handoff": "node tools/verify-handoff.mjs"
+    "verify:handoff": "node tools/verify-handoff.mjs",
+    "verify:batch": "node tools/verify-batch.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

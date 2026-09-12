@@ -603,3 +603,14 @@ textarea.askfield__input { resize: vertical; min-height: 104px; }
 /* The homepage manages its own vertical rhythm, so the shared main padding would
    double up against the hero's own. */
 .site-main--home { padding-top: 0; padding-bottom: 0; }
+
+/* Batch: the file list, before a run and after it. One row per file, its state on the right. */
+.batch-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.batch-row {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 14px;
+  font-size: 14.5px; padding: 7px 0; border-bottom: 1px solid var(--line);
+}
+.batch-row:last-child { border-bottom: 0; }
+.batch-row__name { color: var(--ink); overflow-wrap: anywhere; }
+.batch-row__state { color: var(--ink-76); font-family: ui-monospace, Consolas, monospace; font-size: 13.5px; white-space: nowrap; }
+.batch-row__state[data-state="failed"] { color: var(--ink); font-weight: 700; }

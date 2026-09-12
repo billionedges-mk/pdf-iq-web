@@ -50,6 +50,10 @@ thing claims and what it does. The ones that come up most:
   through the real `openPdf` against MuPDF-written fixtures in `tools/fixtures/crypto/`, with
   every output read back by MuPDF and pypdf. Needs python with PyMuPDF and pypdf. Until it existed the only
   encrypted fixture was our own RC4 file, the one case the code handled correctly.
+- `npm run verify:batch` — batch's decisions, driven in Node with the per-file work scripted:
+  a file that fails puts nothing in the archive, "nothing to gain" is not a failure, a stop keeps
+  what finished and refuses the file it landed in, and the summary is reconciled against entries
+  read back out of the zip. Every archive is opened by python's zipfile, which did not write it.
 - `npm run verify:handoff` — every "next, with this file" link lands on a page that calls
   `claimIncoming()`. A page that does not claim opens empty having consumed the handoff, so the
   link is an offer that cannot work (check 14). Six tools offered "Protect it" for an hour while

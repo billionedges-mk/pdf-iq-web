@@ -34,8 +34,8 @@ which is the only thing that can collide inside a fresh archive.
 
 ## What happens to each file
 
-Four outcomes, per file, named on the screen. The first three are the app's; the wording here is
-the web's.
+Five outcomes, per file, named on the screen. Four are the app's; "stopped partway" is the web's,
+added after watching a cancelled OCR count a third of a document as a finished file.
 
 - **Done.** The output is in the archive.
 - **Failed.** Named, with the reason, from the same typed errors the single-file tools use
@@ -44,6 +44,11 @@ the web's.
 - **Left alone.** Compress declines a document whose images are already small enough, because
   re-encoding would spend quality and save nothing. That is not a failure and must not be
   reported as one. The file is not in the archive, and the summary says why.
+- **Stopped partway.** The file the stop landed in. Nothing of it is kept and nothing of it goes
+  in the archive, because an operation that is interrupted can still return what it had — the OCR
+  pool hands back the pages it managed — and a third of a document is not that document. Watched
+  on 12 September 2026: a 30-page scan stopped at page 10 was reported as done, with its partial
+  text in the archive.
 - **Not attempted.** Only after a cancel: the files the run had not reached. They are named too,
   so a cancelled run of twenty after three does not leave seventeen files unmentioned for the
   reader to assume the worst about.

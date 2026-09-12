@@ -12,11 +12,10 @@
  *    time from the file that will actually be downloaded.
  */
 
-import { OcrPool, poolSize } from '../lib/ocr-pool.js';
 import { openPdf } from '../lib/open-pdf.js';
-import { openDocument, renderPage, pageHasText, pageText } from '../lib/pdfjs.js';
+import { openDocument, pageHasText } from '../lib/pdfjs.js';
+import { readDocumentText, OCR_DPI, type OcrPageResult } from '../lib/ocr-run.js';
 import { LANGUAGES } from '../lib/langs.generated.js';
-import type { OcrWord } from '../lib/textlayer.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, describeRanges, seconds } from '../lib/format.js';
 import { claimIncoming, wireNextLinks } from '../lib/handoff.js';
@@ -25,11 +24,6 @@ import * as E from '../lib/errors.js';
 
 const STAGES = ['Loading the language model', 'Reading each page', 'Collecting the text'];
 
-/** Tesseract wants roughly 300 dpi; below about 200 accuracy falls off sharply. */
-const OCR_DPI = 300;
-/** Below this mean confidence a page is reported as unread rather than quietly kept. */
-const CONFIDENCE_FLOOR = 55;
-
 const shell = new ToolShell();
 // Recognition is nearly the whole job: on a 30-page scan the model load is a second or two and
 // collecting the text is instant, while reading took 47 of the 50 seconds. With equal thirds the
@@ -37,29 +31,13 @@ const shell = new ToolShell();
 // and cannot resolve.
 const progress = new Progress(document, STAGES, [5, 92, 3]);
 
-interface PageResult {
-  index: number;
-  words: OcrWord[];
-  confidence: number;
-  text: string;
-  /**
-   * Where the text came from. A page that already carries a text layer is *read*, not
-   * recognised: the characters are in the file, so reading them is instant and exact where
-   * recognising them costs a 300 dpi render and returns a guess at words the document
-   * already knows. That used to be reported as a warning, which had it backwards.
-   */
-  source: 'ocr' | 'layer';
-  skipped: null | 'no-text' | 'low-confidence';
-}
-
 let file: File | null = null;
 let sourceBytes: Uint8Array | null = null;
 let pageCount = 0;
 let pagesWithText: number[] = [];
-let pool: OcrPool | null = null;
 let controller: AbortController | null = null;
 let busy = false;
-let results: PageResult[] = [];
+let results: OcrPageResult[] = [];
 /** The scale each page was actually rendered at, for mapping word boxes back. */
 const pageScale = new Map<number, number>();
 
@@ -193,124 +171,30 @@ async function run(): Promise<void> {
     progress.set(0, 1, 0, `fetching the ${lang.name} model (${formatBytes(lang.bytes)})`);
     await breathe();
 
-    let modelReady = false;
-    const size = poolSize();
-    pool = await OcrPool.create(size, {
+    // The pipeline lives in src/lib/ocr-run.ts so that batch runs the same one. Everything the
+    // screen shows comes back through these callbacks; nothing about the DOM went with it.
+    const read = await readDocumentText(sourceBytes, {
       lang: lang.code,
       signal,
-      // Tesseract's own status strings used to be printed here verbatim, so the screen said
-      // "recognizing text 57%" — library jargon, in another spelling of English, overwriting the
-      // line that says how many pages are done. Our words, and only while the model is loading:
-      // once pages are being read, the page count is the honest thing to show.
-      onProgress: (_status, fraction) => {
-        if (modelReady) return;
+      pagesWithText,
+      onModelProgress: (fraction) => {
         $('[data-facts]')!.textContent = `fetching the ${lang.name} model · ${Math.round(fraction * 100)}%`;
       },
-    });
-    modelReady = true;
-    localStorage.setItem(`pdfiq.lang.${lang.code}`, 'cached');
-    $('[data-threads]')!.textContent =
-      `${pool.size} ${pool.size === 1 ? 'worker' : 'workers'}`;
-
-    const proxy = await openDocument(sourceBytes);
-    const canvas = document.createElement('canvas');
-    const toRead = Array.from({ length: pageCount }, (_, i) => i)
-      .filter((i) => !pagesWithText.includes(i));
-
-    let completed = 0;
-
-    await pool.run<PageResult>(
-      toRead,
-      // Producer, on the main thread: render the page and hand on a compact image.
-      // The canvas itself is not queued — at 300 dpi an A4 page is 8.7 megapixels, so
-      // holding several of them as raw pixels would cost more memory than the whole
-      // document. Encoding to JPEG first bounds that to a few hundred kilobytes.
-      async (index) => {
-        const page = await proxy.doc.getPage(index + 1);
-        const base = page.getViewport({ scale: 1 });
-        // crisp=false: no device-pixel-ratio multiplier. See renderPage.
-        // intent 'print': pdf.js paces display rendering with requestAnimationFrame,
-        // which browsers stop firing in a background tab. Print intent schedules
-        // itself, so the job keeps running when the user switches away.
-        const actualScale = await renderPage(
-          page, base.width * (OCR_DPI / 72), canvas, false, 'print'
-        );
-        pageScale.set(index, actualScale);
-        const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.95));
-        page.cleanup();
-        return blob;
+      onWorkers: (count) => {
+        localStorage.setItem(`pdfiq.lang.${lang.code}`, 'cached');
+        $('[data-threads]')!.textContent = `${count} ${count === 1 ? 'worker' : 'workers'}`;
       },
-      // Consumer, in a worker. `blocks` has to be requested explicitly; the default
-      // output is text only, and text without boxes cannot be placed behind the scan.
-      async (worker, image) => {
-        const { data } = await worker.recognize(image, {}, { text: true, blocks: true });
-        const words: OcrWord[] = [];
-        for (const block of data.blocks ?? []) {
-          for (const paragraph of block.paragraphs ?? []) {
-            for (const line of paragraph.lines ?? []) {
-              for (const w of line.words ?? []) {
-                if (!w.text.trim()) continue;
-                words.push({
-                  text: w.text,
-                  x0: w.bbox.x0, y0: w.bbox.y0, x1: w.bbox.x1, y1: w.bbox.y1,
-                  confidence: w.confidence,
-                });
-              }
-            }
-          }
-        }
-        const confidence = words.length
-          ? words.reduce((sum, w) => sum + w.confidence, 0) / words.length
-          : 0;
-        return {
-          index: -1, // filled in by onDone, which knows the page
-          words,
-          confidence,
-          text: (data.text ?? '').trim(),
-          source: 'ocr' as const,
-          skipped: !words.length ? 'no-text' : confidence < CONFIDENCE_FLOOR ? 'low-confidence' : null,
-        };
-      },
-      // Pages finish out of order, so results are keyed by index and sorted later.
-      (index, result) => {
-        const entry: PageResult = result
-          ? { ...result, index }
-          : { index, words: [], confidence: 0, text: '', source: 'ocr', skipped: 'no-text' };
-        results.push(entry);
-        markBlock(index, entry.skipped === null);
-
-        completed++;
-        const elapsed = performance.now() - started;
-        const rate = elapsed / completed;
-        progress.set(completed, toRead.length, 1, `${completed} of ${toRead.length} pages read`);
+      onPage: (entry, done, total) => {
+        markBlock(entry.index, entry.skipped === null);
+        const rate = (performance.now() - started) / done;
+        progress.set(done, total, 1, `${done} of ${total} pages read`);
         $('[data-rate]')!.textContent = `${(rate / 1000).toFixed(1)}s a page`;
-        const left = toRead.length - completed;
+        const left = total - done;
         $('[data-remain]')!.textContent = left > 0 ? `about ${seconds(rate * left)} left` : '';
       },
-      signal
-    );
-
-    // Pages that already carry a text layer are read straight out of the file. This is the
-    // whole reason an existing layer is a shortcut rather than a problem: it is instant, and
-    // it returns the document's own characters rather than a recognition of a picture of
-    // them. Done after recognition so the two sets can be merged in page order.
-    for (const index of pagesWithText) {
-      const page = await proxy.doc.getPage(index + 1);
-      const text = await pageText(page);
-      page.cleanup();
-      results.push({
-        index,
-        words: [],
-        confidence: 100,
-        text,
-        source: 'layer',
-        skipped: text ? null : 'no-text',
-      });
-    }
-
-    await proxy.close();
-    await pool.terminate();
-    pool = null;
+    });
+    results = read.results;
+    for (const [index, scale] of read.pageScale) pageScale.set(index, scale);
 
     if (signal.aborted) {
       progress.stop();
@@ -319,8 +203,6 @@ async function run(): Promise<void> {
       shell.announce('Stopped. Nothing was changed.');
       return;
     }
-
-    results.sort((a, b) => a.index - b.index);
     const took = performance.now() - started;
 
     // The third stage was never reported, so a finished run left the bar at 97% and "Collecting
@@ -333,8 +215,6 @@ async function run(): Promise<void> {
   } catch (err) {
     progress.stop();
     busy = false;
-    await pool?.terminate();
-    pool = null;
     if (err instanceof DOMException && err.name === 'AbortError') {
       shell.show('selected');
       shell.announce('Stopped. Nothing was changed.');
@@ -510,8 +390,6 @@ $('[data-err-password]')?.addEventListener('submit', (e) => {
 
 function reset(): void {
   controller?.abort();
-  void pool?.terminate();
-  pool = null;
   file = null;
   sourceBytes = null;
   pageCount = 0;
