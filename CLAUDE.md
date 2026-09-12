@@ -93,6 +93,12 @@ everyone — there is no entitlement check yet, which is acceptable only because
 - **Sentinels.** Every module under `src/pro/` exports a string starting `pdfiq-pro:` and uses it.
   Every build checks its own output: a sentinel in a flag-off build fails it, and so does a flag-on
   build with no Pro module in the bundle.
+- **Pro code, wording included, lives under `src/pro/`.** A Pro branch inside a shared `src/lib`
+  function ships in every production bundle, unreachable. Neither the sentinel nor tree-shaking can
+  see it, because the module is free code. The searchable-PDF sentence did exactly that, from
+  `describeOcr`, until 12 September 2026; grepping the live bundle found it. `verify:pro-gate` now
+  carries a tripwire of Pro-only phrases: absent from every flag-off bundle, and present in a Pro
+  build only in bundles that carry a sentinel. Add a phrase when a Pro feature adds a sentence.
 - **Preview only.** A Cloudflare build of `main` with the flag set throws by name, and so does a
   Cloudflare build that reports no branch. Set `PDFIQ_PRO=1` in the Cloudflare **Preview**
   environment only. Locally: `PDFIQ_PRO=1 npm run build`. A flag-on build is noindex on every page,

@@ -121,10 +121,9 @@ const CASES: Case[] = [
       ok(!/searchable/i.test(text.announce), 'and neither does the screen-reader announcement');
       ok(/read from 16 of 16/.test(text.head), 'it says what actually happened');
 
-      // The Pro path is allowed to say it, because it does it.
-      const pdf = describeOcr({ produced: 'searchable-pdf', pagesRead: 16, pageCount: 16, fromLayer: 0, layered: 16 });
-      note(`pro run head:      ${pdf.head}`);
-      ok(/searchable/.test(pdf.head), 'a run that writes the layer may say so');
+      // The Pro path may say it, because it does it — but that sentence is describeSearchable in
+      // src/pro/searchable.ts, checked by tools/verify-pro-features.mjs, so no Pro wording ships
+      // in the free bundle (tools/verify-pro-gate.mjs checks that).
 
       // Pages read from an existing layer are named in the announcement, not averaged away.
       const mixed = describeOcr({ produced: 'text', pagesRead: 10, pageCount: 12, fromLayer: 4 });

@@ -122,23 +122,21 @@ console.log('\n— searchable PDF');
 // ---------------------------------------------------------------- the searchable result sentence
 console.log('\n— the searchable result sentence');
 {
-  await esbuild.build({
-    entryPoints: [join(ROOT, 'src/lib/ocr-result.ts')],
-    bundle: true, platform: 'node', format: 'esm', logLevel: 'warning', outfile: join(WORK, 'ocr-result.mjs'),
-  });
-  const { describeOcr } = await import(pathToFileURL(join(WORK, 'ocr-result.mjs')).href);
-  const refusal = (o) => { try { describeOcr(o); return ''; } catch (e) { return String(e.message); } };
+  // The sentence lives in src/pro/searchable.ts, not in the free src/lib/ocr-result.ts: a Pro
+  // branch in a shared function ships in production where no sentinel can see it.
+  const { describeSearchable } = searchable;
+  const refusal = (o) => { try { describeSearchable(o); return ''; } catch (e) { return String(e.message); } };
 
-  ok(refusal({ produced: 'searchable-pdf', pagesRead: 2, pageCount: 2, fromLayer: 2, layered: 0 }) !== '',
+  ok(refusal({ pageCount: 2, fromLayer: 2, layered: 0 }) !== '',
     'a searchable copy that layered no page cannot be described as having made anything searchable');
-  ok(refusal({ produced: 'searchable-pdf', pagesRead: 2, pageCount: 2, fromLayer: 0 }) !== '',
+  ok(refusal({ pageCount: 2, fromLayer: 0 }) !== '',
     "and the sentence cannot be written without the writer's own count");
-  const mixed = describeOcr({ produced: 'searchable-pdf', pagesRead: 3, pageCount: 4, fromLayer: 1, layered: 2 });
+  const mixed = describeSearchable({ pageCount: 4, fromLayer: 1, layered: 2 });
   ok(mixed.head.includes('2 given a text layer here') && mixed.head.includes('1 already had its own') && !mixed.head.includes('now searchable'),
     `pages that already had a layer are named, not counted as made searchable: "${mixed.head}"`);
   ok(mixed.announce.includes('2 given a text layer here') && mixed.announce.includes('1 already had its own'),
     `and the screen-reader announcement says the same: "${mixed.announce}"`);
-  const scan = describeOcr({ produced: 'searchable-pdf', pagesRead: 3, pageCount: 3, fromLayer: 0, layered: 3 });
+  const scan = describeSearchable({ pageCount: 3, fromLayer: 0, layered: 3 });
   ok(scan.head === '3 of 3 pages are now searchable.', `a scan with every page layered keeps the plain sentence: "${scan.head}"`);
 }
 

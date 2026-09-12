@@ -85,6 +85,39 @@ export async function writeSearchable(
   return { bytes: await doc.save({ useObjectStreams: true }), layered };
 }
 
+/**
+ * The OCR result's sentence once a searchable copy has been saved.
+ *
+ * Here, under src/pro/, and not beside the free sentence in src/lib/ocr-result.ts: a Pro branch in
+ * a shared function ships in every production bundle, unreachable, where no sentinel can see it.
+ * This one did, until 12 September 2026; tools/verify-pro-gate.mjs now checks for its wording.
+ *
+ * Built from the writer's own count, never from what OCR read. A page read out of the file's own
+ * text layer was searchable already and was given nothing: the offer once saved a file made only
+ * of such pages and said "2 of 2 pages are now searchable". So a copy that layered no page cannot
+ * be described at all, and pages that already had a layer are named rather than claimed.
+ */
+export function describeSearchable(o: { pageCount: number; fromLayer: number; layered: number }): { head: string; announce: string } {
+  const { pageCount, fromLayer, layered } = o;
+  if (layered == null) {
+    throw new Error("a searchable-PDF sentence needs the writer's own count of the pages it layered");
+  }
+  if (layered === 0) {
+    throw new Error('this copy was given a text layer on no page, so it cannot be described as having made anything searchable');
+  }
+  const are = pageCount === 1 ? 'page is' : 'pages are';
+  const own = `${fromLayer} already had ${fromLayer === 1 ? 'its' : 'their'} own`;
+  return fromLayer
+    ? {
+      head: `${layered + fromLayer} of ${pageCount} ${are} searchable in the saved copy: ${layered} given a text layer here, ${own}.`,
+      announce: `${layered + fromLayer} of ${pageCount} pages are searchable: ${layered} given a text layer here, ${own}.`,
+    }
+    : {
+      head: `${layered} of ${pageCount} ${are} now searchable.`,
+      announce: `${layered} of ${pageCount} pages are searchable.`,
+    };
+}
+
 /** Referenced so the sentinel survives minification in the bundle that carries this module. */
 export function searchableMark(): string {
   return SEARCHABLE_SENTINEL;

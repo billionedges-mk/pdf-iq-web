@@ -106,6 +106,15 @@ ok(!s.headers.includes('/account/'), '_headers has no account rule — it is pub
 const offCsp = (s.headers.match(/Content-Security-Policy: (.+)/) ?? [])[1];
 const authLeaks = s.all.filter((f) => f.s.includes(new URL(AUTH.identityToolkit).host) || f.s.includes(AUTH.clientId)).map((f) => f.rel);
 ok(authLeaks.length === 0, `no sign-in host or client ID anywhere in dist${authLeaks.length ? ` — found in ${authLeaks.slice(0, 5).join(', ')}` : ''}`);
+// Pro wording outside src/pro/. The sentinel covers every module under src/pro/, and esbuild drops
+// a whole module nothing free imports, but a Pro branch inside a shared function ships in every
+// production bundle, unreachable, where neither can see it. The searchable-PDF sentence did exactly
+// that from src/lib/ocr-result.ts until 12 September 2026, and a live check found it. A tripwire,
+// not a census: phrases only a Pro path produces. Section 3 proves each one exists in a Pro build,
+// so none of them is a string that could never be found.
+const PRO_WORDING = ['now searchable', 'given a text layer here', 'searchable already', 'Save as a searchable PDF', 'Or aim for a target'];
+const wordingLeaks = s.assets.flatMap((a) => PRO_WORDING.filter((w) => a.s.includes(w)).map((w) => `"${w}" in ${a.rel}`));
+ok(wordingLeaks.length === 0, `no Pro wording in any flag-off bundle${wordingLeaks.length ? ` — ${wordingLeaks.slice(0, 4).join('; ')}` : ''}`);
 
 // ---------------------------------------------------------------- 3. flag on, locally
 console.log('\n— flag on (a local preview build)');
@@ -134,6 +143,14 @@ const privacy = s.pages.find((p) => p.rel === 'privacy/index.html')?.s ?? '';
 for (const name of [AUTH.sessionKey, AUTH.pendingKey, ...AUTH.sessionFields, ...AUTH.pendingFields, ...AUTH.hosts.map((h) => new URL(h).host)]) {
   ok(privacy.includes(name), `/privacy names ${name}, which the sign-in code stores or contacts`);
 }
+// The other half of the wording tripwire: every phrase exists in a Pro build, and in a bundle that
+// carries a Pro sentinel, meaning it is produced by code under src/pro/, not by a shared function.
+for (const w of PRO_WORDING) {
+  const where = s.assets.filter((a) => a.s.includes(w));
+  const inPro = where.filter((a) => a.s.includes(SENTINEL));
+  ok(inPro.length > 0 && inPro.length === where.length,
+    `"${w}" is produced by Pro code alone${where.length === 0 ? ' — IT IS NOWHERE, so the flag-off check for it proves nothing' : inPro.length < where.length ? ` — also in ${where.filter((a) => !a.s.includes(SENTINEL)).map((a) => a.rel).join(', ')}, which has no sentinel` : ''}`);
+}
 
 // ---------------------------------------------------------------- 4. flag on, production
 console.log('\n— flag on for production');
@@ -154,6 +171,8 @@ r = build({ CF_PAGES: '1', CF_PAGES_BRANCH: 'main' });
 ok(r.status === 0, `builds${r.status ? ` — ${tail(r)}` : ''}`);
 s = scan();
 ok(s.hits.length === 0, 'and carries no Pro sentinel');
+const prodWording = s.assets.flatMap((a) => PRO_WORDING.filter((w) => a.s.includes(w)).map((w) => `"${w}" in ${a.rel}`));
+ok(prodWording.length === 0, `and no Pro wording${prodWording.length ? ` — ${prodWording.slice(0, 4).join('; ')}` : ''}`);
 
 console.log(`\n${fails ? `${fails} FAILED` : 'the Pro flag holds: absent when off, present when on, refused in production'}`);
 process.exitCode = fails ? 1 : 0;
