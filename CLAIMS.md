@@ -46,7 +46,8 @@ the work is done.
 30. [A generator and a consumer that share an author agree with each other](#30-a-generator-and-a-consumer-that-share-an-author-agree-with-each-other)  
 31. [A gate that reasons about files cannot see a conditional inside a file that ships anyway](#31-a-gate-that-reasons-about-files-cannot-see-a-conditional-inside-a-file-that-ships-anyway)  
 32. [A command that did nothing reports success](#32-a-command-that-did-nothing-reports-success)  
-33. [The instruments have been wrong twelve times; the product has been sound](#33-the-instruments-have-been-wrong-twelve-times-the-product-has-been-sound)
+33. [The instruments have been wrong twelve times; the product has been sound](#33-the-instruments-have-been-wrong-twelve-times-the-product-has-been-sound)  
+34. [A check is not trusted against the fix until it has failed against the defect](#34-a-check-is-not-trusted-against-the-fix-until-it-has-failed-against-the-defect)
 
 <!-- /index -->
 
@@ -1284,3 +1285,31 @@ Twelve, by kind:
 The product's own defects over the same period were real and fewer — and each was found by
 something other than the check that should have found it: a grep of the live bundle, a person
 opening the site and trying to get something done, a reader that had not written the file.
+
+---
+
+### 34. A check is not trusted against the fix until it has failed against the defect
+
+Three times now a check has passed the exact thing it was written to reject, and each time it was
+written minutes after the defect, while the defect was still fresh enough to feel obvious:
+
+- The end-to-end crypto case asserted the behaviour PASSWORD_RULE.md forbids, so it passed the
+  defect and would have failed the fix (check 30).
+- `contrast` printed FAIL and exited 0, so every run passed whatever it found (check 27).
+- `verify-handoff` matched the word `claimIncoming` anywhere in the target's source. The page it
+  existed to catch imported the function and never called it, so the check passed it. Requiring a
+  call — `claimIncoming\s*\(` — failed it seven times, once per link.
+
+The pattern is not carelessness about the check; it is that the author has the defect in mind and
+writes something that describes it rather than something that detects it. Nothing about reading
+the check afterwards distinguishes the two.
+
+**So: before a check is trusted, run it against the broken state and watch it fail.** Not the
+state you imagine — the actual one. Put the defect back (`git stash`, an inverted line, a fixture
+from before the fix), run the check, read the failure, then restore. A check that has never failed
+is a comment (check 27), and one that fails for the wrong reason is worse than none, because it
+will be believed the next time it passes.
+
+The habit already holds for fixes on this project: every regression test is run against the broken
+code first. It slips for checks written alongside their own remedy, which is exactly where the
+defect is freshest and the check least examined.
