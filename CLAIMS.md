@@ -48,7 +48,8 @@ the work is done.
 32. [A command that did nothing reports success](#32-a-command-that-did-nothing-reports-success)  
 33. [The instruments have been wrong twelve times; the product has been sound](#33-the-instruments-have-been-wrong-twelve-times-the-product-has-been-sound)  
 34. [A check is not trusted against the fix until it has failed against the defect](#34-a-check-is-not-trusted-against-the-fix-until-it-has-failed-against-the-defect)  
-35. [A check that reads a shared mutable location describes whatever wrote there last](#35-a-check-that-reads-a-shared-mutable-location-describes-whatever-wrote-there-last)
+35. [A check that reads a shared mutable location describes whatever wrote there last](#35-a-check-that-reads-a-shared-mutable-location-describes-whatever-wrote-there-last)  
+36. [A claim in metadata is invisible to everyone who reads the page](#36-a-claim-in-metadata-is-invisible-to-everyone-who-reads-the-page)
 
 <!-- /index -->
 
@@ -1346,3 +1347,33 @@ variation was expected is the cheapest available signal that the instrument is p
    break by inserting a check between a build and its assertions.
 3. Two processes must not share an output directory. A dev server serving `dist/` while a suite
    writes to it will mislead one of them, and the one it misleads is whichever you are watching.
+
+---
+
+### 36. A claim in metadata is invisible to everyone who reads the page
+
+The Android scanner was claimed in four places. Three were in copy a reader could see, and a
+review of the live site found all three. The fourth was `/app/`'s `<meta name="description">` —
+the sentence Google indexes and prints in its results — and no amount of reading the page reveals
+it. It was found only because the removal was done by grepping the source for the *fact* rather
+than by editing the three places that had been named.
+
+Metadata carries claims: the description, the title, the Open Graph and Twitter descriptions, and
+the line drawn into the share image. They are written once, when a page is created, and then never
+re-read, so they preserve the version of the product that existed that day. Every property that
+makes them good for search makes them bad for staying true.
+
+**The checks:**
+
+1. A claim sweep reads titles and descriptions as copy, because that is what they are — copy with
+   no audience on the page itself.
+2. When a claim is retired, retire the **phrase**. `tools/retired-claims.mjs` holds it with what
+   replaced it and why, and `npm run verify:retired` fails the build if it reappears in any built
+   page, title or description. Proved by putting "camera scanning" back into `/app/`'s description
+   alone — where nothing visible changes — and watching the check name the file.
+3. Bringing a claim back deletes its entry in the same commit that restores the copy, so the
+   tripwire and the site cannot drift apart. The scanner's five entries will go that way when it
+   merges.
+
+The general form, which is not only about metadata: **a claim you removed is a claim that can
+return**, and the cheapest guard is to make its exact words fail the build.

@@ -54,6 +54,10 @@ thing claims and what it does. The ones that come up most:
   through the real `openPdf` against MuPDF-written fixtures in `tools/fixtures/crypto/`, with
   every output read back by MuPDF and pypdf. Needs python with PyMuPDF and pypdf. Until it existed the only
   encrypted fixture was our own RC4 file, the one case the code handled correctly.
+- `npm run verify:retired` — a claim this site has withdrawn must not come back, in any built page
+  **or in its title or description**. The scanner was claimed in three visible places and in
+  /app/'s description tag, which is what Google prints and what no reader sees (CLAIMS 36). Run it
+  after `npm run build`; retire a phrase in `tools/retired-claims.mjs` when you remove a claim.
 - `npm run verify:pro-copy` — the Pro copy in `tools/pro-copy.mjs` describes exactly the features
   `PRO.features` lists, every entry carries the free alternative that keeps a mark from being a
   wall, and nothing offers a purchase while `PRO.onSale` is false (check 14). It reads the copy
