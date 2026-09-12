@@ -105,6 +105,14 @@ Then **verify from the served files, not from `dist/`** — a 200 is not proof t
 there. Fetch the URL, grep it for a sentence you just wrote, and fetch a path that should not
 exist to confirm 404s are still 404s and the 200 means something.
 
+**`npm run verify:live` is that verification.** It reads `origin/main`, waits until the served
+`pdfiq-build` meta tag is that commit, then checks every page in `site.mjs` against source (title,
+description, noindex, CSP), every JS file each page loads for Pro wording, sign-in hosts and the local
+stub, every retired claim in body, title and description, and that Pro routes and an invented path
+404. Add `--expect-present "..."` / `--expect-absent "..."` for the sentence a deploy changed. Its
+matches run on normalised text (entities decoded, whitespace collapsed): page sources wrap prose,
+and a raw match twice reported a live sentence missing.
+
 **A push is not evidence that the ref moved.** `git push origin main` exits 0 when local `main`
 has not moved — including when the commit you just made is on some other branch. Read the remote
 back with `git ls-remote origin main` and compare it against the commit you meant to send;

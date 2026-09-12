@@ -27,7 +27,8 @@
     "verify:handoff": "node tools/verify-handoff.mjs",
     "verify:batch": "node tools/verify-batch.mjs",
     "verify:pro-copy": "node tools/verify-pro-copy.mjs",
-    "verify:retired": "node tools/verify-retired.mjs"
+    "verify:retired": "node tools/verify-retired.mjs",
+    "verify:live": "node tools/verify-live.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",
