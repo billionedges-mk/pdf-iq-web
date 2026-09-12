@@ -224,7 +224,6 @@
          Google Firestore:</p>
       <ul>
         <li>Account identifier — to attach your counters to you</li>
-        <li>Whether you have bought Pro — to apply the correct limit</li>
         <li>Number of summaries used this month — to enforce the monthly allowance</li>
         <li>Current period and reset date — to know when the allowance renews</li>
         <li>Recent request timestamps — to apply an hourly rate limit and prevent abuse</li>
@@ -323,6 +322,7 @@
         <li><strong>Analytics events</strong> — which features were used, which operations succeeded or failed, and
             the device details sent with each: kept for 2 months, then deleted in Google's monthly
             deletion pass. That is the event retention setting on our Google Analytics property.
+            A crash report carries a log of recent events and is kept longer; see crash reports below.
             None of the events the app records itself is marked as a key event, so all of them follow
             this period. Totals built from those events, such as how many people used a feature on a given day, are
             not covered by either retention period: Google's retention setting &ldquo;does not affect standard
@@ -333,8 +333,9 @@
             identifier does not expire. It is deleted 14 months after the app last reported anything.
             One event is kept for the same 14 months: the first time the app was opened on a device,
             which Google marks as a key event.</li>
-        <li><strong>Crash reports</strong> — the stack trace and the identifiers sent with it: Firebase
-            keeps them for 90 days and then begins removing them from its live and backup systems, so
+        <li><strong>Crash reports</strong> — the stack trace, the identifiers sent with it, and a log of
+            the app's recent analytics events, so that a crash arrives with the steps that led to it:
+            Firebase keeps them for 90 days and then begins removing them from its live and backup systems, so
             removal completes some time after that.</li>
         <li><strong>Files the app creates on your phone:</strong> temporary working copies are
             deleted automatically after 7 days or once 20 files accumulate. Files you explicitly
@@ -385,9 +386,8 @@
          deliberately never hold.</p>
 
       <h2>Changes to this policy</h2>
-      <p>If we change this policy in a way that materially affects how your information is handled,
-         we will update the effective date above and notify you in the app before the change takes
-         effect. Continued use after that point means you accept the revised policy.</p>
+      <p>When this policy changes, the effective date above changes with it. Continued use after a
+         change means you accept the revised policy.</p>
 
       <h2>Contact</h2>
       <p>Questions, concerns or requests about your data:

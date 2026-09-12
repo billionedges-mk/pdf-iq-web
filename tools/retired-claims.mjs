@@ -168,4 +168,14 @@ export const RETIRED = [
     why: 'One number for two settings, never checked: event data is kept 2 months and user data 14 months with reset on new activity (read from the property, 13 September 2026), and it called our own property settings Firebase defaults. Crashlytics is 90 days, from Firebase\'s privacy page.',
     instead: 'three entries under How long we keep things, each with its source',
   },
+  {
+    phrase: 'notify you in the app',
+    why: 'There is no mechanism to notify anyone in the app, and the policy changed three times in the week of 8 September 2026 without it. A promise that cannot be kept (content review item 23).',
+    instead: 'When this policy changes, the effective date above changes with it.',
+  },
+  {
+    phrase: 'fourteen-day right to cancel',
+    why: 'A statement of law that may be wrong: the statutory right to cancel generally ends once digital supply begins with the buyer\'s consent. The thirty-day policy is more generous and is a promise we control (content review item 25).',
+    instead: 'the general statement that the policy adds to your rights and reduces none of them',
+  },
 ];

@@ -363,3 +363,15 @@ A PDF holding one JPEG is about a kilobyte larger than the image data (948 bytes
 JPEGs through pdf-lib with the save settings the page uses, not through the page itself, 12 September
 2026). EXIF stripping, on by default, removes bytes too, so the net difference depends on the photo;
 that part is not measured. The page says both in one sentence; there is nothing to fix.
+
+## "Nothing is purchasable inside the app": a claim about the artefact, not the repo
+
+/terms, /refunds, /privacy and /support say nothing can be bought inside the Android app. The app
+repository does contain billing code (RevenueCat, a Play pricing catalogue, a paywall), so reading
+the repo suggests the opposite. The claim is true of the shipped build because `BILLING_ENABLED`
+gates both the UI and the SDK, the release artefact contains no Pro classes, and a dex gate with
+presence controls proves it (owner, 13 September 2026, content review item 24).
+
+The repo containing billing code and the artefact containing it are different claims, and the gate
+is what makes the second checkable. When Pro ships, these four pages change in the same release
+that turns the gate on. Until then, check the artefact rather than the source.
