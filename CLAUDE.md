@@ -40,6 +40,10 @@ thing claims and what it does. The ones that come up most:
 
 ## Verifying
 
+- **Do not run the suite while a dev server is serving `dist/`.** They are two owners of one
+  directory: `npm run build` replaces what the server is serving, so a flag-on preview silently
+  becomes a flag-off build mid-session and its Pro routes answer 404 (CLAIMS 35). Stop the server,
+  or accept that what you are looking at is the suite's build.
 - **Grep the built output, not the source.** A replace that matches nothing returns
   success; that has happened ten times here. `dist/` is what ships.
 - **Run a regression test against the broken code first** and watch it fail. A test that

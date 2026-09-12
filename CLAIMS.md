@@ -47,7 +47,8 @@ the work is done.
 31. [A gate that reasons about files cannot see a conditional inside a file that ships anyway](#31-a-gate-that-reasons-about-files-cannot-see-a-conditional-inside-a-file-that-ships-anyway)  
 32. [A command that did nothing reports success](#32-a-command-that-did-nothing-reports-success)  
 33. [The instruments have been wrong twelve times; the product has been sound](#33-the-instruments-have-been-wrong-twelve-times-the-product-has-been-sound)  
-34. [A check is not trusted against the fix until it has failed against the defect](#34-a-check-is-not-trusted-against-the-fix-until-it-has-failed-against-the-defect)
+34. [A check is not trusted against the fix until it has failed against the defect](#34-a-check-is-not-trusted-against-the-fix-until-it-has-failed-against-the-defect)  
+35. [A check that reads a shared mutable location describes whatever wrote there last](#35-a-check-that-reads-a-shared-mutable-location-describes-whatever-wrote-there-last)
 
 <!-- /index -->
 
@@ -1313,3 +1314,35 @@ will be believed the next time it passes.
 The habit already holds for fixes on this project: every regression test is run against the broken
 code first. It slips for checks written alongside their own remedy, which is exactly where the
 defect is freshest and the check least examined.
+
+---
+
+### 35. A check that reads a shared mutable location describes whatever wrote there last
+
+`dist/` is one directory with several writers: the dev server's build, `npm run build`, and each
+variant `verify-pro-gate` builds. A check that reads `dist/` is therefore not reading "the build I
+asked about" — it is reading whatever wrote there most recently. That is not a race to be timed
+around. It is two owners.
+
+Twice in one session it produced a confident answer about a build nobody was looking at. A preview
+served `/batch/` and `/password/` as 404 while both pages existed, because the suite's flag-off
+build had replaced them underneath the running server. Test documents placed for a browser walk
+vanished mid-walk, and the tools correctly reported the fetched error pages as not-PDFs — three
+files "failing" for a reason that was true and had nothing to do with the code under test.
+
+**The tell was identical numbers across two builds that should have differed** — the same tell as
+the memory probe's flat work-times, where a cap made four file sizes cost the same. Sameness where
+variation was expected is the cheapest available signal that the instrument is pointed elsewhere.
+
+**The checks:**
+
+1. A check that reads an artefact should own the artefact: build into a directory of its own, per
+   run, and read that. `verify-crypto`, `verify-password` and `verify-batch` do this with a temp
+   directory and are immune by construction.
+2. Where the shared location cannot be avoided, read the identity first. Every build stamps
+   `__PDFIQ_BUILD__` into its output; a check that reads `dist/` can say which build answered it,
+   and refuse if that is not the one it just made. `verify-pro-gate` is correct only because each
+   section rebuilds immediately before reading — an ordering that is load-bearing and easy to
+   break by inserting a check between a build and its assertions.
+3. Two processes must not share an output directory. A dev server serving `dist/` while a suite
+   writes to it will mislead one of them, and the one it misleads is whichever you are watching.
