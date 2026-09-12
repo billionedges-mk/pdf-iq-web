@@ -73,4 +73,94 @@ export const RETIRED = [
       + '(content review item 14).',
     instead: 'JPEG and PNG go in without being re-encoded; the kinds that must be converted are named',
   },
+  {
+    phrase: 'written invisibly behind the original image',
+    why: 'The free /ocr/ writes nothing into the file; that sentence described the Pro searchable PDF (content review, 12 September 2026, item 1).',
+    instead: 'Your scan is never changed',
+  },
+  {
+    phrase: 'reload the page — it keeps working',
+    why: 'No service worker, and HTML is served must-revalidate. Walked in Chrome with DevTools offline: location.reload() and re-entering the URL both land on the offline error page (content review, 12 September 2026, item 3).',
+    instead: 'Once the page has loaded, turn off your wifi and use it',
+  },
+  {
+    phrase: 'Handwriting: not attempted',
+    why: 'Every page is attempted; low-confidence pages are reported by name (src/entries/ocr.ts) (content review, 12 September 2026, item 4).',
+    instead: 'usually comes back too uncertain to trust',
+  },
+  {
+    phrase: 'Handwriting is not attempted',
+    why: 'The same claim on /support/.',
+    instead: 'Handwriting and very noisy scans usually come back too uncertain to trust',
+  },
+  {
+    phrase: 'Batch processing across every tool',
+    why: 'Batch does compress, OCR and rotate (content review, 12 September 2026, item 5).',
+    instead: 'Batch: compress, read or rotate many files at once',
+  },
+  {
+    phrase: 'two questions and an email',
+    why: 'The firms form asks three questions (content review, 12 September 2026, item 7).',
+    instead: 'three questions and an email',
+  },
+  {
+    phrase: 'no upload limit because there is no upload',
+    why: 'The same page states a 60 MB limit (content review, 12 September 2026, item 8).',
+    instead: 'the ceiling is what a browser tab can write out',
+  },
+  {
+    phrase: 'before we publish a number',
+    why: 'Every tool page already publishes the limit (content review, 12 September 2026, item 9).',
+    instead: 'Each tool refuses files over the limit',
+  },
+  {
+    phrase: 'beside the one you opened',
+    why: 'Saving is a browser download; it lands where downloads go (content review, 12 September 2026, item 10).',
+    instead: 'your browser saves them as downloads',
+  },
+  {
+    phrase: 'new one beside it',
+    why: 'The same claim on /rotate/.',
+    instead: 'a new file through your browser’s download',
+  },
+  {
+    phrase: 'buttons below are placeholders',
+    why: '/app/ has no store buttons at all (content review, 12 September 2026, item 11).',
+    instead: 'There are no store links here yet',
+  },
+  {
+    phrase: 'What Pro will pay for',
+    why: 'Pro features run on the device and cost nothing per use, and the site does describe Pro (content review, 12 September 2026, item 12).',
+    instead: 'What Pro pays for',
+  },
+  {
+    phrase: 'so you can search and copy it',
+    why: 'Searching is the Pro output; free OCR gives text to copy or save (content review, 12 September 2026, item 15).',
+    instead: 'so you can copy it or save it as text',
+  },
+  {
+    phrase: 'Everyone else rents theirs',
+    why: 'Unchecked absolute about competitors (content review, 12 September 2026, item 16).',
+    instead: 'Subscription is the usual model',
+  },
+  {
+    phrase: 'every competitor bills monthly',
+    why: 'The same, on /app/.',
+    instead: 'removed',
+  },
+  {
+    phrase: 'every tool gets it wrong',
+    why: 'The same, on /merge/.',
+    instead: 'removed',
+  },
+  {
+    phrase: 'nothing behind the button',
+    why: 'Searchable PDF exists behind the flag; what is missing is a way to buy it (content review, 12 September 2026, item 17).',
+    instead: 'It is part of Pro, which is not on sale yet',
+  },
+  {
+    phrase: 'payment placeholder',
+    why: 'Scaffolding label shown to readers (content review, 12 September 2026, item 29).',
+    instead: 'Nothing to pay for yet / Nothing to buy on this page today',
+  },
 ];

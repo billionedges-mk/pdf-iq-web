@@ -11,9 +11,9 @@
     <div class="card card--flag" style="margin-top: 22px;">
       <p class="kicker">Not publicly listed yet</p>
       <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">The app is in testing and
-        does not have a public Play Store listing at the time of writing. The buttons below are
-        placeholders and are deliberately not live links — we would rather show nothing than send
-        you to a page that does not exist.</p>
+        does not have a public Play Store listing at the time of writing. There are no store links
+        here yet, deliberately — we would rather show nothing than send you to a page that does not
+        exist.</p>
     </div>
 
     <section class="section" aria-label="Price">
@@ -26,18 +26,17 @@
           <ul style="margin: 12px 0 0; padding-left: 18px; font-size: 14.5px; line-height: 1.6; color: var(--ink-78);">
             <!--APP_FEATURES-->
           </ul>
-          <p class="price__sub" style="margin-top: 14px;">store links pending the public listing</p>
+          <p class="price__sub" style="margin-top: 14px;">No store link yet &mdash; the app is not publicly listed.</p>
         </div>
         <div class="price">
           <p class="kicker">Pro &mdash; not yet</p>
           <p class="price__amount">{{proPrice}}<span>{{proQualifier}}</span></p>
           <p class="price__sub">paid once, not a subscription · covers {{proCovers}} &middot; <a href="/refunds/">refunds</a></p>
           <!--PRO--><p class="price__sub"><a href="/account/">Sign in</a> &mdash; only for Pro; the tools never need it.</p><!--/PRO-->
-          <p class="price__note">A PDF tool gets used a few times a year. Everyone else rents theirs by
-            the month; this is bought once and kept. Not on sale yet on either surface.</p>
+          <p class="price__note">A PDF tool gets used a few times a year. Subscription is the usual
+            model; this is bought once and kept. Not on sale yet on either surface.</p>
           <!--PRO_FEATURES-->
-          <p class="price__sub" style="margin-top: 12px;">payment placeholder — nothing to buy on
-            this page today.</p>
+          <p class="price__sub" style="margin-top: 12px;">Nothing to buy on this page today.</p>
         </div>
       </div>
       <p style="margin: 14px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink-80); max-width: 640px;">
@@ -57,10 +56,10 @@
           we wanted one. That is also why none of the tools asks you to sign in.</p>
       </div>
       <div>
-        <h2>What Pro will pay for</h2>
-        <p>The parts that do cost money: the heavier OCR work, and keeping this maintained. Paid once, not rented — a PDF tool gets used a few times a year, and every
-          competitor bills monthly for it. You will hear about it from the app rather than from a
-          banner here.</p>
+        <h2>What Pro pays for</h2>
+        <p>{{proFeatureCountCap}} things the free tools do not do, all run on your device, so what it pays for is
+          building and maintaining them. Paid once, not rented. The details are on
+          <a href="/pro/">the Pro page</a>.</p>
         <p><strong>Summaries are not part of Pro, in any quantity.</strong> Everyone gets ten a
           month, Pro or not, and anything beyond that comes from credit packs bought when you need
           them. A monthly allowance attached to a payment made once would eventually cost more to
@@ -86,6 +85,8 @@
       <ul style="margin: 14px 0 0; padding-left: 20px; font-size: 15.5px; line-height: 1.62; color: var(--ink-78); max-width: 680px;">
         <li>Your PDFs and photos stay on the phone. Every editing tool runs locally.</li>
         <li>It contains Firebase Analytics and Crashlytics, which report feature usage and crashes.</li>
+        <li>Read a scan uses Google's ML Kit, which sends Google a small usage report (such as the device model, app
+            version, locale and an identifier for the installation) &mdash; never the page or its text.</li>
         <li>AI summarise sends the extracted text of a document to Google's Gemini API. It is the
             only feature that does, and the only one needing an account.</li>
         <li>It contains no advertising SDK, and asks for neither storage nor camera permission.</li>

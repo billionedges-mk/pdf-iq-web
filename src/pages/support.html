@@ -27,8 +27,9 @@
       <h2>Something failed with a large file</h2>
       <p>Because processing happens in your browser, the ceiling is your device's memory rather
          than an upload limit. Splitting a very large file first almost always works, because
-         splitting copies pages rather than rendering them. We are still measuring real-world
-         limits on real phones before we publish a number.</p>
+         splitting copies pages rather than rendering them. Each tool refuses files over
+         {{maxFileSize}}, the point where a tab on a desktop machine stopped being able to write the
+         result. Phones have less memory, and we have not measured them yet.</p>
 
       <h2>Does it work offline?</h2>
       <p>Yes. Load a tool once, then disconnect and use it. That is the simplest way to confirm for
@@ -46,9 +47,9 @@
 
       <h2>Some pages came back without text</h2>
       <p>We would rather name the pages we could not read than quietly average them into a
-         success. Handwriting is not attempted, blank or photographic pages have nothing to find,
-         and very noisy scans can come back too uncertain to trust. The result panel lists which
-         pages and why.</p>
+         success. Handwriting and very noisy scans usually come back too uncertain to trust, and
+         blank or photographic pages have nothing to find. The result panel lists which pages and
+         why.</p>
 
       <h2>An iPhone photo would not open</h2>
       <p>Recent iPhones save photos as HEIC, which Safari can read but Chrome and Firefox cannot.

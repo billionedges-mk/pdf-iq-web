@@ -32,14 +32,14 @@ export const PRO_COPY = [
   {
     key: 'batch',
     title: 'Batch',
-    feature: 'Batch processing across every tool',
+    feature: 'Batch: compress, read or rotate many files at once',
     route: '/batch/',
     what: 'One operation across many files at once — compress them, read the text out of them, or '
       + 'rotate them — with a single zip back at the end.',
     onDevice: 'Every file is worked on in your own browser, one after another, and the zip is built '
       + 'there too. Nothing is uploaded, which is the reason the tab has to stay open.',
     instead: 'Each tool here does one file at a time, free and unlimited — and the result of one '
-      + 'carries into the next, so compressing a scan and then making it searchable needs no saving '
+      + 'carries into the next, so compressing a scan and then reading the text off it needs no saving '
       + 'in between.',
   },
   {

@@ -90,7 +90,7 @@ export const TOOLS = [
     slug: 'ocr', nav: 'OCR', name: 'OCR PDF', entry: 'ocr',
     title: 'OCR PDF free — read the text off a scan, no upload',
     description:
-      'OCR a PDF free, without uploading it. Read the text in a scanned document so you can search and copy it — it runs in your browser, on your own device.',
+      'OCR a PDF free, without uploading it. Read the text in a scanned document so you can copy it or save it as text — it runs in your browser, on your own device.',
     faqAction: 'read the text off',
     needsFirstRunDownload: true,
     inApp: true,
@@ -166,9 +166,9 @@ export const PAGES = [
     slug: 'for-professionals', name: 'For firms', entry: 'for-professionals',
     title: 'PDF tools for law firms and accountants — nothing uploaded',
     description:
-      'We build PDF tools that run on your own device and we are asking firms what to build next, before building it. Nothing is on sale; two questions and an email.',
+      'We build PDF tools that run on your own device and we are asking firms what to build next, before building it. Nothing is on sale; three questions and an email.',
     ogSubject: 'For firms',
-    ogLine: 'Two questions, and an email',
+    ogLine: 'Three questions, and an email',
   },
   {
     // A real route rather than a test-harness page, because it has to be reachable from a
@@ -238,7 +238,7 @@ export const PRO = {
   qualifier: 'once',
   covers: 'both the web tools and the Android app',
   features: [
-    'Batch processing across every tool',
+    'Batch: compress, read or rotate many files at once',
     'Searchable-PDF output from OCR',
     'Advanced compression — target a file size or a dpi',
     'Password protect and password remove',
@@ -294,7 +294,7 @@ export const FAQ = [
   },
   {
     q: 'Does this work offline?',
-    a: 'Yes. Turn off your wifi and reload the page — it keeps working.',
+    a: 'Yes. Once the page has loaded, turn off your wifi and use it — it keeps working. Keep the tab open: reloading needs a connection.',
     ocr: 'After the first run, yes. The language model is downloaded once, and then it works with the network off like everything else here.',
   },
   {
@@ -326,6 +326,8 @@ export const TOKENS = {
   webToolCountCap: cap(word(WEB_TOOLS.length)),
   appToolCount: word(APP_TOOLS.length),
   appToolCountCap: cap(word(APP_TOOLS.length)),
+  // /app/ and /pro/ both said "Four things" by hand; a fifth feature would have left both saying four.
+  proFeatureCountCap: cap(word(PRO.features.length)),
   // "all seven" when the app has every tool. Flipping ocr.inApp would otherwise have put
   // "Seven of the seven tools" on the /app lede, the homepage card and the meta description.
   appOfWeb: APP_TOOLS.length === WEB_TOOLS.length

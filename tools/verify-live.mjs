@@ -151,6 +151,16 @@ for (const page of ALL) {
     for (const [where, s] of Object.entries(places)) if (has(s, phrase)) problems.push(`retired claim in ${where}: "${phrase}"`);
   }
 
+  // Every script on the served page must be one this build made. The host can add its own — a
+  // beacon, an email decoder — with nothing in the repo to show it (CLAIMS 11 and 37).
+  // JSON-LD is this build's own structured data, not code; the CSP would refuse any inline script.
+  const foreign = [...html.matchAll(/<script\b([^>]*)>/g)]
+    .filter((m) => !/type="application\/ld\+json"/.test(m[1]))
+    .map((m) => /\bsrc="([^"]*)"/.exec(m[1])?.[1] ?? 'inline script')
+    .filter((src) => !/^\/assets\/[\w.-]+\.js$/.test(src));
+  if (foreign.length) problems.push(`script not built by this repo: ${[...new Set(foreign)].join(', ')}`);
+  if (/data-cfemail|__cf_email__|\/cdn-cgi\/l\/email-protection/.test(html)) problems.push('an email address rewritten by the host (Email Address Obfuscation)');
+
   const key = [...html.matchAll(/src="(\/assets\/[^"]+\.js)"/g)].map((m) => m[1]).sort().join(' ');
   if (!crawled.has(key)) {
     try { crawled.set(key, await bundleText(html)); } catch (e) { problems.push(`bundle crawl: ${e.message}`); crawled.set(key, { all: '', files: 0 }); }

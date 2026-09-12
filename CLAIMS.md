@@ -49,7 +49,8 @@ the work is done.
 33. [The instruments have been wrong twelve times; the product has been sound](#33-the-instruments-have-been-wrong-twelve-times-the-product-has-been-sound)  
 34. [A check is not trusted against the fix until it has failed against the defect](#34-a-check-is-not-trusted-against-the-fix-until-it-has-failed-against-the-defect)  
 35. [A check that reads a shared mutable location describes whatever wrote there last](#35-a-check-that-reads-a-shared-mutable-location-describes-whatever-wrote-there-last)  
-36. [A claim in metadata is invisible to everyone who reads the page](#36-a-claim-in-metadata-is-invisible-to-everyone-who-reads-the-page)
+36. [A claim in metadata is invisible to everyone who reads the page](#36-a-claim-in-metadata-is-invisible-to-everyone-who-reads-the-page)  
+37. [The host edits the page after you write it, and only the served copy shows it](#37-the-host-edits-the-page-after-you-write-it-and-only-the-served-copy-shows-it)
 
 <!-- /index -->
 
@@ -1377,3 +1378,24 @@ makes them good for search makes them bad for staying true.
 
 The general form, which is not only about metadata: **a claim you removed is a claim that can
 return**, and the cheapest guard is to make its exact words fail the build.
+
+---
+
+### 37. The host edits the page after you write it, and only the served copy shows it
+
+Three times now the platform has put something into pdf-iq.com that contradicted the site's own
+copy, with nothing in the repository to show for it. The Web Analytics beacon (check 11). Cloudflare's
+Managed robots.txt, reported by the owner. And on 12 September 2026, Email Address Obfuscation: every
+`mailto:` on support, terms, refunds, privacy and for-professionals was rewritten into
+`[email protected]` plus a script from `/cdn-cgi/` that nobody here wrote — on the page whose
+privacy section says "no third-party script of any kind on this site". Readers without JavaScript
+saw the placeholder instead of the address.
+
+Each was a dashboard setting, not a commit. The build was right, `dist/` was right, every local
+check passed, and the claim was false where people read it.
+
+**The check:** `npm run verify:live` reads every served page and fails on any `<script>` that is not
+one of this build's own `/assets/` bundles, and on the markers email obfuscation leaves in the markup.
+It failed on production the day it was written, for the obfuscation this entry records; it passes
+once the setting is off. A host can add a third-party script to a page you wrote, and the only way to
+know is to read what is served.

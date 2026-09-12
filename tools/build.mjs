@@ -274,7 +274,7 @@ ${FONT_PRELOADS}
 <style>${css}</style>
 </head>
 <body${shell}>
-${PRO ? PREVIEW_BANNER + '\n' : ''}<a class="skip-link" href="#main">Skip to the tool</a>
+${PRO ? PREVIEW_BANNER + '\n' : ''}<a class="skip-link" href="#main">${TOOLS.some((t) => t.slug === page.slug) ? 'Skip to the tool' : 'Skip to content'}</a>
 ${header(page.slug)}
   <main class="site-main${page.slug === '' ? ' site-main--home' : ''}" id="main">
 ${body}
