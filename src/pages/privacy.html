@@ -320,16 +320,19 @@
             request completes.</li>
         <li><strong>Account and usage counters:</strong> kept while your account is active, and
             deleted when you delete your account.</li>
-        <li><strong>Analytics events</strong> — which features were used, which operations failed, and
+        <li><strong>Analytics events</strong> — which features were used, which operations succeeded or failed, and
             the device details sent with each: kept for 2 months, then deleted in Google's monthly
             deletion pass. That is the event retention setting on our Google Analytics property.
-            Totals built from those events, such as how many people used a feature on a given day, are
+            None of the events the app records itself is marked as a key event, so all of them follow
+            this period. Totals built from those events, such as how many people used a feature on a given day, are
             not covered by either retention period: Google's retention setting &ldquo;does not affect standard
             aggregated reports&rdquo;.</li>
         <li><strong>The analytics identifier</strong> — the identifier that lets Analytics recognise the
             same installation, with the data tied to it: kept for 14 months. Our property resets that
             period whenever the app reports activity, so for as long as you keep using PDFiq the
-            identifier does not expire. It is deleted 14 months after the app last reported anything.</li>
+            identifier does not expire. It is deleted 14 months after the app last reported anything.
+            One event is kept for the same 14 months: the first time the app was opened on a device,
+            which Google marks as a key event.</li>
         <li><strong>Crash reports</strong> — the stack trace and the identifiers sent with it: Firebase
             keeps them for 90 days and then begins removing them from its live and backup systems, so
             removal completes some time after that.</li>
