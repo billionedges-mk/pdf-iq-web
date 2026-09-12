@@ -325,7 +325,8 @@ function renderNoGain(r: CompressResult, which: Preset): void {
   $('[data-keep]')!.onclick = () => reset();
 
   shell.show('nogain');
-  shell.announce('This file is already about as small as it gets.');
+  // The operation, not a verdict on the document: this tool only rewrites images.
+  shell.announce('Compressing did not make this file meaningfully smaller.');
 }
 
 // ---------------------------------------------------------------- password

@@ -15,6 +15,7 @@ import { readOutline, writeOutline, shiftOutline, countOutline, type OutlineNode
 import { rebuildAcroForm, hasFormFields } from '../lib/acroform.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural } from '../lib/format.js';
+import { describeMergedSize } from '../lib/size-report.js';
 import { wireNextLinks, claimIncoming } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
 
@@ -303,6 +304,14 @@ function renderResult(
   $('[data-result-head]')!.textContent =
     `${plural(items.length, 'file')} became one — ${plural(pages, 'page')}, ${formatBytes(bytes.length)}.`;
 
+  // What it was given beside what it wrote. Before this the head gave the output size alone, so
+  // a merged file larger than its inputs arrived with nothing to say it was.
+  const size = describeMergedSize(items.map((i) => i.file.size), bytes.length);
+  $('[data-fact-bytes]')!.textContent = size.fact;
+  const sizeNote = $('[data-size-note]')!;
+  sizeNote.textContent = size.note;
+  sizeNote.hidden = !size.note;
+
   $('[data-fact-pages]')!.textContent =
     `${items.map((i) => i.pageCount).join(' + ')} = ${pages}`;
   $('[data-fact-bookmarks]')!.textContent = bookmarks
@@ -322,7 +331,7 @@ function renderResult(
   save.onclick = () => saveFile(bytes, name);
 
   shell.show('result');
-  shell.announce(`Merged into ${plural(pages, 'page')}.`);
+  shell.announce(`Merged into ${plural(pages, 'page')}, ${formatBytes(bytes.length)}.${size.note ? ` ${size.note}` : ''}`);
 }
 
 function reset(): void {

@@ -19,6 +19,7 @@
 
 import { PDFDocument, PDFRawStream, PDFName, PDFNumber, PDFArray, PDFDict, PDFRef, PDFString, PDFHexString } from 'pdf-lib';
 import { findImages, inflate, unpredict, filterNames, type PdfImage } from './pdf-inspect.js';
+import { formatBytes } from './format.js';
 
 export interface Preset {
   key: 'balanced' | 'smaller' | 'smallest';
@@ -51,6 +52,12 @@ export interface Analysis {
   allJpeg: boolean;
   hasText: boolean;
   signed: boolean;
+  /**
+   * Bytes of embedded font programs (FontFile, FontFile2, FontFile3), each counted once.
+   * This tool never rewrites a font, so when fonts are where a file's bytes are, the no-gain
+   * card has to say that — not call the document as small as it gets.
+   */
+  fontBytes: number;
 }
 
 /** What to do with one image: bring it to a resolution and quality, or leave it byte for byte. */
@@ -125,6 +132,24 @@ function documentHasText(doc: PDFDocument): boolean {
   return false;
 }
 
+function embeddedFontBytes(doc: PDFDocument): number {
+  const seen = new Set<string>();
+  let total = 0;
+  for (const [, obj] of doc.context.enumerateIndirectObjects()) {
+    if (!(obj instanceof PDFDict)) continue;
+    const type = obj.get(PDFName.of('Type'));
+    if (!(type instanceof PDFName) || type.asString() !== '/FontDescriptor') continue;
+    for (const key of ['FontFile', 'FontFile2', 'FontFile3']) {
+      const ref = obj.get(PDFName.of(key));
+      if (!(ref instanceof PDFRef) || seen.has(ref.toString())) continue;
+      seen.add(ref.toString());
+      const stream = doc.context.lookup(ref);
+      if (stream instanceof PDFRawStream) total += stream.contents.length;
+    }
+  }
+  return total;
+}
+
 function documentIsSigned(doc: PDFDocument): boolean {
   const form = doc.catalog.lookup(PDFName.of('AcroForm'));
   if (!(form instanceof PDFDict)) return false;
@@ -168,6 +193,7 @@ export async function analyse(doc: PDFDocument, totalBytes: number): Promise<Ana
     allJpeg: recompressible.length > 0 && recompressible.every((i) => i.filters.includes('DCTDecode')),
     hasText: documentHasText(doc),
     signed: documentIsSigned(doc),
+    fontBytes: embeddedFontBytes(doc),
   };
 }
 
@@ -577,16 +603,27 @@ export function explainNoGain(analysis: Analysis, preset: Preset, result?: Compr
   const n = analysis.recompressible.length;
   const bits: string[] = [];
 
+  // Everything below describes what this tool did and did not touch. It rewrites images and
+  // nothing else, so a sentence about the document ("already the most compact way to store a
+  // page") was a verdict it had no grounds for: a file that is mostly embedded fonts was called
+  // as small as it gets while every byte of the fonts sat untouched.
+  const fonts = analysis.fontBytes ?? 0;
+  const fontSentence = fonts > 0
+    ? ` ${formatBytes(fonts)} of its ${formatBytes(analysis.totalBytes)} is embedded fonts, which this tool does not rewrite. That is a limit of this tool, not a finding about the file.`
+    : '';
+
   if (n === 0) {
     const total = analysis.images.length;
     if (total === 0) {
+      if (fonts > 0) return `It holds no images, and images are the only thing this tool shrinks.${fontSentence}`;
       return analysis.hasText
-        ? 'It holds no images at all — it is text and vector drawing, which is already the most compact way to store a page. There is nothing here that recompressing could shrink.'
-        : 'It holds no images we can act on, and no text layer either. There is nothing in it that recompressing would shrink.';
+        ? 'It holds no images, and images are the only thing this tool shrinks. Its text and drawing are copied byte-for-byte, so there was nothing here for it to work on.'
+        : 'It holds no images and no text, and images are the only thing this tool shrinks, so there was nothing here for it to work on.';
     }
     const reasons = [...analysis.skipReasons.entries()].sort((a, b) => b[1] - a[1]);
     const leading = reasons[0];
-    return `Its ${total === 1 ? 'one image is' : `${total} images are`} ${leading ? leading[0] : 'not in a form we rebuild'}. Recompressing ${total === 1 ? 'it' : 'them'} would add bytes rather than remove them.`;
+    return `Its ${total === 1 ? 'one image is' : `${total} images are`} ${leading ? leading[0] : 'not in a form we rebuild'}. Recompressing ${total === 1 ? 'it' : 'them'} would add bytes rather than remove them.` +
+      (fonts > analysis.skippedBytes ? fontSentence : '');
   }
 
   const q = analysis.medianQuality;
@@ -596,8 +633,11 @@ export function explainNoGain(analysis: Analysis, preset: Preset, result?: Compr
   if (dpi != null) bits.push(`${q != null ? 'and ' : 'at '}${Math.round(dpi)} dpi`);
 
   let sentence = `${bits.join(' ')} — close to what our ${preset.name} setting would produce.`;
-  if (analysis.skippedBytes > analysis.actionableBytes) {
-    sentence += ' Most of the file is not image data at all.';
+  if (fonts > analysis.actionableBytes) {
+    sentence += fontSentence;
+  } else if (analysis.skippedBytes > analysis.actionableBytes) {
+    // skippedBytes are images too — the ones left alone — so "not image data" was wrong here.
+    sentence += ' Most of its image data is in images this tool leaves alone.';
   }
 
   // The closing sentence has to match what the card actually offers underneath it. The

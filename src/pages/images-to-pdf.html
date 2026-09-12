@@ -71,7 +71,10 @@
         </label>
 
         <p class="hint">Images are placed at their full resolution and are not re-encoded, so nothing is lost
-           on the way in. If you need the file smaller, compress it afterwards rather than degrading it twice.</p>
+           on the way in. If you need the file smaller, compress it afterwards rather than degrading it twice.
+           A PDF is a container, so it is always a little larger than the image data inside it &mdash; about a
+           kilobyte for a single photo when we measured it. Stripping EXIF removes bytes as well, so whether the
+           PDF ends up larger or smaller than the photo depends on how much metadata the photo carried.</p>
       </div>
     </section>
 
