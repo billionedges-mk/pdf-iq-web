@@ -43,7 +43,8 @@ the work is done.
 27. [A check that cries wolf is where a real failure goes to hide](#27-a-check-that-cries-wolf-is-where-a-real-failure-goes-to-hide)  
 28. [An absent element and an intended one look the same](#28-an-absent-element-and-an-intended-one-look-the-same)  
 29. [Fix what generates the sentence, and read everything else it generates](#29-fix-what-generates-the-sentence-and-read-everything-else-it-generates)  
-30. [A generator and a consumer that share an author agree with each other](#30-a-generator-and-a-consumer-that-share-an-author-agree-with-each-other)
+30. [A generator and a consumer that share an author agree with each other](#30-a-generator-and-a-consumer-that-share-an-author-agree-with-each-other)  
+31. [A gate that reasons about files cannot see a conditional inside a file that ships anyway](#31-a-gate-that-reasons-about-files-cannot-see-a-conditional-inside-a-file-that-ships-anyway)
 
 <!-- /index -->
 
@@ -874,8 +875,9 @@ that produces the output and do not think of the sentence three files away that 
 
 **The check:** a result sentence is generated from the outcome, and the generator refuses to
 describe an artefact the run did not produce. `describeOcr()` takes what was actually handed
-over — `'text'` or `'searchable-pdf'` — and **throws** if a text run would render a sentence
-claiming a file. Not a lint, not a convention: the build fails.
+over and **throws** if a sentence would claim a file. Not a lint, not a convention: the build
+fails. (Since 12 September 2026 it describes the free text run only; the searchable sentence is
+`describeSearchable()` in `src/pro/searchable.ts`, for the reason in check 31.)
 
 Proved by reintroducing the exact string that shipped:
 
@@ -891,6 +893,15 @@ five times, which is a better thing to catch than a general one that never fires
 promising "make a scan searchable" and a title tag selling "searchable scans", both read
 before anyone clicks, and no runtime guard can see them. Those are check 18's territory and
 were found the usual way — by reading.
+
+**Sharpened, 12 September 2026: derived from the wrong measurement is still wrong.** The Pro
+searchable offer generated its sentence, correctly, from what the OCR run read. A file whose
+pages already carried their own text layer gave text without a word being recognised, so nothing
+was written into the copy — and the reader was handed a re-saved file and told *"2 of 2 pages are
+now searchable"*. The writer now reports how many pages it gave a layer to, the sentence is built
+from that count, and a count of zero refuses outright. The Android app had the same defect
+independently, in its own words: the two surfaces share no code, so what they share is the habit
+of describing an operation from its input instead of from what the writing code reports.
 
 ### 25. A claim that was never checked reads exactly like one that was
 
@@ -1141,3 +1152,38 @@ verifier's own header and a commit message. Each file's third line reads `% Writ
 opened one. It mattered: MuPDF was also the only reader checking the outputs, so the verdict
 leaned on the library that had written the inputs. MuPDF did not write the outputs — pdf-lib
 did — so the result stood, but pypdf now reads every output as well.
+
+---
+
+### 31. A gate that reasons about files cannot see a conditional inside a file that ships anyway
+
+Both of this project's Pro defences are file-shaped. The sentinel asks which *files* carry a
+marker. Tree-shaking asks which *files* nothing imports. A branch inside a file that ships either
+way is invisible to both: there is no marker to find, and there is nothing to drop. The gate
+passes, and the code is live.
+
+**The instance.** `describeOcr()` in `src/lib/ocr-result.ts` held the searchable-PDF sentence as
+a second branch of a function the free OCR page calls on every run. The free path only ever asks
+for the text sentence, so the branch was unreachable — and it shipped in production's `/ocr/`
+bundle, wording and all. `verify:pro-gate` passed the build, and its assertion was true:
+there was no `pdfiq-pro:` sentinel anywhere in `dist`, because a shared module carries none.
+Found by fetching the live bundle after deploying and grepping it, which is the only reason it
+was found at all. The branch is older than the Pro flag — "now searchable" had been in the
+production bundle since the free path was re-scoped.
+
+**The rule is structural, not stylistic.** Pro code lives in Pro files. A Pro branch inside a
+shared function is not a tidiness preference; it is the one shape both defences are blind to.
+
+**The check** (`tools/verify-pro-gate.mjs`): a tripwire of phrases only a Pro path produces.
+
+- Absent from every flag-off bundle — the ordinary build and the production-branch build.
+- In a flag-on build, present *only* in bundles that carry a sentinel. So a phrase that exists
+  nowhere fails too, and none of them is a string that could never be found (check 16).
+
+Run against the unmoved code it gave **4 failures**, each naming the file the phrase sat in.
+After moving the sentence to `src/pro/searchable.ts`: all pass.
+
+**Where it does not reach.** A tripwire knows the phrases it was given. Pro logic with no
+user-visible wording — a threshold, a branch in a shared helper — is still invisible to it, and
+to both defences. The only general answer is the placement rule above, applied while the code is
+being written rather than after it ships.

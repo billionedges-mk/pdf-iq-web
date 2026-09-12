@@ -112,7 +112,11 @@ ok(authLeaks.length === 0, `no sign-in host or client ID anywhere in dist${authL
 // that from src/lib/ocr-result.ts until 12 September 2026, and a live check found it. A tripwire,
 // not a census: phrases only a Pro path produces. Section 3 proves each one exists in a Pro build,
 // so none of them is a string that could never be found.
-const PRO_WORDING = ['now searchable', 'given a text layer here', 'searchable already', 'Save as a searchable PDF', 'Or aim for a target'];
+const PRO_WORDING = [
+  'now searchable', 'given a text layer here', 'searchable already', 'Save as a searchable PDF',
+  'Or aim for a target',
+  'Protect with this password', 'Lift the limits',
+];
 const wordingLeaks = s.assets.flatMap((a) => PRO_WORDING.filter((w) => a.s.includes(w)).map((w) => `"${w}" in ${a.rel}`));
 ok(wordingLeaks.length === 0, `no Pro wording in any flag-off bundle${wordingLeaks.length ? ` — ${wordingLeaks.slice(0, 4).join('; ')}` : ''}`);
 

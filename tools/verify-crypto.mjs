@@ -33,7 +33,9 @@
  * owner-pw-2026 — different
  * on purpose, so the two code paths can be told apart. What each must produce is the table
  * in PASSWORD_RULE.md, with the web's one permitted difference: a surface that cannot write
- * a kept-limits copy refuses that case instead.
+ * a kept-limits copy refuses that case instead. That is what the free tools here do, and what
+ * this file checks. Since 12 September 2026 the Pro password page can write one, and does —
+ * `npm run verify:password` covers it.
  *
  *   npm run verify:crypto              requires python with PyMuPDF and pypdf (pip install pymupdf pypdf)
  *   npm run verify:crypto -- --no-reader   classification only, and says so

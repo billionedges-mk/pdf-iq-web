@@ -50,6 +50,10 @@ thing claims and what it does. The ones that come up most:
   through the real `openPdf` against MuPDF-written fixtures in `tools/fixtures/crypto/`, with
   every output read back by MuPDF and pypdf. Needs python with PyMuPDF and pypdf. Until it existed the only
   encrypted fixture was our own RC4 file, the one case the code handled correctly.
+- `npm run verify:password` — the Pro password page's writer (`src/pro/encrypt.ts`, AES-256 V5 R6):
+  protect keeps an author's `/P`, the kept-limits copy opens with no password and carries the
+  original bits under a random owner password, and an edited `/P` is ignored in favour of `/Perms`.
+  Every output is read back by MuPDF and pypdf. Needs python with PyMuPDF and pypdf.
 - `npm run verify:auth` — web sign-in in Node against a scripted Google and Firebase: the
   sign-in URL, state and nonce, the exact storage shape /privacy describes, refresh, and every
   error code sorted into a kind. It cannot prove a real sign-in, Cloudflare honouring the

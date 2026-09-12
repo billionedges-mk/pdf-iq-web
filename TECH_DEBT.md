@@ -281,3 +281,19 @@ TrueType font with a CIDToGIDMap that sends every character to its one blank gly
 before the searchable PDF is sold. Until then `verify:pro-features` accepts exactly that one
 warning, by its text, and fails on any other.
 
+## Passwords outside ASCII: UTF-8, but not SASLprep'd
+
+AES-256 (V5) passwords are the UTF-8 encoding of the password, after SASLprep (PDF 32000-2,
+7.6.4.3). `src/lib/decrypt.ts` and `src/pro/encrypt.ts` do the UTF-8 half and not SASLprep, so a
+password differing only by Unicode normalisation or by the treatment of a non-breaking space may
+be written here and rejected by a conforming reader, or the reverse. Every ASCII password is
+unaffected. Latin-1 was used until 12 September 2026, which was wrong for every non-ASCII
+password and invisible because every fixture is ASCII; MuPDF opening a file our own reader
+refused is what exposed it.
+
+**pypdf cannot be the second reader for this case.** pypdf 5.9.0 encodes a V5 password Latin-1,
+so it refuses a correctly written file — including one MuPDF wrote with the same password.
+`npm run verify:password` states that, and proves the file is right by handing pypdf the UTF-8
+bytes the way it encodes them. If that check starts failing, pypdf has been fixed and the case
+should require it like MuPDF.
+

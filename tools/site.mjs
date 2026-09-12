@@ -389,6 +389,13 @@ export const PRO_PAGES = [
     ogSubject: 'Your account',
     ogLine: 'Only for Pro',
   },
+  {
+    slug: 'password', name: 'Password', entry: 'password', entryDir: 'pro', noindex: true,
+    title: 'Password protect a PDF, or remove one — pdf-iq',
+    description: 'Add a password to a PDF, or take one off, on your device. Part of Pro.',
+    ogSubject: 'Password',
+    ogLine: 'Nothing leaves your device',
+  },
 ];
 
 /**

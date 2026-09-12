@@ -300,8 +300,13 @@ function legacyKeyMatches(info: EncryptInfo, key: Uint8Array): boolean {
 const sha256 = async (data: Uint8Array) =>
   new Uint8Array(await crypto.subtle.digest('SHA-256', data as BufferSource));
 
-/** Algorithm 2.B, the R6 hash. R5 is the single SHA-256 that starts it. */
-async function hash2B(password: Uint8Array, salt: Uint8Array, extra: Uint8Array, r: number): Promise<Uint8Array> {
+/**
+ * Algorithm 2.B, the R6 hash. R5 is the single SHA-256 that starts it.
+ *
+ * Exported for src/pro/encrypt.ts, which writes the values this reads. One implementation, so a
+ * file this project writes and a file it reads cannot disagree about the hash.
+ */
+export async function hash2B(password: Uint8Array, salt: Uint8Array, extra: Uint8Array, r: number): Promise<Uint8Array> {
   let k = await sha256(concat(password, salt, extra));
   if (r === 5) return k;
 
@@ -344,7 +349,11 @@ async function hash2B(password: Uint8Array, salt: Uint8Array, extra: Uint8Array,
  * always are — so the right user password crashed the tool instead of opening the file.
  */
 async function aes256Key(info: EncryptInfo, password: string): Promise<{ key: Uint8Array; role: 'user' | 'owner' } | null> {
-  const pw = latin1(password).subarray(0, 127);
+  // V5 passwords are UTF-8, not Latin-1: PDF 32000-2 says the bytes are the UTF-8 encoding of the
+  // password (SASLprep first, which this does not do — see TECH_DEBT). Latin-1 here was invisible
+  // on every ASCII fixture and wrong on the first password with an accent in it: MuPDF opened a
+  // file this refused. R2-R4 remain Latin-1, which is what padPassword does.
+  const pw = new TextEncoder().encode(password).subarray(0, 127);
   const U = info.U;
   if (U.length < 48) return null;
   const zeroIv = new Uint8Array(16);
@@ -437,20 +446,36 @@ export type DecryptResult =
   | { ok: false; reason: 'unsupported'; detail: string };
 
 /**
- * Decrypt a protected document and return bytes pdf-lib can open normally — only when the
- * rule allows the result to be unrestricted.
- *
- * The rule, decided 11 September 2026 for Android and the web alike: removing a password
- * never lifts an author's print/copy/edit limits without the owner password. It reduces to
- * one predicate, checked after authenticating and before anything is stripped:
- *
- *     may lift = the password authenticated as the owner, OR /P restricts nothing
- *
- * An empty `password` is how a file with only an owner password opens — and a file like
- * that with restricted /P is exactly the case the rule refuses. Stripping it silently is
- * what this function did until TECH_DEBT 27 was fixed.
+ * What a file allowed, and to whom, once a password has authenticated. The mechanism with no
+ * policy in it: it never refuses on the rule's behalf.
  */
-export async function decryptPdf(bytes: Uint8Array, password: string): Promise<DecryptResult> {
+export type UnlockResult =
+  | {
+    ok: true;
+    /** The document with every string and stream in the clear and no encryption dictionary. */
+    bytes: Uint8Array;
+    /** "AES-256 (R6)", "RC4 128-bit" — what the file used. */
+    detail: string;
+    role: 'user' | 'owner';
+    /** The authentic /P where it can be known, and the declared one where it cannot. */
+    permissions: number;
+    /** False when R6's /Perms did not verify: /P is then only what the file claims. */
+    permissionsAuthentic: boolean;
+    /** PASSWORD_RULE.md's one predicate: owner, or an author who restricted nothing. */
+    mayLift: boolean;
+  }
+  | { ok: false; reason: 'wrong-password'; detail: string; restricts: boolean }
+  | { ok: false; reason: 'unsupported'; detail: string };
+
+/**
+ * Authenticate a password, decrypt the document, and say what it permits.
+ *
+ * This is the mechanism both surfaces of the rule are built on, and it is one implementation on
+ * purpose: `decryptPdf` below is this plus PASSWORD_RULE.md's refusal, and the Pro password page
+ * is this plus the ability to write a kept-limits copy. Two callers cannot disagree about which
+ * password authenticated, or about what the file permits, because neither decides it.
+ */
+export async function unlockPdf(bytes: Uint8Array, password: string): Promise<UnlockResult> {
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false });
   const info = readEncryptDict(doc);
   if (!info) return { ok: false, reason: 'unsupported', detail: 'no readable encryption dictionary' };
@@ -492,12 +517,11 @@ export async function decryptPdf(bytes: Uint8Array, password: string): Promise<D
     return { ok: false, reason: 'unsupported', detail: `V${info.v} handler` };
   }
 
-  // The rule. On R2-R4 /P is mixed into the key, so an edited /P does not open at all; on
-  // R6 only /Perms protects it, so the authentic value comes from there, and a /Perms that
-  // does not verify counts as restricted — failing closed.
+  // On R2-R4 /P is mixed into the key, so an edited /P does not open at all; on R6 only /Perms
+  // protects it, so the authentic value comes from there, and a /Perms that does not verify
+  // counts as restricted — failing closed.
   const p = info.v === 5 ? await permsP(info, handler.key) : info.P;
   const mayLift = role === 'owner' || (p !== null && allPermissions(p));
-  if (!mayLift) return { ok: false, reason: 'restricted', detail };
 
   // Walk the object graph and decrypt every string and stream in place. The structure is
   // already plaintext, which is why this works without a parser of our own.
@@ -525,7 +549,42 @@ export async function decryptPdf(bytes: Uint8Array, password: string): Promise<D
   if (encryptRef instanceof PDFRef) doc.context.delete(encryptRef);
 
   const out = await doc.save({ useObjectStreams: false });
-  return { ok: true, bytes: out, handler: `${detail}, ${role} password`, role };
+  return {
+    ok: true,
+    bytes: out,
+    detail,
+    role,
+    permissions: p ?? info.P,
+    permissionsAuthentic: p !== null,
+    mayLift,
+  };
+}
+
+/**
+ * Decrypt a protected document and return bytes pdf-lib can open normally — only when the rule
+ * allows the result to be unrestricted.
+ *
+ * The rule, decided 11 September 2026 for Android and the web alike: removing a password never
+ * lifts an author's print/copy/edit limits without the owner password.
+ *
+ *     may lift = the password authenticated as the owner, OR /P restricts nothing
+ *
+ * An empty `password` is how a file with only an owner password opens — and a file like that with
+ * restricted /P is exactly the case this refuses. Stripping it silently is what this function did
+ * until TECH_DEBT 27 was fixed. Every tool here writes an unencrypted copy, so refusing is the
+ * only honest answer on those pages. A surface that can write a kept-limits copy does that
+ * instead, and calls unlockPdf directly.
+ */
+export async function decryptPdf(bytes: Uint8Array, password: string): Promise<DecryptResult> {
+  const opened = await unlockPdf(bytes, password);
+  if (!opened.ok) return opened;
+  if (!opened.mayLift) return { ok: false, reason: 'restricted', detail: opened.detail };
+  return {
+    ok: true,
+    bytes: opened.bytes,
+    handler: `${opened.detail}, ${opened.role} password`,
+    role: opened.role,
+  };
 }
 
 /** Strings live inside dictionaries and arrays, at any depth. */
