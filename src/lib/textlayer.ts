@@ -42,6 +42,7 @@
  * rather than as whatever Helvetica happens to have at that byte.
  */
 
+import { glyphlessFont } from './glyphless-font.js';
 import { PDFDocument, PDFName, PDFNumber, PDFRawStream, PDFArray, PDFDict, PDFRef, PDFString } from 'pdf-lib';
 
 export interface OcrWord {
@@ -130,6 +131,14 @@ export class TextLayerFont {
     descriptor.set(PDFName.of('Descent'), PDFNumber.of(-200));
     descriptor.set(PDFName.of('CapHeight'), PDFNumber.of(700));
     descriptor.set(PDFName.of('StemV'), PDFNumber.of(80));
+    // The font program itself. Without it every file this wrote carried MuPDF's "non-embedded
+    // font using identity encoding", and a preflight or PDF/A check would refuse the document —
+    // for a layer whose glyphs are never drawn. One empty glyph, about a kilobyte and a half.
+    const program = glyphlessFont();
+    const fontFile = context.obj({}) as PDFDict;
+    fontFile.set(PDFName.of('Length'), PDFNumber.of(program.length));
+    fontFile.set(PDFName.of('Length1'), PDFNumber.of(program.length));
+    descriptor.set(PDFName.of('FontFile2'), context.register(PDFRawStream.of(fontFile, program)));
 
     const cidInfo = context.obj({}) as PDFDict;
     cidInfo.set(PDFName.of('Registry'), PDFString.of('Adobe'));
@@ -144,7 +153,12 @@ export class TextLayerFont {
     descendant.set(PDFName.of('FontDescriptor'), context.register(descriptor));
     // One width for every CID keeps fitting a word to its box exact arithmetic.
     descendant.set(PDFName.of('DW'), PDFNumber.of(GLYPH_WIDTH));
-    descendant.set(PDFName.of('CIDToGIDMap'), PDFName.of('Identity'));
+    // Identity would send CID n to glyph n, and there is exactly one glyph. A stream of zeros
+    // sends every CID to it: two bytes per CID, covering CIDs 0..N.
+    const gidMap = new Uint8Array((this.chars.length + 1) * 2);
+    const gidDict = context.obj({}) as PDFDict;
+    gidDict.set(PDFName.of('Length'), PDFNumber.of(gidMap.length));
+    descendant.set(PDFName.of('CIDToGIDMap'), context.register(PDFRawStream.of(gidDict, gidMap)));
 
     const font = context.obj({}) as PDFDict;
     font.set(PDFName.of('Type'), PDFName.of('Font'));

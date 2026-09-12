@@ -55,7 +55,8 @@ const READ = [
   '    yerr = ""',
   'except Exception as e:',
   '    ytext, yerr = "", repr(e)',
-  'print(json.dumps(dict(pages=len(d), mupdf=mtext, pypdf=ytext, pypdfError=yerr, render=pix, warnings=warn)))',
+  'fonts = [list(f) for f in d[0].get_fonts(full=True)] if len(d) else []',
+  'print(json.dumps(dict(pages=len(d), mupdf=mtext, pypdf=ytext, pypdfError=yerr, render=pix, warnings=warn, fonts=fonts)))',
 ].join('\n');
 const read = (file) => JSON.parse(execFileSync('python', ['-c', READ, file], { encoding: 'utf8' }));
 
@@ -95,10 +96,20 @@ console.log('\n— searchable PDF');
   // words through /ToUnicode, as checked above, but MuPDF notes it cannot map the glyphs. Benign for
   // an invisible layer, and still something a preflight would flag; TECH_DEBT has the fix. Exactly
   // that warning is accepted, by its text. Any other warning fails.
-  const KNOWN = 'non-embedded font using identity encoding: PdfiqInvisible';
-  const other = after.warnings.split(String.fromCharCode(10)).map((l) => l.trim()).filter((l) => l && !l.startsWith(KNOWN));
-  ok(other.length === 0, `MuPDF raises no warning beyond the known unembedded layer font${other.length ? `: ${other[0]}` : ''}`);
+  // No warning at all, since 12 September 2026: the layer's font is embedded (src/lib/glyphless-
+  // font.ts). Until then MuPDF said "non-embedded font using identity encoding" on every file we
+  // wrote, and this check accepted exactly that one line — an accepted warning is a defect with a
+  // note attached, and these files are kept by people who did not make them.
+  const noise = after.warnings.split(String.fromCharCode(10)).map((l) => l.trim()).filter(Boolean);
+  ok(noise.length === 0, `MuPDF raises no warning on the file we wrote${noise.length ? `: ${noise[0]}` : ''}`);
   ok(after.render === before.render, 'the page renders pixel for pixel as it did: the layer is invisible and the scan is unchanged');
+  // Embedded, not merely quiet: MuPDF lists the font with a program of its own. A missing
+  // /FontFile2 shows here as an empty extension and xref 0.
+  const layerFont = (after.fonts ?? []).find((f) => String(f[3] ?? '').includes('PdfiqInvisible'));
+  ok(Boolean(layerFont), `MuPDF lists the layer's font${layerFont ? ` (${layerFont[3]})` : ' — IT IS NOT THERE'}`);
+  ok(Boolean(layerFont) && layerFont[1] === 'ttf' && Number(layerFont[0]) > 0,
+    `and it carries a font program of its own: ${layerFont ? `${layerFont[1] || 'none'}, xref ${layerFont[0]}` : 'no font'}`);
+  ok(Boolean(layerFont) && layerFont[2] === 'Type0', `written as a composite font: ${layerFont?.[2]}`);
 
   const skipped = await searchable.writeSearchable(src, [{ index: 0, words, skipped: 'low-confidence' }], () => scale);
   const skippedFile = join(WORK, 'skipped.pdf');

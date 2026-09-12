@@ -115,9 +115,11 @@ worded so that it stays true if the measurement comes back badly.
   repo) with every output read back by MuPDF and pypdf. Its first run found AES-128 output silently corrupt,
   AES-256 unusable — three defects — and TECH_DEBT 27 in the app repo's list: restricted files
   stripped of their limits. All fixed 11 September 2026; CLAIMS 30. **Gaps:** AES-256 **R5**
-  (deprecated Adobe extension level 3) is implemented and has no fixture. And the *kept-limits copy*
-  PASSWORD_RULE.md allows — open password removed, limits kept — is not written here: the web
-  refuses that case until an AES-256 writer exists, which is the Pro password-protect work.
+  (deprecated Adobe extension level 3) is implemented and has no fixture. ~~And the *kept-limits copy* PASSWORD_RULE.md allows — open
+  password removed, limits kept — is not written here.~~ **Closed 12 September 2026:**
+  `src/pro/encrypt.ts` writes AES-256 V5 R6, and the Pro password page writes the kept-limits copy;
+  the free tools still refuse that case, because they write unencrypted copies. `verify:password`
+  covers it, with every output read by MuPDF and pypdf.
 - **Merge shows a password field that does nothing.** `merge.html` carries the shared password
   form, and a locked file there raises an error with `password: true`, but `merge.ts` passes no
   password to `openPdf` and binds no submit handler — the other five PDF tools each do. Typing a
@@ -270,16 +272,19 @@ preview deployment before Pro ships, and each stated as unverified until then:
   `app-check` kind matches any error that mentions App Check, because the real response to enforcement
   has never been seen. If it is ever enforced, confirm the wording that comes back is caught.
 
-## The searchable layer's font is not embedded
+## Closed: the searchable layer's font is embedded (12 September 2026)
 
-`src/lib/textlayer.ts` writes the invisible text layer with a Type0 / Identity-H font and no font
-program. Readers extract the words correctly through `/ToUnicode` — MuPDF and pypdf both do, in
-`npm run verify:pro-features` — and the glyphs are never drawn (text render mode 3), so the page
-renders unchanged. But MuPDF warns `non-embedded font using identity encoding`, and a PDF/A or
-preflight check would flag the unembedded font. Tesseract avoids this by embedding a tiny glyphless
-TrueType font with a CIDToGIDMap that sends every character to its one blank glyph. Do the same
-before the searchable PDF is sold. Until then `verify:pro-features` accepts exactly that one
-warning, by its text, and fails on any other.
+`src/lib/textlayer.ts` used to write the invisible layer with a Type0 / Identity-H font and no
+font program. Readers extracted the words correctly, the glyphs were never drawn, and the page
+rendered unchanged — but MuPDF warned `non-embedded font using identity encoding` on every file
+this project wrote, and a preflight or PDF/A check would have refused a document people keep and
+forward.
+
+It now embeds `src/lib/glyphless-font.ts`: a TrueType font with one empty glyph, 364 bytes measured,
+with every CID mapped to it through a /CIDToGIDMap stream of zeros. `npm run verify:pro-features`
+was tightened first — no MuPDF warning is accepted at all, which failed against the old output —
+and then asserts what replaced it: MuPDF lists the font as `ttf` with an xref of its own, both
+readers still extract the words, and the page still renders pixel for pixel as it did.
 
 ## Passwords outside ASCII: UTF-8, but not SASLprep'd
 
