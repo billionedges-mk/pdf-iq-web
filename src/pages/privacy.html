@@ -1,7 +1,7 @@
     <div class="tool-head">
       <h1 class="page-title">Privacy</h1>
     </div>
-    <p class="prose__updated">Effective 29 August 2026 &middot; covers pdf-iq.com and the PDFiq Android app</p>
+    <p class="prose__updated">Effective 12 September 2026 &middot; covers pdf-iq.com and the PDFiq Android app</p>
 
     <div class="prose">
       <p>This one page covers both things we make: the tools on this website, and the PDFiq
@@ -179,9 +179,9 @@
       <p>These work with no internet connection and without an account, and they are unlimited and
          not metered.</p>
       <p>Reading a scan uses a text recogniser that Google Play Services fetches to your device
-         once. That is a download to you, not an upload from you: your document is never sent
-         anywhere, and after that first fetch it works with no connection like everything else in
-         this list.</p>
+         once. Your document is never sent anywhere, and after that first fetch it works with no
+         connection, like everything else in this list. The recogniser does report its own usage to
+         Google — see <a href="#diagnostics">Diagnostics and analytics</a> below.</p>
       <p>The app does not request storage permission — it uses Android's own photo and document
          pickers, so you choose exactly which files it can see. <strong>It also does not request
          camera permission:</strong> taking a photograph hands the job to your existing camera app,
@@ -227,7 +227,7 @@
       <p>That is the entirety of what we hold about you on our servers. There is no document, no
          text, no summary and no file name in that record.</p>
 
-      <h3>Diagnostics and analytics</h3>
+      <h3 id="diagnostics">Diagnostics and analytics</h3>
       <p>The app contains <strong>Firebase Crashlytics</strong>, which sends us crash reports, and
          <strong>Firebase Analytics</strong>, which tells us which features are used and where
          people run into problems. These record events such as "a PDF was created" or "an operation
@@ -240,6 +240,21 @@
          way is not to install the app.</p>
       <p>What they never receive is your document content, extracted text, summaries,
          or file names.</p>
+      <p><strong>Google's ML Kit.</strong> Reading a scan uses Google's ML Kit. When it runs, ML
+         Kit sends Google a usage report: your device's manufacturer, model and Android build,
+         PDFiq's package name and version, which ML Kit feature ran and its version, how long it
+         took, the image settings it was given, the size of what went in and out, the type of event
+         and any error code, your language, country and time zone, and an identifier ML Kit
+         generates for this installation. It never contains the page, the picture, or any text from
+         them — the reports we read were 146 to 155 bytes each, far too small to carry
+         a page, and what was legible in them was the package name, the ML Kit version, the locale
+         and an identifier. We did not decode them field by field, and that is the limit of what we
+         checked. Google's own statement is that &ldquo;for the collected data listed on this page,
+         ML Kit does not transfer this data to third-parties&rdquo;. They go to Google for Google's
+         own purposes — measuring, debugging and improving those features, and
+         detecting misuse — not to our servers, and there is no setting in PDFiq or in
+         ML Kit that turns them off. If you are offline the report waits, and is sent the next time
+         you have a connection.</p>
       <p>This is declared to Google Play on our Data Safety form as collecting app interactions,
          crash logs, diagnostics and device identifiers. It is stated here in the same terms.</p>
       <p>The app contains <strong>no advertising SDK</strong>. We do not sell, rent or share your
@@ -277,6 +292,9 @@
             crash reports. Receives: account identifier, usage counts, diagnostic events.</li>
         <li><strong>Google (Gemini API)</strong> — generating summaries. Receives: the extracted
             text of a document you chose to summarise.</li>
+        <li><strong>Google (ML Kit, through Google Play services)</strong> — the text
+            recogniser used by Read a scan. Receives: the usage reports described under
+            <a href="#diagnostics">Diagnostics and analytics</a>. Never receives your document.</li>
         <li><strong>Paddle</strong> — payment processing for the one-time Pro purchase, which is
             made on pdf-iq.com rather than in the app. Receives: your payment details, handled
             entirely by Paddle as merchant of record.</li>
@@ -355,5 +373,5 @@
       <p>Questions, concerns or requests about your data:
          <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a></p>
       <p class="prose__updated">PDFiq and pdf-iq.com are published by BillionEdges. Last updated
-         29 August 2026.</p>
+         12 September 2026.</p>
     </div>

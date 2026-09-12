@@ -37,6 +37,13 @@ export const RETIRED = [
     instead: 'taking a photograph hands the job',
   },
   {
+    phrase: 'a download to you, not an upload from you',
+    why: 'Said of the text recogniser on /privacy. The document really is never sent, but ML Kit '
+      + 'reports its own usage to Google after a scan is read — measured on vc16, 7 events and '
+      + '1,099 bytes for one document. See docs/ml-kit-metrics.md.',
+    instead: 'the paragraph now points at Diagnostics and analytics, which says what is sent',
+  },
+  {
     phrase: 'AI summaries, the heavier OCR work',
     why: 'Read as though Pro includes summaries. It does not, in any quantity: ten a month for '
       + 'everyone, Pro or not, and credit packs beyond that.',
