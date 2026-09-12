@@ -54,6 +54,10 @@ thing claims and what it does. The ones that come up most:
   through the real `openPdf` against MuPDF-written fixtures in `tools/fixtures/crypto/`, with
   every output read back by MuPDF and pypdf. Needs python with PyMuPDF and pypdf. Until it existed the only
   encrypted fixture was our own RC4 file, the one case the code handled correctly.
+- `npm run verify:pro-copy` — the Pro copy in `tools/pro-copy.mjs` describes exactly the features
+  `PRO.features` lists, every entry carries the free alternative that keeps a mark from being a
+  wall, and nothing offers a purchase while `PRO.onSale` is false (check 14). It reads the copy
+  that ships, not the file: the first version failed on its own comment about not selling.
 - `npm run verify:batch` — batch's decisions, driven in Node with the per-file work scripted:
   a file that fails puts nothing in the archive, "nothing to gain" is not a failure, a stop keeps
   what finished and refuses the file it landed in, and the summary is reconciled against entries

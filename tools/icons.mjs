@@ -93,6 +93,14 @@ export const ICONS = {
     <rect x="7" y="15.8" width="5" height="2.2" rx="1.1" class="tm-a"/>`,
 
   // Money going back: a coin, and a bar returning to the left of it.
+  // Pro: the four capabilities as stacked bars, the first picked out — a list with one thing
+  // added to it, which is what Pro is rather than a different product.
+  pro: `
+    <rect x="3" y="3.5" width="18" height="3.2" rx="1.6" class="tm-a"/>
+    <rect x="3" y="9" width="18" height="3.2" rx="1.6" fill="currentColor"/>
+    <rect x="3" y="14.5" width="18" height="3.2" rx="1.6" fill="currentColor"/>
+    <rect x="3" y="20" width="11" height="3.2" rx="1.6" fill="currentColor"/>`,
+
   refunds: `
     <circle cx="15.5" cy="8.5" r="6" fill="currentColor"/>
     <rect x="2.5" y="14.5" width="19" height="2.8" rx="1.4" fill="currentColor"/>

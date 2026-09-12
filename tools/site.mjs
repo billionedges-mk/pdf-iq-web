@@ -152,6 +152,17 @@ export const PAGES = [
     ogLine: 'Your files never leave your device',
   },
   {
+    // A free page, in production, that says what Pro is and what it is not: the marks beside the
+    // features link here rather than each repeating the price, and there is one place to add a
+    // purchase route when there is one to add.
+    slug: 'pro', name: 'Pro', entry: null,
+    title: 'Pro — what it adds, and what stays free — pdf-iq',
+    description:
+      'What pdf-iq Pro adds to the free browser tools: batch across many files, a searchable PDF from OCR, compression to a target size or dpi, and password protect and remove. Not on sale yet.',
+    ogSubject: 'Pro',
+    ogLine: 'Bought once, not rented',
+  },
+  {
     slug: 'for-professionals', name: 'For firms', entry: 'for-professionals',
     title: 'PDF tools for law firms and accountants — nothing uploaded',
     description:

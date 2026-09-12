@@ -17,6 +17,7 @@ import { applyProBlocks } from './pro-blocks.mjs';
 import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
 import { AUTH } from './auth-config.mjs';
 import { faqBlock } from './faq.mjs';
+import { PRO_COPY, proState } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
 import { ogImage } from './og-images.mjs';
 import { LANGUAGES } from './langs.mjs';
@@ -644,6 +645,24 @@ async function build() {
       if (!tool) throw new Error(`${page.slug} has a FAQ marker but is not a tool`);
       body = body.replace(/[ \t]*<!--FAQ-->/, faqBlock(tool, sizeMb));
       if (body.includes('<!--FAQ-->')) throw new Error(`FAQ marker survived substitution in ${file}`);
+    }
+    if (body.includes('<!--PRO_COPY-->')) {
+      // One section per Pro feature, from tools/pro-copy.mjs — the same data the marks beside the
+      // features are written from, so a page and a mark cannot describe the same feature
+      // differently.
+      const sections = PRO_COPY.map((c) => [
+        '      <section class="card" style="margin-top: 18px; max-width: 760px;">',
+        `        <h2 class="kicker">${esc(c.title)}</h2>`,
+        `        <p class="outcome__body" style="margin-top: 10px;">${esc(c.what)}</p>`,
+        `        <p class="outcome__body" style="margin-top: 10px;">${esc(c.onDevice)}</p>`,
+        `        <p class="hint" style="margin-top: 12px;"><strong>Instead, today:</strong> ${esc(c.instead)}</p>`,
+        `        <p class="outcome__mono" style="margin-top: 10px;">${esc(proState())}</p>`,
+        '      </section>',
+      ].join(NL)).join(NL);
+      body = body.replace(/[ 	]*<!--PRO_COPY-->/, sections);
+      if (body.includes('<!--PRO_COPY-->')) {
+        throw new Error(`PRO_COPY marker survived substitution in ${file}`);
+      }
     }
     if (body.includes('<!--PRO_FEATURES-->')) {
       const items = PRO_FEATURES.map((f) => `            <li>${esc(f)}</li>`).join('\n');
