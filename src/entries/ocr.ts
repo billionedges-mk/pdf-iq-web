@@ -35,6 +35,8 @@ let file: File | null = null;
 let sourceBytes: Uint8Array | null = null;
 let pageCount = 0;
 let pagesWithText: number[] = [];
+/** Each page's rotation, because a sideways page is the usual reason recognition fails. */
+let pageRotations: number[] = [];
 let controller: AbortController | null = null;
 let busy = false;
 let results: OcrPageResult[] = [];
@@ -98,6 +100,7 @@ async function parse(password?: string): Promise<void> {
   if (!opened.ok) return shell.fail(opened.error);
   sourceBytes = opened.value.bytes;
   pageCount = opened.value.doc.getPageCount();
+  pageRotations = opened.value.doc.getPages().map((pg) => ((pg.getRotation().angle % 360) + 360) % 360);
 
   // Find the pages that already have a text layer, so we can say so rather than
   // spending minutes recognising words the document already knows.
@@ -291,9 +294,19 @@ function renderResult(took: number): void {
     if (blank.length) {
       bits.push(`${blank.length === 1 ? 'page' : 'pages'} ${describeRanges(blank)} had no readable text on ${blank.length === 1 ? 'it' : 'them'}`);
     }
-    if (poor.length) {
-      const worst = Math.round(Math.min(...skipped.filter((r) => r.skipped === 'low-confidence').map((r) => r.confidence)));
-      bits.push(`${poor.length === 1 ? 'page' : 'pages'} ${describeRanges(poor)} came back too uncertain to trust (as low as ${worst}% confident) — handwriting and heavy noise both look like this`);
+    // A sideways page is the first thing to check, and the one thing the reader can fix in a
+    // minute with the Rotate tool. Before this, a rotated page was reported as "handwriting and
+    // heavy noise", which is two causes that did not apply and no action that would help. Found by
+    // reading a contract whose signature page had been scanned sideways.
+    const sideways = poor.filter((i) => (pageRotations[i] ?? 0) !== 0);
+    const unclear = poor.filter((i) => (pageRotations[i] ?? 0) === 0);
+    if (sideways.length) {
+      const turns = [...new Set(sideways.map((i) => pageRotations[i]))].join(' and ');
+      bits.push(`${sideways.length === 1 ? 'page' : 'pages'} ${describeRanges(sideways)} ${sideways.length === 1 ? 'is' : 'are'} sideways in this document (rotated ${turns}°), and recognition reads a page as it is laid out — turn ${sideways.length === 1 ? 'it' : 'them'} upright with Rotate, which re-encodes nothing, and read this again`);
+    }
+    if (unclear.length) {
+      const worst = Math.round(Math.min(...skipped.filter((r) => r.skipped === 'low-confidence' && unclear.includes(r.index)).map((r) => r.confidence)));
+      bits.push(`${unclear.length === 1 ? 'page' : 'pages'} ${describeRanges(unclear)} came back too uncertain to trust (as low as ${worst}% confident) — handwriting and heavy noise both look like this`);
     }
     detail.push(`${plural(skipped.length, 'page')} ${skipped.length === 1 ? 'was' : 'were'} left without a text layer, and we would rather name ${skipped.length === 1 ? 'it' : 'them'} than average ${skipped.length === 1 ? 'it' : 'them'} away: ${bits.join('; ')}.`);
   }

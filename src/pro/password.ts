@@ -18,7 +18,7 @@
  * this device, for nothing, and a wall in front of that would be a wall in front of value.
  */
 import { ToolShell, wireDropzone, acceptPdf, saveFile, $ } from '../lib/ui.js';
-import { claimIncoming } from '../lib/handoff.js';
+import { claimIncoming, wireNextLinks } from '../lib/handoff.js';
 import { formatBytes, suffixName } from '../lib/format.js';
 import { unlockPdf, isEncrypted, type UnlockResult } from '../lib/decrypt.js';
 import { encryptPdf, NO_RESTRICTIONS } from './encrypt.js';
@@ -304,6 +304,14 @@ async function run(work: () => Promise<Outcome>): Promise<void> {
       return;
     }
     result = { bytes: outcome.bytes, name: outcome.name };
+    // A protected or unlocked copy is a document someone usually wants to do something else with.
+    // Before this the page was a dead end: save it, find it again, choose it again. Found by
+    // walking it as a person — the links carry the copy, not the original.
+    const onward = $('[data-next]');
+    if (onward) {
+      onward.hidden = false;
+      wireNextLinks(document, () => result);
+    }
     $('[data-result-head]')!.textContent = outcome.head;
     $('[data-result-body]')!.textContent = outcome.body;
     $('[data-result-mono]')!.textContent = `${outcome.name} · ${formatBytes(outcome.bytes.length)}`;

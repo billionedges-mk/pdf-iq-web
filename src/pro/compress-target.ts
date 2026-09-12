@@ -81,6 +81,13 @@ export function resolutionPlan(n: number): (img: PdfImage) => ImagePlan {
 export function resolutionNothingToDo(a: Analysis, n: number): string | null {
   const c = countResolution(a, n);
   if (c.above > 0) return null;
+  // A document with no images at all is not a document whose images are all small: saying "every
+  // image in this file is already at or below 150 dpi" about a file that has none is a claim
+  // about things that do not exist. Found by asking a text-only memo for 150 dpi.
+  if (!a.images.length) {
+    return 'This document holds no images, so a resolution target has nothing to act on. '
+      + 'Its size is text, fonts and structure, which this setting does not touch.';
+  }
   const tail = c.unknown ? ` ${plural(c.unknown, 'more image')} ${c.unknown === 1 ? 'has' : 'have'} no measurable resolution and would be left too.` : '';
   return `Every image in this file is already at or below ${n} dpi, so this would change nothing.${tail}`;
 }
