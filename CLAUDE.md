@@ -81,6 +81,19 @@ Then **verify from the served files, not from `dist/`** — a 200 is not proof t
 there. Fetch the URL, grep it for a sentence you just wrote, and fetch a path that should not
 exist to confirm 404s are still 404s and the 200 means something.
 
+**A push is not evidence that the ref moved.** `git push origin main` exits 0 when local `main`
+has not moved — including when the commit you just made is on some other branch. Read the remote
+back with `git ls-remote origin main` and compare it against the commit you meant to send;
+`git status -sb` names the branch you are actually on. On 12 September 2026 a commit sat on a
+task branch for twenty minutes while a Cloudflare build was assumed to be queued or failing
+(CLAIMS 32).
+
+**When a deploy misbehaves, reproduce the build from the pushed commit**, not from the tree you
+have: `git worktree add <dir> <commit>`, link `node_modules` into it (the build resolves fonts by
+path from its own root), then `CF_PAGES=1 CF_PAGES_BRANCH=main npm run build`. A clean checkout is
+not the build you have been running — that is how the line-ending failure in the claims index was
+found, on a file nobody had edited.
+
 ## The Pro flag
 
 Sign-in and the Pro features sit behind one build-time flag, `PDFIQ_PRO`. It turns Pro on for

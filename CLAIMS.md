@@ -44,7 +44,8 @@ the work is done.
 28. [An absent element and an intended one look the same](#28-an-absent-element-and-an-intended-one-look-the-same)  
 29. [Fix what generates the sentence, and read everything else it generates](#29-fix-what-generates-the-sentence-and-read-everything-else-it-generates)  
 30. [A generator and a consumer that share an author agree with each other](#30-a-generator-and-a-consumer-that-share-an-author-agree-with-each-other)  
-31. [A gate that reasons about files cannot see a conditional inside a file that ships anyway](#31-a-gate-that-reasons-about-files-cannot-see-a-conditional-inside-a-file-that-ships-anyway)
+31. [A gate that reasons about files cannot see a conditional inside a file that ships anyway](#31-a-gate-that-reasons-about-files-cannot-see-a-conditional-inside-a-file-that-ships-anyway)  
+32. [A command that did nothing reports success](#32-a-command-that-did-nothing-reports-success)
 
 <!-- /index -->
 
@@ -1183,7 +1184,54 @@ shared function is not a tidiness preference; it is the one shape both defences 
 Run against the unmoved code it gave **4 failures**, each naming the file the phrase sat in.
 After moving the sentence to `src/pro/searchable.ts`: all pass.
 
+**A check can be immune to a class of mistake by construction.** The second half — every phrase
+must appear *only* in bundles carrying a sentinel — is what makes it impossible for a phrase
+shared with free code to sit in the list unnoticed. The ad-hoc version of the same idea, a list
+written by hand to check the deployed site, included `AESV3`: reading AES-encrypted files is
+free, and `decrypt.ts` matches that string to detect the cipher, so the list failed on free code
+the first time it ran against production. Same intent, same author, one afternoon apart — and
+only one of the two could not be wrong. Prefer the check that cannot hold a bad entry over the
+one that has to be kept correct.
+
 **Where it does not reach.** A tripwire knows the phrases it was given. Pro logic with no
 user-visible wording — a threshold, a branch in a shared helper — is still invisible to it, and
 to both defences. The only general answer is the placement rule above, applied while the code is
 being written rather than after it ships.
+
+---
+
+### 32. A command that did nothing reports success
+
+A tool exits 0 for "the work is done" and for "there was nothing to do". Both print the same
+line, and the difference is invisible at the moment it matters most.
+
+**Three instances here, all the same shape:**
+
+- **A push of an unchanged ref.** `git push origin main` exited 0 and sent nothing: local `main`
+  had not moved, because the commit had landed on a task branch another session created in the
+  same working tree. The site stayed on the previous build for twenty minutes while the deploy
+  was assumed to be queued, and then assumed to be failing. Two wrong diagnoses before the ref
+  was read. (12 September 2026.)
+- **A replace that matches nothing.** Success, and the obsolete copy ships. Ten times on this
+  project and the Android one, which is why "grep the built output" is a standing rule.
+- **A wrapper that reported OK on a failed build.** `contrast` printed FAIL and exited 0 for
+  months (check 27), so its output became noise and a real failure could sit in it.
+
+**The shape:** an exit code describes the invocation, not the change. A command that was asked
+to do nothing succeeds at doing nothing.
+
+**The checks, one per instance and all the same instruction — assert on the effect:**
+
+- After a push, read the remote ref (`git ls-remote origin main`) and compare it with the commit
+  you meant to send. `git status -sb` names the branch you are on, which is the other half of
+  what went wrong here: a shared working tree is not guaranteed to be where you left it.
+- After a replace, grep the built output for the new text, and for the old.
+- After a build or a check, assert on something the run produced — a file, a string in it, a
+  count — rather than on its exit code.
+
+**And reproduce the build from the pushed commit, not from the tree you have.** Diagnosing the
+push found a second, unrelated defect the running environment could not have surfaced: the claims
+index was generated with `\n` whatever the file used, so `--check` failed any checkout with CRLF
+on a file nobody had edited. Nothing in this machine's normal workflow touches a fresh checkout;
+the next clone would have hit it, and the deploy that fails is not always the one you are
+looking at.
