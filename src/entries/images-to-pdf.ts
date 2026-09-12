@@ -278,6 +278,8 @@ $('[data-stop]')?.addEventListener('click', () => shell.show('selected'));
 $('[data-start]')?.addEventListener('click', () => void run());
 
 async function run(): Promise<void> {
+  // One run at a time: a second start orphaned the first and reset its results.
+  if (busy) return;
   if (!items.length) return;
   busy = true;
   shell.show('processing');

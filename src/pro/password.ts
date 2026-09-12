@@ -18,6 +18,7 @@
  * this device, for nothing, and a wall in front of that would be a wall in front of value.
  */
 import { ToolShell, wireDropzone, acceptPdf, saveFile, $ } from '../lib/ui.js';
+import { claimIncoming } from '../lib/handoff.js';
 import { formatBytes, suffixName } from '../lib/format.js';
 import { unlockPdf, isEncrypted, type UnlockResult } from '../lib/decrypt.js';
 import { encryptPdf, NO_RESTRICTIONS } from './encrypt.js';
@@ -318,6 +319,14 @@ async function run(work: () => Promise<Outcome>): Promise<void> {
 
 $('[data-save]')?.addEventListener('click', () => {
   if (result) saveFile(result.bytes, result.name);
+});
+
+// A file handed over by another tool. The other tools' result panels now offer "Protect it", and
+// the first time they did, this page did not listen: the link stashed the document, navigated,
+// and the page opened empty — an offer that could not work (check 14). Found by following the
+// chain a person would: scan, searchable copy, compress, protect.
+void claimIncoming().then((handed) => {
+  if (handed) void take(handed);
 });
 
 /** Referenced so the sentinel survives minification in the bundle that carries this module. */

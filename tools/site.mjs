@@ -390,7 +390,10 @@ export const PRO_PAGES = [
     ogLine: 'Only for Pro',
   },
   {
-    slug: 'password', name: 'Password', entry: 'password', entryDir: 'pro', noindex: true,
+    // `nav` puts it in the tool bar of a flag-on build. Without it the page existed and nothing
+    // on the site led to it: someone looking for the feature found no trace of it (12 September
+    // 2026). A route nobody can reach is the same as a route that is not there.
+    slug: 'password', name: 'Password', nav: 'Password', entry: 'password', entryDir: 'pro', noindex: true,
     title: 'Password protect a PDF, or remove one — pdf-iq',
     description: 'Add a password to a PDF, or take one off, on your device. Part of Pro.',
     ogSubject: 'Password',

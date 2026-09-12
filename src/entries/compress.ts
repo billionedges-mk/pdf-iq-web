@@ -199,6 +199,8 @@ $('[data-strip-meta]')?.addEventListener('change', () => renderPlan());
 $('[data-start]')?.addEventListener('click', () => void run(preset));
 
 async function run(which: Preset, explicit = false): Promise<void> {
+  // One run at a time: a second start orphaned the first and reset its results.
+  if (busy) return;
   if (!doc || !analysis || !file || !sourceBytes) return;
 
   // Each run starts from a clean parse: a previous pass mutated the object graph.

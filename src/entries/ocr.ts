@@ -19,7 +19,7 @@ import { LANGUAGES } from '../lib/langs.generated.js';
 import type { OcrWord } from '../lib/textlayer.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, describeRanges, seconds } from '../lib/format.js';
-import { claimIncoming } from '../lib/handoff.js';
+import { claimIncoming, wireNextLinks } from '../lib/handoff.js';
 import { describeOcr } from '../lib/ocr-result.js';
 import * as E from '../lib/errors.js';
 
@@ -65,9 +65,14 @@ const pageScale = new Map<number, number>();
 
 warnWhileBusy(() => busy);
 
-// No "next tool" links here any more: this page's output is text, and there is no PDF to
-// carry into Compress or Split. Handing on the *original* would look like a handoff of
-// something we produced, which it is not.
+// No "next tool" links for the free path: its output is text, and there is no PDF to carry into
+// Compress or Split. Handing on the *original* would look like a handoff of something we
+// produced, which it is not.
+//
+// A Pro run that writes a searchable copy does produce one, so the links appear then and carry
+// that copy. Until 12 September 2026 they did not exist at all, and someone who had just made a
+// searchable PDF had no way to take it anywhere: they were left saving it and starting again.
+let searchableCopy: { bytes: Uint8Array; name: string } | null = null;
 
 const input = $<HTMLInputElement>('[data-file-input]')!;
 wireDropzone($('[data-dropzone]')!, input, (files) => void take(files[0]));
@@ -165,6 +170,11 @@ $('[data-stop]')?.addEventListener('click', () => controller?.abort());
 
 async function run(): Promise<void> {
   if (!sourceBytes || !file) return;
+  // One run at a time. A second start replaced `controller` — orphaning the first run, which the
+  // Stop button could then no longer reach — and reset `results` while the first was still
+  // filling it. Watched on 12 September 2026: the page counted to 18 of 30, fell back to 2 of 30,
+  // and finished claiming 29 of 30 with the progress line saying 30.
+  if (busy) return;
   const facts = { name: file.name, size: file.size, type: file.type };
   const lang = currentLang();
 
@@ -313,6 +323,10 @@ async function run(): Promise<void> {
     results.sort((a, b) => a.index - b.index);
     const took = performance.now() - started;
 
+    // The third stage was never reported, so a finished run left the bar at 97% and "Collecting
+    // the text" marked waiting — a run that had plainly completed, saying it had not. Reporting a
+    // stage past the last one marks them all done and fills the bar.
+    progress.set(1, 1, STAGES.length, '');
     progress.stop();
     busy = false;
     renderResult(took);
@@ -469,9 +483,16 @@ function renderResult(took: number): void {
         pages,
         scaleFor: (index) => pageScale.get(index) ?? OCR_DPI / 72,
         counts,
-        onWritten: (next) => {
+        onWritten: (next, copy) => {
           $('[data-result-head]')!.textContent = next.head;
           shell.announce(next.announce);
+          // Now there is a file of ours to hand on, so the links appear and carry it.
+          searchableCopy = copy;
+          const onward = $('[data-pro-next]');
+          if (onward) {
+            onward.hidden = false;
+            wireNextLinks(document, () => searchableCopy);
+          }
         },
       }));
     }

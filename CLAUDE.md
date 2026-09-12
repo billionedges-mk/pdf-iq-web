@@ -50,6 +50,10 @@ thing claims and what it does. The ones that come up most:
   through the real `openPdf` against MuPDF-written fixtures in `tools/fixtures/crypto/`, with
   every output read back by MuPDF and pypdf. Needs python with PyMuPDF and pypdf. Until it existed the only
   encrypted fixture was our own RC4 file, the one case the code handled correctly.
+- `npm run verify:handoff` — every "next, with this file" link lands on a page that calls
+  `claimIncoming()`. A page that does not claim opens empty having consumed the handoff, so the
+  link is an offer that cannot work (check 14). Six tools offered "Protect it" for an hour while
+  /password/ listened for nothing.
 - `npm run verify:stages` — the stage list a tool shows while it works is the one its code runs.
   The labels used to be typed into each page and declared again in its entry, so `/ocr/` announced
   "Writing the text behind the scan" long after the free path stopped writing anything into it.

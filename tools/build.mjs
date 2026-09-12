@@ -135,7 +135,9 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 // ---------------------------------------------------------------- shell
 
 function header(activeSlug) {
-  const links = TOOLS.map((t) => {
+  // Pro routes that declare a nav label join the bar in a flag-on build, and exist in no other.
+  const navTools = PRO ? [...TOOLS, ...PRO_PAGES.filter((p) => p.nav)] : TOOLS;
+  const links = navTools.map((t) => {
     const cur = t.slug === activeSlug ? ' aria-current="page"' : '';
     return `        <a href="${href(t.slug)}"${cur}>${t.nav}</a>`;
   }).join('\n');
@@ -160,7 +162,7 @@ function footer() {
         <span data-netreadout-text>0 bytes sent &middot; 0 third-party requests</span>
       </p>
       <nav class="footer-nav" aria-label="Site">
-        <a href="/for-professionals/">Using this at work?</a>
+        <a href="/for-professionals/">Using this at work?</a>${PRO ? '\n        <a href="/account/">Account</a>' : ''}
         <a href="/privacy/">Privacy</a>
         <a href="/terms/">Terms</a>
         <a href="/refunds/">Refunds</a>

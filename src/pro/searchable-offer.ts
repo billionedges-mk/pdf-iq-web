@@ -23,8 +23,11 @@ export interface SearchableOffer {
   pages: SearchablePage[];
   scaleFor: (index: number) => number;
   counts: { pagesRead: number; pageCount: number; fromLayer: number };
-  /** Called with the regenerated result sentence once the file has been written. */
-  onWritten: (said: { head: string; announce: string }) => void;
+  /**
+   * Called once the file has been written, with the regenerated result sentence and the copy
+   * itself — the page has a PDF of its own making to offer onward only from this moment.
+   */
+  onWritten: (said: { head: string; announce: string }, copy: { bytes: Uint8Array; name: string }) => void;
 }
 
 export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
@@ -78,8 +81,9 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
       // Worded before saving: describeSearchable refuses a copy that layered no page, and then
       // nothing is handed over under a sentence that says otherwise.
       const said = describeSearchable({ pageCount: o.counts.pageCount, fromLayer: o.counts.fromLayer, layered });
-      saveFile(bytes, suffixName(o.fileName, '-searchable'));
-      o.onWritten(said);
+      const name = suffixName(o.fileName, '-searchable');
+      saveFile(bytes, name);
+      o.onWritten(said, { bytes, name });
       button.textContent = 'Save the searchable PDF again';
     } catch (err) {
       button.textContent = 'Save as a searchable PDF';
