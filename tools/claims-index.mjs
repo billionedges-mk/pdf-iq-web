@@ -29,7 +29,13 @@ const CLOSE = '<!-- /index -->';
 const slug = (t) =>
   t.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s/g, '-');
 
-function build(src) {
+/**
+ * The index is written in whatever line ending CLAIMS.md already uses. It used to be joined with
+ * "\n" regardless, so on a checkout with CRLF — any clone on Windows — the generated block never
+ * equalled the file, `--check` called an untouched file out of date, and `prebuild` failed on a
+ * file nobody had edited. Found 12 September 2026 while reproducing a build from a fresh checkout.
+ */
+function build(src, eol) {
   const checks = [...src.matchAll(/^### (\d+)\. (.+)$/gm)].map((m) => ({
     n: Number(m[1]),
     title: m[2].trim(),
@@ -52,17 +58,17 @@ function build(src) {
     anchors.set(a, c);
   }
   const lines = checks.map((c) => `${c.n}. [${c.title}](#${c.n}-${slug(c.title)})`);
-  return { checks, block: `${OPEN}\n\n${lines.join('  \n')}\n\n${CLOSE}` };
+  return { checks, block: `${OPEN}${eol}${eol}${lines.join(`  ${eol}`)}${eol}${eol}${CLOSE}` };
 }
 
-function splice(src, block) {
+function splice(src, block, eol) {
   const i = src.indexOf(OPEN);
   if (i === -1) {
     // First run: put it under the "## The checklist" heading it indexes.
     const at = src.indexOf('## The checklist');
     if (at === -1) throw new Error('CLAIMS.md has no "## The checklist" heading to index');
     const end = at + '## The checklist'.length;
-    return src.slice(0, end) + '\n\n' + block + src.slice(end);
+    return src.slice(0, end) + eol + eol + block + src.slice(end);
   }
   const j = src.indexOf(CLOSE, i);
   if (j === -1) throw new Error('CLAIMS.md has an index opening marker with no closing one');
@@ -70,11 +76,12 @@ function splice(src, block) {
 }
 
 const src = readFileSync(FILE, 'utf8');
+const eol = src.includes('\r\n') ? '\r\n' : '\n';
 let checks, next;
 try {
-  const built = build(src);
+  const built = build(src, eol);
   checks = built.checks;
-  next = splice(src, built.block);
+  next = splice(src, built.block, eol);
 } catch (e) {
   // A numbering gap is a normal editing mistake, not a crash. Say so and stop.
   console.error(`
