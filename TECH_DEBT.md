@@ -302,6 +302,27 @@ so it refuses a correctly written file — including one MuPDF wrote with the sa
 bytes the way it encodes them. If that check starts failing, pypdf has been fixed and the case
 should require it like MuPDF.
 
+## The scanner: three claims removed, to come back when it merges
+
+The Android scanner is not built, and the site said it was in three places plus a meta
+description: /app/'s opening paragraph ("scanning several pages in a row with the camera"), the
+app feature list ("Multi-page camera scanning straight to PDF"), the homepage Android card
+("camera scanning"), and /app/'s own description tag. All four now describe what the app does
+today — photographing several pages in a row, each becoming a page — which is true and keeps the
+multi-page part that was never in doubt.
+
+**They come back when the scanner merges: after the closed test, before launch.** When it does,
+it belongs on this site as a reason to install the app, alongside the share sheet and offline
+working, and **never as a web feature** — a browser has no camera worth scanning with, and nobody
+photographs a document at a desk.
+
+**One sentence is left for the owner to decide.** `/privacy` says the app "does not request camera
+permission: scanning hands the job to your existing camera app, which returns the picture". That
+describes the scanner too, and that page is the one Play Console will point at, so it is not being
+edited here. Proposed replacement, for review: *"It also does not request camera permission: taking
+a photograph hands the job to your existing camera app, which returns the picture, and that needs
+no permission of its own."*
+
 ## Wanted: OCR in more languages (requested 12 September 2026, not built)
 
 `/ocr/` offers six, all Latin-script European: Dutch, English, French, German, Polish, Spanish

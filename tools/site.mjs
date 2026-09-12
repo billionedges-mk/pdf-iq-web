@@ -115,7 +115,7 @@ export const PAGES = [
     slug: 'app', name: 'Android App', entry: null,
     title: 'pdf-iq for Android — the same tools, offline, on your phone',
     description:
-      'The pdf-iq Android app runs {{appOfWeb}} tools on your device, offline, with share-sheet support and camera scanning. In testing, not yet on Play.',
+      'The pdf-iq Android app runs {{appOfWeb}} tools on your device, offline, with share-sheet support and photos straight into a multi-page PDF. In testing, not yet on Play.',
     ogSubject: 'Android app',
     ogLine: 'The same tools, on your phone',
   },
@@ -382,7 +382,11 @@ export const APP_FEATURES = [
   // TEST_MATRIX SG1 in the app repo confirms the writer is stripped from the free build.
   'Read a scan puts the text on screen, to copy or save as a .txt file. Its recogniser downloads once, through Google Play services.',
   'Opens PDFs from the share sheet and from chat apps.',
-  'Multi-page camera scanning straight to PDF.',
+  // The scanner is not built. When it merges — after the closed test, before launch — this line
+  // and the two others that named it come back. It is an app-only capability: a browser has no
+  // camera worth scanning with, so it appears on this site as a reason to install the app and
+  // never as a web feature.
+  'Photograph several pages in a row — each becomes a page, in the order you add them.',
   'No ads, and no advertising SDK in the build.',
 ];
 
