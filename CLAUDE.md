@@ -154,8 +154,16 @@ everyone — there is no entitlement check yet, which is acceptable only because
   says what covers it. Do not delete it, or its test, as dead code.
 - The served `robots.txt` is not the repo file. Cloudflare prepends a managed block ahead
   of it that blocks several AI crawlers; editing the repo file only changes the tail.
-- **`--watch` does not watch.** In `tools/build.mjs` it only turns off whitespace and identifier
-  minification and turns on sourcemaps; the dev server builds once at start and then serves that.
-  Restart the server after every source edit, and grep `dist/` for the change before a browser
-  check — otherwise the check runs the old code and passes. (Found 12 September 2026, when a
-  fixed string was in no built bundle.)
+- **`--watch` watches `src/`, `public/` and `tools/`, and reloads only the first two.** A change
+  under `src/` or `public/` reruns the whole of `build()` — tokens, Pro blocks, hashed bundles,
+  the HTML that points at those hashes, share images, self-checks — and logs one timestamped
+  line per rebuild, so the server log is the proof a rebuild happened. A change to a
+  `tools/*.mjs` file does not: this process imported them once at startup and their exports are
+  module-level constants, so a rebuild would read `src/` fresh and `site.mjs` from memory. The
+  watcher says so and asks for a restart instead of rebuilding. A failed rebuild keeps the
+  server up, logs its `Error:` line, and puts a red band on every HTML response naming the
+  failure — `dist/` was emptied before the build threw, so what is served is incomplete, not
+  merely old. (Until 12 September 2026 the flag watched nothing at all: it turned off whitespace
+  and identifier minification, turned on sourcemaps, and the dev server served the startup
+  build for the rest of the session. Two edited files were in no built bundle and a browser
+  check at that moment would have passed against code that no longer existed.)

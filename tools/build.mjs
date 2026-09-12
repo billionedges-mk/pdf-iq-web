@@ -6,7 +6,7 @@
 // a third-party origin, so the tools keep working with the network disconnected
 // and the footer readout can honestly say zero.
 
-import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync, readdirSync, statSync, watch } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
@@ -38,6 +38,22 @@ function maxFileSizeMb() {
   return Number(m[1]);
 }
 const OUT = join(ROOT, 'dist');
+/**
+ * --watch: rebuild on every change under src/, public/ and tools/.
+ *
+ * For a while it did not. The flag existed and was read in exactly three places — whether to
+ * minify whitespace, whether to minify identifiers, whether to emit a sourcemap — and nothing
+ * watched anything. `npm run dev` built once and then served dist/ as it was for the rest of
+ * the session. On 12 September 2026 two source files were edited with the dev server running
+ * and a grep of dist/assets/*.js for the new strings found nothing: the server log had one
+ * build line, from startup. A browser check at that moment would have passed, against code
+ * that no longer existed in src/. That is the failure this flag now actually prevents.
+ *
+ * A rebuild reruns build() whole. Not esbuild on its own: this file also substitutes tokens
+ * into src/pages/*.html, resolves the Pro blocks, content-hashes the bundles and writes the
+ * HTML that points at those hashes, generates the share images, and runs the self-checks.
+ * Rerunning only the bundler would leave dist/ holding hashed assets no page references.
+ */
 const WATCH = process.argv.includes('--watch');
 const SERVE = process.argv.includes('--serve');
 
@@ -726,7 +742,108 @@ async function build() {
   console.log(`built ${ROUTES.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images${PRO ? '  — PRO PREVIEW' : ''}`);
 }
 
-await build();
+// ---------------------------------------------------------------- dev loop
+
+const stamp = () => new Date().toTimeString().slice(0, 8);
+
+/** The `Error:` line of the last failed rebuild, or null when dist/ is current. */
+let buildError = null;
+/**
+ * The tools/*.mjs file edited since startup, or null.
+ *
+ * This process imported site.mjs, faq.mjs, og-images.mjs and the rest once, at startup. Their
+ * exports are module-level constants; rerunning build() reads src/ again but reads those from
+ * memory. So a rebuild after a tools/ edit would write output that does not match the source —
+ * the same lie the missing watcher told, in a narrower place. The watcher does not rebuild on
+ * those; it says so and asks for a restart, and the notice below repeats it in the browser.
+ */
+let toolsStale = null;
+/**
+ * Resolves when no build is in flight. Deliberately never rejects: a failed rebuild is
+ * recorded in buildError, so anything awaiting this (a request mid-rebuild, the next queued
+ * rebuild) continues rather than taking the failure as its own.
+ */
+let settled = Promise.resolve();
+let builds = 0;
+
+function rebuild(why) {
+  settled = settled.then(async () => {
+    const started = Date.now();
+    try {
+      await build();
+      buildError = null;
+      console.log(`[${stamp()}] ${builds++ ? 'rebuilt' : 'built'} in ${Date.now() - started} ms — ${why}`);
+    } catch (err) {
+      builds++;
+      // The Error: line, not the stack tail — that is the line that names what failed.
+      buildError = `${err?.name ?? 'Error'}: ${err?.message ?? err}`;
+      console.error(`[${stamp()}] BUILD FAILED — dist/ is not this source. ${buildError}`);
+    }
+  });
+  return settled;
+}
+
+/**
+ * What the browser is looking at, when it is not the source.
+ *
+ * A log line is not enough on its own: the log is in the other window, and the failure this
+ * whole section exists to prevent is a page that looks right and is not. So while dist/ cannot
+ * be trusted, every HTML response carries a band saying why. Injected into the response only —
+ * dist/ is never written with it, and a clean build sends nothing.
+ */
+function devNotice() {
+  const lines = [];
+  if (buildError) lines.push(`BUILD FAILED — this page is from an incomplete build. ${buildError}`);
+  if (toolsStale) lines.push(`${toolsStale} changed and cannot be reloaded — restart the dev server. This page predates that edit.`);
+  if (!lines.length) return '';
+  return '<div style="position:fixed;inset:0 0 auto 0;z-index:99999;background:#7F1D1D;color:#fff;' +
+    'font:600 13px/1.5 system-ui,sans-serif;padding:10px 16px;text-align:center">' +
+    lines.map(esc).join('<br>') + '</div>';
+}
+
+// A plain build keeps its old shape: a failure throws, Node prints it, the exit code is
+// non-zero. tools/verify-pro-gate.mjs builds this file in a child process and reads both.
+if (WATCH) await rebuild('startup');
+else await build();
+
+if (WATCH) {
+  // Recursive fs.watch is supported on Windows and macOS, which is where this runs. Editors
+  // write a file in several steps, so the events arrive in bursts; one debounce window turns
+  // a burst into one rebuild.
+  const DEBOUNCE_MS = 200;
+  const WATCHED = ['src', 'public', 'tools'];
+  const IGNORE = /(^|\/)\.|~$|\.(tmp|swp|swx)$|^\d+$/;   // editor scratch files, not sources
+  let timer = null;
+  let queued = new Set();
+
+  const changed = (dir, filename) => {
+    if (!filename) return;
+    const rel = `${dir}/${String(filename).split(/[\\/]/).join('/')}`;
+    if (IGNORE.test(rel)) return;
+    if (dir === 'tools') {
+      if (!rel.endsWith('.mjs')) return;                  // tools/fixtures/ is not build input
+      if (toolsStale === rel) return;
+      toolsStale = rel;
+      console.warn(
+        `[${stamp()}] ${rel} changed — tools/*.mjs are imported once at startup and cannot be ` +
+        'reloaded. dist/ was NOT rebuilt. Restart the dev server (Ctrl+C, then npm run dev).'
+      );
+      return;
+    }
+    queued.add(rel);
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const names = [...queued];
+      queued = new Set();
+      rebuild(names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3} more` : ''));
+    }, DEBOUNCE_MS);
+  };
+
+  for (const dir of WATCHED) {
+    watch(join(ROOT, dir), { recursive: true }, (_event, filename) => changed(dir, filename));
+  }
+  console.log(`watching ${WATCHED.map((d) => `${d}/`).join(', ')} — each change reruns the whole build`);
+}
 
 if (SERVE) {
   const types = {
@@ -737,29 +854,43 @@ if (SERVE) {
     '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon',
     '.gz': 'application/gzip', '.bcmap': 'application/octet-stream', '.pfb': 'application/octet-stream',
   };
+  /**
+   * A path that exists is not necessarily a file. dist/fixtures is a directory, and readFileSync
+   * on a directory throws EISDIR — which killed this server outright before the read below was
+   * wrapped, and would now answer 500 where the right answer is that directory's index.html or a
+   * 404. Found on 12 September 2026 by one request for /fixtures.
+   */
   const isFile = (path) => existsSync(path) && statSync(path).isFile();
-  createServer((req, res) => {
-    try {
-      const p = decodeURIComponent((req.url || '/').split('?')[0]);
-      let file = join(OUT, p);
-      // A path that exists is not necessarily a file. dist/fixtures is a directory, and
-      // readFileSync on a directory throws EISDIR — uncaught, inside the request handler, which
-      // killed the dev server mid-session on 12 September 2026. The process reported exit 0, so
-      // it read as a clean stop; the next request simply found nothing listening.
-      if (!isFile(file)) {
-        // Cloudflare Pages serves /compress and /compress/ alike; match that locally.
-        const alt = join(OUT, p, 'index.html');
-        if (isFile(alt)) file = alt;
-        else { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
+  createServer(async (req, res) => {
+    // A rebuild empties dist/ and writes it again, so a request that lands in the middle of
+    // one would be answered from neither build. Wait for it instead.
+    await settled;
+    const p = decodeURIComponent((req.url || '/').split('?')[0]);
+    let file = join(OUT, p);
+    if (!isFile(file)) {
+      // Cloudflare Pages serves /compress and /compress/ alike; match that locally.
+      const alt = join(OUT, p, 'index.html');
+      if (isFile(alt)) file = alt;
+      else if (buildError) {
+        // Not a 404: the build stopped before this file was written. Saying "not found" here
+        // would read as a routing mistake and send the reader looking in the wrong place.
+        res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+        return res.end(`the last build failed, so ${p} was never written${NL}${NL}${buildError}${NL}`);
       }
-      const ext = file.slice(file.lastIndexOf('.'));
-      res.writeHead(200, { 'content-type': types[ext] || 'application/octet-stream' });
-      res.end(readFileSync(file));
-    } catch (e) {
-      // One odd request must not take the session's server with it.
-      console.warn(`  (serve) ${req.url}: ${e.message}`);
-      if (!res.headersSent) res.writeHead(500, { 'content-type': 'text/plain' });
-      res.end('error');
+      else { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('not found'); }
     }
+    const ext = file.slice(file.lastIndexOf('.'));
+    const type = types[ext] || 'application/octet-stream';
+    let body;
+    try {
+      body = readFileSync(file);
+    } catch (err) {
+      res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+      return res.end(`could not read ${p}: ${err?.message ?? err}${NL}`);
+    }
+    const notice = type.startsWith('text/html') ? devNotice() : '';
+    if (notice) body = Buffer.from(body.toString('utf8').replace('</body>', notice + '</body>'), 'utf8');
+    res.writeHead(200, { 'content-type': type });
+    res.end(body);
   }).listen(4321, () => console.log('serving http://localhost:4321'));
 }
