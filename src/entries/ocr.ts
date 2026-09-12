@@ -31,7 +31,11 @@ const OCR_DPI = 300;
 const CONFIDENCE_FLOOR = 55;
 
 const shell = new ToolShell();
-const progress = new Progress(document, STAGES);
+// Recognition is nearly the whole job: on a 30-page scan the model load is a second or two and
+// collecting the text is instant, while reading took 47 of the 50 seconds. With equal thirds the
+// bar said 66% next to "29 of 30 pages read", which is the sort of disagreement a reader notices
+// and cannot resolve.
+const progress = new Progress(document, STAGES, [5, 92, 3]);
 
 interface PageResult {
   index: number;
@@ -179,14 +183,21 @@ async function run(): Promise<void> {
     progress.set(0, 1, 0, `fetching the ${lang.name} model (${formatBytes(lang.bytes)})`);
     await breathe();
 
+    let modelReady = false;
     const size = poolSize();
     pool = await OcrPool.create(size, {
       lang: lang.code,
       signal,
-      onProgress: (status, fraction) => {
-        $('[data-facts]')!.textContent = `${status} ${Math.round(fraction * 100)}%`;
+      // Tesseract's own status strings used to be printed here verbatim, so the screen said
+      // "recognizing text 57%" — library jargon, in another spelling of English, overwriting the
+      // line that says how many pages are done. Our words, and only while the model is loading:
+      // once pages are being read, the page count is the honest thing to show.
+      onProgress: (_status, fraction) => {
+        if (modelReady) return;
+        $('[data-facts]')!.textContent = `fetching the ${lang.name} model · ${Math.round(fraction * 100)}%`;
       },
     });
+    modelReady = true;
     localStorage.setItem(`pdfiq.lang.${lang.code}`, 'cached');
     $('[data-threads]')!.textContent =
       `${pool.size} ${pool.size === 1 ? 'worker' : 'workers'}`;

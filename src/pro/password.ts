@@ -152,7 +152,9 @@ function describeLock(l: Lock): { kicker: string; verdict: string; field: string
         verdict: 'This file isn’t password-protected, so there’s nothing to remove. You can protect a copy of it with a password instead.',
         field: 'New password',
         button: 'Protect with this password',
-        note: 'The copy is written AES-256. Nobody can lift its restrictions afterwards, because it is locked under a random owner password nobody keeps — this file has none to keep.',
+        note: 'The copy is written AES-256 and opens with the password you type here. Its permissions cannot be '
+          + 'changed afterwards, because it is locked under a random owner password nobody keeps — and this file '
+          + 'restricts nothing, so nothing is being withheld from you.',
       };
     case 'needs-password':
       return l.restricts
@@ -237,7 +239,14 @@ form.addEventListener('submit', (e) => {
         bytes: opened.bytes,
         name: suffixName(file.name, '-unlocked'),
         head: 'Your copy opens without a password, and nothing is restricted.',
-        body: 'The owner password was given, so the author’s limits came off with the lock. Your original is untouched.',
+        // Which password authenticated, not which one was hoped for. "May lift" is true either
+        // because the owner password was given or because the author set no limits at all, and
+        // saying the first when the second happened tells someone they typed a password they do
+        // not have. Found by removing the password from a file that restricted nothing.
+        body: (opened.role === 'owner'
+          ? 'The owner password was given, so the author’s limits came off with the lock.'
+          : 'This file’s author set no limits on printing, copying or editing, so there were none to keep.')
+          + ' Your original is untouched.',
       };
     }
 

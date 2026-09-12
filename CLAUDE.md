@@ -50,6 +50,10 @@ thing claims and what it does. The ones that come up most:
   through the real `openPdf` against MuPDF-written fixtures in `tools/fixtures/crypto/`, with
   every output read back by MuPDF and pypdf. Needs python with PyMuPDF and pypdf. Until it existed the only
   encrypted fixture was our own RC4 file, the one case the code handled correctly.
+- `npm run verify:stages` — the stage list a tool shows while it works is the one its code runs.
+  The labels used to be typed into each page and declared again in its entry, so `/ocr/` announced
+  "Writing the text behind the scan" long after the free path stopped writing anything into it.
+  `src/lib/ui.ts` now writes the labels from the array at run time; this checks the markup too.
 - `npm run verify:password` — the Pro password page's writer (`src/pro/encrypt.ts`, AES-256 V5 R6):
   protect keeps an author's `/P`, the kept-limits copy opens with no password and carries the
   original bits under a random owner password, and an edited `/P` is ignored in favour of `/Perms`.
@@ -120,6 +124,14 @@ everyone — there is no entitlement check yet, which is acceptable only because
   Cloudflare build that reports no branch. Set `PDFIQ_PRO=1` in the Cloudflare **Preview**
   environment only. Locally: `PDFIQ_PRO=1 npm run build`. A flag-on build is noindex on every page,
   disallows crawling in robots.txt, and carries a preview banner.
+- **The local stub.** Pro needs a sign-in and a local build has no Firebase key, so a local preview
+  could reach no Pro feature at all. `PDFIQ_PRO=1 npm run dev` therefore defines `__PDFIQ_LOCAL__`,
+  and `/account/` offers a switch that makes `src/pro/gate.ts` accept a stub in place of a session.
+  It is not a sign-in and grants nothing a session would not. A Cloudflare build with `PDFIQ_LOCAL`
+  set **refuses by name**; every other build defines the constant false, so the code, its storage
+  key `pdfiq.local-pro` and its words are dropped. `verify:pro-gate` proves present-in-local,
+  absent-everywhere-else, and the refusal — an absence check whose subject exists nowhere would
+  prove nothing, so the local build is built and searched too.
 - **`npm run verify:pro-gate`** builds with the flag off, on, and on-for-production, and proves each.
 
 ## Things that are not what they look like

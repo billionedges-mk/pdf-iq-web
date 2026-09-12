@@ -9,6 +9,7 @@
  */
 import { startSignIn, completeSignIn, freshSession, signOut, AuthError, AUTH_SENTINEL, type AuthErrorKind } from './auth.js';
 import { SESSION_SENTINEL } from './session.js';
+import { localStub, setLocalStub } from './gate.js';
 
 export const ACCOUNT_SENTINEL = 'pdfiq-pro:account';
 
@@ -98,10 +99,63 @@ function go(): void {
   }
 }
 
+/**
+ * Local builds only: a switch for the Pro gate, offered because signing in here is impossible —
+ * the key is not in this build. Written in JavaScript rather than in account.html because the page
+ * markers are PRO/FREE only, and this must vanish from a deployed preview as well as production.
+ * `__PDFIQ_LOCAL__` is false there, so esbuild drops this function and everything it says.
+ */
+function localStubCard(): void {
+  const host = document.querySelector('[data-account="out"]')?.parentElement;
+  if (!host) return;
+
+  const card = document.createElement('section');
+  card.className = 'card';
+  card.style.cssText = 'margin-top: 22px; max-width: 700px;';
+
+  const kicker = document.createElement('p');
+  kicker.className = 'kicker';
+  kicker.textContent = 'This build is served from your own machine';
+
+  const body = document.createElement('p');
+  body.style.cssText = 'margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;';
+  body.textContent =
+    'Signing in with Google needs a key a local build does not carry, so no Pro feature could be '
+    + 'reached here at all. This switches the Pro gate on in this browser instead. It is not a '
+    + 'sign-in: no account exists, nothing is sent anywhere, and it grants nothing a real sign-in '
+    + 'would not — there is no purchase check on either path yet. It exists in no deployed build.';
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  const state = document.createElement('p');
+  state.className = 'hint';
+
+  const paint = (): void => {
+    const on = localStub();
+    button.className = on ? 'btn-quiet' : 'btn';
+    button.textContent = on ? 'Turn the local stub off' : 'Turn the local stub on';
+    state.textContent = on
+      ? 'On. Pro features in this browser act as though someone is signed in.'
+      : 'Off. Pro features show their sign-in prompt.';
+  };
+  button.addEventListener('click', () => {
+    setLocalStub(!localStub());
+    paint();
+  });
+  paint();
+
+  const row = document.createElement('p');
+  row.style.marginTop = '18px';
+  row.append(button);
+  card.append(kicker, body, row, state);
+  host.append(card);
+}
+
 async function mount(): Promise<void> {
   // Marks the page and keeps each Pro module's sentinel in the bundle, where the build's own
   // check looks for it.
   document.documentElement.dataset.pdfiqAccount = [ACCOUNT_SENTINEL, AUTH_SENTINEL, SESSION_SENTINEL].join(' ');
+  if (__PDFIQ_LOCAL__) localStubCard();
   el('[data-signin]').addEventListener('click', go);
   el('[data-account-retry]').addEventListener('click', go);
   el('[data-signout]').addEventListener('click', () => {

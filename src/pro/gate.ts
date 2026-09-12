@@ -14,14 +14,63 @@ import { readSession, type Session } from './session.js';
 
 export const GATE_SENTINEL = 'pdfiq-pro:gate';
 
+/**
+ * The local stub, and the reason it exists.
+ *
+ * A build served from a developer machine has no Firebase key, so signing in is impossible there —
+ * and with Pro gated on sign-in, that makes every Pro feature unreachable in the only build a
+ * person can run locally. The stub is a flag in this browser that stands in for a session. It is
+ * not a sign-in: no account exists, nothing is sent, and it grants nothing a real session would
+ * not, because there is no purchase check on either path yet.
+ *
+ * In any deployed build `__PDFIQ_LOCAL__` is false, esbuild drops everything below, and the key
+ * itself appears nowhere in the bundle. A Cloudflare build that asks for the flag refuses by name.
+ * tools/verify-pro-gate.mjs proves both.
+ */
+// Not exported. An exported binding survives as a chunk export under code splitting, which put
+// this key into a deployed-shaped Pro build the first time it was written — caught by the gate.
+const LOCAL_STUB_KEY = 'pdfiq.local-pro';
+
+const LOCAL_STUB: Session = {
+  uid: 'local-stub',
+  email: 'local stub — not a sign-in',
+  idToken: '',
+  idTokenExpiresAt: 0,
+  refreshToken: '',
+};
+
+export function localStub(): boolean {
+  if (!__PDFIQ_LOCAL__) return false;
+  try {
+    return localStorage.getItem(LOCAL_STUB_KEY) === 'on';
+  } catch {
+    return false;
+  }
+}
+
+export function setLocalStub(on: boolean): void {
+  if (!__PDFIQ_LOCAL__) return;
+  try {
+    if (on) localStorage.setItem(LOCAL_STUB_KEY, 'on');
+    else localStorage.removeItem(LOCAL_STUB_KEY);
+  } catch {
+    // Storage refused; the stub stays off, which is the safe direction.
+  }
+}
+
 /** The sign-in kept in this browser, or null. Never makes a request. */
 export function signedIn(): Session | null {
   try {
-    return readSession();
+    const session = readSession();
+    if (session) return session;
   } catch {
     // Storage refused (private browsing, blocked site data): nobody can be signed in here.
-    return null;
   }
+  // The constant, not the call: `localStub()` is a function call the bundler cannot fold, so
+  // referencing LOCAL_STUB through it kept the stub session — and its words — in builds that must
+  // not have them. With the constant first the whole branch is dropped.
+  if (__PDFIQ_LOCAL__ && localStub()) return LOCAL_STUB;
+  return null;
 }
 
 /**

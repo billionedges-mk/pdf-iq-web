@@ -74,6 +74,30 @@ const ROUTES = PRO ? [...ALL, ...PRO_PAGES] : ALL;
 if (PRO && !AUTH.apiKey) {
   console.warn('  (pro) no PDFIQ_FIREBASE_WEB_KEY: /account/ will say signing in is not set up, and make no request');
 }
+/**
+ * The local Pro stub.
+ *
+ * Pro needs a sign-in, and signing in needs a Firebase key a build served from a developer machine
+ * does not have — so without this, a local preview cannot reach any Pro feature at all. The stub
+ * is not a sign-in: it is a flag in the browser that src/pro/gate.ts accepts in place of a session.
+ * It grants nothing that a session would not, because there is no entitlement check yet either way.
+ *
+ * It must not exist in a deployed build. A Cloudflare build that asks for it refuses by name, and
+ * every build without it defines the constant false — esbuild then drops the code, its storage key
+ * and its words out of the bundle entirely. tools/verify-pro-gate.mjs proves both halves.
+ */
+const LOCAL_ASKED = /^(1|true|on)$/i.test(process.env.PDFIQ_LOCAL ?? '');
+if (LOCAL_ASKED && ON_CLOUDFLARE) {
+  throw new Error(
+    'PDFIQ_LOCAL is set on a Cloudflare build (branch ' +
+    `${process.env.CF_PAGES_BRANCH ?? 'unknown'}). The local Pro stub exists only in a build served ` +
+    'from a developer machine. Remove PDFIQ_LOCAL from the environment variables.'
+  );
+}
+const LOCAL = PRO && !ON_CLOUDFLARE && (LOCAL_ASKED || SERVE);
+if (LOCAL) {
+  console.warn('  (pro) local stub: /account/ can switch Pro on in this browser without Google');
+}
 const PREVIEW_BANNER =
   '<div data-pdfiq-pro="pdfiq-pro:preview" role="note" style="background:#1E2A38;color:#FAF8F4;' +
   'font:600 14px/1.45 system-ui,sans-serif;padding:9px 16px;text-align:center">' +
@@ -468,7 +492,7 @@ async function bundle() {
     sourcemap: WATCH,
     logLevel: 'warning',
     metafile: true,
-    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null' },
+    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null' },
   });
 
   const hashed = new Map();

@@ -119,6 +119,16 @@ const PRO_WORDING = [
 ];
 const wordingLeaks = s.assets.flatMap((a) => PRO_WORDING.filter((w) => a.s.includes(w)).map((w) => `"${w}" in ${a.rel}`));
 ok(wordingLeaks.length === 0, `no Pro wording in any flag-off bundle${wordingLeaks.length ? ` — ${wordingLeaks.slice(0, 4).join('; ')}` : ''}`);
+/**
+ * The local Pro stub (src/pro/gate.ts) exists only in a build served from a developer machine,
+ * because signing in there is impossible — no Firebase key. "Only" is proved rather than intended:
+ * in every build but the local one the constant is false, esbuild drops the code, and even the
+ * storage key is absent from the output. Section 3b builds it on and finds the key, so a check
+ * that can never fail is not what is being run here.
+ */
+const STUB_KEY = 'pdfiq.local-pro';
+const stubOff = s.all.filter((f) => f.s.includes(STUB_KEY)).map((f) => f.rel);
+ok(stubOff.length === 0, `no local Pro stub anywhere in a flag-off build${stubOff.length ? ` — found in ${stubOff.slice(0, 4).join(', ')}` : ''}`);
 
 // ---------------------------------------------------------------- 3. flag on, locally
 console.log('\n— flag on (a local preview build)');
@@ -156,6 +166,28 @@ for (const w of PRO_WORDING) {
     `"${w}" is produced by Pro code alone${where.length === 0 ? ' — IT IS NOWHERE, so the flag-off check for it proves nothing' : inPro.length < where.length ? ` — also in ${where.filter((a) => !a.s.includes(SENTINEL)).map((a) => a.rel).join(', ')}, which has no sentinel` : ''}`);
 }
 
+const stubOn = s.all.filter((f) => f.s.includes(STUB_KEY)).map((f) => f.rel);
+ok(stubOn.length === 0, `no local Pro stub in a Pro build that is not local${stubOn.length ? ` — found in ${stubOn.slice(0, 4).join(', ')}` : ''}`);
+
+// ---------------------------------------------------------------- 3b. the local stub
+console.log('\n— the local stub (only in a build served from a developer machine)');
+r = build({ PDFIQ_PRO: '1', PDFIQ_LOCAL: '1' });
+ok(r.status === 0, `a local build builds${r.status ? ` — ${tail(r)}` : ''}`);
+s = scan();
+const stubLocal = s.assets.filter((a) => a.s.includes(STUB_KEY));
+ok(stubLocal.length > 0,
+  `the stub is present in a local build${stubLocal.length ? ` (${stubLocal.map((a) => a.rel).slice(0, 2).join(', ')})` : ' — IT IS NOWHERE, so the absence checks above prove nothing'}`);
+ok(stubLocal.every((a) => a.s.includes(SENTINEL)), 'and only in bundles that carry a Pro sentinel');
+// A deployed build must not be able to carry it, whichever branch it is built for. On main the
+// production refusal fires first, which is why either name is accepted.
+const refusalText = (res) => `${res.stderr || ''}${res.stdout || ''}`;
+for (const branch of ['main', 'pro-preview']) {
+  r = build({ PDFIQ_PRO: '1', PDFIQ_LOCAL: '1', CF_PAGES: '1', CF_PAGES_BRANCH: branch });
+  const byName = /PDFIQ_(LOCAL|PRO) is set on a/.test(refusalText(r));
+  ok(r.status !== 0 && byName,
+    `a Cloudflare build asking for the stub refuses, by name (branch ${branch})${r.status === 0 ? ' — IT BUILT' : byName ? '' : ` — but not by name: ${tail(r)}`}`);
+}
+
 // ---------------------------------------------------------------- 4. flag on, production
 console.log('\n— flag on for production');
 // Matched against the whole output: Node prints the message first and a stack trace after it,
@@ -177,6 +209,8 @@ s = scan();
 ok(s.hits.length === 0, 'and carries no Pro sentinel');
 const prodWording = s.assets.flatMap((a) => PRO_WORDING.filter((w) => a.s.includes(w)).map((w) => `"${w}" in ${a.rel}`));
 ok(prodWording.length === 0, `and no Pro wording${prodWording.length ? ` — ${prodWording.slice(0, 4).join('; ')}` : ''}`);
+const prodStub = s.all.filter((f) => f.s.includes(STUB_KEY)).map((f) => f.rel);
+ok(prodStub.length === 0, `and no local Pro stub${prodStub.length ? ` — found in ${prodStub.slice(0, 4).join(', ')}` : ''}`);
 
 console.log(`\n${fails ? `${fails} FAILED` : 'the Pro flag holds: absent when off, present when on, refused in production'}`);
 process.exitCode = fails ? 1 : 0;

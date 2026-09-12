@@ -31,7 +31,18 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
   host.textContent = '';
   host.dataset.pdfiqPro = searchableMark();
 
-  if (!o.counts.pagesRead) return; // nothing was read, so there is no layer to write
+  // Nothing was read, so there is no layer to write — said rather than left blank. An empty slot
+  // where a Pro offer belongs reads as a feature that is missing, not as one with nothing to do
+  // (check 28). Found by opening the page with a document OCR could read nothing from.
+  if (!o.counts.pagesRead) {
+    const nothing = document.createElement('p');
+    nothing.className = 'hint';
+    nothing.textContent =
+      'No text was read from this document, so there is nothing to write into a searchable copy: '
+      + 'the layer is made from the words that were recognised, and there were none.';
+    host.append(nothing);
+    return;
+  }
 
   if (!pagesToLayer(o.pages)) {
     const already = document.createElement('p');

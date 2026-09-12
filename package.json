@@ -22,7 +22,8 @@
     "verify:pro-gate": "node tools/verify-pro-gate.mjs",
     "verify:auth": "node tools/verify-auth.mjs",
     "verify:pro-features": "node tools/verify-pro-features.mjs",
-    "verify:password": "node tools/verify-password.mjs"
+    "verify:password": "node tools/verify-password.mjs",
+    "verify:stages": "node tools/verify-stages.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

@@ -256,11 +256,45 @@ export class Progress {
   private started = 0;
   private elapsedTimer: number | undefined;
 
-  constructor(private root: ParentNode = document, private stageLabels: string[] = []) {
+  /**
+   * @param stageWeights what share of the whole job each stage is, in any units. Without them
+   *   every stage is an equal slice, which showed "66%" beside "29 of 30 pages read" on a 30-page
+   *   OCR: recognition is nearly all of that job and was drawn as a third of it.
+   */
+  constructor(
+    private root: ParentNode = document,
+    private stageLabels: string[] = [],
+    private stageWeights: number[] = [],
+  ) {
     this.bar = $('[data-bar]', root);
     this.pct = $('[data-pct]', root);
     this.facts = $('[data-facts]', root);
     this.stagesEl = $('[data-stages]', root);
+    this.writeLabels();
+  }
+
+  /**
+   * The labels on screen are the labels in the code. They used to be typed into each page's HTML
+   * and declared again in its entry, so a re-scope could move one and leave the other: /ocr/ went
+   * on announcing "Writing the text behind the scan" after the free path stopped writing anything
+   * into the scan. tools/verify-stages.mjs checks the markup as well, for what is read before a
+   * run starts.
+   */
+  private writeLabels(): void {
+    if (!this.stagesEl || !this.stageLabels.length) return;
+    $$('li', this.stagesEl).forEach((li, i) => {
+      const label = $('.stages__label', li);
+      if (label && i < this.stageLabels.length) label.textContent = this.stageLabels[i];
+    });
+  }
+
+  /** Where this stage starts and ends on the bar, by weight. Equal slices when none are given. */
+  private span(stage: number): { from: number; to: number } {
+    const count = Math.max(1, this.stageLabels.length);
+    const weights = this.stageWeights.length === count ? this.stageWeights : new Array(count).fill(1);
+    const total = weights.reduce((n, w) => n + w, 0) || 1;
+    const before = weights.slice(0, Math.max(0, stage)).reduce((n, w) => n + w, 0);
+    return { from: before / total, to: (before + (weights[stage] ?? 0)) / total };
   }
 
   start(): void {
@@ -281,11 +315,11 @@ export class Progress {
 
   set(done: number, total: number, stage: number, detail: string): void {
     const fraction = total > 0 ? Math.min(1, done / total) : 0;
-    // The bar spans the whole job, with each stage owning a slice of it.
+    // The bar spans the whole job, with each stage owning a slice of it — sized by weight where
+    // the caller knows the shape of the work, and equally where it does not.
     const stageCount = Math.max(1, this.stageLabels.length);
-    const overall = stageCount > 1
-      ? (stage + fraction) / stageCount
-      : fraction;
+    const { from, to } = this.span(stage);
+    const overall = stageCount > 1 ? from + (to - from) * fraction : fraction;
     const shown = Math.min(100, Math.round(overall * 100));
 
     if (this.bar) this.bar.style.width = `${shown}%`;
