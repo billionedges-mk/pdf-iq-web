@@ -1,7 +1,7 @@
     <div class="tool-head">
       <h1 class="page-title">Privacy</h1>
     </div>
-    <p class="prose__updated">Effective 12 September 2026 &middot; covers pdf-iq.com and the PDFiq Android app</p>
+    <p class="prose__updated">Effective 13 September 2026 &middot; covers pdf-iq.com and the PDFiq Android app</p>
 
     <div class="prose">
       <p>This one page covers both things we make: the tools on this website, and the PDFiq
@@ -320,8 +320,19 @@
             request completes.</li>
         <li><strong>Account and usage counters:</strong> kept while your account is active, and
             deleted when you delete your account.</li>
-        <li><strong>Crash and analytics data:</strong> retained according to Firebase's default
-            retention periods, typically up to 14 months.</li>
+        <li><strong>Analytics events</strong> — which features were used, which operations failed, and
+            the device details sent with each: kept for 2 months, then deleted in Google's monthly
+            deletion pass. That is the event retention setting on our Google Analytics property.
+            Totals built from those events, such as how many people used a feature on a given day, are
+            not covered by either retention period: Google's retention setting &ldquo;does not affect standard
+            aggregated reports&rdquo;.</li>
+        <li><strong>The analytics identifier</strong> — the identifier that lets Analytics recognise the
+            same installation, with the data tied to it: kept for 14 months. Our property resets that
+            period whenever the app reports activity, so for as long as you keep using PDFiq the
+            identifier does not expire. It is deleted 14 months after the app last reported anything.</li>
+        <li><strong>Crash reports</strong> — the stack trace and the identifiers sent with it: Firebase
+            keeps them for 90 days and then begins removing them from its live and backup systems, so
+            removal completes some time after that.</li>
         <li><strong>Files the app creates on your phone:</strong> temporary working copies are
             deleted automatically after 7 days or once 20 files accumulate. Files you explicitly
             save go to your Documents folder and are yours — we never touch or delete them.</li>
@@ -379,5 +390,5 @@
       <p>Questions, concerns or requests about your data:
          <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a></p>
       <p class="prose__updated">PDFiq and pdf-iq.com are published by BillionEdges. Last updated
-         12 September 2026.</p>
+         13 September 2026.</p>
     </div>

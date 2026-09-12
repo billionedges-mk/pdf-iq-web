@@ -163,4 +163,9 @@ export const RETIRED = [
     why: 'Scaffolding label shown to readers (content review, 12 September 2026, item 29).',
     instead: 'Nothing to pay for yet / Nothing to buy on this page today',
   },
+  {
+    phrase: 'typically up to 14 months',
+    why: 'One number for two settings, never checked: event data is kept 2 months and user data 14 months with reset on new activity (read from the property, 13 September 2026), and it called our own property settings Firebase defaults. Crashlytics is 90 days, from Firebase\'s privacy page.',
+    instead: 'three entries under How long we keep things, each with its source',
+  },
 ];
