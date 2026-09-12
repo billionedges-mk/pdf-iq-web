@@ -344,3 +344,22 @@ Not started, and not a matter of adding rows to a list. What has to be worked ou
 - **What the page may claim.** Accuracy differs sharply by script and by scan quality. The page
   says nothing about accuracy today, and adding languages must not become the moment it starts.
 
+
+## Merge's "larger than its inputs" message: its trigger has never been observed
+
+`src/lib/size-report.ts` tells a person when a merged file is larger than the files they gave it.
+The case was reported from the Android app's testing, where merging uses PdfBox. Here merging uses
+pdf-lib, and on 40 files (the app's test corpus, the OCR and crypto fixtures, and font-heavy PDFs
+generated for the purpose) every merged file came out 0–40% smaller than its inputs.
+
+So the sentence is proven by `verify:size-claims` and by nothing else. No browser has shown it and
+no person has read it in place, and a message whose trigger has never been seen is a message nobody
+has seen. The guard stays because the comparison is correct to make whatever the engine. If a
+real file ever produces it, walk the result screen with that file and record the file here.
+
+## Limit, not defect: Images to PDF adds a container
+
+A PDF holding one JPEG is about a kilobyte larger than the image data (948 bytes measured on three
+JPEGs through pdf-lib with the save settings the page uses, not through the page itself, 12 September
+2026). EXIF stripping, on by default, removes bytes too, so the net difference depends on the photo;
+that part is not measured. The page says both in one sentence; there is nothing to fix.

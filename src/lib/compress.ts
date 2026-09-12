@@ -587,6 +587,18 @@ export function harderOffer(analysis: Analysis, current: Preset): HarderOffer {
  * The sentence that explains *why* a file cannot get smaller, built from what the
  * document actually contains. Never templated.
  */
+/**
+ * The no-gain card's closing note. It warns against compressing the result again because the
+ * second pass re-encodes images already re-encoded — which is advice about images, so a file with
+ * none this tool would touch gets no note. It was fixed text in the page, and it told a document
+ * made only of fonts that its image would look worse (12 September 2026).
+ */
+export function noGainFoot(analysis: Analysis): string {
+  if (analysis.recompressible.length === 0) return '';
+  return 'Compressing again from the result you already have does not help: the second pass re-encodes an ' +
+    'already-encoded image and usually makes it look worse without making it smaller.';
+}
+
 export function explainNoGain(analysis: Analysis, preset: Preset, result?: CompressResult): string {
   // If we could not decode the images, everything below this is a guess dressed as a
   // finding. Say what actually happened instead: the numbers describing their quality come

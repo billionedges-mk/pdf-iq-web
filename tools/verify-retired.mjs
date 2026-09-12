@@ -60,7 +60,9 @@ const title = (html) => (/<title>([^<]*)<\/title>/.exec(html) ?? ['', ''])[1];
 
 for (const { phrase, instead } of RETIRED) {
   const needle = phrase.toLowerCase();
-  const inBody = site.filter((f) => f.html.toLowerCase().includes(needle)).map((f) => f.rel);
+  // Whitespace collapsed first: page sources wrap prose, and a phrase split across a line break
+  // would otherwise be reported absent while a reader sees it whole.
+  const inBody = site.filter((f) => f.html.toLowerCase().replace(/\s+/g, ' ').includes(needle)).map((f) => f.rel);
   // Named separately: a claim in metadata is invisible to anyone reading the page, and is the
   // half that survived the last sweep.
   const inMeta = site

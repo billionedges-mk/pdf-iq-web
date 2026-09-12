@@ -49,4 +49,28 @@ export const RETIRED = [
       + 'everyone, Pro or not, and credit packs beyond that.',
     instead: 'the heavier OCR work, and keeping this maintained — with summaries named separately',
   },
+  {
+    phrase: 'Make it searchable',
+    why: 'An onward link to /ocr/ from Compress and Merge. The free OCR reads the text out; writing a '
+      + 'searchable PDF is Pro, so the link promised what the page it opens does not do (content review, '
+      + '12 September 2026, item 2).',
+    instead: 'Read the text from it',
+  },
+  {
+    phrase: 'Make searchable',
+    why: 'The same link on Split and Rotate.',
+    instead: 'Read the text from it',
+  },
+  {
+    phrase: 'Make the text searchable',
+    why: 'The same link on Images to PDF.',
+    instead: 'Read the text in it',
+  },
+  {
+    phrase: 'are not re-encoded, so nothing is lost',
+    why: 'Said of every image on /images-to-pdf/. HEIC, WebP, AVIF, GIF and mirrored JPEGs are decoded '
+      + 'and re-encoded (src/lib/image.ts), and the result panel already counted them as converted '
+      + '(content review item 14).',
+    instead: 'JPEG and PNG go in without being re-encoded; the kinds that must be converted are named',
+  },
 ];

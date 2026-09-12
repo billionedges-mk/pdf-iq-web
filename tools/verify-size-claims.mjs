@@ -97,11 +97,22 @@ if (C) {
   const bare = C.explainNoGain({ ...analysis, fontBytes: 0 }, C.PRESETS[0], result);
   console.log(`        no fonts: ${bare}`);
   ok(!/most compact|optimal/i.test(bare), 'a text-only document is not called the most compact form either');
+
+  // The card's closing note warned that a second pass "re-encodes an already-encoded image" —
+  // on a file with no image in it. One sentence further down, the same defect.
+  ok(typeof C.noGainFoot === 'function', 'the card’s closing note is written from the analysis');
+  if (typeof C.noGainFoot === 'function') {
+    ok(C.noGainFoot(analysis) === '', 'a file with no images gets no note about re-encoding images');
+    const withImages = { ...analysis, recompressible: [{}], images: [{}] };
+    ok(/image/.test(C.noGainFoot(withImages)), 'a file whose images were considered still gets it');
+  }
 }
 
 const card = readFileSync(join(ROOT, 'src/pages/compress.html'), 'utf8');
 const nogain = /data-view="nogain"[\s\S]*?<\/section>/.exec(card)?.[0] ?? '';
 ok(nogain && !/as small as a PDF of these pages gets/.test(nogain), 'the no-gain card has no fixed headline about the document');
+const foot = /<p class="outcome__foot"[^>]*>([\s\S]*?)<\/p>/.exec(nogain);
+ok(foot && !/re-encodes/.test(foot[1]), 'the no-gain card carries no fixed sentence about images');
 const entry = readFileSync(join(ROOT, 'src/entries/compress.ts'), 'utf8');
 ok(!/already about as small as it gets/.test(entry), 'and the screen-reader announcement makes no such claim either');
 

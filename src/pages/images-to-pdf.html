@@ -70,8 +70,10 @@
                 three by default.</span>
         </label>
 
-        <p class="hint">Images are placed at their full resolution and are not re-encoded, so nothing is lost
-           on the way in. If you need the file smaller, compress it afterwards rather than degrading it twice.
+        <p class="hint">JPEG and PNG images go in at their full resolution without being re-encoded, so nothing
+           is lost on the way in. Two kinds have to be converted to JPEG first, at full resolution: formats a PDF
+           cannot hold directly, such as HEIC, WebP and GIF, and the rare photo stored mirrored. The result counts
+           how many were converted. If you need the file smaller, compress it afterwards rather than degrading it twice.
            A PDF is a container, so it is always a little larger than the image data inside it &mdash; about a
            kilobyte for a single photo when we measured it. Stripping EXIF removes bytes as well, so whether the
            PDF ends up larger or smaller than the photo depends on how much metadata the photo carried.</p>
@@ -121,7 +123,7 @@
       <div class="nextup">
         <span class="nextup__label">Next, with the file you just made:</span>
         <a href="/compress/">Compress it</a>
-        <a href="/ocr/">Make the text searchable</a>
+        <a href="/ocr/">Read the text in it</a>
         <a href="/merge/">Merge with a form</a>
         <!--PRO--><a href="/password/">Protect it</a><!--/PRO-->
       </div>

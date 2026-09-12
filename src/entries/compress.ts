@@ -8,7 +8,7 @@
  */
 
 import { PDFDocument } from 'pdf-lib';
-import { PRESETS, STAGES, analyse, compress, explainNoGain, harderOffer, type Analysis, type CompressResult, type Preset, worthIt, worthShowing } from '../lib/compress.js';
+import { PRESETS, STAGES, analyse, compress, explainNoGain, harderOffer, noGainFoot, type Analysis, type CompressResult, type Preset, worthIt, worthShowing } from '../lib/compress.js';
 import { openPdf } from '../lib/open-pdf.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, percent } from '../lib/format.js';
@@ -301,6 +301,9 @@ function renderNoGain(r: CompressResult, which: Preset): void {
     ? `${percent(saved / r.beforeBytes, 1)} smaller`
     : 'no smaller at all';
   $('[data-nogain-why]')!.textContent = explainNoGain(analysis!, which, r);
+  const foot = $('[data-nogain-foot]')!;
+  foot.textContent = noGainFoot(analysis!);
+  foot.hidden = !foot.textContent;
 
   // Only offer a harder pass when it would actually change this file. Both numbers the
   // decision rests on are the ones already used to write the sentence above the button.
