@@ -18,7 +18,7 @@ import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, 
 import { AUTH } from './auth-config.mjs';
 import { PADDLE } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
-import { PRO_COPY, proState } from './pro-copy.mjs';
+import { PRO_COPY, proState, proStrip } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
 import { ogImage } from './og-images.mjs';
 import { LANGUAGES } from './langs.mjs';
@@ -225,9 +225,11 @@ function toolGrid() {
  * mechanism exists to prevent.
  */
 function substituteTokens(body, file) {
+  // {{proStrip}} is generated from tools/pro-copy.mjs, which site.mjs cannot import (pro-copy imports site).
+  const tokens = { ...TOKENS, proStrip: proStrip() };
   const out = body.replace(/\{\{(\w+)\}\}/g, (_, name) => {
-    if (!(name in TOKENS)) throw new Error(`unknown token {{${name}}} in ${file}`);
-    return TOKENS[name];
+    if (!(name in tokens)) throw new Error(`unknown token {{${name}}} in ${file}`);
+    return tokens[name];
   });
   const leftover = /\{\{(\w+)\}\}/.exec(out);
   if (leftover) throw new Error(`token ${leftover[0]} survived substitution in ${file}`);
