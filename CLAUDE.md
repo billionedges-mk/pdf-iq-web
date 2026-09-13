@@ -176,6 +176,12 @@ everyone — there is no entitlement check yet, which is acceptable only because
 
 Nothing is on sale. `PDFIQ_SALE` is off everywhere except the Preview environment's sandbox test.
 
+**Paddle.js never runs on the site's origin.** The Pro sign-in keeps a refresh token in pdf-iq.com's
+localStorage, and /privacy promises only this site's own code can read it. So the checkout is a separate
+Cloudflare Pages project (`pdf-iq-checkout`, built by `tools/build-checkout.mjs` into `dist-checkout`),
+which /pro/buy/ frames and hands a uid and an email by postMessage. The site build refuses any Paddle
+script, call or token in its own output (CLAIMS 38).
+
 **Before the sale opens: measure Paddle.js in production.** Sandbox cannot show what matters most: Paddle.js
 injects Retain analytics (public.profitwell.com) in every environment except sandbox. The go-live checklist is
 `docs/sale-go-live.md`, and the production refusal in `tools/paddle-config.mjs` points to it.

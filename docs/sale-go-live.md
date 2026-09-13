@@ -31,12 +31,25 @@ production hosts, so it is corrected from this run before the sale is announced.
 
 ## 2. Credentials and configuration, Production environment only
 
+**Two Cloudflare Pages projects.** pdf-iq-web is the site; pdf-iq-checkout is the checkout origin, the only
+place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
+
+- pdf-iq-checkout: the custom domain `checkout.pdf-iq.com`; `PDFIQ_SALE`, `PDFIQ_PADDLE_ENV=production`,
+  the `live_` token, the live price id, `PDFIQ_SITE_ORIGIN=https://pdf-iq.com`,
+  `PDFIQ_CHECKOUT_ORIGIN=https://checkout.pdf-iq.com`.
+- pdf-iq-web: `PDFIQ_CHECKOUT_ORIGIN=https://checkout.pdf-iq.com` (and no client token: the site never uses it).
+- Paddle live: approve **both** pdf-iq.com and checkout.pdf-iq.com. Paddle's checkout frame sends a
+  report-only frame-ancestors policy naming its approved domain; with the checkout origin framed by the site,
+  both are ancestors. It only reports today; if Paddle enforces it, an unapproved ancestor breaks checkout.
+- The live default payment link is https://checkout.pdf-iq.com/ (the page that runs Paddle.js), not /pro/buy/.
+
+
 - `PDFIQ_PADDLE_ENV=production`, the `live_` client token, the live price id.
 - A live notification destination at `https://pdf-iq.com/api/paddle/webhook` for exactly
   `transaction.completed`, `adjustment.created`, `adjustment.updated`; its secret as `PADDLE_WEBHOOK_SECRET`.
 - A production D1 purchases database bound as `PURCHASES`, in the same region as the others.
 - `npm run entitlement:keys -- production`; private key into Production, public key committed.
-- The live default payment link repointed from /pro/ to https://pdf-iq.com/pro/buy/.
+- (Superseded by the checkout origin above: the default payment link is https://checkout.pdf-iq.com/.)
 - Cloudflare Bot Fight Mode checked for the webhook path (Paddle asks for bot checks to be bypassed there).
 
 ## 3. Copy that must change in the same release

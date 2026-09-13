@@ -130,6 +130,14 @@ await send('Page.addScriptToEvaluateOnNewDocument', {
   source: `if (location.origin === ${JSON.stringify(origin)}) { try { localStorage.setItem('pdfiq.session', ${JSON.stringify(JSON.stringify(fakeSession))}); } catch {} }`,
 }, page);
 
+// On every origin but the site's: remember the KEYS of each message received (never the values), so the
+// report shows exactly what /pro/buy/ handed across the boundary.
+await send('Page.addScriptToEvaluateOnNewDocument', {
+  source: `if (location.origin !== ${JSON.stringify(origin)}) { window.addEventListener('message', (e) => {
+    (window.__pdfiqSeen = window.__pdfiqSeen || []).push({ from: e.origin, keys: e.data && typeof e.data === 'object' ? Object.keys(e.data).sort() : typeof e.data });
+  }, true); }`,
+}, page);
+
 const evalIn = async (sessionId, expression) =>
   (await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }, sessionId)).result?.result?.value;
 
@@ -138,6 +146,8 @@ async function storage(label) {
   for (const [sid, f] of frames) {
     if (!/^https?:/.test(f.url ?? '')) continue;
     const v = await evalIn(sid, `(async () => ({ origin: location.origin,
+      signInReadable: (() => { try { return localStorage.getItem('pdfiq.session') !== null; } catch { return 'storage blocked'; } })(),
+      messages: window.__pdfiqSeen ?? [],
       local: Object.keys(localStorage), session: Object.keys(sessionStorage),
       idb: (await (indexedDB.databases?.() ?? Promise.resolve([]))).map((d) => d.name) }))()`).catch(() => null);
     if (v) out.push({ at: label, ...v });
@@ -220,6 +230,16 @@ console.log('\nStorage keys by origin:');
 for (const s of report.storage) console.log(`  ${s.at.padEnd(8)} ${s.origin}  local=[${s.local.join(', ')}] session=[${s.session.join(', ')}] idb=[${s.idb.join(', ')}]`);
 console.log('\nFooter counter on the page, by phase:');
 for (const [k, v] of Object.entries(readout)) console.log(`  ${k.padEnd(8)} ${v}`);
+console.log('\nThe boundary: can each frame read the Pro sign-in, and what did it receive?');
+const seenOrigins = new Map();
+for (const st of report.storage) seenOrigins.set(st.origin, st);
+for (const [o, st] of seenOrigins) {
+  const msgs = (st.messages ?? []).filter((m) => m.from === origin).map((m) => (Array.isArray(m.keys) ? m.keys.join('+') : m.keys));
+  console.log(`  ${o.padEnd(44)} sign-in readable: ${o === origin ? '(the site itself)' : st.signInReadable}${msgs.length ? `  messages from the site carried keys: ${[...new Set(msgs)].join(' | ')}` : ''}`);
+}
+const leaked = [...seenOrigins].some(([o, st]) => o !== origin && st.signInReadable === true);
+const tokenKeys = [...seenOrigins].some(([, st]) => (st.messages ?? []).some((m) => Array.isArray(m.keys) && m.keys.some((k) => /token/i.test(k))));
+console.log(`  → ${leaked ? 'BOUNDARY BROKEN: a frame outside the site read the sign-in' : 'no frame outside the site could read the sign-in'}; ${tokenKeys ? 'A MESSAGE CARRIED A TOKEN FIELD' : 'no message carried a token field'}`);
 console.log(`\nProfitWell / Retain requested: ${report.profitwellSeen ? 'YES' : 'no'}`);
 console.log(`Console lines about policy or Paddle: ${consoleLines.length}`);
 console.log(`Final page state: ${finalState?.state}${finalState?.reference ? `, reference ${finalState.reference}` : ''}`);

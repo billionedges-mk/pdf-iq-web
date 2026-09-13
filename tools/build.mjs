@@ -16,7 +16,7 @@ import * as esbuild from 'esbuild';
 import { applyProBlocks } from './pro-blocks.mjs';
 import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
 import { AUTH } from './auth-config.mjs';
-import { PADDLE, PADDLE_SCRIPT } from './paddle-config.mjs';
+import { PADDLE } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
 import { PRO_COPY, proState } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
@@ -483,22 +483,15 @@ function buyHeaders() {
   const site = readFileSync(join(ROOT, 'public/_headers'), 'utf8');
   const policy = site.match(/^\s*Content-Security-Policy: (.+)$/m)?.[1];
   if (!policy) throw new Error('public/_headers has no Content-Security-Policy to derive the purchase page policy from');
-  const h = PADDLE.hosts;
-  const add = (p, directive, hosts) => {
-    if (!hosts.length) return p;
-    const re = new RegExp(`${directive} ([^;]+)`);
-    return re.test(p) ? p.replace(re, (_, v) => `${directive} ${v} ${hosts.join(' ')}`) : `${p}; ${directive} ${hosts.join(' ')}`;
-  };
-  let p = policy;
-  p = add(p, 'script-src', h.script);
-  p = add(p, 'style-src', h.style);
-  p = add(p, 'img-src', h.img);
-  p = add(p, 'connect-src', h.connect);
-  p = add(p, 'frame-src', h.frame);
-  if (/profitwell/i.test(p)) throw new Error('the purchase page policy names a ProfitWell host; Retain analytics must stay blocked');
+  // One addition: the checkout origin, as a frame. No Paddle host at all — Paddle.js runs on that origin,
+  // never on this one, so it cannot read this origin's storage (tools/paddle-config.mjs explains why).
+  const p = /frame-src ([^;]+)/.test(policy)
+    ? policy.replace(/frame-src ([^;]+)/, (_, v) => `frame-src ${v} ${PADDLE.checkoutOrigin}`)
+    : `${policy}; frame-src ${PADDLE.checkoutOrigin}`;
+  if (/paddle\.com|profitwell/i.test(p)) throw new Error('the purchase page policy names a Paddle or ProfitWell host; Paddle.js must never run on this origin');
   return [
     '',
-    `# Sale build only (Paddle ${PADDLE.env}): the purchase page, and nothing else, may load Paddle's checkout.`,
+    `# Sale build only (Paddle ${PADDLE.env}): the purchase page may frame the checkout origin, and nothing else changes.`,
     '/pro/buy/*',
     '  ! Content-Security-Policy',
     `  Content-Security-Policy: ${p}`,
@@ -553,7 +546,7 @@ async function bundle() {
     sourcemap: WATCH,
     logLevel: 'warning',
     metafile: true,
-    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null', __PDFIQ_SALE__: PADDLE?.page ? 'true' : 'false', __PDFIQ_PADDLE_ENV__: JSON.stringify(PADDLE?.page ? PADDLE.env : ''), __PDFIQ_PADDLE_TOKEN__: JSON.stringify(PADDLE?.page ? PADDLE.token : ''), __PDFIQ_PADDLE_PRICE__: JSON.stringify(PADDLE?.page ? PADDLE.priceId : ''), __PDFIQ_PADDLE_SCRIPT__: JSON.stringify(PADDLE?.page ? PADDLE_SCRIPT : '') },
+    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null', __PDFIQ_SALE__: PADDLE?.page ? 'true' : 'false', __PDFIQ_PADDLE_ENV__: JSON.stringify(PADDLE?.page ? PADDLE.env : ''), __PDFIQ_CHECKOUT_ORIGIN__: JSON.stringify(PADDLE?.page ? PADDLE.checkoutOrigin : '') },
     // Scalars, not one object: esbuild hoists an object-valued define into a shared module, and the
     // first version put the token, price and Paddle.js URL into a chunk every Pro page loads.
   });
@@ -798,6 +791,17 @@ async function build() {
     throw new Error('the Pro flag is on, but no Pro module reached the bundle');
   }
 
+  // Paddle.js never runs on this origin, sale build or not (tools/paddle-config.mjs). No file this build
+  // writes may call Paddle or carry a client token; only the /pro/buy/ header may name the checkout origin.
+  for (const rel of readdirSync(OUT, { recursive: true })) {
+    const name = String(rel);
+    if (!TEXTLIKE.test(name)) continue;
+    const text = readFileSync(join(OUT, name), 'utf8');
+    if (/cdn\.paddle\.com|Paddle\.Initialize|Paddle\.Checkout|test_[0-9a-f]{20}|live_[0-9a-f]{20}/.test(text)) {
+      throw new Error(`Paddle reached the site's own origin in ${name.split(/[\\/]/).join('/')}; it belongs on the checkout origin only`);
+    }
+  }
+
   // The sale, checked the same way. A build that cannot sell may carry no purchase path at all:
   // no Paddle host, no client token, no checkout call, in any file it wrote (check 14).
   if (!PADDLE?.page) {
@@ -806,7 +810,7 @@ async function build() {
       const name = String(rel);
       if (!TEXTLIKE.test(name) && !name.endsWith('_headers')) continue;
       const text = readFileSync(join(OUT, name), 'utf8');
-      if (/paddle\.com|Paddle\.Checkout|Paddle\.Initialize|test_[0-9a-f]{20}|live_[0-9a-f]{20}/.test(text)) selling.push(name.split(/[\\/]/).join('/'));
+      if (/paddle\.com|Paddle\.Checkout|Paddle\.Initialize|test_[0-9a-f]{20}|live_[0-9a-f]{20}|pdfiq-checkout-open/.test(text)) selling.push(name.split(/[\\/]/).join('/'));
     }
     if (selling.length) throw new Error(`a purchase path reached a build that is not selling: ${selling.slice(0, 8).join(', ')}`);
   }

@@ -26,6 +26,12 @@ declare const __PDFIQ_LOCAL__: boolean;
  */
 declare const __PDFIQ_SALE__: boolean;
 declare const __PDFIQ_PADDLE_ENV__: string;
-declare const __PDFIQ_PADDLE_TOKEN__: string;
-declare const __PDFIQ_PADDLE_PRICE__: string;
-declare const __PDFIQ_PADDLE_SCRIPT__: string;
+/** The checkout origin /pro/buy/ frames and talks to (tools/paddle-config.mjs). Empty when not selling. */
+declare const __PDFIQ_CHECKOUT_ORIGIN__: string;
+
+/** Checkout build only (tools/build-checkout.mjs): the Paddle configuration and the one origin it answers. */
+declare const __CHECKOUT_PADDLE_ENV__: string;
+declare const __CHECKOUT_PADDLE_TOKEN__: string;
+declare const __CHECKOUT_PADDLE_PRICE__: string;
+declare const __CHECKOUT_PADDLE_SCRIPT__: string;
+declare const __CHECKOUT_SITE_ORIGIN__: string;

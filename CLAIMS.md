@@ -50,7 +50,8 @@ the work is done.
 34. [A check is not trusted against the fix until it has failed against the defect](#34-a-check-is-not-trusted-against-the-fix-until-it-has-failed-against-the-defect)  
 35. [A check that reads a shared mutable location describes whatever wrote there last](#35-a-check-that-reads-a-shared-mutable-location-describes-whatever-wrote-there-last)  
 36. [A claim in metadata is invisible to everyone who reads the page](#36-a-claim-in-metadata-is-invisible-to-everyone-who-reads-the-page)  
-37. [The host edits the page after you write it, and only the served copy shows it](#37-the-host-edits-the-page-after-you-write-it-and-only-the-served-copy-shows-it)
+37. [The host edits the page after you write it, and only the served copy shows it](#37-the-host-edits-the-page-after-you-write-it-and-only-the-served-copy-shows-it)  
+38. [A claim and a new feature that contradict each other are a design review nobody scheduled](#38-a-claim-and-a-new-feature-that-contradict-each-other-are-a-design-review-nobody-scheduled)
 
 <!-- /index -->
 
@@ -1399,3 +1400,34 @@ one of this build's own `/assets/` bundles, and on the markers email obfuscation
 It failed on production the day it was written, for the obfuscation this entry records; it passes
 once the setting is off. A host can add a third-party script to a page you wrote, and the only way to
 know is to read what is served.
+
+---
+
+### 38. A claim and a new feature that contradict each other are a design review nobody scheduled
+
+On 13 September 2026 the /privacy wording for Paddle's checkout was drafted, researched and approved,
+and was one step from being applied. Applying it meant reading the section it would sit beside, and
+that section already said of the stored Pro sign-in: "loads no third-party script on any page: the only
+code that can read it is this site's own. If that ever changed, this storage would have to change with
+it."
+
+/pro/buy/, as built, loaded Paddle.js into a page on the same origin. Any script in that page can read
+the origin's localStorage, and the sign-in there holds a Firebase refresh token that can act as the
+account. The page under construction and the sentence on /privacy could not both be true. Neither the
+builds, the gates nor the measurement found it: each checked what it was written to check. The
+contradiction was the finding.
+
+The fix was structural, not a rewrite of the sentence. Paddle.js now runs only on a separate origin (its
+own Cloudflare Pages project), which /pro/buy/ frames and hands a uid and an email by postMessage. The
+browser keeps each origin's storage to itself, so the claim holds because the platform enforces it, not
+because the code is careful. Weakening the sentence to fit the code was the alternative and was refused.
+
+**The check:**
+
+1. Before applying new copy, read the page it lands on for statements the new copy, or the feature it
+   describes, would make false. Applying a draft beside a sentence it contradicts buries the finding.
+2. When a claim and a feature disagree, change the design before the words. The claim was written for a
+   reason; the disagreement is the review.
+3. `verify:sale-build` fails if Paddle's script, a Paddle call or a client token reaches any file on the
+   site's origin, and the build itself refuses it. Putting Paddle.js's address back into the site's buy
+   bundle made the build fail by name.

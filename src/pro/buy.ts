@@ -1,18 +1,21 @@
 /**
  * /pro/buy/ — present only in a sale build (tools/paddle-config.mjs).
  *
- * The one page on the site that loads a third-party script, and it does so only when someone
- * presses the button. Visiting the page loads nothing from Paddle; the footer readout stays at zero
- * until a person chooses to pay.
+ * This page never runs Paddle's script. It cannot: Paddle.js running here could read this origin's
+ * localStorage, where the Pro sign-in keeps a refresh token that can act as the account, and /privacy
+ * promises only this site's own code can read that. So pressing Pay embeds the checkout, which lives
+ * on a different origin (__PDFIQ_CHECKOUT_ORIGIN__), in a frame covering the page, and hands it only
+ * the uid and email, by postMessage, addressed to that exact origin. The browser keeps each origin's
+ * storage to itself; nothing here has to be careful for that to hold.
  *
- * Two things this page must never do:
- *   - Load Paddle Retain's analytics. Paddle.js 2.9.7 ends Paddle.Initialize() by injecting
- *     public.profitwell.com/js/profitwell.js whenever the environment is not sandbox, unless
- *     `window.profitwell.isLoaded` is already set (read from the library's source, not its docs).
- *     It is set before Initialize, and the page's content security policy does not allow that host
- *     either, so if a future Paddle.js ignores the first guard the browser still refuses the script.
- *   - Take payment for someone who is not signed in. The purchase is recorded against the Firebase
- *     account in custom_data; without one, a payment would belong to nobody we can find again.
+ * Visiting the page loads nothing from anyone else. The frame is created only when Pay is pressed.
+ *
+ * Messages are accepted only from the checkout origin, and only these shapes:
+ *   { type: 'pdfiq-checkout-ready' }                     the frame is listening; send it the buyer
+ *   { type: 'pdfiq-checkout-loaded' }                    Paddle's checkout is showing
+ *   { type: 'pdfiq-checkout-failed' }                    Paddle.js did not load, or Paddle refused
+ *   { type: 'pdfiq-checkout-closed' }                    the buyer closed the checkout
+ *   { type: 'pdfiq-checkout-completed', transactionId }  paid
  */
 import { signedIn } from './gate.js';
 
@@ -20,96 +23,87 @@ export const BUY_SENTINEL = 'pdfiq-pro:buy';
 
 type View = 'working' | 'out' | 'ready' | 'loading' | 'done' | 'failed';
 
-interface PaddleEvent { name?: string; data?: { transaction_id?: string } }
-interface PaddleGlobal {
-  Environment: { set(env: string): void };
-  Initialize(options: { token: string; eventCallback: (e: PaddleEvent) => void }): void;
-  Checkout: { open(options: unknown): void };
-}
-declare global {
-  interface Window { Paddle?: PaddleGlobal; profitwell?: { isLoaded?: boolean } }
-}
-
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel);
 
 function show(view: View): void {
   for (const el of document.querySelectorAll<HTMLElement>('[data-buy]')) el.hidden = el.dataset.buy !== view;
   document.body.dataset.pdfiqBuy = BUY_SENTINEL;
-  // Read by the checkout.closed handler: closing Paddle's overlay after paying must not put the
-  // page back to "ready", as if nothing had happened.
+  // Read by the closed handler: closing the checkout after paying must not put the page back to
+  // "ready", as if nothing had happened.
   document.body.dataset.pdfiqBuyState = view;
 }
 
-function loadPaddle(src: string): Promise<PaddleGlobal> {
-  if (window.Paddle) return Promise.resolve(window.Paddle);
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = () => (window.Paddle ? resolve(window.Paddle) : reject(new Error('Paddle.js loaded without defining Paddle')));
-    s.onerror = () => reject(new Error('Paddle.js did not load'));
-    document.head.appendChild(s);
-  });
-}
-
-let initialized = false;
-
 /**
- * How long Paddle's checkout may take to report itself loaded before the page stops saying it is
- * opening. Measured first: with a checkout Paddle refused, neither checkout.loaded nor checkout.failed
- * arrived, and the page said "Opening Paddle's checkout" indefinitely.
+ * How long the checkout may take to say it is showing before the page stops saying it is opening.
+ * Measured first: with a checkout Paddle refused, no event arrived at all, and the page said
+ * "Opening Paddle's checkout" indefinitely.
  */
 const OPEN_TIMEOUT_MS = 25000;
 let opening: ReturnType<typeof setTimeout> | undefined;
+let frame: HTMLIFrameElement | null = null;
 
-async function pay(): Promise<void> {
+function removeFrame(): void {
+  frame?.remove();
+  frame = null;
+}
+
+function pay(): void {
   const session = signedIn();
   if (!__PDFIQ_SALE__ || !session) {
     show('out');
     return;
   }
+  removeFrame();
   show('loading');
-  let Paddle: PaddleGlobal;
-  try {
-    Paddle = await loadPaddle(__PDFIQ_PADDLE_SCRIPT__);
-  } catch {
-    show('failed');
-    return;
-  }
-  if (!initialized) {
-    // First guard against Retain analytics; the page's CSP is the second.
-    window.profitwell = { ...(window.profitwell ?? {}), isLoaded: true };
-    if (__PDFIQ_PADDLE_ENV__ === 'sandbox') Paddle.Environment.set('sandbox');
-    Paddle.Initialize({
-      token: __PDFIQ_PADDLE_TOKEN__,
-      eventCallback: (e) => {
-        if (e.name === 'checkout.loaded') {
-          clearTimeout(opening);
-          show('ready');
-        } else if (e.name === 'checkout.failed') {
-          clearTimeout(opening);
-          show('failed');
-        } else if (e.name === 'checkout.completed') {
-          $('[data-buy-reference]')!.textContent = e.data?.transaction_id ?? 'not given';
-          show('done');
-        } else if (e.name === 'checkout.closed' && document.body.dataset.pdfiqBuyState !== 'done') {
-          show('ready');
-        }
-      },
-    });
-    initialized = true;
-  }
+
+  frame = document.createElement('iframe');
+  frame.src = `${__PDFIQ_CHECKOUT_ORIGIN__}/`;
+  frame.title = "Paddle's checkout";
+  // Paddle's checkout offers wallet payments; the frame may ask for them, nothing else.
+  frame.allow = 'payment';
+  frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;background:transparent;z-index:2147483647;color-scheme:normal';
+  document.body.append(frame);
+
   clearTimeout(opening);
   opening = setTimeout(() => {
-    if (document.body.dataset.pdfiqBuyState === 'loading') show('failed');
+    if (document.body.dataset.pdfiqBuyState === 'loading') {
+      removeFrame();
+      show('failed');
+    }
   }, OPEN_TIMEOUT_MS);
-  Paddle.Checkout.open({
-    items: [{ priceId: __PDFIQ_PADDLE_PRICE__, quantity: 1 }],
-    customer: { email: session.email },
-    // Whose purchase this is. The webhook records it against this uid (server/paddle.js).
-    customData: { uid: session.uid, email: session.email },
-    settings: { displayMode: 'overlay', allowLogout: false },
-  });
 }
+
+window.addEventListener('message', (e: MessageEvent) => {
+  // Anything not from the checkout origin, or not from the frame this page made, is ignored.
+  if (e.origin !== __PDFIQ_CHECKOUT_ORIGIN__ || !frame || e.source !== frame.contentWindow) return;
+  const data = e.data as { type?: string; transactionId?: string } | null;
+  const session = signedIn();
+  switch (data?.type) {
+    case 'pdfiq-checkout-ready':
+      if (!session) { removeFrame(); show('out'); return; }
+      // The uid and email only: never the ID token or the refresh token.
+      frame.contentWindow!.postMessage({ type: 'pdfiq-checkout-open', uid: session.uid, email: session.email }, __PDFIQ_CHECKOUT_ORIGIN__);
+      break;
+    case 'pdfiq-checkout-loaded':
+      clearTimeout(opening);
+      break;
+    case 'pdfiq-checkout-failed':
+      clearTimeout(opening);
+      removeFrame();
+      show('failed');
+      break;
+    case 'pdfiq-checkout-completed':
+      clearTimeout(opening);
+      $('[data-buy-reference]')!.textContent = typeof data.transactionId === 'string' ? data.transactionId : 'not given';
+      show('done');
+      break;
+    case 'pdfiq-checkout-closed':
+      clearTimeout(opening);
+      removeFrame();
+      if (document.body.dataset.pdfiqBuyState !== 'done') show('ready');
+      break;
+  }
+});
 
 function start(): void {
   const session = signedIn();
@@ -118,8 +112,8 @@ function start(): void {
     return;
   }
   $('[data-buy-email]')!.textContent = session.email;
-  $<HTMLButtonElement>('[data-buy-pay]')!.addEventListener('click', () => void pay());
-  $<HTMLButtonElement>('[data-buy-retry]')?.addEventListener('click', () => void pay());
+  $<HTMLButtonElement>('[data-buy-pay]')!.addEventListener('click', pay);
+  $<HTMLButtonElement>('[data-buy-retry]')?.addEventListener('click', pay);
   show('ready');
 }
 

@@ -34,6 +34,7 @@
     "paddle:test-events": "node tools/paddle-test-events.mjs",
     "verify:sale-build": "node tools/verify-sale-build.mjs",
     "measure:paddle": "node tools/measure-paddle.mjs",
+    "build:checkout": "node tools/build-checkout.mjs",
     "verify:size-claims": "node tools/verify-size-claims.mjs"
   },
   "dependencies": {
