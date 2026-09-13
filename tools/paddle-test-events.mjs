@@ -80,8 +80,10 @@ const results = [
   await send('3. approved full refund', refund, /"applied":\s*true.*"revoked"/),
 ];
 
-console.log(`\nIn the D1 console, the row should now read status 'revoked' for ${txn}:`);
-console.log(`  SELECT * FROM purchases WHERE uid = 'sim-test';`);
+console.log(`\nIn the D1 console, the row should now read uid 'sim-test', status 'revoked':`);
+console.log(`  SELECT * FROM purchases WHERE transaction_id = '${txn}';`);
+// By transaction, not uid: if the purchase was refused (a wrong price, say) the refund still writes
+// an unbound row, and a delete by uid would leave it behind.
 console.log('Then remove it:');
-console.log(`  DELETE FROM purchases WHERE uid = 'sim-test';\n`);
+console.log(`  DELETE FROM purchases WHERE transaction_id = '${txn}';\n`);
 process.exit(results.every(Boolean) ? 0 : 1);
