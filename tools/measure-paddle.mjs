@@ -102,17 +102,31 @@ listeners.push((m) => {
   } else if (m.method === 'Target.attachedToTarget') {
     const { sessionId, targetInfo } = m.params;
     frames.set(sessionId, { url: targetInfo.url, type: targetInfo.type, targetId: targetInfo.targetId });
-    void setUp(sessionId);
+    void setUp(sessionId, targetInfo.type === 'iframe');
   } else if (m.method === 'Target.targetInfoChanged') {
     for (const [sid, f] of frames) if (f.targetId === m.params.targetInfo.targetId) f.url = m.params.targetInfo.url;
   }
 });
 
-async function setUp(sessionId) {
+// Installed in every frame target before its document runs: remembers the KEYS of each message received,
+// never the values. The first version installed it on the top page only; cross-site frames are separate
+// targets, so the checkout frame's messages were never seen and "no message carried a token field"
+// had nothing to judge.
+const MESSAGE_SPY = `window.addEventListener('message', (e) => {
+  (window.__pdfiqSeen = window.__pdfiqSeen || []).push({ from: e.origin, keys: e.data && typeof e.data === 'object' ? Object.keys(e.data).sort() : typeof e.data });
+}, true);`;
+
+async function setUp(sessionId, isFrame = false) {
   await send('Network.enable', {}, sessionId);
   await send('Runtime.enable', {}, sessionId);
   await send('Log.enable', {}, sessionId);
-  await send('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: false, flatten: true }, sessionId);
+  if (isFrame) {
+    await send('Page.enable', {}, sessionId);
+    await send('Page.addScriptToEvaluateOnNewDocument', { source: MESSAGE_SPY }, sessionId);
+    // The frame was paused at start (waitForDebuggerOnStart); its first document has not run yet.
+    await send('Runtime.evaluate', { expression: MESSAGE_SPY }, sessionId);
+  }
+  await send('Target.setAutoAttach', { autoAttach: true, waitForDebuggerOnStart: true, flatten: true }, sessionId);
   await send('Runtime.runIfWaitingForDebugger', {}, sessionId);
 }
 
@@ -128,14 +142,6 @@ await send('Page.enable', {}, page);
 const fakeSession = { uid: FAKE_UID, email: 'pdfiq-sandbox-measure@example.com', idToken: 'measurement', idTokenExpiresAt: 0, refreshToken: 'measurement' };
 await send('Page.addScriptToEvaluateOnNewDocument', {
   source: `if (location.origin === ${JSON.stringify(origin)}) { try { localStorage.setItem('pdfiq.session', ${JSON.stringify(JSON.stringify(fakeSession))}); } catch {} }`,
-}, page);
-
-// On every origin but the site's: remember the KEYS of each message received (never the values), so the
-// report shows exactly what /pro/buy/ handed across the boundary.
-await send('Page.addScriptToEvaluateOnNewDocument', {
-  source: `if (location.origin !== ${JSON.stringify(origin)}) { window.addEventListener('message', (e) => {
-    (window.__pdfiqSeen = window.__pdfiqSeen || []).push({ from: e.origin, keys: e.data && typeof e.data === 'object' ? Object.keys(e.data).sort() : typeof e.data });
-  }, true); }`,
 }, page);
 
 const evalIn = async (sessionId, expression) =>
@@ -239,7 +245,8 @@ for (const [o, st] of seenOrigins) {
 }
 const leaked = [...seenOrigins].some(([o, st]) => o !== origin && st.signInReadable === true);
 const tokenKeys = [...seenOrigins].some(([, st]) => (st.messages ?? []).some((m) => Array.isArray(m.keys) && m.keys.some((k) => /token/i.test(k))));
-console.log(`  → ${leaked ? 'BOUNDARY BROKEN: a frame outside the site read the sign-in' : 'no frame outside the site could read the sign-in'}; ${tokenKeys ? 'A MESSAGE CARRIED A TOKEN FIELD' : 'no message carried a token field'}`);
+const anyMessages = [...seenOrigins].some(([o, st]) => o !== origin && (st.messages ?? []).some((m) => m.from === origin));
+console.log(`  → ${leaked ? 'BOUNDARY BROKEN: a frame outside the site read the sign-in' : 'no frame outside the site could read the sign-in'}; ${!anyMessages ? 'NO MESSAGE FROM THE SITE WAS RECORDED, so what crossed the boundary is unknown' : tokenKeys ? 'A MESSAGE CARRIED A TOKEN FIELD' : 'no message carried a token field'}`);
 console.log(`\nProfitWell / Retain requested: ${report.profitwellSeen ? 'YES' : 'no'}`);
 console.log(`Console lines about policy or Paddle: ${consoleLines.length}`);
 console.log(`Final page state: ${finalState?.state}${finalState?.reference ? `, reference ${finalState.reference}` : ''}`);

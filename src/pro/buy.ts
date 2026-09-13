@@ -86,6 +86,9 @@ window.addEventListener('message', (e: MessageEvent) => {
       break;
     case 'pdfiq-checkout-loaded':
       clearTimeout(opening);
+      // The checkout is showing over the page. Behind it, the page reads "ready", so closing the checkout
+      // returns to the same place. Found on Preview: without this it stayed on "Opening Paddle's checkout".
+      show('ready');
       break;
     case 'pdfiq-checkout-failed':
       clearTimeout(opening);
