@@ -81,3 +81,13 @@ place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
   Also new: card-brand icons from buy.paddle.com (the production host, even in sandbox) and more Stripe
   scripts. No new cookie names: still m on m.stripe.com (until 2027-10-18) and __cf_bm on .paddle.com. The
   footer counter stayed at 3 third-party requests. ProfitWell requested: no, as expected in sandbox.
+
+- **The two-origin checkout on Preview** (3d796a5, 13 September 2026): the stored sign-in was readable by no frame
+  outside the site: not the checkout origin, Paddle's or Stripe's. The checkout origin stores nothing and
+  received one message, keys email, type and uid. **One consequence of nesting:** Paddle's checkout frame has a
+  report-only frame-ancestors policy naming only its default payment link's origin, so the site above it is a
+  violation, and the browser posts a report about our page to Paddle's Sentry
+  (o522631.ingest.sentry.io/api/5637177/security/). The footer counter counts that as a third-party request but
+  shows 0 bytes sent, because it cannot see bodies the browser posts itself. Approving the site's domain in
+  Paddle should remove the violation, and with it the report. Measure again after approving, before the
+  /privacy wording names or omits it.
