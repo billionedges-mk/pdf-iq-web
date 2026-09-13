@@ -120,6 +120,16 @@ back with `git ls-remote origin main` and compare it against the commit you mean
 task branch for twenty minutes while a Cloudflare build was assumed to be queued or failing
 (CLAIMS 32).
 
+**"No deployment available" is at least two different failures.** A build that ran and failed (e56b881,
+which refused a sale without Pro in its own log) and a build that was never started (f3c2dbf, "Failed: unable
+to submit build job", before any clone) show the same status and the same warning icon on 13 September 2026.
+Only the deployment log tells them apart. The second is fixed by Retry deployment with no change; the first is
+not. Read the log before reproducing anything.
+
+**A poll must say what it is still seeing.** Any wait for a deploy prints the build it is currently served on
+every attempt (verify:live does: "serving X, waiting for Y"). A wait that only reports success cannot tell
+slow from never. One waited silently for a build Cloudflare had not queued.
+
 **When a deploy misbehaves, reproduce the build from the pushed commit**, not from the tree you
 have: `git worktree add <dir> <commit>`, link `node_modules` into it (the build resolves fonts by
 path from its own root), then `CF_PAGES=1 CF_PAGES_BRANCH=main npm run build`. A clean checkout is
