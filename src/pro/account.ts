@@ -173,12 +173,12 @@ function localStubCard(): void {
  */
 function proState(result: RefreshResult): void {
   const host = el('[data-signout]').closest('p')!;
-  document.querySelector('[data-account-pro]')?.remove();
+  for (const old of Array.from(document.querySelectorAll('[data-account-pro]'))) old.remove();
   const p = document.createElement('p');
   p.dataset.accountPro = '';
   p.style.cssText = 'margin: 16px 0 0; font-size: 15.5px; line-height: 1.6;';
   const words: Record<RefreshResult['state'], string> = {
-    owned: 'Pro is yours, and this browser now knows it. The Pro features work here with no connection from now on.',
+    owned: 'Pro is yours, and this browser now knows it. A Pro feature in a page that is already open keeps working with no connection; opening a page still needs one.',
     'not-owned': 'This account does not own Pro.',
     revoked: 'This account’s Pro purchase was refunded, so Pro has been taken off this browser.',
     offline: 'You are offline, so Pro could not be checked. Nothing on this browser changed.',
@@ -186,8 +186,65 @@ function proState(result: RefreshResult): void {
   };
   p.textContent = words[result.state];
   host.before(p);
+  if (result.state === 'owned') {
+    // Where Pro is, so owning it is a click away rather than a search.
+    const where = document.createElement('p');
+    where.dataset.accountPro = '';
+    where.style.cssText = 'margin: 8px 0 0; font-size: 15.5px; line-height: 1.6;';
+    where.append('Try it: ');
+    const links: [string, string][] = [['/batch/', 'Batch'], ['/password/', 'Password'], ['/compress/', 'Compress to a size'], ['/ocr/', 'Searchable PDF']];
+    links.forEach(([href, text], i) => {
+      const a = document.createElement('a');
+      a.href = href;
+      a.textContent = text;
+      where.append(a, i < links.length - 1 ? ' · ' : '');
+    });
+    host.before(where);
+  }
   // Owning Pro, the Buy link has nothing left to offer.
   if (result.state === 'owned') document.querySelector('[data-account-buy]')?.remove();
+}
+
+/**
+ * Arrived from /pro/buy/ straight after paying. Paddle tells our server by webhook, which can land a few seconds
+ * after the checkout says it is done, so this asks again every two seconds and says what it is waiting for, with
+ * the time, until Pro is confirmed or a minute and a half has passed.
+ */
+async function confirmPurchase(reference: string): Promise<void> {
+  const txn = /^txn_[a-z0-9]{26}$/.test(reference) ? reference : '';
+  const host = el('[data-signout]').closest('p')!;
+  const status = document.createElement('p');
+  status.dataset.accountPro = '';
+  status.setAttribute('role', 'status');
+  status.style.cssText = 'margin: 16px 0 0; font-size: 15.5px; line-height: 1.6;';
+  host.before(status);
+  const started = Date.now();
+  const LIMIT_MS = 90_000;
+  for (;;) {
+    const seconds = Math.round((Date.now() - started) / 1000);
+    status.textContent = `Paddle has taken your payment${txn ? ` (reference ${txn})` : ''}. Waiting for Paddle to confirm it to us, which usually takes a few seconds… ${seconds}s`;
+    let result: RefreshResult;
+    try {
+      const session = await freshSession();
+      if (!session) return show('out');
+      result = await refreshEntitlement(session.idToken, session.uid);
+    } catch {
+      result = { state: 'unavailable', detail: 'sign-in could not be renewed' };
+    }
+    if (result.state === 'owned' || result.state === 'revoked') {
+      status.remove();
+      return proState(result);
+    }
+    if (result.state === 'offline') {
+      status.textContent = `Paddle has taken your payment${txn ? ` (reference ${txn})` : ''}, but you are offline, so it could not be confirmed. Open this page again once you are connected; nothing is lost.`;
+      return;
+    }
+    if (Date.now() - started > LIMIT_MS) {
+      status.textContent = `Paddle has taken your payment${txn ? ` (reference ${txn})` : ''}, but its confirmation has not reached us yet. Nothing is lost: this page checks again each time you open it, and support@pdf-iq.com can match the reference if it does not arrive.`;
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 2000));
+  }
 }
 
 async function mount(): Promise<void> {
@@ -210,7 +267,14 @@ async function mount(): Promise<void> {
     const session = completed ?? (await freshSession());
     if (!session) return show('out');
     signedIn(session.email);
-    if (__PDFIQ_SALE__) proState(await refreshEntitlement(session.idToken, session.uid));
+    if (__PDFIQ_SALE__) {
+      const purchased = new URLSearchParams(location.search).get('purchased');
+      if (purchased) {
+        history.replaceState(null, '', location.pathname);
+        return confirmPurchase(purchased);
+      }
+      proState(await refreshEntitlement(session.idToken, session.uid));
+    }
   } catch (e) {
     failed(e);
   }

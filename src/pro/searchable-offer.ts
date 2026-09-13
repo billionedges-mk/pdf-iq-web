@@ -30,6 +30,21 @@ export interface SearchableOffer {
   onWritten: (said: { head: string; announce: string }, copy: { bytes: Uint8Array; name: string }) => void;
 }
 
+/**
+ * The options step, before any reading: whether this browser can use the searchable PDF. Before this the
+ * feature was invisible until a run finished, and not always then (reported four times). Said in words about
+ * what the person can do.
+ */
+export function introSearchable(host: HTMLElement): void {
+  host.dataset.pdfiqPro = searchableMark();
+  host.textContent = '';
+  if (proAccount()) {
+    host.append('Yours with Pro: the option appears with the text once reading finishes.');
+    return;
+  }
+  host.append(proPrompt('The searchable PDF'));
+}
+
 export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
   host.textContent = '';
   host.dataset.pdfiqPro = searchableMark();

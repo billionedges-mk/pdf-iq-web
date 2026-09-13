@@ -17,11 +17,11 @@
  *   { type: 'pdfiq-checkout-closed' }                    the buyer closed the checkout
  *   { type: 'pdfiq-checkout-completed', transactionId }  paid
  */
-import { signedIn } from './gate.js';
+import { signedIn, proAccount } from './gate.js';
 
 export const BUY_SENTINEL = 'pdfiq-pro:buy';
 
-type View = 'working' | 'out' | 'ready' | 'loading' | 'done' | 'failed';
+type View = 'working' | 'out' | 'owned' | 'ready' | 'loading' | 'done' | 'failed';
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel);
 
@@ -41,10 +41,34 @@ function show(view: View): void {
 const OPEN_TIMEOUT_MS = 25000;
 let opening: ReturnType<typeof setTimeout> | undefined;
 let frame: HTMLIFrameElement | null = null;
+let cover: HTMLElement | null = null;
+
+/**
+ * A full-page status shown the instant Pay is pressed, beneath the checkout frame. The checkout is a separate
+ * origin that takes seconds to load, and before this the page showed nothing in that time: Maneesh's walk
+ * (13 September 2026) timed four to five seconds of an unchanged screen. The frame is transparent until
+ * Paddle's overlay paints, so this shows through it until then.
+ */
+function coverWith(words: string): void {
+  if (!cover) {
+    cover = document.createElement('div');
+    cover.setAttribute('role', 'status');
+    cover.style.cssText = 'position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;'
+      + 'background:rgba(30,42,56,.55);color:#FAF8F4;font:600 18px/1.5 system-ui,sans-serif;padding:24px;text-align:center';
+    document.body.append(cover);
+  }
+  cover.textContent = words;
+}
+
+function removeCover(): void {
+  cover?.remove();
+  cover = null;
+}
 
 function removeFrame(): void {
   frame?.remove();
   frame = null;
+  removeCover();
 }
 
 function pay(): void {
@@ -55,6 +79,7 @@ function pay(): void {
   }
   removeFrame();
   show('loading');
+  coverWith("Opening Paddle's secure checkout…");
 
   frame = document.createElement('iframe');
   frame.src = `${__PDFIQ_CHECKOUT_ORIGIN__}/`;
@@ -86,6 +111,8 @@ window.addEventListener('message', (e: MessageEvent) => {
       break;
     case 'pdfiq-checkout-loaded':
       clearTimeout(opening);
+      // Paddle's own overlay is showing now; ours would only sit behind it.
+      removeCover();
       // The checkout is showing over the page. Behind it, the page reads "ready", so closing the checkout
       // returns to the same place. Found on Preview: without this it stayed on "Opening Paddle's checkout".
       show('ready');
@@ -95,11 +122,21 @@ window.addEventListener('message', (e: MessageEvent) => {
       removeFrame();
       show('failed');
       break;
-    case 'pdfiq-checkout-completed':
+    case 'pdfiq-checkout-completed': {
       clearTimeout(opening);
-      $('[data-buy-reference]')!.textContent = typeof data.transactionId === 'string' ? data.transactionId : 'not given';
+      const txn = typeof data.transactionId === 'string' && /^txn_[a-z0-9]{26}$/.test(data.transactionId) ? data.transactionId : '';
+      $('[data-buy-reference]')!.textContent = txn || 'not given';
       show('done');
+      // Paid. Before this the page stopped at Paddle's success message: closing it and reloading still offered
+      // Buy, and Pro arrived only if the buyer thought to open /account/ (the walk of 13 September 2026). So go
+      // there now, where the purchase is confirmed and this browser learns it owns Pro.
+      removeFrame();
+      coverWith('Payment received. Taking you to your account to switch Pro on…');
+      setTimeout(() => {
+        location.href = `/account/${txn ? `?purchased=${encodeURIComponent(txn)}` : '?purchased=1'}`;
+      }, 1200);
       break;
+    }
     case 'pdfiq-checkout-closed':
       clearTimeout(opening);
       removeFrame();
@@ -112,6 +149,11 @@ function start(): void {
   const session = signedIn();
   if (!__PDFIQ_SALE__ || !session) {
     show('out');
+    return;
+  }
+  // Already owned on this browser: nothing to buy, and nothing should suggest otherwise.
+  if (proAccount()) {
+    show('owned');
     return;
   }
   $('[data-buy-email]')!.textContent = session.email;

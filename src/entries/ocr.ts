@@ -392,6 +392,12 @@ function renderResult(took: number): void {
   }
 }
 
+// Pro: say before any reading that the searchable PDF exists, and whether this browser can use it.
+if (__PDFIQ_PRO__) {
+  const intro = $('[data-pro-searchable-state]');
+  if (intro) void import('../pro/searchable-offer.js').then((m) => m.introSearchable(intro as HTMLElement));
+}
+
 $('[data-replace]')?.addEventListener('click', reset);
 $$('[data-again]').forEach((b) => b.addEventListener('click', reset));
 

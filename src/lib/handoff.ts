@@ -117,6 +117,8 @@ export async function claim(key: string): Promise<Handoff | null> {
  * `current` is called at click time, so it always hands over the latest result rather
  * than whatever existed when the panel was first shown.
  */
+let carrying = false;
+
 export function wireNextLinks(root: ParentNode, current: () => Handoff | null): void {
   for (const link of Array.from(root.querySelectorAll<HTMLAnchorElement>('.nextup a[href^="/"]'))) {
     if (link.dataset.handoffWired) continue;
@@ -125,11 +127,24 @@ export function wireNextLinks(root: ParentNode, current: () => Handoff | null): 
       const result = current();
       if (!result) return; // nothing to carry: behave as an ordinary link
       event.preventDefault();
+      // One handoff at a time. A second click used to start a second copy of the document into storage and a
+      // second navigation: on the walk of 13 September 2026 a slow Compress-to-Protect handoff was clicked three
+      // times, because nothing on the link itself changed.
+      if (carrying) return;
+      carrying = true;
+      const row = link.closest('.nextup');
+      for (const other of Array.from(row?.querySelectorAll<HTMLAnchorElement>('a') ?? [])) {
+        other.setAttribute('aria-disabled', 'true');
+        other.style.pointerEvents = 'none';
+        if (other !== link) other.style.opacity = '0.45';
+      }
+      link.setAttribute('aria-busy', 'true');
+      link.textContent = `${link.textContent?.trim() ?? ''} — opening…`;
       const href = link.getAttribute('href')!;
       // Say something before the navigation. Copying a large document into IndexedDB takes a
       // moment, and the page it happens on showed nothing at all: a reader clicked and watched
       // an unchanged screen, unable to tell a slow handoff from a broken link.
-      const where = link.textContent?.trim() || 'the next tool';
+      const where = link.textContent?.replace(/ — opening…$/, '').trim() || 'the next tool';
       say(link.closest('.nextup') ?? link.parentElement, `Taking ${result.name} to ${where}…`);
       void stash(result.bytes, result.name).then((key) => {
         location.href = key ? `${href}?from=${encodeURIComponent(key)}` : href;
