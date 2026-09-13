@@ -416,18 +416,26 @@ depends on it.
 
 ## Paddle's checkout frame talks to hosts this site's policy cannot govern
 
-Measured with `npm run measure:paddle` against a local sandbox build with a placeholder token, on
-13 September 2026: provisional until repeated on the Preview deployment with the real sandbox token.
-Inside Paddle's own checkout frame (sandbox-buy.paddle.com), the checkout contacted:
-- `o522631.ingest.sentry.io`, Sentry error and security reports;
-- `fonts.googleapis.com` and `fonts.gstatic.com`;
-- `sandbox-checkout-analytics.paddle.com`, a ping;
-- `sandbox-checkout-service.paddle.com`.
-Paddle's hosts set a Cloudflare `__cf_bm` cookie on `.paddle.com`.
+Measured with `npm run measure:paddle` on the Preview deployment f3c2dbf with the real sandbox token
+(13 September 2026), through opening the checkout, before any payment. Arrival alone: nothing third-party.
+After pressing Pay, Paddle.js loaded from cdn.paddle.com and opened its checkout frame (sandbox-buy.paddle.com),
+and inside that frame:
 
-Those requests belong to Paddle's frame and follow Paddle's policy, not ours. The /pro/buy/ content
-security policy decides what our page may load and frame. It cannot stop what the frame loads once
-it is allowed. /privacy's Paddle.js wording must describe that, from the Preview measurement.
+- **Stripe:** js.stripe.com/v3, a frame from m.stripe.network, and m.stripe.com, which sets a cookie `m` on
+  m.stripe.com lasting about 13 months (httpOnly). Stripe's frame also writes sessionStorage keys `_ab`,
+  `_mf`, `1` and `id`.
+- **Localize** (global.localizecdn.com), Paddle's translation service: a tl.gif image request plus XHRs, and
+  localStorage keys in Paddle's frame including `ljs-visits` and `ljs-cache`.
+- **Sentry** (o522631.ingest.sentry.io): five envelopes.
+- **Google Fonts:** fonts.googleapis.com and fonts.gstatic.com.
+- **Paddle's own analytics and checkout events:** sandbox-checkout-analytics.paddle.com, and pings to
+  sandbox-checkout-service.paddle.com.
+- **Cloudflare bot management:** a `__cf_bm` cookie on .paddle.com, about 30 minutes.
+
+None of this is governed by /pro/buy/'s policy. It belongs to Paddle's frame, and once the frame is
+allowed our policy has no say over what it loads. /privacy's wording for the purchase page has to
+describe this from the measurement. The standing rule against anything needing a cookie or consent banner
+needs a decision on the Stripe `m` and `__cf_bm` cookies, which arrive only after someone presses Pay.
 
 Paddle.js 2.9.7 also injects Retain analytics (public.profitwell.com) outside sandbox. /pro/buy/
 pre-sets the loader's own skip check and leaves that host out of its policy. Only a production
