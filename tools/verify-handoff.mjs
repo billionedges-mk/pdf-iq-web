@@ -67,5 +67,17 @@ for (const route of routes) {
 }
 
 ok(checked > 0, `${checked} handoffs between tools were checked`);
+
+// /privacy: a file left behind "is deleted after ten minutes". Until 13 September 2026 it was only refused, and deleted
+// when the next handoff was written. Every tool page now sweeps on load, through claimIncoming, and the sweep must
+// never create the database. Exact lines, not mentions (a mention in a comment would pass). The behaviour itself was
+// walked in a browser: stale row deleted on reload, fresh row kept, no database created on a clean origin.
+{
+  const src = readFileSync(join(ROOT, 'src/lib/handoff.ts'), 'utf8').split(/\r?\n/);
+  const claimAt = src.findIndex((l) => l === 'export async function claimIncoming(): Promise<File | null> {');
+  const body = claimAt < 0 ? [] : src.slice(claimAt + 1, claimAt + 6).map((l) => l.trim());
+  ok(body.includes('void sweepStale();'), 'every tool page sweeps stale handoffs as it loads (claimIncoming calls sweepStale)');
+  ok(src.some((l) => l.trim() === 'req.onupgradeneeded = () => req.transaction?.abort();'), 'and the sweep aborts creating the database, so a browser that never handed a file over stores nothing');
+}
 console.log(`\n${fails ? `${fails} FAILED` : 'every next-tool link lands somewhere that takes the file'}`);
 process.exitCode = fails ? 1 : 0;

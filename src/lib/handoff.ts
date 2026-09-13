@@ -139,11 +139,56 @@ export function wireNextLinks(root: ParentNode, current: () => Handoff | null): 
 }
 
 /**
+ * Delete every handed-off file older than ten minutes.
+ *
+ * /privacy says a file left behind "is deleted after ten minutes". Until 13 September 2026 only writing the next
+ * handoff swept, so a file left behind by a link that was not followed stayed in storage until someone handed
+ * over another file. Unusable, but kept, which is worse than what the page says. Now every tool page sweeps as it
+ * loads. A browser runs nothing while no page of this site is open, so "after ten minutes" means the first tool
+ * page opened after that.
+ *
+ * Never creates the database. Opening a database that does not exist would create one, which on a browser that
+ * has never handed a file over would be a write to storage by a page that stores nothing. So the creation is
+ * aborted: if nothing was ever stored, there is nothing to delete.
+ */
+export async function sweepStale(): Promise<void> {
+  try {
+    const db = await new Promise<IDBDatabase | null>((resolve) => {
+      const req = indexedDB.open(DB_NAME);
+      req.onupgradeneeded = () => req.transaction?.abort();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+      req.onblocked = () => resolve(null);
+    });
+    if (!db) return;
+    if (!db.objectStoreNames.contains(STORE)) {
+      db.close();
+      return;
+    }
+    const tx = db.transaction(STORE, 'readwrite');
+    const cutoff = Date.now() - MAX_AGE_MS;
+    tx.objectStore(STORE).openCursor().onsuccess = (e) => {
+      const cursor = (e.target as IDBRequest<IDBCursorWithValue>).result;
+      if (!cursor) return;
+      const row = cursor.value as Row;
+      if (!row.at || row.at < cutoff) cursor.delete();
+      cursor.continue();
+    };
+    await done(tx);
+    db.close();
+  } catch {
+    // Storage blocked: nothing could have been stored.
+  }
+}
+
+/**
  * If this page was opened from another tool, return the file it handed over.
  * The query string is removed either way, so a reload does not try to re-claim a
  * handoff that has already been consumed.
  */
 export async function claimIncoming(): Promise<File | null> {
+  // Every tool page calls this on load, so every tool page load sweeps.
+  void sweepStale();
   const key = new URLSearchParams(location.search).get('from');
   if (!key) return null;
   history.replaceState(null, '', location.pathname);
