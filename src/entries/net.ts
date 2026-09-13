@@ -285,8 +285,27 @@ window.pdfiqNet = {
   clean: () => staleBundle() === null && state.sentBytes === 0 && state.thirdParty.length === 0,
 };
 
+// On a narrow screen the bar scrolls sideways, and the page you are on can sit past its right edge (Batch and Password
+// always did). Bring the current item into view, by scrolling the bar itself rather than the page.
+const bringCurrentIntoView = (): void => {
+    const bar = document.querySelector<HTMLElement>('.toolnav');
+    const current = bar?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!bar || !current || bar.scrollWidth <= bar.clientWidth) return;
+    // Measured on screen, not by offsetLeft, which ignores how far the bar has already scrolled.
+    const over = current.getBoundingClientRect().right - (bar.getBoundingClientRect().right - 44); // clear of the edge fade
+    if (over > 0) bar.scrollLeft += over;
+};
+{
+  const bring = bringCurrentIntoView;
+  bring();
+  // Again once the web font is in and the page has laid out: Inter Tight is wider than the fallback measured first.
+  void document.fonts?.ready.then(bring);
+  addEventListener('load', bring, { once: true });
+}
+
 // Pro builds only, and on every page because the nav is on every page: show the selling marks to someone who does not
 // own Pro, remove them for someone who does (src/pro/strip.ts). No request. With the flag off the branch is dropped.
-if (__PDFIQ_PRO__) void import('../pro/strip.js').then((m) => m.settleSellingMarks());
+// Settling can reveal the PRO tag, which widens the bar: bring the current item into view again after it.
+if (__PDFIQ_PRO__) void import('../pro/strip.js').then((m) => { m.settleSellingMarks(); bringCurrentIntoView(); });
 
 export {};

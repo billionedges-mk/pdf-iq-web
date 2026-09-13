@@ -10,25 +10,33 @@
 */
 
 :root {
-  --paper: #FAF8F4;
-  --card: #FFFDF9;
-  --card-hover: #FFFCF6;
-  --ink: #1E2A38;
-  --ink-hover: #16202B;
-  --ink-80: rgba(30, 42, 56, .80);
-  --ink-78: rgba(30, 42, 56, .78);
-  --ink-76: rgba(30, 42, 56, .76);
-  --ink-74: rgba(30, 42, 56, .74);
-  --line: rgba(30, 42, 56, .16);
-  --line-soft: rgba(30, 42, 56, .14);
-  --line-strong: rgba(30, 42, 56, .28);
-  --wash: rgba(30, 42, 56, .06);
+  /* The redesign (owner's brief and pdf-iq-final.html, 13 September 2026): white, near-black ink, Inter Tight; Pro is
+     gold. The alpha inks below are the same near-black, so every existing use follows without a second palette. */
+  --paper: #FFFFFF;
+  --card: #FFFFFF;
+  --card-hover: #FCFCFC;
+  --panel: #FCFCFC;
+  --ink: #111214;
+  --ink-hover: #000000;
+  --soft: #63666B;
+  --gold: #8A6A24;
+  --gold-bg: #FFF8EC;
+  --gold-line: #F0DFC2;
+  --gold-deep: #6E5318;
+  --ink-80: rgba(17, 18, 20, .80);
+  --ink-78: rgba(17, 18, 20, .78);
+  --ink-76: rgba(17, 18, 20, .76);
+  --ink-74: rgba(17, 18, 20, .74);
+  --line: rgba(17, 18, 20, .16);
+  --line-soft: rgba(17, 18, 20, .14);
+  --line-strong: rgba(17, 18, 20, .28);
+  --wash: rgba(17, 18, 20, .06);
   --amber: #C87A1E;
   --amber-text: #A45F13;
   --amber-wash: rgba(200, 122, 30, .05);
   --shell: 1080px;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --sans: "Public Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sans: "Inter Tight", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -49,7 +57,7 @@ body {
   flex-direction: column;
 }
 
-a { color: var(--ink); text-decoration-color: rgba(30, 42, 56, .5); text-underline-offset: 3px; }
+a { color: var(--ink); text-decoration-color: rgba(17, 18, 20, .5); text-underline-offset: 3px; }
 a:hover { color: var(--amber-text); text-decoration-color: var(--amber-text); }
 
 input, button, select, textarea { font-family: inherit; }
@@ -84,45 +92,74 @@ input, button, select, textarea { font-family: inherit; }
 
 .site-header {
   position: sticky; top: 0; z-index: 20;
-  background: rgba(250, 248, 244, .94);
+  background: rgba(255, 255, 255, .96);
   backdrop-filter: blur(6px);
-  border-bottom: 1px solid var(--line-soft);
+  border-bottom: 1px solid #E8E8E8;
 }
+/* The bar (pdf-iq-final.html): wordmark, the free tools, a divider and the gold Pro group, then the account control.
+   Desktop is one row. Below 760px the wordmark and account control share the top row and the tools scroll sideways
+   beneath them, full width: nine labels stay one tap away, where a menu would put every one of them two taps away. */
 .site-header__inner {
-  max-width: var(--shell); margin: 0 auto; padding: 10px 20px;
-  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  max-width: var(--shell); margin: 0 auto; padding: 0 20px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 18px;
 }
-.brand { display: flex; align-items: center; gap: 9px; text-decoration: none; flex: 0 0 auto; min-height: 44px; }
+.brand { display: flex; align-items: center; text-decoration: none; min-height: 56px; }
 .brand:hover { color: var(--ink); }
-.brand__mark {
-  width: 22px; height: 22px; border-radius: 3px;
-  background: linear-gradient(135deg, var(--ink) 0 50%, var(--amber) 50% 100%);
-}
-.brand__word { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.brand__word { font-size: 16.5px; font-weight: 700; letter-spacing: -.03em; }
 
 .toolnav {
-  flex: 1 1 320px; min-width: 0; display: flex; gap: 2px;
-  overflow-x: auto; white-space: nowrap; padding-bottom: 2px;
+  min-width: 0; display: flex; align-items: center; gap: 0;
+  overflow-x: auto; white-space: nowrap; scrollbar-width: none;
 }
-/* The nav scrolls sideways on a narrow screen rather than collapsing into a menu button.
-   Seven short labels stay one tap away; a menu would put every one of them two taps away and
-   cost the drop zone its place above the fold. What it needed was a real tap target — these
-   were 29px tall — and an edge fade so it is discoverable that there is more to the right. */
+.toolnav::-webkit-scrollbar { display: none; }
+/* Nothing in the bar shrinks: a shrunk Pro group let its links spill past the scrollable width, so Password could not be scrolled to. */
+.toolnav > * { flex: 0 0 auto; }
 .toolnav a {
-  padding: 6px 10px; border-radius: 4px; font-size: 14.5px;
-  text-decoration: none; color: var(--ink-78);
+  padding: 6px 10px; font-size: 14.5px;
+  text-decoration: none; color: var(--soft);
   display: inline-flex; align-items: center; min-height: 44px;
 }
-@media (max-width: 700px) {
+.toolnav a:hover { color: var(--ink); }
+.toolnav a[aria-current="page"] { font-weight: 600; color: var(--ink); }
+/* The Pro group: a category in gold, after a divider. The PRO tag goes once someone owns Pro (src/pro/strip.ts); the
+   gold stays, because it marks a category, not a lock. */
+.toolnav__pro {
+  display: inline-flex; align-items: center; gap: 2px;
+  margin-left: 10px; padding-left: 12px; border-left: 1px solid #E8E8E8;
+}
+.toolnav__pro a { color: var(--gold); padding: 6px 6px; }
+.toolnav__pro a:hover { color: var(--gold-deep); }
+.toolnav__pro a[aria-current="page"] { color: var(--gold-deep); font-weight: 600; }
+.pro-tag, .pro-label {
+  display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; line-height: 1.3;
+  color: var(--gold); background: var(--gold-bg); border: 1px solid var(--gold-line); border-radius: 11px; padding: 2px 8px;
+}
+.pro-tag { margin-right: 4px; }
+
+/* The account control: "Sign in" in a pill, or the signed-in person's initial and name. Pro builds only. */
+.acct {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+  font-size: 14px; color: var(--ink); text-decoration: none; white-space: nowrap;
+}
+.acct--out { border: 1px solid #E8E8E8; border-radius: 20px; padding: 0 16px; min-height: 38px; }
+.acct--out:hover { border-color: var(--ink-74); color: var(--ink); }
+.acct__av {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #FFFFFF;
+  display: grid; place-items: center; font-size: 11.5px; font-weight: 600; flex: 0 0 auto;
+}
+.acct__name { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 760px) {
+  .site-header__inner { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand acct" "nav nav"; padding: 0 14px; }
+  .brand { grid-area: brand; min-height: 50px; }
+  .acct { grid-area: acct; }
   .toolnav {
+    grid-area: nav; margin: 0 -14px; padding: 0 30px 0 8px; border-top: 1px solid #F2F2F2;
     -webkit-overflow-scrolling: touch;
     mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
   }
-  .toolnav a { padding: 6px 12px; }
-}
-.toolnav a:hover { background: var(--wash); color: var(--ink); }
-.toolnav a[aria-current="page"] {
-  font-weight: 700; color: var(--ink); box-shadow: inset 0 -2px 0 var(--amber);
+  .toolnav a { padding: 6px 11px; }
+  .acct__name { max-width: 12ch; }
 }
 
 .site-main {
@@ -130,7 +167,7 @@ input, button, select, textarea { font-family: inherit; }
   padding: clamp(20px, 4vw, 44px) 20px 40px;
 }
 
-.site-footer { border-top: 1px solid var(--line-soft); background: rgba(250, 248, 244, .94); }
+.site-footer { border-top: 1px solid var(--line-soft); background: rgba(255, 255, 255, .94); }
 .site-footer__inner {
   max-width: var(--shell); margin: 0 auto; padding: 11px 20px;
   display: flex; align-items: center; justify-content: space-between;
@@ -158,7 +195,7 @@ input, button, select, textarea { font-family: inherit; }
 .pro-strip { margin: 0 0 10px; font-size: 13.5px; line-height: 1.5; color: var(--ink-76); }
 .pro-strip strong { color: var(--ink-78); font-weight: 700; }
 /* The small "Pro" label, and a real control shown locked: still itself, visibly unavailable. Pro builds only. */
-.pro-label { margin-left: 5px; padding: 0 5px; border: 1px solid var(--ink-74); border-radius: 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: var(--ink-76); vertical-align: 1px; }
+.pro-label { margin-left: 8px; vertical-align: 2px; }
 .pro-locked { opacity: .5; }
 .pro-locked :disabled { cursor: not-allowed; }
 .kicker {
@@ -193,12 +230,12 @@ input, button, select, textarea { font-family: inherit; }
 .btn--sm { padding: 13px 20px; font-size: 16px; }
 
 .btn-quiet {
-  background: none; border: 1px solid rgba(30, 42, 56, .24); border-radius: 4px;
+  background: none; border: 1px solid rgba(17, 18, 20, .24); border-radius: 4px;
   padding: 12px 16px; font-size: 15px; color: var(--ink); cursor: pointer;
   text-decoration: none; display: inline-block; line-height: 1.2;
 }
 .btn-quiet:hover { border-color: var(--ink); color: var(--ink); }
-.btn-quiet--xs { padding: 6px 10px; font-size: 13.5px; border-color: rgba(30, 42, 56, .2); }
+.btn-quiet--xs { padding: 6px 10px; font-size: 13.5px; border-color: rgba(17, 18, 20, .2); }
 
 .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 
@@ -256,7 +293,7 @@ input, button, select, textarea { font-family: inherit; }
   border: 1px solid var(--line); border-radius: 5px; padding: 13px 15px;
   cursor: pointer; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
 }
-.preset:hover { border-color: rgba(30, 42, 56, .4); }
+.preset:hover { border-color: rgba(17, 18, 20, .4); }
 .preset__ring { position: absolute; inset: -1px; border: 2px solid var(--amber); border-radius: 5px; pointer-events: none; }
 .preset__name { font-size: 15.5px; font-weight: 700; color: var(--ink); }
 .preset__note { font-size: 14px; color: var(--ink-76); }
@@ -285,7 +322,7 @@ input, button, select, textarea { font-family: inherit; }
 .proc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .proc-title { margin: 0; font-size: clamp(19px, 2.6vw, 24px); font-weight: 700; letter-spacing: -.015em; }
 .proc-pct { margin: 0; font-family: var(--mono); font-size: clamp(24px, 4vw, 34px); font-weight: 500; letter-spacing: -.02em; }
-.bar { margin-top: 14px; height: 10px; border-radius: 5px; background: rgba(30, 42, 56, .1); overflow: hidden; }
+.bar { margin-top: 14px; height: 10px; border-radius: 5px; background: rgba(17, 18, 20, .1); overflow: hidden; }
 .bar__fill { height: 100%; background: var(--amber); width: 0; transition: width .18s linear; }
 .proc-facts {
   margin-top: 12px; display: flex; gap: 18px; flex-wrap: wrap;
@@ -303,7 +340,7 @@ input, button, select, textarea { font-family: inherit; }
 .sizes { margin-top: 12px; display: flex; align-items: baseline; gap: clamp(12px, 2.5vw, 26px); flex-wrap: wrap; }
 .size-before {
   margin: 0; font-family: var(--mono); font-size: clamp(26px, 5vw, 44px); font-weight: 500;
-  letter-spacing: -.03em; color: rgba(30, 42, 56, .5);
+  letter-spacing: -.03em; color: rgba(17, 18, 20, .5);
   text-decoration: line-through; text-decoration-thickness: 2px;
 }
 .size-after { margin: 0; font-family: var(--mono); font-size: clamp(30px, 6.4vw, 56px); font-weight: 500; letter-spacing: -.03em; }
@@ -312,12 +349,12 @@ input, button, select, textarea { font-family: inherit; }
 .compare { margin-top: 20px; display: grid; gap: 9px; max-width: 620px; }
 .compare__row { display: flex; align-items: center; gap: 12px; }
 .compare__label { font-family: var(--mono); font-size: 12px; width: 46px; color: var(--ink-76); flex: 0 0 auto; }
-.compare__track { flex: 1 1 auto; height: 14px; background: rgba(30, 42, 56, .08); border-radius: 3px; }
-.compare__track--full { background: rgba(30, 42, 56, .16); }
+.compare__track { flex: 1 1 auto; height: 14px; background: rgba(17, 18, 20, .08); border-radius: 3px; }
+.compare__track--full { background: rgba(17, 18, 20, .16); }
 .compare__fill { display: block; height: 100%; border-radius: 3px; background: var(--amber); }
 
 .facts {
-  margin: 26px 0 0; padding-top: 18px; border-top: 1px solid rgba(30, 42, 56, .12);
+  margin: 26px 0 0; padding-top: 18px; border-top: 1px solid rgba(17, 18, 20, .12);
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 16px 24px; font-size: 14px;
 }
@@ -327,7 +364,7 @@ input, button, select, textarea { font-family: inherit; }
 .nextup { margin-top: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .nextup__label { font-size: 14.5px; color: var(--ink-76); }
 .nextup a {
-  padding: 8px 13px; border: 1px solid rgba(30, 42, 56, .2); border-radius: 4px;
+  padding: 8px 13px; border: 1px solid rgba(17, 18, 20, .2); border-radius: 4px;
   font-size: 14.5px; text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
 .nextup a:hover { border-color: var(--amber); color: var(--ink); }
 
@@ -345,7 +382,7 @@ input, button, select, textarea { font-family: inherit; }
 .pwform label { display: grid; gap: 6px; font-size: 14px; color: var(--ink-78); }
 .pwform input {
   width: 240px; max-width: 70vw; padding: 11px 12px; font-size: 15px;
-  border: 1px solid rgba(30, 42, 56, .3); border-radius: 4px; background: var(--paper); color: var(--ink);
+  border: 1px solid rgba(17, 18, 20, .3); border-radius: 4px; background: var(--paper); color: var(--ink);
 }
 
 /* ---------- page thumbnail grids (reorder, rotate, split) ---------- */
@@ -359,7 +396,7 @@ input, button, select, textarea { font-family: inherit; }
   background: var(--card); padding: 8px; display: flex; flex-direction: column;
   align-items: center; gap: 7px; cursor: pointer; text-align: center;
 }
-.pagecell:hover { border-color: rgba(30, 42, 56, .4); }
+.pagecell:hover { border-color: rgba(17, 18, 20, .4); }
 .pagecell[aria-pressed="true"] { border-color: var(--amber); }
 .pagecell[aria-pressed="true"]::after {
   content: ""; position: absolute; inset: -1px; border: 2px solid var(--amber);
@@ -374,7 +411,7 @@ input, button, select, textarea { font-family: inherit; }
 .pagecell__n { font-family: var(--mono); font-size: 12px; color: var(--ink-76); }
 .pagecell__drop { display: flex; gap: 4px; }
 .pagecell__mini {
-  background: none; border: 1px solid rgba(30, 42, 56, .2); border-radius: 3px;
+  background: none; border: 1px solid rgba(17, 18, 20, .2); border-radius: 3px;
   font-size: 12px; padding: 2px 6px; cursor: pointer; color: var(--ink); line-height: 1.4;
 }
 .pagecell__mini:hover { border-color: var(--ink); }
@@ -407,7 +444,7 @@ input, button, select, textarea { font-family: inherit; }
 
 .field { display: grid; gap: 6px; font-size: 14px; color: var(--ink-78); margin-top: 14px; }
 .field input[type="text"], .field input[type="number"], .field select {
-  padding: 11px 12px; font-size: 15px; border: 1px solid rgba(30, 42, 56, .3);
+  padding: 11px 12px; font-size: 15px; border: 1px solid rgba(17, 18, 20, .3);
   border-radius: 4px; background: var(--paper); color: var(--ink); max-width: 340px;
 }
 .hint { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-76); }

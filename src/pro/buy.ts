@@ -25,7 +25,7 @@ import { confirmPurchase, confirmEndWords } from './confirm.js';
 import { peekUnlock, latestUnlockKey, type UnlockIntent } from '../lib/handoff.js';
 import { startSignIn, completeSignIn, AuthError, type AuthErrorKind } from './auth.js';
 import { WORDS } from './auth-words.js';
-import { settleSellingMarks } from './strip.js';
+import { settleSellingMarks, settleAccountControl } from './strip.js';
 import { refreshEntitlement } from './entitlement.js';
 
 /**
@@ -287,6 +287,7 @@ async function start(): Promise<void> {
       if (completed) {
         session = completed;
         backFromGoogle = true;
+        settleAccountControl();
       }
     } catch (e) {
       await readUnlock(true);

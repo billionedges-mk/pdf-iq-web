@@ -10,7 +10,7 @@
 import { startSignIn, completeSignIn, freshSession, signOut, AuthError, AUTH_SENTINEL, type AuthErrorKind } from './auth.js';
 import { SESSION_SENTINEL } from './session.js';
 import { WORDS } from './auth-words.js';
-import { settleSellingMarks } from './strip.js';
+import { settleSellingMarks, settleAccountControl } from './strip.js';
 import { localStub, setLocalStub } from './gate.js';
 import { refreshEntitlement, clearEntitlement, type RefreshResult } from './entitlement.js';
 import { readPendingPurchase, clearPendingPurchase } from './pending.js';
@@ -33,6 +33,7 @@ function show(view: View): void {
 }
 
 function signedIn(email: string): void {
+  settleAccountControl();
   el('[data-account-email]').textContent = email || 'your Google account';
   // The way to /pro/buy/, which otherwise nothing links to. Built here rather than hidden in the
   // page, so a build that is not selling carries no trace of it: __PDFIQ_SALE__ is false there and
@@ -195,6 +196,8 @@ async function mount(): Promise<void> {
   el('[data-account-retry]').addEventListener('click', go);
   el('[data-signout]').addEventListener('click', () => {
     signOut();
+    // The bar says signed out, and the Pro tags return: this browser no longer holds Pro.
+    queueMicrotask(() => settleSellingMarks());
     // Signing out of this browser takes Pro off it too: the token belongs to the account that signed out.
     if (__PDFIQ_SALE__) {
       clearEntitlement();

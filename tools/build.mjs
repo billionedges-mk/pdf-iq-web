@@ -155,24 +155,38 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 // ---------------------------------------------------------------- shell
 
+/**
+ * The bar (redesign stage 1, pdf-iq-final.html): the free tools; in a Pro build a divider, then the Pro group in gold
+ * with its PRO label, then the account control. Three states, settled in the page by src/pro/strip.ts:
+ *
+ *   signed out            "Sign in" pill      Pro group with PRO label
+ *   signed in, no Pro     avatar + name       Pro group with PRO label
+ *   signed in, owns Pro   avatar + name       Pro group, no label (it marks a category, not a lock)
+ *
+ * The label and the control are written hidden and shown once settled, so an owner never sees the label flash and a
+ * signed-in person never sees "Sign in". A build without the Pro flag has neither: no Pro pages, no sign-in.
+ */
 function header(activeSlug) {
-  // Pro routes that declare a nav label join the bar in a flag-on build, and exist in no other.
-  const navTools = PRO ? [...TOOLS, ...PRO_PAGES.filter((p) => p.nav)] : TOOLS;
-  const links = navTools.map((t) => {
-    const cur = t.slug === activeSlug ? ' aria-current="page"' : '';
-    // Batch and Password carry a small "Pro" label until owned (src/pro/strip.ts reveals or removes it).
-    const label = PRO_PAGES.includes(t) ? ' <span class="pro-label" data-pro-label hidden>Pro</span>' : '';
-    return `        <a href="${href(t.slug)}"${cur}>${t.nav}${label}</a>`;
-  }).join('\n');
+  const link = (t) => `<a href="${href(t.slug)}"${t.slug === activeSlug ? ' aria-current="page"' : ''}>${t.nav}</a>`;
+  const free = TOOLS.map((t) => `        ${link(t)}`).join('\n');
+  const proPages = PRO ? PRO_PAGES.filter((p) => p.nav) : [];
+  const pro = proPages.length
+    ? `\n        <span class="toolnav__pro" role="group" aria-label="Pro">
+          <span class="pro-tag" data-pro-label hidden>PRO</span>
+${proPages.map((t) => `          ${link(t)}`).join('\n')}
+        </span>`
+    : '';
+  const account = PRO
+    ? `\n      <a class="acct" href="/account/" data-account-control hidden${activeSlug === 'account' ? ' aria-current="page"' : ''}>Sign in</a>`
+    : '';
   return `  <header class="site-header">
     <div class="site-header__inner">
       <a class="brand" href="/"${activeSlug === '' ? ' aria-current="page"' : ''}>
-        <span class="brand__mark" aria-hidden="true"></span>
         <span class="brand__word">pdf-iq</span>
       </a>
       <nav class="toolnav" aria-label="PDF tools">
-${links}
-      </nav>
+${free}${pro}
+      </nav>${account}
     </div>
   </header>`;
 }
@@ -202,7 +216,7 @@ function footer() {
 // would sit there reporting "2 requests" for its own typography. Preloading moves them
 // into the initial load where they belong, and the readout can honestly say zero.
 const FONT_PRELOADS = [
-  'public-sans-400.woff2', 'public-sans-700.woff2', 'public-sans-800.woff2',
+  'inter-tight-400.woff2', 'inter-tight-500.woff2', 'inter-tight-600.woff2', 'inter-tight-700.woff2',
   'ibm-plex-mono-400.woff2', 'ibm-plex-mono-500.woff2',
 ].map((f) => `<link rel="preload" href="/fonts/${f}" as="font" type="font/woff2" crossorigin>`).join('\n');
 
@@ -277,7 +291,7 @@ ${hasShareImage(page) ? `<meta property="og:image" content="${ORIGIN}/og/${page.
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <meta name="twitter:image" content="${ORIGIN}/og/${page.slug || 'home'}.png">
-<meta name="theme-color" content="#FAF8F4">
+<meta name="theme-color" content="#FFFFFF">
 <meta name="pdfiq-build" content="${BUILD_ID}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 ${FONT_PRELOADS}
@@ -302,9 +316,11 @@ ${footer()}
 // break the offline test and would put two cross-origin requests behind a readout
 // that claims zero.
 const FONT_FILES = [
-  ['@fontsource/public-sans/files/public-sans-latin-400-normal.woff2', 'public-sans-400.woff2'],
-  ['@fontsource/public-sans/files/public-sans-latin-700-normal.woff2', 'public-sans-700.woff2'],
-  ['@fontsource/public-sans/files/public-sans-latin-800-normal.woff2', 'public-sans-800.woff2'],
+  // Inter Tight: the redesign's type (owner's brief, 13 September 2026). Share images still use Public Sans (og-images.mjs).
+  ['@fontsource/inter-tight/files/inter-tight-latin-400-normal.woff2', 'inter-tight-400.woff2'],
+  ['@fontsource/inter-tight/files/inter-tight-latin-500-normal.woff2', 'inter-tight-500.woff2'],
+  ['@fontsource/inter-tight/files/inter-tight-latin-600-normal.woff2', 'inter-tight-600.woff2'],
+  ['@fontsource/inter-tight/files/inter-tight-latin-700-normal.woff2', 'inter-tight-700.woff2'],
   ['@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2', 'ibm-plex-mono-400.woff2'],
   ['@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2', 'ibm-plex-mono-500.woff2'],
 ];
@@ -312,9 +328,10 @@ const FONT_FILES = [
 function fontCss() {
   const face = (family, weight, file) => `@font-face{font-family:"${family}";font-style:normal;font-weight:${weight};font-display:swap;src:url("/fonts/${file}") format("woff2");}`;
   return [
-    face('Public Sans', 400, 'public-sans-400.woff2'),
-    face('Public Sans', 700, 'public-sans-700.woff2'),
-    face('Public Sans', 800, 'public-sans-800.woff2'),
+    face('Inter Tight', 400, 'inter-tight-400.woff2'),
+    face('Inter Tight', 500, 'inter-tight-500.woff2'),
+    face('Inter Tight', 600, 'inter-tight-600.woff2'),
+    face('Inter Tight', 700, 'inter-tight-700.woff2'),
     face('IBM Plex Mono', 400, 'ibm-plex-mono-400.woff2'),
     face('IBM Plex Mono', 500, 'ibm-plex-mono-500.woff2'),
   ].join('');

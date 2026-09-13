@@ -68,6 +68,17 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
     const flat = privacyOff.replace(/\s+/g, ' ');
     ok(flat.includes('it happens on the account page only:') && !flat.includes('purchase page'), `${label}: /privacy says sign-in happens on the account page only, and names no purchase page`);
   }
+  // The bar (redesign stage 1): the Pro group and the account control exist only where Pro and sign-in exist.
+  const bar = /<header class="site-header">[\s\S]*?<\/header>/.exec(readFileSync(join(ROOT, 'dist/merge/index.html'), 'utf8'))?.[0] ?? '';
+  const freeLinks = (bar.match(/<a href="\/(merge|split|compress|images-to-pdf|rotate|reorder|ocr)\/"/g) || []).length;
+  if (env.PDFIQ_PRO) {
+    ok(freeLinks === 7 && /<span class="toolnav__pro" role="group" aria-label="Pro">\s*<span class="pro-tag" data-pro-label hidden>PRO<\/span>\s*<a href="\/batch\/">Batch<\/a>\s*<a href="\/password\/">Password<\/a>/.test(bar)
+      && /<a class="acct" href="\/account\/" data-account-control hidden>Sign in<\/a>/.test(bar),
+    `${label}: the bar has the seven tools, then the Pro group with its PRO tag (hidden until settled), then the account control`);
+  } else {
+    ok(freeLinks === 7 && !bar.includes('toolnav__pro') && !bar.includes('data-account-control') && !bar.includes('/batch/'),
+      `${label}: the bar has the seven tools and nothing else: no Pro group, no account control`);
+  }
 }
 
 // ---------------------------------------------------------------- site: selling (sandbox)
@@ -121,7 +132,8 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   const mergeHtml = readFileSync(join(ROOT, 'dist/merge/index.html'), 'utf8');
   const stripTag = /<p class="pro-strip" data-pro-strip hidden>[^\n]*?<\/p>/.exec(mergeHtml)?.[0] ?? '';
   ok(stripTag.includes(`&mdash; ${PRO_OFFER.price} ${PRO_OFFER.qualifier}.`) && !stripTag.includes('not on sale'), `a sale build writes the strip hidden, naming the price (${stripTag ? 'found' : 'no hidden strip'})`);
-  ok(/Batch <span class="pro-label" data-pro-label hidden>Pro<\/span>/.test(mergeHtml) && /Password <span class="pro-label" data-pro-label hidden>Pro<\/span>/.test(mergeHtml), 'and the nav labels Batch and Password as Pro, hidden until settled');
+  ok(/<span class="pro-tag" data-pro-label hidden>PRO<\/span>/.test(mergeHtml) && /data-account-control hidden>Sign in<\/a>/.test(mergeHtml), "and the bar's PRO tag and account control, hidden until settled");
+  ok(siteJs.includes('acct acct--out') && siteJs.includes('acct__av') && siteJs.includes('Your account, signed in as'), 'the page code that settles the account control (Sign in pill, or initial and name) is in the bundle');
   ok(siteJs.includes('pdfiq-pro:strip') && /settleSellingMarks|\[data-pro-strip\], \[data-pro-label\]/.test(siteJs), 'the page code that settles them (show unless owned) is in the bundle');
   ok(siteJs.includes('The three presets are free and report the real before and after') && siteJs.includes('Add a password to a copy of a PDF, or take one off, written AES-256.'), "the locked controls' what and instead sentences are pro-copy.mjs's");
   ok(!siteJs.includes('Yours with Pro'), 'an owner is not told "Yours with Pro" on OCR: after buying, nothing sells');
