@@ -118,26 +118,46 @@ export interface PromptOptions {
   noWhat?: boolean;
   /** Leave out the free alternative (OCR's intro card: the approved copy has only the sentence and Unlock there). */
   noInstead?: boolean;
+  /** The panel's heading, with the PRO tag beside it. Absent where the card around it already has one. */
+  title?: string;
+  /** The real controls, already locked (lockControls), shown inside the panel between the sentence and the action. */
+  controls?: HTMLElement;
 }
 
 /**
- * What sits under a locked Pro control (approved copy, 13 September 2026). The control itself stays on the page,
- * disabled, and the caller does that; this is the words and the one action, in this order:
+ * The locked panel (redesign stage 2, pdf-iq-final.html 03): a gold card with the feature's heading and PRO tag, what it
+ * does, the real controls disabled, one full-width action, and the free alternative. The words are the approved step 4
+ * copy, from tools/pro-copy.mjs:
  *
- *   1. what it does (tools/pro-copy.mjs `what`);
- *   2. the action: Unlock with the line about the file (sale build), the payment being confirmed (pending, no button),
+ *   1. what it does (`what`);
+ *   2. the real controls, locked, when the caller passes them;
+ *   3. the action: Unlock with the line about the file (sale build), the payment being confirmed (pending, no button),
  *      or "Part of Pro, not on sale yet." (a Pro preview that is not selling);
- *   3. the free alternative (`instead`);
- *   4. "Bought it already?" (sale build, nothing pending).
+ *   4. "Free instead:" and the free alternative (`instead`), written as a choice, not a consolation;
+ *   5. "Bought it already?" (sale build, nothing pending).
  *
  * `feature` names it in the pending sentence and in the Unlock intent.
  */
 export function lockedPanel(key: ProKey, feature: string, carry?: () => File | null, opts: PromptOptions = {}): HTMLElement {
   const wrap = document.createElement('div');
+  wrap.className = 'lock';
   wrap.dataset.pdfiqGate = GATE_SENTINEL;
   wrap.dataset.pdfiqLocked = key;
   const copy = COPY[key];
-  if (copy && !opts.noWhat) wrap.append(line(copy.what, '10px 0 0', false));
+  if (opts.title) {
+    const head = document.createElement('div');
+    head.className = 'lock__head';
+    const h = document.createElement('p');
+    h.className = 'lock__title';
+    h.textContent = opts.title;
+    head.append(h, proLabel());
+    wrap.append(head);
+  }
+  if (copy && !opts.noWhat) wrap.append(para('lock__what', copy.what));
+  if (opts.controls) {
+    opts.controls.classList.add('lock__controls');
+    wrap.append(opts.controls);
+  }
   // The sale action is referenced only inside this constant branch. esbuild drops a false branch when it parses, so in
   // a build that is not selling nothing reaches saleAction, and it, the Unlock module and its /pro/buy/ address are left
   // out. Code after an early `return` is dropped only when printing, too late: the references already kept them
@@ -148,62 +168,60 @@ export function lockedPanel(key: ProKey, feature: string, carry?: () => File | n
   } else {
     // A Pro preview that is not selling: nothing to buy. Testers sign in on the account page to use Pro here.
     const a = Object.assign(document.createElement('a'), { href: '/account/', textContent: 'Sign in' });
-    const p = line('Part of Pro, not on sale yet. ', '10px 0 0');
+    const p = para('lock__state', 'Part of Pro, not on sale yet. ');
     p.append(a, ' to use it in this preview build.');
     wrap.append(p);
   }
-  if (copy && !opts.noInstead) wrap.append(line(copy.instead, '8px 0 0'));
+  if (copy && !opts.noInstead) wrap.append(para('lock__alt', `Free instead: ${copy.instead}`));
   if (__PDFIQ_SALE__) {
     if (!pending) wrap.append(alreadyLine());
   }
   return wrap;
 }
 
-function line(text: string, margin: string, hint = true): HTMLParagraphElement {
+function para(className: string, text: string): HTMLParagraphElement {
   const p = document.createElement('p');
-  if (hint) p.className = 'hint';
-  else p.style.cssText = 'font-size: 15px; line-height: 1.55;';
-  p.style.margin = margin;
+  p.className = className;
   p.textContent = text;
   return p;
 }
 
-/** The sale build's action. Returns true when a payment is pending, which replaces everything else. */
+/** The sale build's action. Returns true when a payment is pending, which replaces the button. */
 function saleAction(wrap: HTMLElement, feature: string, carry: (() => File | null) | undefined, opts: PromptOptions): boolean {
   const session = signedIn();
   // Paid, not yet confirmed: say so, and offer no second checkout.
   const pending = readPendingPurchase(session?.uid);
   if (pending) {
     const account = Object.assign(document.createElement('a'), { href: '/account/', textContent: 'your account page' });
-    const p = line(`${feature} is part of Pro, and your payment for it (reference ${pending.txn}) is being confirmed. Open `, '10px 0 0');
+    const p = para('lock__state', `${feature} is part of Pro, and your payment for it (reference ${pending.txn}) is being confirmed. Open `);
     p.append(account, ' to finish. There is no need to pay again.');
     wrap.append(p);
     return true;
   }
   // Unlock, from here: the checkout opens straight away, and paying brings the buyer back to this page with the file
   // they had open (src/pro/unlock.ts).
-  const act = document.createElement('p');
-  act.style.margin = '12px 0 0';
-  act.append(unlockButton(feature, carry));
-  const after = line(opts.manyFiles
+  const button = unlockButton(feature, carry);
+  button.className = 'cta';
+  const after = para('lock__after', opts.manyFiles
     ? 'These files do not come with you to the checkout: after paying, you come back here and choose them again.'
     : carry
       ? 'After paying you come back here with this file. Meanwhile it is kept on this device only, for up to ten minutes.'
-      : 'After paying you come back here.', '8px 0 0');
+      : 'After paying you come back here.');
   // Signed out, Unlock signs in with Google first (src/pro/buy.ts), and an account that already owns Pro is found there
   // before any checkout opens.
   if (!session) after.append(' Buying needs an account, so you sign in with Google first and come straight back.');
-  wrap.append(act, after);
+  wrap.append(button, after);
   return false;
 }
 
 function alreadyLine(): HTMLParagraphElement {
-  const p = line('', '6px 0 0');
+  const p = para('lock__already', '');
   if (signedIn()) {
     const account = Object.assign(document.createElement('a'), { href: '/account/', textContent: 'your account page' });
     p.append('Bought it already? Open ', account, ' once with a connection and this browser will know.');
   } else {
-    p.append('Bought it already, on another browser or the app? Unlock signs you in and checks before offering a checkout.');
+    // This website's purchases only: one made in the Android app is not visible here (BILLING_ENABLED is not split).
+    p.append('Bought it already on this website? Unlock signs you in and checks before offering a checkout.');
   }
   return p;
 }
@@ -222,7 +240,7 @@ export function lockControls(host: HTMLElement): void {
 export function proLabel(): HTMLElement {
   const span = document.createElement('span');
   span.className = 'pro-label';
-  span.textContent = 'Pro';
+  span.textContent = 'PRO';
   return span;
 }
 

@@ -310,7 +310,7 @@ async function start(): Promise<void> {
     return;
   }
 
-  // Just signed in: this browser has no word yet on whether the account owns Pro (bought on the app, or on another
+  // Just signed in: this browser has no word yet on whether the account owns Pro (bought on another
   // browser). Ask before offering to sell it again.
   let owned = proAccount() !== null;
   // Whether this page may open the checkout by itself. Not after a sign-in whose ownership check got no clear

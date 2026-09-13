@@ -138,6 +138,15 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   ok(siteJs.includes('pdfiq-pro:strip') && /settleSellingMarks|\[data-pro-strip\], \[data-pro-label\]/.test(siteJs), 'the page code that settles them (show unless owned) is in the bundle');
   ok(siteJs.includes('The three presets are free and report the real before and after') && siteJs.includes('Add a password to a copy of a PDF, or take one off, written AES-256.'), "the locked controls' what and instead sentences are pro-copy.mjs's");
   ok(!siteJs.includes('Yours with Pro'), 'an owner is not told "Yours with Pro" on OCR: after buying, nothing sells');
+  // Redesign stage 2: each tool's own mark in its drop zone; the strip hidden before a file; the gold locked panel; and no
+  // promise that a purchase crosses between the website and the Android app (it does not: BILLING_ENABLED is not split).
+  const zones = ['merge', 'split', 'compress', 'images-to-pdf', 'rotate', 'reorder', 'ocr', 'batch', 'password']
+    .filter((slug) => !/<span class="dropzone__mark" aria-hidden="true"><svg class="dropzone__glyph"[^>]*width="42" height="42"/.test(readFileSync(join(ROOT, `dist/${slug}/index.html`), 'utf8')));
+  ok(zones.length === 0, `every tool's drop zone carries its own 42px mark${zones.length ? ` — not: ${zones.join(', ')}` : ''}`);
+  ok(/\.site-main:has\(\[data-view="empty"\]:not\(\[hidden\]\)\) \[data-pro-strip\]\{display:none\}/.test(mergeHtml.replace(/\s+/g, ' ').replace(/ \{ /g, '{').replace(/; \}/g, '}').replace(/: /g, ':')) || mergeHtml.includes('[data-view="empty"]:not([hidden])) [data-pro-strip]'), 'the strip is hidden while the empty view shows, from the first paint');
+  ok(siteJs.includes('"lock__what"') && siteJs.includes('Free instead: ') && siteJs.includes('"cta"'), 'the locked panel is the gold card: what, the action, "Free instead:"');
+  const appPromise = [siteJs, readFileSync(join(ROOT, 'dist/pro/buy/index.html'), 'utf8')].some((t) => /or the app\?|any device you sign in on/.test(t));
+  ok(!appPromise, 'nothing tells a buyer a purchase crosses to or from the Android app, or follows them to "any device"');
   // Signing in from a locked feature, and Batch saying its files stay behind.
   ok(siteJs.includes('Buying needs an account, so you sign in with Google first and come straight back.'), 'signed out, a locked feature offers Unlock and says a Google sign-in comes first');
   ok(siteJs.includes('These files do not come with you to the checkout: after paying, you come back here and choose them again.'), 'Batch says before Unlock that its files do not come back');

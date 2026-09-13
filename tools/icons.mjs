@@ -66,6 +66,21 @@ export const ICONS = {
     <rect x="3" y="13.9" width="16" height="2.6" rx="1.3" fill="currentColor"/>
     <rect x="3" y="19.1" width="9" height="2.6" rx="1.3" fill="currentColor"/>`,
 
+  // ---- the Pro pages (their drop zones; they have no share image) ----
+
+  // Several sheets fanned behind one another: many files, one operation.
+  batch: `
+    <rect x="8" y="2.5" width="13" height="15" rx="1.5" fill="none" stroke="currentColor" stroke-width="2.2"/>
+    <rect x="5.25" y="4.75" width="13" height="15" rx="1.5" fill="none" stroke="currentColor" stroke-width="2.2"/>
+    <rect x="2.5" y="7" width="13" height="14.5" rx="1.5" fill="currentColor"/>`,
+
+  // A password field: an input box holding three dots. Not a padlock, which is the privacy page's mark.
+  password: `
+    <rect x="2.5" y="6.5" width="19" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <circle cx="8" cy="12" r="1.7" fill="currentColor"/>
+    <circle cx="12" cy="12" r="1.7" fill="currentColor"/>
+    <circle cx="16" cy="12" r="1.7" fill="currentColor"/>`,
+
   // ---- the routes that are not tools ----
   // These exist because a share card without its subject is what shipped for six routes:
   // ICONS had no entry, the drawing was skipped, and the missing mark looked exactly like a

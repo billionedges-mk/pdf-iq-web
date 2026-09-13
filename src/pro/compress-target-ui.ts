@@ -7,7 +7,7 @@
  * words, and asks the page for passes through `TargetContext`. Every pass is a fresh compression
  * from the original file, run by the same compressor the presets use.
  */
-import { proAccount, lockedPanel, lockControls, proLabel } from './gate.js';
+import { proAccount, lockedPanel, lockControls } from './gate.js';
 import {
   MAX_PASSES, searchSize, describeSize, resolutionPlan, resolutionNothingToDo, describeResolution,
   parseTarget, targetMark, type Step,
@@ -107,9 +107,11 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   // Not owned: the same controls, locked, and the words under them (approved copy, 13 September 2026). Not a
   // description of the controls in their place: the reader sees what they would get. No handler is attached.
   if (!account) {
-    legend.append(proLabel());
+    // The gold panel carries the heading and the PRO tag, with the real controls inside it (pdf-iq-final.html 03).
+    legend.remove();
+    note.remove();
     lockControls(controls);
-    host.append(lockedPanel('target', 'Compressing to a size or a resolution you choose', () => ctx.source()));
+    host.append(lockedPanel('target', 'Compressing to a size or a resolution you choose', () => ctx.source(), { title: 'Or aim for a target', controls }));
     return;
   }
 

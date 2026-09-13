@@ -687,6 +687,14 @@ async function build() {
         throw new Error(`TOOL_GRID marker survived substitution in ${file}`);
       }
     }
+    // The drop zone carries the tool's own mark (redesign stage 2; finding #3: every tool had a distinct icon on the
+    // homepage and the same brand square in every drop zone, so the specificity vanished at the moment someone checks
+    // they are in the right place). The same shapes as the homepage tile, in plain ink, at 42px.
+    const ZONE_MARK = '<span class="dropzone__mark" aria-hidden="true"></span>';
+    if (body.includes(ZONE_MARK)) {
+      body = body.replace(ZONE_MARK, `<span class="dropzone__mark" aria-hidden="true">${icon(page.slug).replace('class="toolcard__mark"', 'class="dropzone__glyph"').replace('width="24" height="24"', 'width="42" height="42"')}</span>`);
+      if (body.includes(ZONE_MARK)) throw new Error(`the drop zone mark was not replaced in ${file}`);
+    }
     // The homepage describes the application itself. Not added elsewhere: a tool page is a
     // page about one feature, and claiming each is a separate application would be untrue.
     if (page.slug === '') {

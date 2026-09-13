@@ -89,7 +89,8 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     locked.style.margin = '0';
     locked.append(button);
     lockControls(locked);
-    host.append(locked, lockedPanel('searchable', 'A searchable PDF', o.source));
+    // The card around this already titles it ("Searchable PDF · Pro"), so the panel has no heading of its own.
+    host.append(lockedPanel('searchable', 'A searchable PDF', o.source, { controls: locked }));
     return;
   }
   const hint = document.createElement('p');

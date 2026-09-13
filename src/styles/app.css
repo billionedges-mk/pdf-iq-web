@@ -58,7 +58,7 @@ body {
 }
 
 a { color: var(--ink); text-decoration-color: rgba(17, 18, 20, .5); text-underline-offset: 3px; }
-a:hover { color: var(--amber-text); text-decoration-color: var(--amber-text); }
+a:hover { color: var(--ink-hover); text-decoration-color: var(--ink); }
 
 input, button, select, textarea { font-family: inherit; }
 
@@ -214,12 +214,42 @@ input, button, select, textarea { font-family: inherit; }
 .page-title { margin: 0; font-size: clamp(27px, 4.4vw, 38px); font-weight: 800; letter-spacing: -.025em; }
 .page-lede { margin: 0; font-size: clamp(15px, 2vw, 17px); color: var(--ink-76); }
 .tool-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.site-main:has([data-dropzone]) .tool-head {
+  display: block; text-align: center; max-width: 700px; margin: clamp(8px, 3vw, 28px) auto 0;
+}
+.site-main:has([data-dropzone]) .page-title { font-size: clamp(28px, 5vw, 38px); font-weight: 600; letter-spacing: -.03em; line-height: 1.12; }
+.site-main:has([data-dropzone]) .page-lede { margin-top: 12px; color: var(--soft); font-size: clamp(15px, 2.2vw, 17px); line-height: 1.55; }
+/* No Pro strip before a file is chosen: nothing is sold to someone who has not started (brief, stage 2). It appears
+   once the empty view gives way. :has() so it holds from the first paint, before any script runs. */
+.site-main:has([data-view="empty"]:not([hidden])) [data-pro-strip] { display: none; }
+.site-main:has([data-dropzone]) .pro-strip { text-align: center; max-width: 700px; margin: 12px auto 0; }
 /* The one Pro line under a tool's heading (tools/pro-copy.mjs proStrip): the page's own hint type, nothing louder. */
 .pro-strip { margin: 0 0 10px; font-size: 13.5px; line-height: 1.5; color: var(--ink-76); }
 .pro-strip strong { color: var(--ink-78); font-weight: 700; }
 /* The small "Pro" label, and a real control shown locked: still itself, visibly unavailable. Pro builds only. */
 .pro-label { margin-left: 8px; vertical-align: 2px; }
 .pro-locked { opacity: .5; }
+.lock {
+  margin-top: 18px; background: var(--gold-bg); border: 1px solid var(--gold-line); border-radius: 14px;
+  padding: 22px; text-align: left; max-width: 700px;
+}
+.lock__head { display: flex; align-items: center; gap: 10px; margin: 0 0 9px; }
+.lock__title { margin: 0; font-size: 16.5px; font-weight: 600; color: var(--ink); }
+.lock__what { margin: 0 0 16px; font-size: 14.5px; line-height: 1.6; color: #6B5C3E; }
+.lock__controls { margin: 0 0 16px; }
+.lock__controls .actions { margin-top: 8px; }
+.lock__controls input, .lock__controls select { border-color: var(--gold-line); background: #FFFFFF; }
+.lock .cta {
+  display: block; width: 100%; background: var(--ink); color: #FFFFFF; border: none; border-radius: 10px;
+  padding: 13px; font: 600 15.5px/1.3 var(--sans); text-align: center; cursor: pointer;
+}
+.lock .cta:hover { background: #000000; }
+.lock .cta:disabled { opacity: .7; cursor: progress; }
+.lock__after, .lock__alt, .lock__already { margin: 12px 0 0; font-size: 13.5px; line-height: 1.6; color: #7A6B4E; text-align: center; }
+.lock__alt { margin-top: 15px; }
+.lock__already { margin-top: 8px; }
+.lock__after a, .lock__alt a, .lock__already a, .lock__state a { color: #6B5C3E; }
+.lock__state { margin: 0; font-size: 14.5px; line-height: 1.6; color: #6B5C3E; }
 .pro-locked :disabled { cursor: not-allowed; }
 .kicker {
   margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase;
@@ -265,28 +295,28 @@ input, button, select, textarea { font-family: inherit; }
 /* ---------- drop zone ---------- */
 
 .dropzone {
-  position: relative; border: 2px dashed var(--line-strong); border-radius: 6px;
-  background: var(--card); min-height: clamp(300px, 46vh, 460px);
+  position: relative; border: 2px dashed #DEDEDE; border-radius: 16px;
+  background: var(--panel); min-height: clamp(280px, 42vh, 420px); max-width: 700px; margin: 0 auto;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 18px; padding: 32px 24px; cursor: pointer; text-align: center;
 }
-.dropzone:hover { border-color: var(--amber); background: var(--card-hover); }
+.dropzone:hover { border-color: var(--ink-74); background: #FFFFFF; }
 .dropzone__ring {
   position: absolute; inset: -2px; border: 2px solid var(--amber);
-  border-radius: 6px; background: var(--amber-wash); pointer-events: none;
+  border-radius: 16px; background: var(--amber-wash); pointer-events: none;
 }
-.dropzone__mark {
-  width: 62px; height: 62px; border-radius: 5px;
-  background: linear-gradient(135deg, var(--ink) 0 50%, var(--amber) 50% 100%);
-}
-.dropzone__head { margin: 0; font-size: clamp(22px, 3.4vw, 30px); font-weight: 700; letter-spacing: -.02em; }
-.dropzone__sub { margin: 8px 0 0; font-size: 16px; color: var(--ink-76); }
+/* The tool's own mark (tools/icons.mjs), plain ink: gold is kept for Pro alone (owner, 13 September 2026). */
+.dropzone__mark { display: block; width: 42px; height: 42px; color: var(--ink); }
+.dropzone__glyph { display: block; width: 42px; height: 42px; }
+.dropzone__glyph .tm-a { fill: currentColor; }
+.dropzone__head { margin: 0; font-size: clamp(20px, 3.2vw, 23px); font-weight: 600; letter-spacing: -.02em; }
+.dropzone__sub { margin: 7px 0 0; font-size: 15px; color: var(--soft); }
 .dropzone__meta { margin: 0; font-family: var(--mono); font-size: 12.5px; color: var(--ink-74); letter-spacing: .02em; }
 
 /* ---------- the verification notes ---------- */
 
 .assurances {
-  margin-top: 22px; display: grid;
+  margin: 28px auto 0; max-width: 920px; display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 28px;
 }
 .assurances h2 { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
