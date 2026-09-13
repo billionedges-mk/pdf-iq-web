@@ -401,3 +401,34 @@ recorded by a Cloudflare Pages Function in D1 (`functions/api/paddle/webhook.js`
 So a Firestore record showing `tier: free` for someone who bought Pro on the web is correct, not a
 bug. If Play billing is ever switched on, the two stores must be reconciled deliberately, not
 discovered to disagree. Until then, treat the Firestore tier as dormant.
+
+## What a Pro entitlement unlocks must be the same on both surfaces
+
+A web purchase covers the Android app (/pro/, /terms, /refunds). The entitlement token from
+`GET /api/entitlement` says only `pro: true` for a uid; each surface decides what that unlocks. So
+the two feature lists must be kept in agreement deliberately.
+
+**The app cannot honour a web purchase yet** (app session, 13 September 2026). `BILLING_ENABLED`
+does two jobs there: it compiles the Pro features in, and it turns on the Play purchase path. A
+Paddle buyer needs the first and must never get the second. The flag has to be split before the app
+reads this entitlement. That is app work, recorded here because a web sale that says "covers both"
+depends on it.
+
+## Paddle's checkout frame talks to hosts this site's policy cannot govern
+
+Measured with `npm run measure:paddle` against a local sandbox build with a placeholder token, on
+13 September 2026: provisional until repeated on the Preview deployment with the real sandbox token.
+Inside Paddle's own checkout frame (sandbox-buy.paddle.com), the checkout contacted:
+- `o522631.ingest.sentry.io`, Sentry error and security reports;
+- `fonts.googleapis.com` and `fonts.gstatic.com`;
+- `sandbox-checkout-analytics.paddle.com`, a ping;
+- `sandbox-checkout-service.paddle.com`.
+Paddle's hosts set a Cloudflare `__cf_bm` cookie on `.paddle.com`.
+
+Those requests belong to Paddle's frame and follow Paddle's policy, not ours. The /pro/buy/ content
+security policy decides what our page may load and frame. It cannot stop what the frame loads once
+it is allowed. /privacy's Paddle.js wording must describe that, from the Preview measurement.
+
+Paddle.js 2.9.7 also injects Retain analytics (public.profitwell.com) outside sandbox. /pro/buy/
+pre-sets the loader's own skip check and leaves that host out of its policy. Only a production
+measurement can confirm both hold, so measure again on the day the sale opens.

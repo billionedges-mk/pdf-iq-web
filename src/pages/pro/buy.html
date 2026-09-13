@@ -1,0 +1,46 @@
+    <div class="tool-head">
+      <h1 class="page-title">Buy Pro</h1>
+      <p class="page-lede">{{proPrice}} once, covering {{proCovers}}. None of the {{webToolCount}} free tools needs this.</p>
+    </div>
+
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="working">
+      <p class="kicker">One moment</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">Checking for a sign-in kept in this browser.</p>
+    </section>
+
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="out" hidden>
+      <p class="kicker">Sign in first</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">Pro is kept with your account, so it
+        follows you to any device you sign in on. That needs an account before paying:
+        <a href="/account/">sign in on your account page</a>, then come back here.</p>
+    </section>
+
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="ready" hidden>
+      <p class="kicker">Ready to pay</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">Signed in as <strong data-buy-email></strong>.
+        Pro will be recorded against this account.</p>
+      <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.6; color: var(--ink-78);">Paying opens Paddle's
+        checkout on this page. Paddle is the merchant of record: they take the payment and handle any tax, and
+        your card details go to Paddle, never to pdf-iq. Nothing is loaded from Paddle until you press the button.</p>
+      <p style="margin: 18px 0 0;"><button class="btn" type="button" data-buy-pay>Pay {{proPrice}} with Paddle</button></p>
+      <p class="hint" style="margin-top: 12px;">Paid once, not a subscription. <a href="/refunds/">Refunds</a>: thirty days, for any reason.</p>
+    </section>
+
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="loading" hidden>
+      <p class="kicker">Opening Paddle's checkout</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">Loading the checkout from Paddle.</p>
+    </section>
+
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="done" hidden>
+      <p class="kicker">Paid</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">Paddle has taken the payment. Their
+        reference for it is <code data-buy-reference></code>; quote it if you ever need to ask about this purchase.</p>
+    </section>
+
+    <section class="card card--problem" style="margin-top: 22px; max-width: 700px;" data-buy="failed" hidden>
+      <p class="kicker">Paddle's checkout did not open</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">Nothing was charged. Either Paddle's checkout
+        could not be reached — no connection, or something in this browser blocks it — or Paddle declined to
+        start it.</p>
+      <p style="margin: 18px 0 0;"><button class="btn btn--sm" type="button" data-buy-retry>Try again</button></p>
+    </section>

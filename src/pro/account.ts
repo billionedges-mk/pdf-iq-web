@@ -77,6 +77,21 @@ function show(view: View): void {
 
 function signedIn(email: string): void {
   el('[data-account-email]').textContent = email || 'your Google account';
+  // The way to /pro/buy/, which otherwise nothing links to. Built here rather than hidden in the
+  // page, so a build that is not selling carries no trace of it: __PDFIQ_SALE__ is false there and
+  // the branch is dropped.
+  if (__PDFIQ_SALE__ && !document.querySelector('[data-account-buy]')) {
+    const p = document.createElement('p');
+    p.dataset.accountBuy = '';
+    p.style.margin = '16px 0 0';
+    const a = document.createElement('a');
+    a.className = 'btn';
+    a.href = '/pro/buy/';
+    a.textContent = 'Buy Pro';
+    p.append(a);
+    if (__PDFIQ_PADDLE_ENV__ === 'sandbox') p.append(' Paddle sandbox: test payments only, no real card is charged.');
+    el('[data-signout]').closest('p')!.before(p);
+  }
   show('in');
 }
 

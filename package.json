@@ -32,6 +32,8 @@
     "verify:paddle": "node --no-warnings tools/verify-paddle.mjs",
     "entitlement:keys": "node tools/entitlement-keys.mjs",
     "paddle:test-events": "node tools/paddle-test-events.mjs",
+    "verify:sale-build": "node tools/verify-sale-build.mjs",
+    "measure:paddle": "node tools/measure-paddle.mjs",
     "verify:size-claims": "node tools/verify-size-claims.mjs"
   },
   "dependencies": {

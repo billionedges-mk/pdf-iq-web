@@ -3,6 +3,7 @@
 // specific tool from search, so there is no client-side router anywhere on this site.
 
 import { AUTH } from './auth-config.mjs';
+import { PADDLE } from './paddle-config.mjs';
 
 export const ORIGIN = 'https://pdf-iq.com';
 
@@ -268,8 +269,13 @@ export const PRO = {
    * open. That is better known than papered over with a cadence nobody asked for.
    */
   teamCadenceIsAsked: true,
-  /** Kept prominent: it is not on sale, on either surface. */
-  onSale: false,
+  /**
+   * True only in a build that sells for real: a purchase page against Paddle's production
+   * environment (tools/paddle-config.mjs), which no build can make until the sale is switched on in
+   * code. A sandbox build has a purchase page but sells nothing real, so Pro is still "not on sale",
+   * and its banner says test payments only.
+   */
+  onSale: Boolean(PADDLE?.page && PADDLE.env === 'production'),
 };
 
 export const PRO_FEATURES = PRO.features;
@@ -424,6 +430,16 @@ export const PRO_PAGES = [
     description: 'Add a password to a PDF, or take one off, on your device. Part of Pro.',
     ogSubject: 'Password',
     ogLine: 'Nothing leaves your device',
+  },
+  {
+    // The one page that loads a third-party script: Paddle's checkout. It exists only in a sale build
+    // (`sale: true`), gets its own content security policy, and loads Paddle.js only when someone
+    // chooses to pay. See src/pro/buy.ts.
+    slug: 'pro/buy', name: 'Buy Pro', entry: 'buy', entryDir: 'pro', noindex: true, sale: true,
+    title: 'Buy Pro — pdf-iq',
+    description: 'Pay for Pro once, through Paddle. Nothing free needs this.',
+    ogSubject: 'Buy Pro',
+    ogLine: 'Paid once',
   },
 ];
 

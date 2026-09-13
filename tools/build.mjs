@@ -16,6 +16,7 @@ import * as esbuild from 'esbuild';
 import { applyProBlocks } from './pro-blocks.mjs';
 import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
 import { AUTH } from './auth-config.mjs';
+import { PADDLE, PADDLE_SCRIPT } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
 import { PRO_COPY, proState } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
@@ -87,7 +88,8 @@ const PRO_SENTINEL_PREFIX = 'pdfiq-pro:';
  * The routes this build emits. Pro-only pages (site.mjs PRO_PAGES) join only when the flag is on:
  * in any other build they are absent — no page, no bundle, no link — not hidden.
  */
-const ROUTES = PRO ? [...ALL, ...PRO_PAGES] : ALL;
+// A `sale` page (/pro/buy/) joins only a build that can actually sell: tools/paddle-config.mjs.
+const ROUTES = PRO ? [...ALL, ...PRO_PAGES.filter((p) => !p.sale || PADDLE?.page)] : ALL;
 if (PRO && !AUTH.apiKey) {
   console.warn('  (pro) no PDFIQ_FIREBASE_WEB_KEY: /account/ will say signing in is not set up, and make no request');
 }
@@ -118,7 +120,9 @@ if (LOCAL) {
 const PREVIEW_BANNER =
   '<div data-pdfiq-pro="pdfiq-pro:preview" role="note" style="background:#1E2A38;color:#FAF8F4;' +
   'font:600 14px/1.45 system-ui,sans-serif;padding:9px 16px;text-align:center">' +
-  'Preview build with the Pro flag on \u2014 not the live site, and nothing here is for sale.</div>';
+  (PADDLE?.page
+    ? 'Preview build with the Pro flag on, selling through the Paddle SANDBOX \u2014 test payments only; no real card is charged.</div>'
+    : 'Preview build with the Pro flag on \u2014 not the live site, and nothing here is for sale.</div>');
 
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 
@@ -441,7 +445,7 @@ function copyVendor() {
 function copyStatic() {
   const pub = join(ROOT, 'public');
   if (existsSync(pub)) cpSync(pub, OUT, { recursive: true });
-  if (PRO) writeFileSync(join(OUT, '_headers'), readFileSync(join(OUT, '_headers'), 'utf8') + accountHeaders());
+  if (PRO) writeFileSync(join(OUT, '_headers'), readFileSync(join(OUT, '_headers'), 'utf8') + accountHeaders() + (PADDLE?.page ? buyHeaders() : ''));
 }
 
 /**
@@ -464,6 +468,40 @@ function accountHeaders() {
     '/account/*',
     '  ! Content-Security-Policy',
     `  Content-Security-Policy: ${policy}`,
+    '',
+  ].join(NL);
+}
+
+/**
+ * The purchase page is the one page that may load a third-party script, Paddle's, so it alone
+ * gets a policy naming Paddle's hosts for this build's environment. Derived from the site-wide
+ * policy like the account page's. Not the Retain analytics host: Paddle.js injects
+ * public.profitwell.com outside sandbox, and this policy is the second of two things that stop it
+ * (src/pro/buy.ts is the first).
+ */
+function buyHeaders() {
+  const site = readFileSync(join(ROOT, 'public/_headers'), 'utf8');
+  const policy = site.match(/^\s*Content-Security-Policy: (.+)$/m)?.[1];
+  if (!policy) throw new Error('public/_headers has no Content-Security-Policy to derive the purchase page policy from');
+  const h = PADDLE.hosts;
+  const add = (p, directive, hosts) => {
+    if (!hosts.length) return p;
+    const re = new RegExp(`${directive} ([^;]+)`);
+    return re.test(p) ? p.replace(re, (_, v) => `${directive} ${v} ${hosts.join(' ')}`) : `${p}; ${directive} ${hosts.join(' ')}`;
+  };
+  let p = policy;
+  p = add(p, 'script-src', h.script);
+  p = add(p, 'style-src', h.style);
+  p = add(p, 'img-src', h.img);
+  p = add(p, 'connect-src', h.connect);
+  p = add(p, 'frame-src', h.frame);
+  if (/profitwell/i.test(p)) throw new Error('the purchase page policy names a ProfitWell host; Retain analytics must stay blocked');
+  return [
+    '',
+    `# Sale build only (Paddle ${PADDLE.env}): the purchase page, and nothing else, may load Paddle's checkout.`,
+    '/pro/buy/*',
+    '  ! Content-Security-Policy',
+    `  Content-Security-Policy: ${p}`,
     '',
   ].join(NL);
 }
@@ -515,7 +553,9 @@ async function bundle() {
     sourcemap: WATCH,
     logLevel: 'warning',
     metafile: true,
-    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null' },
+    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null', __PDFIQ_SALE__: PADDLE?.page ? 'true' : 'false', __PDFIQ_PADDLE_ENV__: JSON.stringify(PADDLE?.page ? PADDLE.env : ''), __PDFIQ_PADDLE_TOKEN__: JSON.stringify(PADDLE?.page ? PADDLE.token : ''), __PDFIQ_PADDLE_PRICE__: JSON.stringify(PADDLE?.page ? PADDLE.priceId : ''), __PDFIQ_PADDLE_SCRIPT__: JSON.stringify(PADDLE?.page ? PADDLE_SCRIPT : '') },
+    // Scalars, not one object: esbuild hoists an object-valued define into a shared module, and the
+    // first version put the token, price and Paddle.js URL into a chunk every Pro page loads.
   });
 
   const hashed = new Map();
@@ -756,6 +796,19 @@ async function build() {
   }
   if (PRO && !carrying.some((f) => f.startsWith('assets/'))) {
     throw new Error('the Pro flag is on, but no Pro module reached the bundle');
+  }
+
+  // The sale, checked the same way. A build that cannot sell may carry no purchase path at all:
+  // no Paddle host, no client token, no checkout call, in any file it wrote (check 14).
+  if (!PADDLE?.page) {
+    const selling = [];
+    for (const rel of readdirSync(OUT, { recursive: true })) {
+      const name = String(rel);
+      if (!TEXTLIKE.test(name) && !name.endsWith('_headers')) continue;
+      const text = readFileSync(join(OUT, name), 'utf8');
+      if (/paddle\.com|Paddle\.Checkout|Paddle\.Initialize|test_[0-9a-f]{20}|live_[0-9a-f]{20}/.test(text)) selling.push(name.split(/[\\/]/).join('/'));
+    }
+    if (selling.length) throw new Error(`a purchase path reached a build that is not selling: ${selling.slice(0, 8).join(', ')}`);
   }
 
   console.log(`built ${ROUTES.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images${PRO ? '  — PRO PREVIEW' : ''}`);
