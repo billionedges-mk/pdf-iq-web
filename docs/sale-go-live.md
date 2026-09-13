@@ -60,3 +60,11 @@ production hosts, so it is corrected from this run before the sale is announced.
   - Localize (global.localizecdn.com), Sentry (o522631.ingest.sentry.io), Google Fonts, Paddle checkout
     analytics and event pings.
   - Cloudflare `__cf_bm` on .paddle.com, about 30 minutes.
+
+- **Completing a sandbox payment** (13 September 2026, uid measure-1789292745404, txn_01m2d2hercp5bhwww21rs529yw):
+  the webhook recorded the purchase as granted to that uid. The first run of Paddle itself sending our price and
+  custom_data end to end. New at payment, absent from the open phase in three runs: **r.stripe.com**
+  (five requests to /b) and **www.gstatic.com** (five requests for /instantbuy/svg/transparent_square.svg).
+  Also new: card-brand icons from buy.paddle.com (the production host, even in sandbox) and more Stripe
+  scripts. No new cookie names: still m on m.stripe.com (until 2027-10-18) and __cf_bm on .paddle.com. The
+  footer counter stayed at 3 third-party requests. ProfitWell requested: no, as expected in sandbox.
