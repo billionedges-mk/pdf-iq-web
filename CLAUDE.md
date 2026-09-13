@@ -184,6 +184,13 @@ Nothing is on sale. `PDFIQ_SALE` is off everywhere except the Preview environmen
   stored signed token locally and send nothing. The token does not expire; a refund takes effect on a
   browser at its next online visit to `/account/`.
 - **The app backend's Firestore `tier` is dormant**, not the source of truth (TECH_DEBT).
+- **Cloudflare's variables screen, two traps** (13 September 2026): saving two variables in one dialog
+  hangs, so add them one at a time; and a new variable's type defaults to **Text**, so every secret
+  must be switched to **Secret** before saving or it is stored in the clear.
+- **Sandbox, as configured:** D1 `pdf-iq-purchases-sandbox` (Asia Pacific) bound to Preview as
+  `PURCHASES`; Paddle sandbox price `pri_01m2cv2xegy64zmhtxrbk0b1bf`; notification destination
+  `https://pro-sale.pdf-iq-web.pages.dev/api/paddle/webhook` for exactly the three events. Production
+  has none of it.
 
 ## Things that are not what they look like
 

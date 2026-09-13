@@ -1,0 +1,8 @@
+{
+  "sandbox": {
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "1-9aGhZLuixAIgvMOf9_k2DdaWDpyd3RFFdo4lorrHw",
+    "y": "j4nCVW7LYTiqCPyHqJRAXjQYvFZ1zvlS-1ySMkbKwTQ"
+  }
+}
