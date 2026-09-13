@@ -57,6 +57,8 @@ place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
 - A live notification destination at `https://pdf-iq.com/api/paddle/webhook` for exactly
   `transaction.completed`, `adjustment.created`, `adjustment.updated`; its secret as `PADDLE_WEBHOOK_SECRET`.
 - A production D1 purchases database bound as `PURCHASES`, in the same region as the others.
+  **Read replication must stay off** on it, and on the sandbox one: /privacy says the database runs where the Asia-Pacific
+  location hint places it, and read replication copies it to every region (Cloudflare D1 data-location docs).
 - `npm run entitlement:keys -- production`; private key into Production, public key committed.
 - (Superseded by the checkout origin above: the default payment link is https://checkout.pdf-iq.com/.)
 - Cloudflare Bot Fight Mode checked for the webhook path (Paddle asks for bot checks to be bypassed there).

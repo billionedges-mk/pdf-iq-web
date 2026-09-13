@@ -230,6 +230,20 @@
       <p><a href="https://www.paddle.com/legal/privacy">Paddle's privacy notice</a> is addressed to people who buy
          from Paddle and sets out how Paddle handles their personal data. It does not list the services its
          checkout loads.</p>
+
+      <h3 id="purchase-record">If you buy Pro: the purchase record</h3>
+      <p>When Paddle tells this site a payment went through, we record the purchase, so that Pro follows your account
+         to any browser you sign in on. The record holds Paddle's reference for the transaction, your account
+         identifier, the email address you were signed in with, whether the purchase stands or was refunded, and when
+         that last changed. It holds no card details, no amount, no billing address and no IP address.</p>
+      <p>It is kept in a Cloudflare database. We asked Cloudflare to place it in Asia-Pacific, which Cloudflare
+         describes as a location hint for where the database runs
+         (<a href="https://developers.cloudflare.com/d1/configuration/data-location/">Cloudflare's description</a>).</p>
+      <p><strong>The record outlives your account, on purpose.</strong> Deleting your account does not take Pro away,
+         and this record is how that promise is kept: sign in again with the same Google account and Pro is found
+         again. That means deleting the record is the one thing that does take Pro away. You can ask us to delete it,
+         and we will. Before we do, we will tell you that Pro will end on every device you use it on, and that
+         deleting the record is not a refund. Refunds are covered on <a href="/refunds/">the refunds page</a>.</p>
       <!--/SALE-->
 
       <!-- ================================================================ app -->
@@ -352,7 +366,7 @@
       <!-- ============================================================= shared -->
       <h2>Who your data is shared with</h2>
       <p>Nothing from this website is shared with anyone for their own purposes. What it collects —
-         the form on the firms page, if you use it, and the server logs described above — stays with
+         the form on the firms page, if you use it,<!--SALE--> a Pro purchase record, if you buy Pro,<!--/SALE--> and the server logs described above — stays with
          this site and Cloudflare, which hosts it.<!--PRO--> Signing in for Pro uses Google Firebase, the
          same as the app; see <a href="#if-you-sign-in">If you sign in</a>.<!--/PRO--> The app uses a small
          number of providers, each for a specific purpose:</p>
@@ -383,7 +397,10 @@
         <li><strong>Document text and summaries:</strong> not kept at all — discarded when the
             request completes.</li>
         <li><strong>Account and usage counters:</strong> kept while your account is active, and
-            deleted when you delete your account.</li>
+            deleted when you delete your account.</li><!--SALE-->
+        <li><strong>Your Pro purchase record:</strong> kept for as long as Pro is yours, including after you delete
+            your account, so that signing in again restores it. Deleted if you ask, which ends Pro; see
+            <a href="#purchase-record">the purchase record</a>.</li><!--/SALE-->
         <li><strong>Analytics events</strong> — which features were used, which operations succeeded or failed, and
             the device details sent with each: kept for 2 months, then deleted in Google's monthly
             deletion pass. That is the event retention setting on our Google Analytics property.
@@ -421,7 +438,10 @@
       <p>Deleting your account removes your account record and usage counters from our servers. It
          does not affect any PDF you have already saved — those files are yours and are not ours to
          delete. A one-time Pro purchase is not affected either: it is not a subscription, so
-         there is nothing to cancel, and deleting your account does not refund or revoke it.</p>
+         there is nothing to cancel, and deleting your account does not refund or revoke it.</p><!--SALE-->
+      <p><strong>The Pro purchase record is the exception, and it is deliberate.</strong> It is not deleted with your
+         account, because it is what keeps Pro yours afterwards. Deleting it is a separate request, and it ends Pro on
+         every device. It is described under <a href="#purchase-record">the purchase record</a>.</p><!--/SALE-->
       <p><!--FREE-->If you have only ever used this website, or have never used Summarise<!--/FREE--><!--PRO-->If you
          have never signed in, in the app or on this website<!--/PRO-->, we hold nothing
          about you and there is nothing to delete.</p>
@@ -429,7 +449,8 @@
       <h2>Your rights</h2>
       <p>Depending on where you live, you may have rights to access, correct, export, restrict or
          delete the personal information we hold about you, and to object to certain processing.
-         Because we hold so little — an email address and a set of counters — most such requests
+         Because we hold so little — an email address and a set of counters<!--SALE-->, and a purchase record if you
+         bought Pro<!--/SALE--> — most such requests
          are straightforward.</p>
       <p>Write to <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> and we will
          respond within 30 days. We will not charge you for exercising these rights and will not
