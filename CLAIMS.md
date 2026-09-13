@@ -1444,6 +1444,11 @@ app cannot honour one until its `BILLING_ENABLED` flag is split, which was appro
 Every check passed. Nothing on the website could fail on them, because the surface they describe is a different
 codebase. The sentences were found by reading them against the app's state, one at a time.
 
+The scale is the finding. It was not one sentence: five places said it (/pro/buy/, /pro/, the homepage Pro panel, /terms
+and /refunds), plus the two lines of this session's and the mockup's. It was in the product's description of itself, set
+once in `PRO.covers` and substituted everywhere, and it propagated because it was true of the plan. A single source made
+it consistent, which is not the same as making it true.
+
 **The check:**
 
 1. A sentence that names a second surface (the app, "any device", "both") is a claim about that surface. Before it

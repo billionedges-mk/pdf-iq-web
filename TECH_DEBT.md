@@ -462,11 +462,16 @@ surfaces" above; approved in the app session, not built). /pro/buy/ said "coveri
 app", on the page where someone hands over money, and "covers the app" is a material part of what they think they are
 buying. The owner pulled it the same day.
 
-**Now:** /pro/buy/ reads "$14.99 once, for Pro in the web tools on this site. It does not unlock anything in the Android
-app." (`PRO.coversToday` in tools/site.mjs; verify:sale-build checks the page says it and no longer carries `PRO.covers`).
+**Now:** the pages that define the purchase say what it covers today (`PRO.coversToday` in tools/site.mjs):
+- /pro/buy/: "$14.99 once, for Pro in the web tools on this site. It does not unlock anything in the Android app."
+  (verify:sale-build checks it and that the page no longer carries `PRO.covers`).
+- /terms: "It covers Pro in the web tools on this site. It does not unlock anything in the Android app." and "Buying
+  happens on this website rather than inside the Android app." (production, 8b9273a; /terms is linked from the checkout).
+- /refunds: "A Pro purchase is a one-time unlock covering Pro in the web tools on this site; it does not unlock anything
+  in the Android app. A refund removes it from this website." (production, 8b9273a).
+- The old phrases from /terms and /refunds are in tools/retired-claims.mjs, so verify:retired refuses them.
 
-**The sentence comes back when the app can honour a web purchase** (the flag split, shipped and walked on a device), and in
-the same change on all three places that make the promise: /pro/buy/, /pro/, and the homepage Pro panel (redesign stage
-4). Until then those two still carry `covers`, in a build that sells nothing, and the stage 5 claims sweep takes them.
-/terms ("the purchase covers both") and /refunds ("a one-time unlock covering both the website and the Android app")
-say the same, in future-tense policy text on production; they are the owner's to decide in the sweep.
+**The sentence comes back when the app can honour a web purchase and it has been tested on a device** (the flag split),
+in one change, on all five places that made the promise: /pro/buy/, /pro/, the homepage Pro panel, /terms and /refunds.
+Delete the three retired-claims entries in the same commit. Until then /pro/ and the homepage still carry `covers` in
+production, which sells nothing; the redesign (stage 4) and the claims sweep (stage 5) take them.
