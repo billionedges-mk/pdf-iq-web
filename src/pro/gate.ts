@@ -14,6 +14,9 @@
 import { readSession, type Session } from './session.js';
 import { storedEntitlementUid, ENTITLEMENT_SENTINEL } from './entitlement.js';
 import { readPendingPurchase, PENDING_SENTINEL } from './pending.js';
+// Not in GATE_CHECKS: that would keep the Unlock module, and its /pro/buy/ address, in a Pro build that is not
+// selling (see proPrompt).
+import { unlockButton } from './unlock.js';
 
 export const GATE_SENTINEL = 'pdfiq-pro:gate';
 
@@ -104,8 +107,18 @@ export const GATE_CHECKS = [GATE_SENTINEL, ENTITLEMENT_SENTINEL, PENDING_SENTINE
  * What a Pro control shows instead of acting. Signed out: the sign-in prompt. In a sale build, signed in
  * without Pro on this browser: where to buy it, and how a purchase already made reaches this browser.
  */
-export function proPrompt(feature: string): HTMLElement {
-  if (!__PDFIQ_SALE__ || !signedIn()) return signInPrompt(feature);
+export function proPrompt(feature: string, carry?: () => File | null): HTMLElement {
+  // The sale prompt is referenced only inside this constant branch. esbuild drops a false branch when it parses,
+  // so in a build that is not selling nothing reaches salePrompt, and it, the Unlock module and its /pro/buy/
+  // address are left out. Code after an early `return` is dropped only when printing, too late: the references
+  // already kept them (tools/verify-sale-build.mjs caught exactly that).
+  if (__PDFIQ_SALE__) {
+    if (signedIn()) return salePrompt(feature, carry);
+  }
+  return signInPrompt(feature);
+}
+
+function salePrompt(feature: string, carry?: () => File | null): HTMLElement {
   const p = document.createElement('p');
   p.className = 'hint';
   p.dataset.pdfiqGate = GATE_SENTINEL;
@@ -118,15 +131,31 @@ export function proPrompt(feature: string): HTMLElement {
     p.append(`${feature} is part of Pro, and your payment for it (reference ${pending.txn}) is being confirmed. Open `, account, ' to finish. There is no need to pay again.');
     return p;
   }
-  p.append(`${feature} is part of Pro. `);
-  const buy = document.createElement('a');
-  buy.href = '/pro/buy/';
-  buy.textContent = 'Buy Pro';
+  // Unlock, from here: the checkout opens straight away, and paying brings the buyer back to this page with the
+  // file they had open (src/pro/unlock.ts). Buying used to mean a link to /pro/buy/, a second button there, and
+  // then finding the file again.
+  p.append(`${feature} is part of Pro.`);
+  const act = document.createElement('p');
+  act.style.margin = '10px 0 0';
+  act.append(unlockButton(feature, carry));
+  const after = document.createElement('p');
+  after.className = 'hint';
+  after.style.marginTop = '8px';
+  after.append(carry
+    ? 'After paying you come back here with this file. Meanwhile it is kept on this device only, for up to ten minutes.'
+    : 'After paying you come back here.');
   const account = document.createElement('a');
   account.href = '/account/';
   account.textContent = 'your account page';
-  p.append(buy, ' — or, if you already have, open ', account, ' once with a connection and this browser will know.');
-  return p;
+  const already = document.createElement('p');
+  already.className = 'hint';
+  already.style.marginTop = '4px';
+  already.append('Bought it already? Open ', account, ' once with a connection and this browser will know.');
+  const wrap = document.createElement('div');
+  wrap.dataset.pdfiqGate = GATE_SENTINEL;
+  p.removeAttribute('data-pdfiq-gate');
+  wrap.append(p, act, after, already);
+  return wrap;
 }
 
 /**

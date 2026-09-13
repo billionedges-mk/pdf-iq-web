@@ -373,6 +373,7 @@ function renderResult(took: number): void {
       void import('../pro/searchable-offer.js').then((m) => m.offerSearchable(host as HTMLElement, {
         fileName,
         sourceBytes: bytes,
+        source: () => file,
         pages,
         scaleFor: (index) => pageScale.get(index) ?? OCR_DPI / 72,
         counts,
@@ -395,7 +396,7 @@ function renderResult(took: number): void {
 // Pro: say before any reading that the searchable PDF exists, and whether this browser can use it.
 if (__PDFIQ_PRO__) {
   const intro = $('[data-pro-searchable-state]');
-  if (intro) void import('../pro/searchable-offer.js').then((m) => m.introSearchable(intro as HTMLElement));
+  if (intro) void import('../pro/searchable-offer.js').then((m) => m.introSearchable(intro as HTMLElement, () => file));
 }
 
 $('[data-replace]')?.addEventListener('click', reset);

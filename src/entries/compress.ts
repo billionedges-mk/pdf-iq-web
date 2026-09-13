@@ -95,6 +95,7 @@ function renderSelected(): void {
     if (host) {
       void import('../pro/compress-target-ui.js').then((m) => m.mountTarget(host as HTMLElement, {
         state: () => (file && analysis ? { fileName: file.name, fileSize: file.size, analysis } : null),
+        source: () => file,
         pass: async ({ preset: which, plan, label, signal }) => {
           // Every pass from the original file: a previous pass mutated its own copy.
           const fresh = await PDFDocument.load(sourceBytes!, { updateMetadata: false });

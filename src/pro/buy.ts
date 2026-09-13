@@ -20,6 +20,57 @@
 import { signedIn, proAccount } from './gate.js';
 import { writePendingPurchase, readPendingPurchase } from './pending.js';
 import { confirmPurchase, confirmEndWords } from './confirm.js';
+import { peekUnlock, type UnlockIntent } from '../lib/handoff.js';
+
+/**
+ * The pages an Unlock button can send a buyer from, and so the only places this page will send them back to. A
+ * path from storage is still only ever one of these: nothing here navigates to an address it was handed.
+ */
+const RETURN_PAGES: Record<string, string> = {
+  '/compress/': 'Compress',
+  '/ocr/': 'OCR',
+  '/password/': 'Password',
+  '/batch/': 'Batch',
+};
+
+/** Set when this page was opened by an Unlock button (src/pro/unlock.ts). */
+let unlock: { key: string; intent: UnlockIntent; page: string; name: string; file: boolean; expired: boolean } | null = null;
+
+async function readUnlock(): Promise<void> {
+  const key = new URLSearchParams(location.search).get('unlock');
+  if (!key) return;
+  const found = await peekUnlock(key);
+  if (!found || !RETURN_PAGES[found.intent.path]) return;
+  unlock = { key, intent: found.intent, page: RETURN_PAGES[found.intent.path], name: found.name, file: found.file, expired: found.expired };
+}
+
+/** The link back to where Unlock was pressed, carrying the file when it is still there. */
+function backHref(withFile: boolean): string {
+  return withFile ? `${unlock!.intent.path}?from=${encodeURIComponent(unlock!.key)}` : unlock!.intent.path;
+}
+
+/** Owned now, and this page was opened by Unlock: take the buyer back, with the file if it is still kept. */
+async function returnFromUnlock(): Promise<void> {
+  if (!unlock) return;
+  const line = $('[data-buy-return]')!;
+  line.hidden = false;
+  // Asked again: the confirmation may have taken long enough for the ten minutes to pass.
+  const now = await peekUnlock(unlock.key);
+  const withFile = Boolean(now?.file);
+  if (withFile) {
+    line.textContent = `Pro is yours. Taking you back to ${unlock.page} with ${unlock.name}…`;
+    setTimeout(() => { location.href = backHref(true); }, 1500);
+    return;
+  }
+  const a = Object.assign(document.createElement('a'), { href: backHref(false), textContent: `Back to ${unlock.page}` });
+  const why = !unlock.name
+    ? '.'
+    // Expired on arrival (that read deleted it), expired since, or gone since it was seen with its file.
+    : unlock.expired || now?.expired || (!now && unlock.file)
+      ? ` — ${unlock.name} was kept on this device for ten minutes only, so choose it again there.`
+      : ` — ${unlock.name} could not be brought along, so choose it again there.`;
+  line.replaceChildren('Pro is yours. ', a, why);
+}
 
 export const BUY_SENTINEL = 'pdfiq-pro:buy';
 
@@ -130,8 +181,8 @@ window.addEventListener('message', (e: MessageEvent) => {
       $('[data-buy-reference]')!.textContent = txn || 'not given';
       show('done');
       // Paid. Before this the page stopped at Paddle's success message: closing it and reloading still offered
-      // Buy, and Pro arrived only if the buyer thought to open /account/ (the walk of 13 September 2026). So go
-      // there now, where the purchase is confirmed and this browser learns it owns Pro.
+      // Buy, and Pro arrived only if the buyer thought to open /account/ (the walk of 13 September 2026). So the
+      // purchase is confirmed here, and this browser learns it owns Pro without going anywhere.
       // Remembered before anything else, so a tab closed from here on still knows it paid (src/pro/pending.ts).
       const who = signedIn();
       if (who) writePendingPurchase({ txn: txn || 'not given', uid: who.uid, at: Date.now() });
@@ -157,6 +208,7 @@ async function confirmHere(txn: string): Promise<void> {
   line.textContent = confirmEndWords(outcome, txn);
   if (outcome.kind === 'owned') {
     show('owned');
+    await returnFromUnlock();
     return;
   }
   if (outcome.kind === 'signed-out' || outcome.kind === 'slow') {
@@ -165,15 +217,17 @@ async function confirmHere(txn: string): Promise<void> {
   }
 }
 
-function start(): void {
+async function start(): Promise<void> {
   const session = signedIn();
   if (!__PDFIQ_SALE__ || !session) {
     show('out');
     return;
   }
+  await readUnlock();
   // Already owned on this browser: nothing to buy, and nothing should suggest otherwise.
   if (proAccount()) {
     show('owned');
+    await returnFromUnlock();
     return;
   }
   // Paid on this browser but not confirmed yet (the tab was closed, say): confirm, never offer a second checkout.
@@ -186,6 +240,17 @@ function start(): void {
   $<HTMLButtonElement>('[data-buy-pay]')!.addEventListener('click', pay);
   $<HTMLButtonElement>('[data-buy-retry]')?.addEventListener('click', pay);
   show('ready');
+  if (unlock) {
+    // Closing the checkout without paying lands here: the way back, with the file, is on the page.
+    const back = $('[data-buy-back]')!;
+    const a = Object.assign(document.createElement('a'), { href: backHref(unlock.file), textContent: `Back to ${unlock.page}` });
+    back.replaceChildren(a, unlock.file ? ` with ${unlock.name}, without buying.` : ', without buying.');
+    back.hidden = false;
+    // Unlock was the decision to buy: open the checkout now rather than asking for a second press. Not on a
+    // reload, so closing the checkout and reloading does not throw it open again.
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    if (nav?.type !== 'reload' && nav?.type !== 'back_forward') pay();
+  }
 }
 
-start();
+void start();

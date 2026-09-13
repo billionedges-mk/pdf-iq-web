@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
 import { applyProBlocks, applySaleBlocks } from './pro-blocks.mjs';
-import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
+import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN, PRO as PRO_OFFER } from './site.mjs';
 import { AUTH } from './auth-config.mjs';
 import { PADDLE } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
@@ -549,7 +549,7 @@ async function bundle() {
     sourcemap: WATCH,
     logLevel: 'warning',
     metafile: true,
-    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null', __PDFIQ_SALE__: PADDLE?.page ? 'true' : 'false', __PDFIQ_PADDLE_ENV__: JSON.stringify(PADDLE?.page ? PADDLE.env : ''), __PDFIQ_CHECKOUT_ORIGIN__: JSON.stringify(PADDLE?.page ? PADDLE.checkoutOrigin : '') },
+    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null', __PDFIQ_SALE__: PADDLE?.page ? 'true' : 'false', __PDFIQ_PADDLE_ENV__: JSON.stringify(PADDLE?.page ? PADDLE.env : ''), __PDFIQ_CHECKOUT_ORIGIN__: JSON.stringify(PADDLE?.page ? PADDLE.checkoutOrigin : ''), __PDFIQ_PRO_PRICE__: JSON.stringify(PRO_OFFER.price) },
     // Scalars, not one object: esbuild hoists an object-valued define into a shared module, and the
     // first version put the token, price and Paddle.js URL into a chunk every Pro page loads.
   });

@@ -30,10 +30,21 @@ export interface Handoff {
   name: string;
 }
 
+/**
+ * Where an Unlock button was pressed (src/pro/unlock.ts): the Pro feature and the page, so /pro/buy/ can bring
+ * the buyer back to it after paying. Held with the file, under the same one-shot, ten-minute rules.
+ */
+export interface UnlockIntent {
+  feature: string;
+  path: string;
+}
+
 interface Row {
   key: string;
   name: string;
-  bytes: ArrayBuffer;
+  /** Absent for an Unlock pressed with no file open. */
+  bytes?: ArrayBuffer;
+  unlock?: UnlockIntent;
   at: number;
 }
 
@@ -57,7 +68,7 @@ const done = (tx: IDBTransaction) =>
   });
 
 /** Put a finished file aside and return the key to fetch it with. */
-export async function stash(bytes: Uint8Array, name: string): Promise<string | null> {
+export async function stash(bytes: Uint8Array | null, name: string, unlock?: UnlockIntent): Promise<string | null> {
   try {
     const db = await openDb();
     const key = `h${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -76,8 +87,10 @@ export async function stash(bytes: Uint8Array, name: string): Promise<string | n
     };
 
     // Copy into a plain ArrayBuffer: a view over a larger buffer would store the lot.
-    const copy = bytes.slice().buffer;
-    store.put({ key, name, bytes: copy, at: Date.now() } satisfies Row);
+    const row: Row = { key, name, at: Date.now() };
+    if (bytes) row.bytes = bytes.slice().buffer;
+    if (unlock) row.unlock = { feature: unlock.feature, path: unlock.path };
+    store.put(row);
     await done(tx);
     db.close();
     return key;
@@ -107,6 +120,32 @@ export async function claim(key: string): Promise<Handoff | null> {
     if (!row || !row.bytes) return null;
     if (row.at && Date.now() - row.at > MAX_AGE_MS) return null;
     return { bytes: new Uint8Array(row.bytes), name: row.name };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Read an Unlock intent without taking it: /pro/buy/ needs to know where to return, while the file stays put for
+ * that page's own claim. `file` is false when no file was carried, or when it is older than the ten minutes a
+ * handoff is kept (it is then deleted here rather than waiting for the next sweep).
+ */
+export async function peekUnlock(key: string): Promise<{ intent: UnlockIntent; name: string; file: boolean; expired: boolean } | null> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    const req = store.get(key);
+    const row = await new Promise<Row | undefined>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result as Row | undefined);
+      req.onerror = () => reject(req.error);
+    });
+    const stale = !row?.at || Date.now() - row.at > MAX_AGE_MS;
+    if (row && stale) store.delete(key);
+    await done(tx);
+    db.close();
+    if (!row?.unlock) return null;
+    return { intent: row.unlock, name: row.name, file: Boolean(row.bytes) && !stale, expired: Boolean(row.bytes) && stale };
   } catch {
     return null;
   }

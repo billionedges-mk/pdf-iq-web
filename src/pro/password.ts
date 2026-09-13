@@ -126,7 +126,7 @@ function render(): void {
   gate.textContent = '';
   const account = proAccount();
   form.hidden = !actionable || !account;
-  if (actionable && !account) gate.append(proPrompt('Protecting a PDF, and removing a password'));
+  if (actionable && !account) gate.append(proPrompt('Protecting a PDF, and removing a password', () => file));
 
   // An owner-only file is the one case with two honest answers: lift the limits with the owner
   // password, or keep them through a new one.

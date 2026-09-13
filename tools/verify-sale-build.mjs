@@ -22,6 +22,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PRO as PRO_OFFER } from './site.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 let fails = 0;
@@ -92,6 +93,15 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   const privacyText = readFileSync(join(ROOT, 'dist/privacy/index.html'), 'utf8').replace(/\s+/g, ' ');
   ok(privacyText.includes('pdfiq.entitlement') && privacyText.includes('up to four more if you sign in'), '/privacy lists the stored entitlement token');
   ok(privacyText.includes('pdfiq.pending-purchase') && privacyText.includes('on your account page and the purchase page'), '/privacy lists the pending-purchase note, and the purchase page as a place the token is fetched');
+  // Unlock: the button, its price from site.mjs, the return pages, and /privacy saying the handoff store holds it.
+  const siteJs = files('dist').filter(([f]) => f.endsWith('.js')).map(([, t]) => t).join('\n');
+  const unlockText = `Unlock with Pro \\u2014 ${PRO_OFFER.price} once`;
+  ok(siteJs.includes(unlockText) || siteJs.includes(`Unlock with Pro — ${PRO_OFFER.price} once`), `the Unlock button reads "Unlock with Pro — ${PRO_OFFER.price} once", its price taken from site.mjs`);
+  ok(/\/pro\/buy\/\?unlock=/.test(siteJs) && /\.unlock=\{feature:/.test(siteJs) && /\.get\("unlock"\)/.test(siteJs), 'Unlock stores its intent with the file, and carries the key to /pro/buy/, which reads it');
+  // The allow-list as it compiles, not the paths alone: those appear in every page's navigation too.
+  const returns = /\{"\/compress\/":"Compress","\/ocr\/":"OCR","\/password\/":"Password","\/batch\/":"Batch"\}/.exec(siteJs);
+  ok(Boolean(returns), '/pro/buy/ returns only to the four Pro pages (its allow-list, in the bundle)');
+  ok(privacyText.includes('or an <em>Unlock with Pro</em> button'), '/privacy says Unlock keeps the file in the handoff store');
   ok(privacyText.includes('That means deleting the record is the one thing that does take Pro away.') && privacyText.includes('deleting the record is not a refund') && privacyText.includes('The Pro purchase record is the exception, and it is deliberate.'), '/privacy states the purchase record, why it outlives the account, and what deleting it costs');
   const refundsText = readFileSync(join(ROOT, 'dist/refunds/index.html'), 'utf8').replace(/\s+/g, ' ');
   ok(refundsText.includes('a refund takes Pro off a browser the next time your account page is opened there with a connection'), '/refunds says when a refund reaches a browser');
@@ -123,6 +133,7 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   ok(js.length === 1 && js[0][1].includes(TOKEN), 'one script, carrying the token');
   ok(!/localStorage|sessionStorage|indexedDB|document\.cookie/.test(js[0]?.[1] ?? ''), 'the script uses no browser storage');
   ok((js[0]?.[1] ?? '').includes(SITE), 'the script addresses its messages to the site origin');
+  ok(/variant:"one-page"|variant: ?['"]one-page['"]/.test(js[0]?.[1] ?? ''), "opens Paddle's one-page checkout");
   const headers = readFileSync(join(ROOT, 'dist-checkout/_headers'), 'utf8');
   const policy = /Content-Security-Policy: (.+)/.exec(headers)?.[1] ?? '';
   ok(/script-src 'self' https:\/\/cdn\.paddle\.com/.test(policy) && /frame-src https:\/\/sandbox-buy\.paddle\.com/.test(policy), "policy: Paddle.js and the sandbox checkout frame");

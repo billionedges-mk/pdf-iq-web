@@ -7,8 +7,8 @@
  * offers no second checkout.
  *
  * Temporary by design. It holds the transaction reference, the account it was bought for and when, nothing
- * else. It is removed when the purchase is confirmed or refunded, when the buyer signs out, or after 24 hours,
- * whichever comes first. /privacy lists it (sale builds).
+ * else. It is removed when the purchase is confirmed or refunded, or when the buyer signs out. After 24 hours it
+ * is ignored, and removed the next time a page reads it. /privacy lists it (sale builds).
  */
 export const PENDING_SENTINEL = 'pdfiq-pro:pending';
 

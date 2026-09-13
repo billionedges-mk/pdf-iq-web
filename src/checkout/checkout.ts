@@ -72,7 +72,9 @@ async function open(uid: string, email: string): Promise<void> {
     customer: { email },
     // Whose purchase this is. The webhook records it against this uid (server/paddle.js).
     customData: { uid, email },
-    settings: { displayMode: 'overlay', allowLogout: false },
+    // Paddle's one-page layout: the buyer's details and the payment form on one screen instead of two steps
+    // (Paddle's default is multi-page). Chosen by the owner, 13 September 2026.
+    settings: { displayMode: 'overlay', variant: 'one-page', allowLogout: false },
   });
 }
 

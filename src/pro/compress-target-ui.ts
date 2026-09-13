@@ -18,6 +18,8 @@ import { seconds } from '../lib/format.js';
 
 export interface TargetContext {
   state(): { fileName: string; fileSize: number; analysis: Analysis } | null;
+  /** The file as chosen, for Unlock to carry to the checkout and back. */
+  source(): File | null;
   /** One complete pass from the original file. `plan` absent means the preset applies to every image. */
   pass(opts: { preset: Preset; plan?: (img: PdfImage) => ImagePlan; label: string; signal: AbortSignal }): Promise<{ result: CompressResult; analysis: Analysis }>;
   /** Show progress and return the signal the page's Stop button aborts. */
@@ -54,7 +56,7 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   host.append(legend);
 
   if (!proAccount()) {
-    host.append(proPrompt('Compressing to a size or a resolution you choose'));
+    host.append(proPrompt('Compressing to a size or a resolution you choose', () => ctx.source()));
     return;
   }
 

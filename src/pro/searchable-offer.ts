@@ -23,6 +23,8 @@ export interface SearchableOffer {
   pages: SearchablePage[];
   scaleFor: (index: number) => number;
   counts: { pagesRead: number; pageCount: number; fromLayer: number };
+  /** The file as chosen, for Unlock to carry to the checkout and back. */
+  source?: () => File | null;
   /**
    * Called once the file has been written, with the regenerated result sentence and the copy
    * itself — the page has a PDF of its own making to offer onward only from this moment.
@@ -35,14 +37,14 @@ export interface SearchableOffer {
  * feature was invisible until a run finished, and not always then (reported four times). Said in words about
  * what the person can do.
  */
-export function introSearchable(host: HTMLElement): void {
+export function introSearchable(host: HTMLElement, source?: () => File | null): void {
   host.dataset.pdfiqPro = searchableMark();
   host.textContent = '';
   if (proAccount()) {
     host.append('Yours with Pro: the option appears with the text once reading finishes.');
     return;
   }
-  host.append(proPrompt('The searchable PDF'));
+  host.append(proPrompt('The searchable PDF', source));
 }
 
 export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
@@ -74,7 +76,7 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
   }
 
   if (!proAccount()) {
-    host.append(proPrompt('A searchable PDF'));
+    host.append(proPrompt('A searchable PDF', o.source));
     return;
   }
 
