@@ -485,9 +485,12 @@ function buyHeaders() {
   if (!policy) throw new Error('public/_headers has no Content-Security-Policy to derive the purchase page policy from');
   // One addition: the checkout origin, as a frame. No Paddle host at all — Paddle.js runs on that origin,
   // never on this one, so it cannot read this origin's storage (tools/paddle-config.mjs explains why).
-  const p = /frame-src ([^;]+)/.test(policy)
+  let p = /frame-src ([^;]+)/.test(policy)
     ? policy.replace(/frame-src ([^;]+)/, (_, v) => `frame-src ${v} ${PADDLE.checkoutOrigin}`)
     : `${policy}; frame-src ${PADDLE.checkoutOrigin}`;
+  // It confirms a purchase itself, which can mean renewing a sign-in older than an hour: Google's token host,
+  // as /account/'s policy has. Not Identity Toolkit, which only signing in needs.
+  p = p.replace(/connect-src ([^;]+)/, (_, v) => `connect-src ${v} ${AUTH.secureToken}`);
   if (/paddle\.com|profitwell/i.test(p)) throw new Error('the purchase page policy names a Paddle or ProfitWell host; Paddle.js must never run on this origin');
   return [
     '',

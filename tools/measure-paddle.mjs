@@ -69,6 +69,11 @@ const send = (method, params = {}, sessionId) => new Promise((resolve) => {
 // ---------------------------------------------------------------- recording
 
 let phase = 'arrival';
+// Milliseconds since Pay was pressed, for every request and every state change: the bank screen question
+// ("contacting your bank" looked stuck) is answered by how long it lasted and what was in flight, not by a guess.
+let T0 = Date.now();
+const timeline = []; // { t, what }
+const mark = (what) => timeline.push({ t: Date.now() - T0, what });
 const requests = [];      // { phase, frame, type, host, path, blocked }
 const setCookies = [];    // { phase, host, names }
 const consoleLines = [];  // CSP refusals and Paddle errors
@@ -84,7 +89,7 @@ listeners.push((m) => {
   if (m.method === 'Network.requestWillBeSent') {
     const { host, path } = hostPath(m.params.request.url);
     if (m.params.request.url.startsWith('data:') || m.params.request.url.startsWith('blob:')) return;
-    const row = { phase, frame: bare(frames.get(s)?.url ?? '?'), type: m.params.type ?? '', host, path, blocked: '' };
+    const row = { phase, t: Date.now() - T0, frame: bare(frames.get(s)?.url ?? '?'), type: m.params.type ?? '', host, path, blocked: '' };
     byRequest.set(`${s}:${m.params.requestId}`, row);
     requests.push(row);
     // Policy-violation reports the browser posts on a policy's behalf. They are not our requests, so the
@@ -193,6 +198,8 @@ const view = await evalIn(page, `document.body.dataset.pdfiqBuyState ?? ''`);
 if (view !== 'ready') {
   console.log(`The page is in state "${view}", not "ready" — is this a sale build with a token? Stopping.`);
 } else {
+  T0 = Date.now();
+  mark('Pay pressed');
   await evalIn(page, `document.querySelector('[data-buy-pay]').click()`);
   for (let i = 0; i < 40; i++) {
     if ([...frames.values()].some((f) => /buy\.paddle\.com/.test(f.url ?? ''))) break;
@@ -209,7 +216,20 @@ if (PAY_MINUTES > 0 && view === 'ready') {
   console.log(`\nComplete the sandbox payment in the Chrome window (up to ${PAY_MINUTES} minutes).`);
   console.log('Use a Paddle sandbox test card. This script does not type anything into the checkout.\n');
   const until = Date.now() + PAY_MINUTES * 60000;
-  while (Date.now() < until && (await evalIn(page, `document.body.dataset.pdfiqBuyState`)) !== 'done') await wait(2000);
+  let last = '';
+  for (;;) {
+    const st = await evalIn(page, `document.body.dataset.pdfiqBuyState`);
+    if (st !== last) { mark(`page state: ${st}`); last = st; }
+    if (['confirming', 'owned', 'done'].includes(st) || Date.now() > until) break;
+    await wait(500);
+  }
+  // Keep watching the confirmation, which now happens on this page.
+  for (let i = 0; i < 120; i++) {
+    const st = await evalIn(page, `document.body.dataset.pdfiqBuyState`);
+    if (st !== last) { mark(`page state: ${st}`); last = st; }
+    if (st === 'owned' || st === 'failed') break;
+    await wait(1000);
+  }
   await wait(8000);
   storagePay = await storage('pay');
   await readReadout('pay');
@@ -239,6 +259,7 @@ const report = {
   storage: [...storageArrival, ...storageOpen, ...storagePay],
   console: consoleLines,
   footerReadout: readout,
+  timeline,
   violationReports,
   profitwellSeen: requests.some((r) => /profitwell/i.test(r.host)),
 };
@@ -250,6 +271,13 @@ console.log(`\nCookies in the browser at the end (${report.cookiesAtEnd.length})
 for (const c of report.cookiesAtEnd) console.log(`  ${c.domain}  ${c.name}  ${c.session ? 'session' : `until ${c.expires}`}${c.httpOnly ? '  httpOnly' : ''}  sameSite=${c.sameSite ?? '-'}${c.partitioned ? '  partitioned' : ''}`);
 console.log('\nStorage keys by origin:');
 for (const s of report.storage) console.log(`  ${s.at.padEnd(8)} ${s.origin}  local=[${s.local.join(', ')}] session=[${s.session.join(', ')}] idb=[${s.idb.join(', ')}]`);
+console.log('\nTimeline from pressing Pay (ms):');
+for (const e of timeline) console.log(`  ${String(e.t).padStart(7)}  ${e.what}`);
+const paddlePay = requests.filter((r) => r.phase === 'pay' && !firstParty(r.host));
+if (paddlePay.length) {
+  const first = Math.min(...paddlePay.map((r) => r.t)), lastReq = Math.max(...paddlePay.map((r) => r.t));
+  console.log(`  third-party requests during payment: ${paddlePay.length}, from ${first} to ${lastReq} ms`);
+}
 console.log('\nFooter counter on the page, by phase:');
 for (const [k, v] of Object.entries(readout)) console.log(`  ${k.padEnd(8)} ${v}`);
 console.log('\nThe boundary: can each frame read the Pro sign-in, and what did it receive?');

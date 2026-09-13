@@ -11,6 +11,8 @@ import { startSignIn, completeSignIn, freshSession, signOut, AuthError, AUTH_SEN
 import { SESSION_SENTINEL } from './session.js';
 import { localStub, setLocalStub } from './gate.js';
 import { refreshEntitlement, clearEntitlement, type RefreshResult } from './entitlement.js';
+import { readPendingPurchase, clearPendingPurchase } from './pending.js';
+import { confirmPurchase as waitForConfirmation, confirmEndWords } from './confirm.js';
 
 export const ACCOUNT_SENTINEL = 'pdfiq-pro:account';
 
@@ -205,11 +207,7 @@ function proState(result: RefreshResult): void {
   if (result.state === 'owned') document.querySelector('[data-account-buy]')?.remove();
 }
 
-/**
- * Arrived from /pro/buy/ straight after paying. Paddle tells our server by webhook, which can land a few seconds
- * after the checkout says it is done, so this asks again every two seconds and says what it is waiting for, with
- * the time, until Pro is confirmed or a minute and a half has passed.
- */
+/** A purchase just made, or one pending on this browser: confirm it here, saying so as it goes. */
 async function confirmPurchase(reference: string): Promise<void> {
   const txn = /^txn_[a-z0-9]{26}$/.test(reference) ? reference : '';
   const host = el('[data-signout]').closest('p')!;
@@ -218,33 +216,17 @@ async function confirmPurchase(reference: string): Promise<void> {
   status.setAttribute('role', 'status');
   status.style.cssText = 'margin: 16px 0 0; font-size: 15.5px; line-height: 1.6;';
   host.before(status);
-  const started = Date.now();
-  const LIMIT_MS = 90_000;
-  for (;;) {
-    const seconds = Math.round((Date.now() - started) / 1000);
-    status.textContent = `Paddle has taken your payment${txn ? ` (reference ${txn})` : ''}. Waiting for Paddle to confirm it to us, which usually takes a few seconds… ${seconds}s`;
-    let result: RefreshResult;
-    try {
-      const session = await freshSession();
-      if (!session) return show('out');
-      result = await refreshEntitlement(session.idToken, session.uid);
-    } catch {
-      result = { state: 'unavailable', detail: 'sign-in could not be renewed' };
-    }
-    if (result.state === 'owned' || result.state === 'revoked') {
-      status.remove();
-      return proState(result);
-    }
-    if (result.state === 'offline') {
-      status.textContent = `Paddle has taken your payment${txn ? ` (reference ${txn})` : ''}, but you are offline, so it could not be confirmed. Open this page again once you are connected; nothing is lost.`;
-      return;
-    }
-    if (Date.now() - started > LIMIT_MS) {
-      status.textContent = `Paddle has taken your payment${txn ? ` (reference ${txn})` : ''}, but its confirmation has not reached us yet. Nothing is lost: this page checks again each time you open it, and support@pdf-iq.com can match the reference if it does not arrive.`;
-      return;
-    }
-    await new Promise((r) => setTimeout(r, 2000));
+  const outcome = await waitForConfirmation(txn, (text) => { status.textContent = text; });
+  if (outcome.kind === 'owned') {
+    status.remove();
+    return proState({ state: 'owned' });
   }
+  if (outcome.kind === 'revoked') {
+    status.remove();
+    return proState({ state: 'revoked' });
+  }
+  if (outcome.kind === 'signed-out') return show('out');
+  status.textContent = confirmEndWords(outcome, txn);
 }
 
 async function mount(): Promise<void> {
@@ -257,7 +239,10 @@ async function mount(): Promise<void> {
   el('[data-signout]').addEventListener('click', () => {
     signOut();
     // Signing out of this browser takes Pro off it too: the token belongs to the account that signed out.
-    if (__PDFIQ_SALE__) clearEntitlement();
+    if (__PDFIQ_SALE__) {
+      clearEntitlement();
+      clearPendingPurchase();
+    }
     show('out');
   });
 
@@ -269,10 +254,9 @@ async function mount(): Promise<void> {
     signedIn(session.email);
     if (__PDFIQ_SALE__) {
       const purchased = new URLSearchParams(location.search).get('purchased');
-      if (purchased) {
-        history.replaceState(null, '', location.pathname);
-        return confirmPurchase(purchased);
-      }
+      if (purchased) history.replaceState(null, '', location.pathname);
+      const pending = readPendingPurchase(session.uid);
+      if (purchased || pending) return confirmPurchase(pending?.txn ?? purchased ?? '');
       proState(await refreshEntitlement(session.idToken, session.uid));
     }
   } catch (e) {

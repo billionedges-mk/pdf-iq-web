@@ -4,7 +4,7 @@
  * The server (functions/api/entitlement.js, server/entitlement.js) signs a token for a Firebase uid
  * that owns Pro. This module is the other half:
  *
- *   - refreshEntitlement() asks /api/entitlement once, from /account/ only, and stores the token only if
+ *   - refreshEntitlement() asks /api/entitlement, from /account/ and /pro/buy/ only, and stores the token only if
  *     it verifies here first. A token that does not verify is never stored.
  *   - storedEntitlementUid() verifies the stored token against the signed-in uid and this build's Paddle
  *     environment, with the public key compiled into the build. No request: it works with no connection,
@@ -16,6 +16,7 @@
  * Tool pages never call refreshEntitlement(): they send nothing, which is what /privacy says of them.
  */
 import PUBLIC_KEYS from './entitlement-public-keys.json';
+import { clearPendingPurchase } from './pending.js';
 
 export const ENTITLEMENT_SENTINEL = 'pdfiq-pro:entitlement';
 
@@ -92,7 +93,7 @@ export type RefreshResult =
   | { state: 'unavailable'; detail: string };
 
 /**
- * Ask the server, from /account/ only. Anything short of a clear answer — no connection, a server error, a
+ * Ask the server, from /account/ and /pro/buy/ only. Anything short of a clear answer — no connection, a server error, a
  * sign-in the server did not accept, a token that does not verify — leaves what is stored exactly as it
  * was: an unreachable server must not take Pro away from someone who paid.
  */
@@ -117,11 +118,18 @@ export async function refreshEntitlement(idToken: string, uid: string): Promise<
     } catch {
       return { state: 'unavailable', detail: 'browser storage unavailable' };
     }
+    clearPendingPurchase();
     return { state: 'owned' };
   }
   if (body.pro === false) {
     clearEntitlement();
-    return body.revoked === true ? { state: 'revoked' } : { state: 'not-owned' };
+    // Refunded ends a pending note. Not-owned does not: that is also what the server says in the seconds before
+    // Paddle's webhook arrives, and the note exists for exactly those seconds.
+    if (body.revoked === true) {
+      clearPendingPurchase();
+      return { state: 'revoked' };
+    }
+    return { state: 'not-owned' };
   }
   return { state: 'unavailable', detail: 'unexpected response' };
 }

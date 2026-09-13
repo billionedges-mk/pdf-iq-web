@@ -13,6 +13,7 @@
  */
 import { readSession, type Session } from './session.js';
 import { storedEntitlementUid, ENTITLEMENT_SENTINEL } from './entitlement.js';
+import { readPendingPurchase, PENDING_SENTINEL } from './pending.js';
 
 export const GATE_SENTINEL = 'pdfiq-pro:gate';
 
@@ -97,7 +98,7 @@ export function proAccount(): Session | null {
 }
 
 /** Keeps the entitlement module's sentinel in any bundle that carries the gate. */
-export const GATE_CHECKS = [GATE_SENTINEL, ENTITLEMENT_SENTINEL] as const;
+export const GATE_CHECKS = [GATE_SENTINEL, ENTITLEMENT_SENTINEL, PENDING_SENTINEL] as const;
 
 /**
  * What a Pro control shows instead of acting. Signed out: the sign-in prompt. In a sale build, signed in
@@ -108,6 +109,15 @@ export function proPrompt(feature: string): HTMLElement {
   const p = document.createElement('p');
   p.className = 'hint';
   p.dataset.pdfiqGate = GATE_SENTINEL;
+  // Paid, not yet confirmed: say so, and offer no second checkout.
+  const pending = readPendingPurchase(signedIn()?.uid);
+  if (pending) {
+    const account = document.createElement('a');
+    account.href = '/account/';
+    account.textContent = 'your account page';
+    p.append(`${feature} is part of Pro, and your payment for it (reference ${pending.txn}) is being confirmed. Open `, account, ' to finish. There is no need to pay again.');
+    return p;
+  }
   p.append(`${feature} is part of Pro. `);
   const buy = document.createElement('a');
   buy.href = '/pro/buy/';

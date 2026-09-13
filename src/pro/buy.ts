@@ -18,10 +18,12 @@
  *   { type: 'pdfiq-checkout-completed', transactionId }  paid
  */
 import { signedIn, proAccount } from './gate.js';
+import { writePendingPurchase, readPendingPurchase } from './pending.js';
+import { confirmPurchase, confirmEndWords } from './confirm.js';
 
 export const BUY_SENTINEL = 'pdfiq-pro:buy';
 
-type View = 'working' | 'out' | 'owned' | 'ready' | 'loading' | 'done' | 'failed';
+type View = 'working' | 'out' | 'owned' | 'ready' | 'loading' | 'confirming' | 'done' | 'failed';
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel);
 
@@ -130,11 +132,11 @@ window.addEventListener('message', (e: MessageEvent) => {
       // Paid. Before this the page stopped at Paddle's success message: closing it and reloading still offered
       // Buy, and Pro arrived only if the buyer thought to open /account/ (the walk of 13 September 2026). So go
       // there now, where the purchase is confirmed and this browser learns it owns Pro.
+      // Remembered before anything else, so a tab closed from here on still knows it paid (src/pro/pending.ts).
+      const who = signedIn();
+      if (who) writePendingPurchase({ txn: txn || 'not given', uid: who.uid, at: Date.now() });
       removeFrame();
-      coverWith('Payment received. Taking you to your account to switch Pro on…');
-      setTimeout(() => {
-        location.href = `/account/${txn ? `?purchased=${encodeURIComponent(txn)}` : '?purchased=1'}`;
-      }, 1200);
+      void confirmHere(txn);
       break;
     }
     case 'pdfiq-checkout-closed':
@@ -145,6 +147,24 @@ window.addEventListener('message', (e: MessageEvent) => {
   }
 });
 
+/** Confirm on this page, in words, then say what the buyer can do next. */
+async function confirmHere(txn: string): Promise<void> {
+  show('confirming');
+  const line = $('[data-buy-confirm]')!;
+  const next = $('[data-buy-confirm-next]')!;
+  next.hidden = true;
+  const outcome = await confirmPurchase(txn, (text) => { line.textContent = text; });
+  line.textContent = confirmEndWords(outcome, txn);
+  if (outcome.kind === 'owned') {
+    show('owned');
+    return;
+  }
+  if (outcome.kind === 'signed-out' || outcome.kind === 'slow') {
+    next.replaceChildren('Your ', Object.assign(document.createElement('a'), { href: '/account/', textContent: 'account page' }), ' checks again whenever it is opened.');
+    next.hidden = false;
+  }
+}
+
 function start(): void {
   const session = signedIn();
   if (!__PDFIQ_SALE__ || !session) {
@@ -154,6 +174,12 @@ function start(): void {
   // Already owned on this browser: nothing to buy, and nothing should suggest otherwise.
   if (proAccount()) {
     show('owned');
+    return;
+  }
+  // Paid on this browser but not confirmed yet (the tab was closed, say): confirm, never offer a second checkout.
+  const pending = readPendingPurchase(session.uid);
+  if (pending) {
+    void confirmHere(pending.txn === 'not given' ? '' : pending.txn);
     return;
   }
   $('[data-buy-email]')!.textContent = session.email;

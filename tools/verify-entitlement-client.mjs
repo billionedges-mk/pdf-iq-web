@@ -126,6 +126,24 @@ store.set(KEY, kept);
 E.clearEntitlement();
 ok(!store.has(KEY), 'clearEntitlement removes it (sign-out)');
 
+// ---------------------------------------------------------------- the pending-purchase note
+const PENDING = 'pdfiq.pending-purchase';
+const note = JSON.stringify({ txn: 'txn_1', uid: 'uid-alice', at: Date.now() });
+store.set(PENDING, note);
+respond = async () => json(200, { pro: false, revoked: false });
+await E.refreshEntitlement('id', 'uid-alice');
+ok(store.get(PENDING) === note, 'not-owned (the seconds before the webhook) leaves the pending note in place');
+respond = async () => json(500, { error: 'store-failed' });
+await E.refreshEntitlement('id', 'uid-alice');
+ok(store.get(PENDING) === note, 'a server error leaves it in place');
+respond = async () => json(200, { pro: true, token: await sign({}) });
+await E.refreshEntitlement('id', 'uid-alice');
+ok(!store.has(PENDING), 'confirmation removes it');
+store.set(PENDING, note);
+respond = async () => json(200, { pro: false, revoked: true });
+await E.refreshEntitlement('id', 'uid-alice');
+ok(!store.has(PENDING), 'a refund removes it');
+
 // ---------------------------------------------------------------- the build's own key
 
 store.set(KEY, kept);
