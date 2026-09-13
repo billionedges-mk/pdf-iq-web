@@ -60,11 +60,16 @@ place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
   **Read replication must stay off** on it, and on the sandbox one: /privacy says the database runs where the Asia-Pacific
   location hint places it, and read replication copies it to every region (Cloudflare D1 data-location docs).
 - `npm run entitlement:keys -- production`; private key into Production, public key committed.
+- The sandbox database (`pdf-iq-purchases-sandbox`) holds only test walks: rows from 13 September 2026 are Maneesh's
+  sandbox payments, not sales. Nothing that counts purchases may read it, and it is never copied into production.
 - (Superseded by the checkout origin above: the default payment link is https://checkout.pdf-iq.com/.)
 - Cloudflare Bot Fight Mode checked for the webhook path (Paddle asks for bot checks to be bypassed there).
 
 **Web sign-in for production** (the same three settings made for Preview, for pdf-iq.com):
-- Google Cloud, OAuth web client 340733500005-e6guq4…: JavaScript origin `https://pdf-iq.com`, redirect URI `https://pdf-iq.com/account/`.
+- Google Cloud, OAuth web client 340733500005-e6guq4…: JavaScript origin `https://pdf-iq.com`, redirect URIs
+  `https://pdf-iq.com/account/` **and `https://pdf-iq.com/pro/buy/`** (signing in from the purchase page returns there;
+  both with the trailing slash). Check from outside afterwards: an authorisation URL with each redirect goes to
+  Google's sign-in page, not `/signin/oauth/error`.
 - Firebase Authentication, Authorized domains: `pdf-iq.com`.
 - The web API key (restricted to Identity Toolkit and Token Service) as `PDFIQ_FIREBASE_WEB_KEY` in pdf-iq-web Production.
 - And `npm run entitlement:keys -- production`: a production sale build leaves /pro/buy/ out without its public key.

@@ -232,6 +232,12 @@ injects Retain analytics (public.profitwell.com) in every environment except san
   **kept on purpose** as the only evidence of that. Email/Password sign-in was disabled the same day, so it cannot be used.
   Delete it only once someone remembers creating it.
 
+- **Rows in the sandbox purchases table (D1 `pdf-iq-purchases-sandbox`) are test walks, not sales.** Every one is a
+  Paddle sandbox payment made on Preview by the owner or Maneesh, with card 4242, from 13 September 2026: at that date
+  `txn_01m2dfspkzdtepgr1660jqbsae` and `txn_01m2dg6d7yy7n4bt923kazct9s`, two tester accounts that therefore own Pro in
+  the sandbox (useful for walking the already-owned path). The walk-A row `txn_01m2dynw6ehyt9amw066vhvqp8` was deleted
+  by the owner the same day. Clear the table before anything counts rows; never read it as revenue.
+
 - **Firebase App Check's Authentication metrics are not a signal.** They show roughly 85% of Auth
   calls unverified. The app's backend checks every request with `verifyIdToken(token, true)`, whose
   revocation check is a server-side call to Auth that carries no App Check token, and debug builds
