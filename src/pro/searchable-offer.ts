@@ -13,7 +13,7 @@
  * free path's sentence (src/lib/ocr-result.ts) cannot say "searchable" at all.
  */
 import { writeSearchable, describeSearchable, searchableMark, pagesToLayer, type SearchablePage } from './searchable.js';
-import { signedIn, signInPrompt } from './gate.js';
+import { proAccount, proPrompt } from './gate.js';
 import { saveFile } from '../lib/ui.js';
 import { suffixName } from '../lib/format.js';
 
@@ -58,8 +58,8 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     return;
   }
 
-  if (!signedIn()) {
-    host.append(signInPrompt('A searchable PDF'));
+  if (!proAccount()) {
+    host.append(proPrompt('A searchable PDF'));
     return;
   }
 

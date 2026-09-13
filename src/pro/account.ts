@@ -10,6 +10,7 @@
 import { startSignIn, completeSignIn, freshSession, signOut, AuthError, AUTH_SENTINEL, type AuthErrorKind } from './auth.js';
 import { SESSION_SENTINEL } from './session.js';
 import { localStub, setLocalStub } from './gate.js';
+import { refreshEntitlement, clearEntitlement, type RefreshResult } from './entitlement.js';
 
 export const ACCOUNT_SENTINEL = 'pdfiq-pro:account';
 
@@ -138,7 +139,7 @@ function localStubCard(): void {
     'Signing in with Google needs a key a local build does not carry, so no Pro feature could be '
     + 'reached here at all. This switches the Pro gate on in this browser instead. It is not a '
     + 'sign-in: no account exists, nothing is sent anywhere, and it grants nothing a real sign-in '
-    + 'would not — there is no purchase check on either path yet. It exists in no deployed build.';
+    + (__PDFIQ_SALE__ ? 'would not, except that in this build it also stands in for owning Pro. ' : 'would not. ') + 'It exists in no deployed build.';
 
   const button = document.createElement('button');
   button.type = 'button';
@@ -166,6 +167,29 @@ function localStubCard(): void {
   host.append(card);
 }
 
+/**
+ * Sale builds: what the account page learned about Pro on this visit. Written for what the person can do:
+ * an offline or failed check changes nothing already on this browser, and says so.
+ */
+function proState(result: RefreshResult): void {
+  const host = el('[data-signout]').closest('p')!;
+  document.querySelector('[data-account-pro]')?.remove();
+  const p = document.createElement('p');
+  p.dataset.accountPro = '';
+  p.style.cssText = 'margin: 16px 0 0; font-size: 15.5px; line-height: 1.6;';
+  const words: Record<RefreshResult['state'], string> = {
+    owned: 'Pro is yours, and this browser now knows it. The Pro features work here with no connection from now on.',
+    'not-owned': 'This account does not own Pro.',
+    revoked: 'This account’s Pro purchase was refunded, so Pro has been taken off this browser.',
+    offline: 'You are offline, so Pro could not be checked. Nothing on this browser changed.',
+    unavailable: 'Pro could not be checked just now. Nothing on this browser changed; opening this page again later will try again.',
+  };
+  p.textContent = words[result.state];
+  host.before(p);
+  // Owning Pro, the Buy link has nothing left to offer.
+  if (result.state === 'owned') document.querySelector('[data-account-buy]')?.remove();
+}
+
 async function mount(): Promise<void> {
   // Marks the page and keeps each Pro module's sentinel in the bundle, where the build's own
   // check looks for it.
@@ -175,16 +199,18 @@ async function mount(): Promise<void> {
   el('[data-account-retry]').addEventListener('click', go);
   el('[data-signout]').addEventListener('click', () => {
     signOut();
+    // Signing out of this browser takes Pro off it too: the token belongs to the account that signed out.
+    if (__PDFIQ_SALE__) clearEntitlement();
     show('out');
   });
 
   show('working');
   try {
     const completed = await completeSignIn(location.hash);
-    if (completed) return signedIn(completed.email);
-    const session = await freshSession();
-    if (session) return signedIn(session.email);
-    show('out');
+    const session = completed ?? (await freshSession());
+    if (!session) return show('out');
+    signedIn(session.email);
+    if (__PDFIQ_SALE__) proState(await refreshEntitlement(session.idToken, session.uid));
   } catch (e) {
     failed(e);
   }

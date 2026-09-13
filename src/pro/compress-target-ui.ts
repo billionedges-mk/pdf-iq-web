@@ -7,7 +7,7 @@
  * words, and asks the page for passes through `TargetContext`. Every pass is a fresh compression
  * from the original file, run by the same compressor the presets use.
  */
-import { signedIn, signInPrompt } from './gate.js';
+import { proAccount, proPrompt } from './gate.js';
 import {
   MAX_PASSES, searchSize, describeSize, resolutionPlan, resolutionNothingToDo, describeResolution,
   parseTarget, targetMark, type Step,
@@ -53,8 +53,8 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   legend.textContent = 'Or aim for a target';
   host.append(legend);
 
-  if (!signedIn()) {
-    host.append(signInPrompt('Compressing to a size or a resolution you choose'));
+  if (!proAccount()) {
+    host.append(proPrompt('Compressing to a size or a resolution you choose'));
     return;
   }
 

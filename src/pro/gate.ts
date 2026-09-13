@@ -1,16 +1,18 @@
 /**
- * Who may use a Pro feature in a preview build: anyone signed in on this browser.
+ * Who may use a Pro feature.
  *
- * Read from the sign-in kept in this browser, with no request. There is no purchase check:
- * nothing is for sale, and the check that "this person paid" comes with Paddle — where it must
- * keep working offline after its first validation, so that someone who paid and has no signal is
- * not locked out. Requiring sign-in now, rather than switching Pro on for everyone, exercises
- * the path a buyer will actually take.
+ *   - In a Pro build that is not selling: anyone signed in on this browser. Requiring sign-in, rather
+ *     than switching Pro on for everyone, exercises the path a buyer will actually take.
+ *   - In a sale build: someone signed in whose browser holds an entitlement token that verifies for their
+ *     uid (src/pro/entitlement.ts). The token is checked once, here, before any feature code runs, with the
+ *     public key in the build and no request, so it works offline indefinitely: someone who paid and has
+ *     no signal is not locked out.
  *
  * A tool page never renews a sign-in. That happens on /account/ only, so tool pages never talk
  * to Google and keep their content security policy — which is what /privacy says.
  */
 import { readSession, type Session } from './session.js';
+import { storedEntitlementUid, ENTITLEMENT_SENTINEL } from './entitlement.js';
 
 export const GATE_SENTINEL = 'pdfiq-pro:gate';
 
@@ -71,6 +73,50 @@ export function signedIn(): Session | null {
   // not have them. With the constant first the whole branch is dropped.
   if (__PDFIQ_LOCAL__ && localStub()) return LOCAL_STUB;
   return null;
+}
+
+/**
+ * The uid whose stored entitlement token verified when this module loaded. Checked before any module that
+ * imports the gate runs (top-level await), so proAccount() can stay synchronous for its callers. Local
+ * crypto on a token of a few hundred bytes: no request, and nothing a page has to wait for visibly.
+ */
+const entitledUid: string | null = __PDFIQ_SALE__ ? await storedEntitlementUid(signedIn()?.uid ?? null) : null;
+
+/**
+ * The account a Pro feature may act for, or null.
+ *
+ * Not selling: whoever is signed in. Selling: whoever is signed in AND holds a verified entitlement token for
+ * that account on this browser. The local stub stands in for both, in a local build only.
+ */
+export function proAccount(): Session | null {
+  const session = signedIn();
+  if (!session) return null;
+  if (!__PDFIQ_SALE__) return session;
+  if (__PDFIQ_LOCAL__ && localStub()) return session;
+  return entitledUid === session.uid ? session : null;
+}
+
+/** Keeps the entitlement module's sentinel in any bundle that carries the gate. */
+export const GATE_CHECKS = [GATE_SENTINEL, ENTITLEMENT_SENTINEL] as const;
+
+/**
+ * What a Pro control shows instead of acting. Signed out: the sign-in prompt. In a sale build, signed in
+ * without Pro on this browser: where to buy it, and how a purchase already made reaches this browser.
+ */
+export function proPrompt(feature: string): HTMLElement {
+  if (!__PDFIQ_SALE__ || !signedIn()) return signInPrompt(feature);
+  const p = document.createElement('p');
+  p.className = 'hint';
+  p.dataset.pdfiqGate = GATE_SENTINEL;
+  p.append(`${feature} is part of Pro. `);
+  const buy = document.createElement('a');
+  buy.href = '/pro/buy/';
+  buy.textContent = 'Buy Pro';
+  const account = document.createElement('a');
+  account.href = '/account/';
+  account.textContent = 'your account page';
+  p.append(buy, ' — or, if you already have, open ', account, ' once with a connection and this browser will know.');
+  return p;
 }
 
 /**

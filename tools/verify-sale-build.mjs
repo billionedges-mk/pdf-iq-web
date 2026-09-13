@@ -88,6 +88,10 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   // this check failed on that comment rather than on a policy.
   ok(!/paddle\.com|profitwell\.com/i.test(headers), "no Paddle or ProfitWell host in any of the site's policies");
   ok(/not on sale yet/i.test(readFileSync(join(ROOT, 'dist/pro/index.html'), 'utf8')), 'a sandbox purchase page sells nothing real, so /pro/ still says not on sale');
+  const privacyText = readFileSync(join(ROOT, 'dist/privacy/index.html'), 'utf8').replace(/\s+/g, ' ');
+  ok(privacyText.includes('pdfiq.entitlement') && privacyText.includes('up to three more if you sign in'), '/privacy lists the stored entitlement token');
+  const refundsText = readFileSync(join(ROOT, 'dist/refunds/index.html'), 'utf8').replace(/\s+/g, ' ');
+  ok(refundsText.includes('a refund takes Pro off a browser the next time your account page is opened there with a connection'), '/refunds says when a refund reaches a browser');
 }
 
 {

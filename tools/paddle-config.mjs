@@ -26,6 +26,8 @@
  * every preview branch shares Cloudflare's Preview variables.
  */
 
+import { readFileSync } from 'node:fs';
+
 const on = (v) => /^(1|true|on)$/i.test(v ?? '');
 const env = process.env;
 
@@ -96,6 +98,12 @@ function resolveSite() {
   if (!checkoutOrigin) {
     console.warn('  (sale) no PDFIQ_CHECKOUT_ORIGIN: /pro/buy/ is left out of this build');
     return { env: e, checkoutOrigin: '', page: false };
+  }
+  // A build that sells but cannot verify an entitlement would take payment and then never grant Pro.
+  const keys = JSON.parse(readFileSync(new URL('../src/pro/entitlement-public-keys.json', import.meta.url), 'utf8'));
+  if (!keys[e]) {
+    console.warn(`  (sale) no ${e} key in src/pro/entitlement-public-keys.json (npm run entitlement:keys -- ${e}): /pro/buy/ is left out of this build`);
+    return { env: e, checkoutOrigin, page: false };
   }
   return { env: e, checkoutOrigin, page: true };
 }

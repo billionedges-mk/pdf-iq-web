@@ -96,7 +96,7 @@
       <p>Ask at <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> and it is deleted. Using any
          of the {{webToolCount}} tools never involves this form, and none of them asks you for anything.</p>
 
-      <h3>Four things stored in your browser<!--PRO-->, and two more if you sign in<!--/PRO--></h3>
+      <h3>Four things stored in your browser<!--PRO-->, and <!--NOSALE-->two<!--/NOSALE--><!--SALE-->up to three<!--/SALE--> more if you sign in<!--/PRO--></h3>
       <p><!--FREE-->These stay<!--/FREE--><!--PRO-->The first four stay<!--/PRO--> on your device and are never sent to us. You can clear all of them at any time
          through your browser's "clear site data" control.</p>
       <ul>
@@ -120,7 +120,12 @@
         <!--PRO--><li><strong>If you sign in for Pro: your sign-in</strong>, under {{authSessionKey}}, and — only
             while you are away at Google's sign-in page — a check under {{authPendingKey}}. Unlike the four
             above, part of your sign-in is sent to Google each time it is renewed. Both are described
-            under <a href="#if-you-sign-in">If you sign in</a>.</li><!--/PRO-->
+            under <a href="#if-you-sign-in">If you sign in</a>.</li><!--SALE-->
+        <li><strong>If you own Pro: a signed note saying so</strong>, under <code>pdfiq.entitlement</code>, so the
+            Pro features work with no connection. It holds your account identifier and Paddle's reference for the
+            purchase, is checked on your device without sending anything, and is removed when you sign out of this
+            browser, or when your account page finds the purchase was refunded. It is fetched from this site only
+            on your account page, never by a tool.</li><!--/SALE--><!--/PRO-->
       </ul>
 
       <h3><!--FREE-->The one request this site makes<!--/FREE--><!--PRO-->Requests this site makes<!--/PRO--></h3>

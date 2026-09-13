@@ -30,6 +30,7 @@
     "verify:retired": "node tools/verify-retired.mjs",
     "verify:live": "node tools/verify-live.mjs",
     "verify:paddle": "node --no-warnings tools/verify-paddle.mjs",
+    "verify:entitlement-client": "node tools/verify-entitlement-client.mjs",
     "entitlement:keys": "node tools/entitlement-keys.mjs",
     "paddle:test-events": "node tools/paddle-test-events.mjs",
     "verify:sale-build": "node tools/verify-sale-build.mjs",

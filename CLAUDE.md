@@ -207,6 +207,11 @@ injects Retain analytics (public.profitwell.com) in every environment except san
 - **Offline is the constraint.** A buyer with no connection must not be locked out: tool pages verify a
   stored signed token locally and send nothing. The token does not expire; a refund takes effect on a
   browser at its next online visit to `/account/`.
+- **The browser side:** `src/pro/entitlement.ts`. /account/ fetches the signed token once, and it is stored only if it
+  verifies. `src/pro/gate.ts` verifies it once, before any Pro feature code runs, with no request, and Pro features act
+  through `proAccount()`, never `signedIn()`. Offline, a server error or a refused sign-in never removes a stored
+  token; only a clear refund or not-owned answer does. `npm run verify:entitlement-client` runs it against the server's
+  signing code; seven deliberate breaks were each caught.
 - **The app backend's Firestore `tier` is dormant**, not the source of truth (TECH_DEBT).
 - **Cloudflare's variables screen, two traps** (13 September 2026): saving two variables in one dialog
   hangs, so add them one at a time; and a new variable's type defaults to **Text**, so every secret
