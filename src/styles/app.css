@@ -97,18 +97,24 @@ input, button, select, textarea { font-family: inherit; }
   border-bottom: 1px solid #E8E8E8;
 }
 /* The bar (pdf-iq-final.html): wordmark, the free tools, a divider and the gold Pro group, then the account control.
-   Desktop is one row. Below 760px the wordmark and account control share the top row and the tools scroll sideways
-   beneath them, full width: nine labels stay one tap away, where a menu would put every one of them two taps away. */
+   Desktop is one row. At 1000px and below the wordmark, the Pro group and the account control share the top row and the
+   free tools scroll sideways beneath them, full width: nine labels stay one tap away, where a menu would put every one of them two taps away. */
 .site-header__inner {
   max-width: var(--shell); margin: 0 auto; padding: 0 20px;
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 18px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "brand nav acct";
+  align-items: center; column-gap: 18px;
 }
-.brand { display: flex; align-items: center; text-decoration: none; min-height: 56px; }
+.brand { grid-area: brand; display: flex; align-items: center; gap: 9px; text-decoration: none; min-height: 56px; }
+/* The brand square stays beside the wordmark (owner, 13 September 2026: the mockup only left it undrawn). */
+.brand__mark {
+  width: 22px; height: 22px; border-radius: 3px; flex: 0 0 auto;
+  background: linear-gradient(135deg, #1E2A38 0 50%, var(--amber) 50% 100%);
+}
 .brand:hover { color: var(--ink); }
 .brand__word { font-size: 16.5px; font-weight: 700; letter-spacing: -.03em; }
 
 .toolnav {
-  min-width: 0; display: flex; align-items: center; gap: 0;
+  grid-area: nav; min-width: 0; display: flex; align-items: center; gap: 0;
   overflow-x: auto; white-space: nowrap; scrollbar-width: none;
 }
 .toolnav::-webkit-scrollbar { display: none; }
@@ -135,10 +141,11 @@ input, button, select, textarea { font-family: inherit; }
   color: var(--gold); background: var(--gold-bg); border: 1px solid var(--gold-line); border-radius: 11px; padding: 2px 8px;
 }
 .pro-tag { margin-right: 4px; }
+.toolnav__pro--top { display: none; }
 
 /* The account control: "Sign in" in a pill, or the signed-in person's initial and name. Pro builds only. */
 .acct {
-  display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+  grid-area: acct; display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
   font-size: 14px; color: var(--ink); text-decoration: none; white-space: nowrap;
 }
 .acct--out { border: 1px solid #E8E8E8; border-radius: 20px; padding: 0 16px; min-height: 38px; }
@@ -149,17 +156,33 @@ input, button, select, textarea { font-family: inherit; }
 }
 .acct__name { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; }
 
-@media (max-width: 760px) {
-  .site-header__inner { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand acct" "nav nav"; padding: 0 14px; }
-  .brand { grid-area: brand; min-height: 50px; }
-  .acct { grid-area: acct; }
+/* Up to 1000px the whole bar does not fit on one row (measured: it needs about 980px with a signed-in name), and the Pro
+   group would start past the right edge on phones and tablets alike. */
+@media (max-width: 1000px) {
+  /* Top row: brand, the Pro group, the account control (initial only). Beneath: the free tools, scrolling. */
+  .site-header__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "brand pro acct" "nav nav nav";
+    column-gap: 8px; padding: 0 14px;
+  }
+  .brand { min-height: 50px; gap: 7px; }
+  .brand__mark { width: 20px; height: 20px; }
+  .toolnav__pro--bar { display: none; }
+  .toolnav__pro--top { display: inline-flex; grid-area: pro; justify-self: end; margin: 0; padding: 0; border: 0; gap: 0; }
+  .toolnav__pro--top a { color: var(--gold); text-decoration: none; font-size: 14px; padding: 0 6px; min-height: 44px; display: inline-flex; align-items: center; }
+  .toolnav__pro--top a[aria-current="page"] { color: var(--gold-deep); font-weight: 600; }
+  .toolnav__pro--top .pro-tag { margin-right: 2px; }
+  .acct__name { display: none; }
+  .acct--out { padding: 0 12px; min-height: 36px; }
   .toolnav {
     grid-area: nav; margin: 0 -14px; padding: 0 30px 0 8px; border-top: 1px solid #F2F2F2;
     -webkit-overflow-scrolling: touch;
     mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
   }
   .toolnav a { padding: 6px 11px; }
-  .acct__name { max-width: 12ch; }
+}
+/* The narrowest phones: the tag goes before a link would. The gold and the group's label still say what it is. */
+@media (max-width: 350px) {
+  .toolnav__pro--top .pro-tag { display: none; }
 }
 
 .site-main {

@@ -170,23 +170,28 @@ function header(activeSlug) {
   const link = (t) => `<a href="${href(t.slug)}"${t.slug === activeSlug ? ' aria-current="page"' : ''}>${t.nav}</a>`;
   const free = TOOLS.map((t) => `        ${link(t)}`).join('\n');
   const proPages = PRO ? PRO_PAGES.filter((p) => p.nav) : [];
-  const pro = proPages.length
-    ? `\n        <span class="toolnav__pro" role="group" aria-label="Pro">
-          <span class="pro-tag" data-pro-label hidden>PRO</span>
-${proPages.map((t) => `          ${link(t)}`).join('\n')}
-        </span>`
-    : '';
+  // The Pro group is written twice: inside the scrolling bar for wider screens, and on the top row beside the account
+  // control for phones, where inside the bar it started past the right edge (owner, 13 September 2026: "a redesign that
+  // fixes it on desktop and not on mobile has fixed nothing"). CSS shows exactly one; the other is display: none, which
+  // also takes it out of the accessibility tree, so nobody hears the links twice.
+  const group = (where, indent) => `<span class="toolnav__pro toolnav__pro--${where}" role="group" aria-label="Pro">
+${indent}  <span class="pro-tag" data-pro-label hidden>PRO</span>
+${proPages.map((t) => `${indent}  ${link(t)}`).join('\n')}
+${indent}</span>`;
+  const pro = proPages.length ? `\n        ${group('bar', '        ')}` : '';
+  const proTop = proPages.length ? `\n      ${group('top', '      ')}` : '';
   const account = PRO
     ? `\n      <a class="acct" href="/account/" data-account-control hidden${activeSlug === 'account' ? ' aria-current="page"' : ''}>Sign in</a>`
     : '';
   return `  <header class="site-header">
     <div class="site-header__inner">
       <a class="brand" href="/"${activeSlug === '' ? ' aria-current="page"' : ''}>
+        <span class="brand__mark" aria-hidden="true"></span>
         <span class="brand__word">pdf-iq</span>
       </a>
       <nav class="toolnav" aria-label="PDF tools">
 ${free}${pro}
-      </nav>${account}
+      </nav>${proTop}${account}
     </div>
   </header>`;
 }

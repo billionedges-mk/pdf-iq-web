@@ -72,9 +72,10 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   const bar = /<header class="site-header">[\s\S]*?<\/header>/.exec(readFileSync(join(ROOT, 'dist/merge/index.html'), 'utf8'))?.[0] ?? '';
   const freeLinks = (bar.match(/<a href="\/(merge|split|compress|images-to-pdf|rotate|reorder|ocr)\/"/g) || []).length;
   if (env.PDFIQ_PRO) {
-    ok(freeLinks === 7 && /<span class="toolnav__pro" role="group" aria-label="Pro">\s*<span class="pro-tag" data-pro-label hidden>PRO<\/span>\s*<a href="\/batch\/">Batch<\/a>\s*<a href="\/password\/">Password<\/a>/.test(bar)
+    const group = (where) => new RegExp(`<span class="toolnav__pro toolnav__pro--${where}" role="group" aria-label="Pro">\\s*<span class="pro-tag" data-pro-label hidden>PRO</span>\\s*<a href="/batch/">Batch</a>\\s*<a href="/password/">Password</a>`).test(bar);
+    ok(freeLinks === 7 && group('bar') && group('top') && bar.includes('<span class="brand__mark" aria-hidden="true"></span>')
       && /<a class="acct" href="\/account\/" data-account-control hidden>Sign in<\/a>/.test(bar),
-    `${label}: the bar has the seven tools, then the Pro group with its PRO tag (hidden until settled), then the account control`);
+    `${label}: the bar has the brand square, the seven tools, the Pro group with its PRO tag (hidden until settled) in the bar and for the top row, and the account control`);
   } else {
     ok(freeLinks === 7 && !bar.includes('toolnav__pro') && !bar.includes('data-account-control') && !bar.includes('/batch/'),
       `${label}: the bar has the seven tools and nothing else: no Pro group, no account control`);
