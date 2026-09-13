@@ -25,6 +25,7 @@ import { confirmPurchase, confirmEndWords } from './confirm.js';
 import { peekUnlock, latestUnlockKey, type UnlockIntent } from '../lib/handoff.js';
 import { startSignIn, completeSignIn, AuthError, type AuthErrorKind } from './auth.js';
 import { WORDS } from './auth-words.js';
+import { settleSellingMarks } from './strip.js';
 import { refreshEntitlement } from './entitlement.js';
 
 /**
@@ -133,6 +134,8 @@ function show(view: View): void {
   // Read by the closed handler: closing the checkout after paying must not put the page back to
   // "ready", as if nothing had happened.
   document.body.dataset.pdfiqBuyState = view;
+  // Owned: the nav's Pro labels go at once, not on the next page (src/pro/strip.ts).
+  if (view === 'owned') settleSellingMarks(true);
 }
 
 /**

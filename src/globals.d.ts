@@ -30,6 +30,11 @@ declare const __PDFIQ_PADDLE_ENV__: string;
 declare const __PDFIQ_CHECKOUT_ORIGIN__: string;
 /** The Pro price as site.mjs states it (PRO.price), for the Unlock button. One source, not a second literal. */
 declare const __PDFIQ_PRO_PRICE__: string;
+/**
+ * tools/pro-copy.mjs's `what` and `instead` per feature key, as a JSON string (Pro builds; '{}' otherwise), for the
+ * locked controls. One source: the /pro/ page and the locked controls say the same sentences.
+ */
+declare const __PDFIQ_PRO_COPY__: string;
 
 /** Checkout build only (tools/build-checkout.mjs): the Paddle configuration and the one origin it answers. */
 declare const __CHECKOUT_PADDLE_ENV__: string;

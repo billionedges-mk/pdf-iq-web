@@ -116,6 +116,15 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
     && privacyText.includes('account page</a>, or the purchase page if you sign in from there, sends you to Google'),
   '/privacy says sign-in starts and finishes on the purchase page too, and that it renews a sign-in there');
   ok(!/and nothing else, may reach/.test(headers) && /the purchase page may frame the checkout origin and reach the Google sign-in hosts, and nothing else changes\./.test(headers), "_headers' own comments name the purchase page's Google hosts");
+  // Step 4: the strip names the price in a sale build and is written hidden (src/pro/strip.ts shows it only to
+  // someone who does not own Pro); the nav's Pro labels likewise; the locked controls' words come from pro-copy.mjs.
+  const mergeHtml = readFileSync(join(ROOT, 'dist/merge/index.html'), 'utf8');
+  const stripTag = /<p class="pro-strip" data-pro-strip hidden>[^\n]*?<\/p>/.exec(mergeHtml)?.[0] ?? '';
+  ok(stripTag.includes(`&mdash; ${PRO_OFFER.price} ${PRO_OFFER.qualifier}.`) && !stripTag.includes('not on sale'), `a sale build writes the strip hidden, naming the price (${stripTag ? 'found' : 'no hidden strip'})`);
+  ok(/Batch <span class="pro-label" data-pro-label hidden>Pro<\/span>/.test(mergeHtml) && /Password <span class="pro-label" data-pro-label hidden>Pro<\/span>/.test(mergeHtml), 'and the nav labels Batch and Password as Pro, hidden until settled');
+  ok(siteJs.includes('pdfiq-pro:strip') && /settleSellingMarks|\[data-pro-strip\], \[data-pro-label\]/.test(siteJs), 'the page code that settles them (show unless owned) is in the bundle');
+  ok(siteJs.includes('The three presets are free and report the real before and after') && siteJs.includes('Add a password to a copy of a PDF, or take one off, written AES-256.'), "the locked controls' what and instead sentences are pro-copy.mjs's");
+  ok(!siteJs.includes('Yours with Pro'), 'an owner is not told "Yours with Pro" on OCR: after buying, nothing sells');
   // Signing in from a locked feature, and Batch saying its files stay behind.
   ok(siteJs.includes('Buying needs an account, so you sign in with Google first and come straight back.'), 'signed out, a locked feature offers Unlock and says a Google sign-in comes first');
   ok(siteJs.includes('These files do not come with you to the checkout: after paying, you come back here and choose them again.'), 'Batch says before Unlock that its files do not come back');

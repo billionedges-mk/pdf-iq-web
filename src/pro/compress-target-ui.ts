@@ -7,7 +7,7 @@
  * words, and asks the page for passes through `TargetContext`. Every pass is a fresh compression
  * from the original file, run by the same compressor the presets use.
  */
-import { proAccount, proPrompt } from './gate.js';
+import { proAccount, lockedPanel, lockControls, proLabel } from './gate.js';
 import {
   MAX_PASSES, searchSize, describeSize, resolutionPlan, resolutionNothingToDo, describeResolution,
   parseTarget, targetMark, type Step,
@@ -55,10 +55,7 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   legend.textContent = 'Or aim for a target';
   host.append(legend);
 
-  if (!proAccount()) {
-    host.append(proPrompt('Compressing to a size or a resolution you choose', () => ctx.source()));
-    return;
-  }
+  const account = proAccount();
 
   const note = document.createElement('p');
   note.className = 'hint';
@@ -100,13 +97,24 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   sizeGo.className = 'btn-quiet';
   sizeGo.textContent = 'Compress to this size';
 
-  host.append(
+  const controls = document.createElement('div');
+  controls.append(
     row('No image above ', dpi, ' dpi', dpiGo),
     row('No larger than ', amount, unit, sizeGo),
-    note,
   );
+  host.append(controls, note);
+
+  // Not owned: the same controls, locked, and the words under them (approved copy, 13 September 2026). Not a
+  // description of the controls in their place: the reader sees what they would get. No handler is attached.
+  if (!account) {
+    legend.append(proLabel());
+    lockControls(controls);
+    host.append(lockedPanel('target', 'Compressing to a size or a resolution you choose', () => ctx.source()));
+    return;
+  }
 
   dpiGo.onclick = async () => {
+    if (!proAccount()) return;
     const s = ctx.state();
     if (!s) return;
     const n = Math.round(Number(dpi.value));
@@ -132,6 +140,7 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   };
 
   sizeGo.onclick = async () => {
+    if (!proAccount()) return;
     const s = ctx.state();
     if (!s) return;
     const target = parseTarget(amount.value, unit.value as 'KB' | 'MB');

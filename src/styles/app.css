@@ -157,6 +157,10 @@ input, button, select, textarea { font-family: inherit; }
 /* The one Pro line under a tool's heading (tools/pro-copy.mjs proStrip): the page's own hint type, nothing louder. */
 .pro-strip { margin: 0 0 10px; font-size: 13.5px; line-height: 1.5; color: var(--ink-76); }
 .pro-strip strong { color: var(--ink-78); font-weight: 700; }
+/* The small "Pro" label, and a real control shown locked: still itself, visibly unavailable. Pro builds only. */
+.pro-label { margin-left: 5px; padding: 0 5px; border: 1px solid var(--ink-74); border-radius: 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: var(--ink-76); vertical-align: 1px; }
+.pro-locked { opacity: .5; }
+.pro-locked :disabled { cursor: not-allowed; }
 .kicker {
   margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .08em; color: var(--ink-74);

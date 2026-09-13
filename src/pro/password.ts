@@ -22,7 +22,7 @@ import { claimIncoming, wireNextLinks } from '../lib/handoff.js';
 import { formatBytes, suffixName } from '../lib/format.js';
 import { unlockPdf, isEncrypted, type UnlockResult } from '../lib/decrypt.js';
 import { encryptPdf, NO_RESTRICTIONS } from './encrypt.js';
-import { proAccount, proPrompt } from './gate.js';
+import { proAccount, lockedPanel, lockControls, proLabel } from './gate.js';
 
 export const PASSWORD_SENTINEL = 'pdfiq-pro:password';
 
@@ -125,8 +125,14 @@ function render(): void {
   const actionable = Boolean(said.button);
   gate.textContent = '';
   const account = proAccount();
-  form.hidden = !actionable || !account;
-  if (actionable && !account) gate.append(proPrompt('Protecting a PDF, and removing a password', () => file));
+  // Not owned: the form this file would get, locked, then the words (approved copy, 13 September 2026). The submit
+  // handlers check the gate too.
+  form.hidden = !actionable;
+  if (actionable && !account) {
+    $('[data-lock-kicker]')!.append(proLabel());
+    lockControls(form);
+    gate.append(lockedPanel('password', 'Protecting a PDF, and removing a password', () => file));
+  }
 
   // An owner-only file is the one case with two honest answers: lift the limits with the owner
   // password, or keep them through a new one.
@@ -202,6 +208,7 @@ function describeLock(l: Lock): { kicker: string; verdict: string; field: string
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
+  if (!proAccount()) return;
   void run(async () => {
     if (!sourceBytes || !lock || !file) return null;
     const typed = passwordInput.value;
@@ -265,6 +272,7 @@ form.addEventListener('submit', (e) => {
 
 alsoForm.addEventListener('submit', (e) => {
   e.preventDefault();
+  if (!proAccount()) return;
   void run(async () => {
     if (!lock || lock.kind !== 'owner-only' || !file) return null;
     const typed = alsoInput.value;

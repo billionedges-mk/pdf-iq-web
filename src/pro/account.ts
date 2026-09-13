@@ -10,6 +10,7 @@
 import { startSignIn, completeSignIn, freshSession, signOut, AuthError, AUTH_SENTINEL, type AuthErrorKind } from './auth.js';
 import { SESSION_SENTINEL } from './session.js';
 import { WORDS } from './auth-words.js';
+import { settleSellingMarks } from './strip.js';
 import { localStub, setLocalStub } from './gate.js';
 import { refreshEntitlement, clearEntitlement, type RefreshResult } from './entitlement.js';
 import { readPendingPurchase, clearPendingPurchase } from './pending.js';
@@ -156,8 +157,11 @@ function proState(result: RefreshResult): void {
     });
     host.before(where);
   }
-  // Owning Pro, the Buy link has nothing left to offer.
-  if (result.state === 'owned') document.querySelector('[data-account-buy]')?.remove();
+  // Owning Pro, the Buy link has nothing left to offer, and neither do the nav's Pro labels.
+  if (result.state === 'owned') {
+    document.querySelector('[data-account-buy]')?.remove();
+    settleSellingMarks(true);
+  }
 }
 
 /** A purchase just made, or one pending on this browser: confirm it here, saying so as it goes. */

@@ -160,7 +160,9 @@ function header(activeSlug) {
   const navTools = PRO ? [...TOOLS, ...PRO_PAGES.filter((p) => p.nav)] : TOOLS;
   const links = navTools.map((t) => {
     const cur = t.slug === activeSlug ? ' aria-current="page"' : '';
-    return `        <a href="${href(t.slug)}"${cur}>${t.nav}</a>`;
+    // Batch and Password carry a small "Pro" label until owned (src/pro/strip.ts reveals or removes it).
+    const label = PRO_PAGES.includes(t) ? ' <span class="pro-label" data-pro-label hidden>Pro</span>' : '';
+    return `        <a href="${href(t.slug)}"${cur}>${t.nav}${label}</a>`;
   }).join('\n');
   return `  <header class="site-header">
     <div class="site-header__inner">
@@ -226,7 +228,9 @@ function toolGrid() {
  */
 function substituteTokens(body, file) {
   // {{proStrip}} is generated from tools/pro-copy.mjs, which site.mjs cannot import (pro-copy imports site).
-  const tokens = { ...TOKENS, proStrip: proStrip() };
+  // A sale build names the price. A Pro build writes the strip hidden: src/pro/strip.ts shows it only to someone who
+  // does not own Pro, so an owner never sees it, not even for a moment. Production writes it visible, and has no owners.
+  const tokens = { ...TOKENS, proStrip: proStrip({ selling: Boolean(PADDLE?.page) || PRO_OFFER.onSale, hidden: PRO }) };
   const out = body.replace(/\{\{(\w+)\}\}/g, (_, name) => {
     if (!(name in tokens)) throw new Error(`unknown token {{${name}}} in ${file}`);
     return tokens[name];
@@ -552,7 +556,7 @@ async function bundle() {
     sourcemap: WATCH,
     logLevel: 'warning',
     metafile: true,
-    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null', __PDFIQ_SALE__: PADDLE?.page ? 'true' : 'false', __PDFIQ_PADDLE_ENV__: JSON.stringify(PADDLE?.page ? PADDLE.env : ''), __PDFIQ_CHECKOUT_ORIGIN__: JSON.stringify(PADDLE?.page ? PADDLE.checkoutOrigin : ''), __PDFIQ_PRO_PRICE__: JSON.stringify(PRO_OFFER.price) },
+    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null', __PDFIQ_SALE__: PADDLE?.page ? 'true' : 'false', __PDFIQ_PADDLE_ENV__: JSON.stringify(PADDLE?.page ? PADDLE.env : ''), __PDFIQ_CHECKOUT_ORIGIN__: JSON.stringify(PADDLE?.page ? PADDLE.checkoutOrigin : ''), __PDFIQ_PRO_PRICE__: JSON.stringify(PRO_OFFER.price), __PDFIQ_PRO_COPY__: JSON.stringify(PRO ? JSON.stringify(Object.fromEntries(PRO_COPY.map((c) => [c.key, { what: c.what, instead: c.instead }]))) : '{}') },
     // Scalars, not one object: esbuild hoists an object-valued define into a shared module, and the
     // first version put the token, price and Paddle.js URL into a chunk every Pro page loads.
   });

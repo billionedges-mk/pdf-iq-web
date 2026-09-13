@@ -103,77 +103,127 @@ export function proAccount(): Session | null {
 /** Keeps the entitlement module's sentinel in any bundle that carries the gate. */
 export const GATE_CHECKS = [GATE_SENTINEL, ENTITLEMENT_SENTINEL, PENDING_SENTINEL] as const;
 
-/**
- * What a Pro control shows instead of acting. Signed out: the sign-in prompt. In a sale build, signed in
- * without Pro on this browser: where to buy it, and how a purchase already made reaches this browser.
- */
+/** tools/pro-copy.mjs, per feature key: what it does, and the free thing that gets closest. */
+const COPY = JSON.parse(__PDFIQ_PRO_COPY__) as Record<string, { what: string; instead: string } | undefined>;
+
+export type ProKey = 'batch' | 'searchable' | 'target' | 'password';
+
 export interface PromptOptions {
   /**
    * The page works on many files (Batch). The handoff store holds one file per key, so Unlock cannot carry them,
    * and the prompt says so before the button is pressed (owner's decision, 13 September 2026; TECH_DEBT records it).
    */
   manyFiles?: boolean;
+  /** Leave out the "what it does" sentence, where the card around the panel already says it (OCR's intro card). */
+  noWhat?: boolean;
+  /** Leave out the free alternative (OCR's intro card: the approved copy has only the sentence and Unlock there). */
+  noInstead?: boolean;
 }
 
-export function proPrompt(feature: string, carry?: () => File | null, opts: PromptOptions = {}): HTMLElement {
-  // The sale prompt is referenced only inside this constant branch. esbuild drops a false branch when it parses,
-  // so in a build that is not selling nothing reaches salePrompt, and it, the Unlock module and its /pro/buy/
-  // address are left out. Code after an early `return` is dropped only when printing, too late: the references
-  // already kept them (tools/verify-sale-build.mjs caught exactly that).
+/**
+ * What sits under a locked Pro control (approved copy, 13 September 2026). The control itself stays on the page,
+ * disabled, and the caller does that; this is the words and the one action, in this order:
+ *
+ *   1. what it does (tools/pro-copy.mjs `what`);
+ *   2. the action: Unlock with the line about the file (sale build), the payment being confirmed (pending, no button),
+ *      or "Part of Pro, not on sale yet." (a Pro preview that is not selling);
+ *   3. the free alternative (`instead`);
+ *   4. "Bought it already?" (sale build, nothing pending).
+ *
+ * `feature` names it in the pending sentence and in the Unlock intent.
+ */
+export function lockedPanel(key: ProKey, feature: string, carry?: () => File | null, opts: PromptOptions = {}): HTMLElement {
+  const wrap = document.createElement('div');
+  wrap.dataset.pdfiqGate = GATE_SENTINEL;
+  wrap.dataset.pdfiqLocked = key;
+  const copy = COPY[key];
+  if (copy && !opts.noWhat) wrap.append(line(copy.what, '10px 0 0', false));
+  // The sale action is referenced only inside this constant branch. esbuild drops a false branch when it parses, so in
+  // a build that is not selling nothing reaches saleAction, and it, the Unlock module and its /pro/buy/ address are left
+  // out. Code after an early `return` is dropped only when printing, too late: the references already kept them
+  // (tools/verify-sale-build.mjs caught exactly that).
+  let pending = false;
   if (__PDFIQ_SALE__) {
-    return salePrompt(feature, carry, opts);
+    pending = saleAction(wrap, feature, carry, opts);
+  } else {
+    // A Pro preview that is not selling: nothing to buy. Testers sign in on the account page to use Pro here.
+    const a = Object.assign(document.createElement('a'), { href: '/account/', textContent: 'Sign in' });
+    const p = line('Part of Pro, not on sale yet. ', '10px 0 0');
+    p.append(a, ' to use it in this preview build.');
+    wrap.append(p);
   }
-  return signInPrompt(feature);
+  if (copy && !opts.noInstead) wrap.append(line(copy.instead, '8px 0 0'));
+  if (__PDFIQ_SALE__) {
+    if (!pending) wrap.append(alreadyLine());
+  }
+  return wrap;
 }
 
-function salePrompt(feature: string, carry: (() => File | null) | undefined, opts: PromptOptions): HTMLElement {
-  const session = signedIn();
+function line(text: string, margin: string, hint = true): HTMLParagraphElement {
   const p = document.createElement('p');
-  p.className = 'hint';
-  p.dataset.pdfiqGate = GATE_SENTINEL;
+  if (hint) p.className = 'hint';
+  else p.style.cssText = 'font-size: 15px; line-height: 1.55;';
+  p.style.margin = margin;
+  p.textContent = text;
+  return p;
+}
+
+/** The sale build's action. Returns true when a payment is pending, which replaces everything else. */
+function saleAction(wrap: HTMLElement, feature: string, carry: (() => File | null) | undefined, opts: PromptOptions): boolean {
+  const session = signedIn();
   // Paid, not yet confirmed: say so, and offer no second checkout.
   const pending = readPendingPurchase(session?.uid);
   if (pending) {
-    const account = document.createElement('a');
-    account.href = '/account/';
-    account.textContent = 'your account page';
-    p.append(`${feature} is part of Pro, and your payment for it (reference ${pending.txn}) is being confirmed. Open `, account, ' to finish. There is no need to pay again.');
-    return p;
+    const account = Object.assign(document.createElement('a'), { href: '/account/', textContent: 'your account page' });
+    const p = line(`${feature} is part of Pro, and your payment for it (reference ${pending.txn}) is being confirmed. Open `, '10px 0 0');
+    p.append(account, ' to finish. There is no need to pay again.');
+    wrap.append(p);
+    return true;
   }
-  // Unlock, from here: the checkout opens straight away, and paying brings the buyer back to this page with the
-  // file they had open (src/pro/unlock.ts). Buying used to mean a link to /pro/buy/, a second button there, and
-  // then finding the file again.
-  p.append(`${feature} is part of Pro.`);
+  // Unlock, from here: the checkout opens straight away, and paying brings the buyer back to this page with the file
+  // they had open (src/pro/unlock.ts).
   const act = document.createElement('p');
-  act.style.margin = '10px 0 0';
+  act.style.margin = '12px 0 0';
   act.append(unlockButton(feature, carry));
-  const after = document.createElement('p');
-  after.className = 'hint';
-  after.style.marginTop = '8px';
-  after.append(opts.manyFiles
+  const after = line(opts.manyFiles
     ? 'These files do not come with you to the checkout: after paying, you come back here and choose them again.'
     : carry
       ? 'After paying you come back here with this file. Meanwhile it is kept on this device only, for up to ten minutes.'
-      : 'After paying you come back here.');
-  // Signed out, Unlock signs in with Google first (src/pro/buy.ts), and an account that already owns Pro is found
-  // there before any checkout opens.
+      : 'After paying you come back here.', '8px 0 0');
+  // Signed out, Unlock signs in with Google first (src/pro/buy.ts), and an account that already owns Pro is found there
+  // before any checkout opens.
   if (!session) after.append(' Buying needs an account, so you sign in with Google first and come straight back.');
-  const already = document.createElement('p');
-  already.className = 'hint';
-  already.style.marginTop = '4px';
-  if (session) {
-    const account = document.createElement('a');
-    account.href = '/account/';
-    account.textContent = 'your account page';
-    already.append('Bought it already? Open ', account, ' once with a connection and this browser will know.');
+  wrap.append(act, after);
+  return false;
+}
+
+function alreadyLine(): HTMLParagraphElement {
+  const p = line('', '6px 0 0');
+  if (signedIn()) {
+    const account = Object.assign(document.createElement('a'), { href: '/account/', textContent: 'your account page' });
+    p.append('Bought it already? Open ', account, ' once with a connection and this browser will know.');
   } else {
-    already.append('Bought it already, on another browser or the app? Unlock signs you in and checks before offering a checkout.');
+    p.append('Bought it already, on another browser or the app? Unlock signs you in and checks before offering a checkout.');
   }
-  const wrap = document.createElement('div');
-  wrap.dataset.pdfiqGate = GATE_SENTINEL;
-  p.removeAttribute('data-pdfiq-gate');
-  wrap.append(p, act, after, already);
-  return wrap;
+  return p;
+}
+
+/**
+ * Show a real control locked: disabled, dimmed, still itself. Everything focusable inside is disabled, so it cannot
+ * act; the handlers check the gate as well, because a disabled attribute is only a property of the page.
+ */
+export function lockControls(host: HTMLElement): void {
+  host.classList.add('pro-locked');
+  host.setAttribute('aria-disabled', 'true');
+  for (const el of host.querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement>('input, button, select, textarea')) el.disabled = true;
+}
+
+/** The small "Pro" label beside a heading. Only for someone who does not own Pro: the caller checks. */
+export function proLabel(): HTMLElement {
+  const span = document.createElement('span');
+  span.className = 'pro-label';
+  span.textContent = 'Pro';
+  return span;
 }
 
 /**

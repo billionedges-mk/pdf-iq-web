@@ -13,7 +13,7 @@
  * free path's sentence (src/lib/ocr-result.ts) cannot say "searchable" at all.
  */
 import { writeSearchable, describeSearchable, searchableMark, pagesToLayer, type SearchablePage } from './searchable.js';
-import { proAccount, proPrompt } from './gate.js';
+import { proAccount, lockedPanel, lockControls } from './gate.js';
 import { saveFile } from '../lib/ui.js';
 import { suffixName } from '../lib/format.js';
 
@@ -41,10 +41,13 @@ export function introSearchable(host: HTMLElement, source?: () => File | null): 
   host.dataset.pdfiqPro = searchableMark();
   host.textContent = '';
   if (proAccount()) {
-    host.append('Yours with Pro: the option appears with the text once reading finishes.');
+    // Owned: no word of Pro, only what will happen (owner, 13 September 2026: after buying, the site stops selling).
+    host.append('Saving it as a searchable PDF is offered with the text, once reading finishes.');
     return;
   }
-  host.append(proPrompt('The searchable PDF', source));
+  // The card around this already says what it does, and the real button does not exist before reading, so there is
+  // nothing to show locked here: the action only (approved copy, 13 September 2026).
+  host.append(lockedPanel('searchable', 'The searchable PDF', source, { noWhat: true, noInstead: true }));
 }
 
 export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
@@ -75,15 +78,20 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     return;
   }
 
-  if (!proAccount()) {
-    host.append(proPrompt('A searchable PDF', o.source));
-    return;
-  }
-
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'btn-quiet';
   button.textContent = 'Save as a searchable PDF';
+
+  // Not owned: the real button, locked, then the words (approved copy, 13 September 2026). No handler is attached.
+  if (!proAccount()) {
+    const locked = document.createElement('p');
+    locked.style.margin = '0';
+    locked.append(button);
+    lockControls(locked);
+    host.append(locked, lockedPanel('searchable', 'A searchable PDF', o.source));
+    return;
+  }
   const hint = document.createElement('p');
   hint.className = 'hint';
   hint.textContent =
@@ -91,6 +99,7 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     'and copied from. The scan is not changed, and it is written here, on this device.';
 
   button.onclick = async () => {
+    if (!proAccount()) return;
     button.disabled = true;
     button.textContent = 'Writing the text layer…';
     try {

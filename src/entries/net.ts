@@ -285,4 +285,8 @@ window.pdfiqNet = {
   clean: () => staleBundle() === null && state.sentBytes === 0 && state.thirdParty.length === 0,
 };
 
+// Pro builds only, and on every page because the nav is on every page: show the selling marks to someone who does not
+// own Pro, remove them for someone who does (src/pro/strip.ts). No request. With the flag off the branch is dropped.
+if (__PDFIQ_PRO__) void import('../pro/strip.js').then((m) => m.settleSellingMarks());
+
 export {};
