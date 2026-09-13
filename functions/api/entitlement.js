@@ -2,7 +2,7 @@
  * GET /api/entitlement — does the signed-in person own Pro? If so, a signed token the browser
  * keeps and checks offline (server/entitlement.js explains the token).
  *
- * Called from /account/ only, in a Pro build, with the Firebase ID token in
+ * Called from /account/ and /pro/buy/ only, in a Pro build, with the Firebase ID token in
  * `Authorization: Bearer …`. Tool pages never call it: they verify the stored token locally and
  * send nothing, which is what /privacy says of them.
  *

@@ -464,7 +464,7 @@ function accountHeaders() {
   if (policy === m[1]) throw new Error('the site-wide CSP has no connect-src to extend for /account/');
   return [
     '',
-    '# Pro-flag build only: the account page, and nothing else, may reach the Google sign-in hosts.',
+    `# Pro-flag build only: the account page may reach the Google sign-in hosts${PADDLE?.page ? ' (and the purchase page, below, the token host)' : ', and nothing else'}.`,
     '/account/*',
     '  ! Content-Security-Policy',
     `  Content-Security-Policy: ${policy}`,
@@ -494,7 +494,7 @@ function buyHeaders() {
   if (/paddle\.com|profitwell/i.test(p)) throw new Error('the purchase page policy names a Paddle or ProfitWell host; Paddle.js must never run on this origin');
   return [
     '',
-    `# Sale build only (Paddle ${PADDLE.env}): the purchase page may frame the checkout origin, and nothing else changes.`,
+    `# Sale build only (Paddle ${PADDLE.env}): the purchase page may frame the checkout origin and reach Google's token host, and nothing else changes.`,
     '/pro/buy/*',
     '  ! Content-Security-Policy',
     `  Content-Security-Policy: ${p}`,

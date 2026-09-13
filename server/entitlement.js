@@ -5,7 +5,7 @@
  *   - Someone who paid and has no connection must not be locked out. A server check cannot run
  *     offline, so a browser needs something it can check by itself.
  *   - Tool pages send nothing (/privacy says so). A gate that asked a server on every tool page
- *     would break that. The token is fetched on /account/ only, and a tool page verifies it
+ *     would break that. The token is fetched on /account/ and /pro/buy/ only, and a tool page verifies it
  *     locally with the public key compiled into the build.
  *
  * The token does not expire: an expiry would lock out exactly the offline buyer this exists for.

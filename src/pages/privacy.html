@@ -142,9 +142,10 @@
          language. It is served from this domain, downloaded once, and then cached. That download
          is a request for a file; it does not carry any part of your document, and no other tool on
          this site fetches anything at all after the page has loaded.</p>
-      <!--PRO--><p>Signing in for Pro is the other exception, and it happens on the account page only: that
+      <!--PRO--><p>Signing in for Pro is the other exception, and it happens on the account page<!--NOSALE--> only<!--/NOSALE-->: that
          page contacts {{authIdentityHost}} when you sign in, and {{authTokenHost}} when it renews a sign-in
-         that is about to expire. Both are Google's, and both are described under <a href="#if-you-sign-in">If
+         that is about to expire.<!--SALE--> The purchase page may also renew one there, to confirm a purchase
+         you have just made.<!--/SALE--> Both are Google's, and both are described under <a href="#if-you-sign-in">If
          you sign in</a>.</p><!--/PRO-->
 
       <h3>Server logs</h3>
@@ -171,8 +172,8 @@
       <p><strong>What this browser keeps</strong>, in its local storage under {{authSessionKey}}:
          {{authSessionFields}}. In that order: the account identifier, your email address, a proof of
          sign-in that lasts about an hour, when that proof expires, and the refresh token that renews it.
-         When the proof is within five minutes of expiring, the account page renews it at {{authTokenHost}},
-         sending the refresh token.</p>
+         When the proof is within five minutes of expiring, the account page<!--SALE--> (or the purchase page,
+         while confirming a purchase)<!--/SALE--> renews it at {{authTokenHost}}, sending the refresh token.</p>
       <p>While you are away at Google's sign-in page it also keeps {{authPendingFields}} under
          {{authPendingKey}}, in session storage: two random values that let the page check that Google's
          answer belongs to a sign-in it started, and the time it started. The two random values travel to

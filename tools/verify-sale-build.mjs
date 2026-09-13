@@ -64,6 +64,10 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   ok(found.length === 0, `${label}: no Paddle, checkout message, buy module, /pro/buy/ link or token in any file${found.length ? ` — ${found.slice(0, 4).join(', ')}` : ''}`);
   const privacyOff = readFileSync(join(ROOT, 'dist/privacy/index.html'), 'utf8');
   ok(!privacyOff.includes('id="checkout"') && !privacyOff.includes('m.stripe.com') && privacyOff.includes('no third-party script of any kind on this site'), `${label}: /privacy has no checkout section and keeps its original sentence`);
+  if (env.PDFIQ_PRO) {
+    const flat = privacyOff.replace(/\s+/g, ' ');
+    ok(flat.includes('it happens on the account page only:') && !flat.includes('purchase page'), `${label}: /privacy says sign-in happens on the account page only, and names no purchase page`);
+  }
 }
 
 // ---------------------------------------------------------------- site: selling (sandbox)
@@ -102,6 +106,10 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   const returns = /\{"\/compress\/":"Compress","\/ocr\/":"OCR","\/password\/":"Password","\/batch\/":"Batch"\}/.exec(siteJs);
   ok(Boolean(returns), '/pro/buy/ returns only to the four Pro pages (its allow-list, in the bundle)');
   ok(privacyText.includes('or an <em>Unlock with Pro</em> button'), '/privacy says Unlock keeps the file in the handoff store');
+  ok(!privacyText.includes('happens on the account page only') && privacyText.includes('The purchase page may also renew one there')
+    && privacyText.includes('the account page (or the purchase page, while confirming a purchase) renews it'),
+  '/privacy no longer says only the account page contacts Google: the purchase page renews a sign-in too');
+  ok(!/nothing else changes\.|and nothing else, may reach/.test(readFileSync(join(ROOT, 'dist/_headers'), 'utf8').replace(/may frame the checkout origin and reach Google's token host, and nothing else changes\./, '')), "_headers' own comments name the purchase page's token host");
   ok(privacyText.includes('That means deleting the record is the one thing that does take Pro away.') && privacyText.includes('deleting the record is not a refund') && privacyText.includes('The Pro purchase record is the exception, and it is deliberate.'), '/privacy states the purchase record, why it outlives the account, and what deleting it costs');
   const refundsText = readFileSync(join(ROOT, 'dist/refunds/index.html'), 'utf8').replace(/\s+/g, ' ');
   ok(refundsText.includes('a refund takes Pro off a browser the next time your account page is opened there with a connection'), '/refunds says when a refund reaches a browser');

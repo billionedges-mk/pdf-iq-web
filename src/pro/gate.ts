@@ -8,7 +8,7 @@
  *     public key in the build and no request, so it works offline indefinitely: someone who paid and has
  *     no signal is not locked out.
  *
- * A tool page never renews a sign-in. That happens on /account/ only, so tool pages never talk
+ * A tool page never renews a sign-in. That happens on /account/ (and /pro/buy/, confirming a purchase), so tool pages never talk
  * to Google and keep their content security policy — which is what /privacy says.
  */
 import { readSession, type Session } from './session.js';
