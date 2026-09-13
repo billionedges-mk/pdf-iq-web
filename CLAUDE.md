@@ -162,6 +162,29 @@ everyone — there is no entitlement check yet, which is acceptable only because
   prove nothing, so the local build is built and searched too.
 - **`npm run verify:pro-gate`** builds with the flag off, on, and on-for-production, and proves each.
 
+## Selling Pro (Paddle)
+
+Nothing is on sale. `PDFIQ_SALE` is off everywhere except the Preview environment's sandbox test.
+
+- **Never a live Paddle credential in Preview.** A `live_` client token on a preview checkout takes
+  real money from whoever tests it. Preview uses the Paddle **sandbox** account: its `test_` token,
+  its price, its notification destination and secret, and its own D1 database. Live values go into
+  the Production environment only, on the day the sale is switched on.
+- **Server side:** `functions/api/paddle/webhook.js` (Paddle → D1) and `functions/api/entitlement.js`
+  (Firebase ID token → signed entitlement), with shared logic in `server/`. Both answer 404 unless
+  `PDFIQ_SALE` is `"true"` in that deployment's runtime environment. `npm run verify:paddle` drives them
+  with real SQL, HMACs and signatures; each check was proven by breaking the code it guards.
+- **Bindings and secrets** (Cloudflare → Settings, per environment): `PURCHASES` (D1, sandbox database
+  in Preview), `PADDLE_WEBHOOK_SECRET`, `PDFIQ_PADDLE_PRICE_ID`, `PDFIQ_PADDLE_ENV` (`sandbox` |
+  `production`), `PDFIQ_ENTITLEMENT_PRIVATE_KEY`, `PDFIQ_SALE`.
+- **Keys:** `npm run entitlement:keys -- sandbox|production` writes the public key into
+  `src/pro/entitlement-public-keys.json` and prints the private key once for the owner to paste into
+  Cloudflare. The private key never goes into the repo or a conversation.
+- **Offline is the constraint.** A buyer with no connection must not be locked out: tool pages verify a
+  stored signed token locally and send nothing. The token does not expire; a refund takes effect on a
+  browser at its next online visit to `/account/`.
+- **The app backend's Firestore `tier` is dormant**, not the source of truth (TECH_DEBT).
+
 ## Things that are not what they look like
 
 - **Firebase App Check's Authentication metrics are not a signal.** They show roughly 85% of Auth

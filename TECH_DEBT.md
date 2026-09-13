@@ -375,3 +375,29 @@ presence controls proves it (owner, 13 September 2026, content review item 24).
 The repo containing billing code and the artefact containing it are different claims, and the gate
 is what makes the second checkable. When Pro ships, these four pages change in the same release
 that turns the gate on. Until then, check the artefact rather than the source.
+
+## Deliberately not used: the app backend's Firestore `tier` and `revenueCatWebhook`
+
+The Android app's Firebase backend (app repo, `functions/src/index.ts`, region asia-south1) has
+entitlement infrastructure that looks live and is not:
+
+- a `tier` field (`free` | `pro`) on each user's Firestore record;
+- `revenueCatWebhook`, which writes `tier` from RevenueCat events, with event-time ordering and a
+  constant-time shared-secret check;
+- `entitlement` and `usageSync` endpoints that return `isPro` from that field.
+
+It was built for Play billing through RevenueCat, which `BILLING_ENABLED` keeps off in the shipped
+app. Nothing server-side reads `tier` for a limit any more: summaries are ten a month for everyone.
+
+**Pro bought on the web does not use it** (decided 13 September 2026). Paddle purchases are
+recorded by a Cloudflare Pages Function in D1 (`functions/api/paddle/webhook.js`,
+`functions/purchases-schema.sql`), and the entitlement both surfaces read is
+`GET https://pdf-iq.com/api/entitlement`. The reasons:
+
+- Paddle's five-second response deadline against a Firebase cold start;
+- one repo owning checkout, webhook and refunds;
+- no Google service-account key stored in Cloudflare.
+
+So a Firestore record showing `tier: free` for someone who bought Pro on the web is correct, not a
+bug. If Play billing is ever switched on, the two stores must be reconciled deliberately, not
+discovered to disagree. Until then, treat the Firestore tier as dormant.
