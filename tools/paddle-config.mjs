@@ -53,7 +53,9 @@ function resolve() {
     throw new Error(
       'PDFIQ_SALE is set on a production build (Cloudflare Pages, branch ' +
       `${process.env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}). The sale is not switched on. ` +
-      'Remove PDFIQ_SALE from the Production environment variables; turning it on is a code change, not a setting.'
+      'Remove PDFIQ_SALE from the Production environment variables; turning it on is a code change, not a setting, ' +
+      'and docs/sale-go-live.md is what that change must satisfy — starting with the production measurement ' +
+      'of Paddle.js, which sandbox cannot perform.'
     );
   }
   const env = process.env.PDFIQ_PADDLE_ENV ?? '';

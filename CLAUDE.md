@@ -176,6 +176,10 @@ everyone — there is no entitlement check yet, which is acceptable only because
 
 Nothing is on sale. `PDFIQ_SALE` is off everywhere except the Preview environment's sandbox test.
 
+**Before the sale opens: measure Paddle.js in production.** Sandbox cannot show what matters most: Paddle.js
+injects Retain analytics (public.profitwell.com) in every environment except sandbox. The go-live checklist is
+`docs/sale-go-live.md`, and the production refusal in `tools/paddle-config.mjs` points to it.
+
 - **Never a live Paddle credential in Preview.** A `live_` client token on a preview checkout takes
   real money from whoever tests it. Preview uses the Paddle **sandbox** account: its `test_` token,
   its price, its notification destination and secret, and its own D1 database. Live values go into

@@ -150,6 +150,12 @@ async function storage(label) {
 await send('Page.navigate', { url: URL_ }, page);
 await wait(6000);
 const storageArrival = await storage('arrival');
+// The page's own footer counter at the end of each phase, to set beside what the recorder saw in every frame.
+const readout = {};
+const readReadout = async (label) => {
+  readout[label] = await evalIn(page, "document.querySelector('[data-netreadout-text]')?.textContent ?? '(no readout)'");
+};
+await readReadout('arrival');
 
 phase = 'open';
 const view = await evalIn(page, `document.body.dataset.pdfiqBuyState ?? ''`);
@@ -164,6 +170,7 @@ if (view !== 'ready') {
   await wait(Number(opt('--open-seconds', '10')) * 1000);
 }
 const storageOpen = await storage('open');
+await readReadout('open');
 
 let storagePay = [];
 if (PAY_MINUTES > 0 && view === 'ready') {
@@ -174,6 +181,7 @@ if (PAY_MINUTES > 0 && view === 'ready') {
   while (Date.now() < until && (await evalIn(page, `document.body.dataset.pdfiqBuyState`)) !== 'done') await wait(2000);
   await wait(8000);
   storagePay = await storage('pay');
+  await readReadout('pay');
 }
 
 const { result: { cookies } } = await send('Storage.getCookies', {});
@@ -199,6 +207,7 @@ const report = {
   cookiesAtEnd: cookies.map((c) => ({ domain: c.domain, name: c.name, session: c.session, expires: c.session ? null : new Date(c.expires * 1000).toISOString(), httpOnly: c.httpOnly, sameSite: c.sameSite, partitioned: Boolean(c.partitionKey) })),
   storage: [...storageArrival, ...storageOpen, ...storagePay],
   console: consoleLines,
+  footerReadout: readout,
   profitwellSeen: requests.some((r) => /profitwell/i.test(r.host)),
 };
 writeFileSync(OUT, JSON.stringify(report, null, 2));
@@ -209,6 +218,8 @@ console.log(`\nCookies in the browser at the end (${report.cookiesAtEnd.length})
 for (const c of report.cookiesAtEnd) console.log(`  ${c.domain}  ${c.name}  ${c.session ? 'session' : `until ${c.expires}`}${c.httpOnly ? '  httpOnly' : ''}  sameSite=${c.sameSite ?? '-'}${c.partitioned ? '  partitioned' : ''}`);
 console.log('\nStorage keys by origin:');
 for (const s of report.storage) console.log(`  ${s.at.padEnd(8)} ${s.origin}  local=[${s.local.join(', ')}] session=[${s.session.join(', ')}] idb=[${s.idb.join(', ')}]`);
+console.log('\nFooter counter on the page, by phase:');
+for (const [k, v] of Object.entries(readout)) console.log(`  ${k.padEnd(8)} ${v}`);
 console.log(`\nProfitWell / Retain requested: ${report.profitwellSeen ? 'YES' : 'no'}`);
 console.log(`Console lines about policy or Paddle: ${consoleLines.length}`);
 console.log(`Final page state: ${finalState?.state}${finalState?.reference ? `, reference ${finalState.reference}` : ''}`);
