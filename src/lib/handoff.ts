@@ -204,7 +204,8 @@ export async function claimIncoming(): Promise<File | null> {
   // And say something on arrival. The file still has to be read out of storage and parsed by the
   // tool that receives it, which on a large document is seconds of a page that looks empty and
   // idle — the same silence, on the other side of the navigation.
-  const note = say(document.querySelector('main'), 'Bringing your file over from the last tool…', true);
+  // Not "from the last tool": since Unlock (src/pro/unlock.ts) a file also arrives back from the purchase page.
+  const note = say(document.querySelector('main'), 'Bringing your file over…', true);
   try {
     const handed = await claim(key);
     if (!handed) {
