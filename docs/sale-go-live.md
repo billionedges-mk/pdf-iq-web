@@ -61,6 +61,12 @@ place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
 - (Superseded by the checkout origin above: the default payment link is https://checkout.pdf-iq.com/.)
 - Cloudflare Bot Fight Mode checked for the webhook path (Paddle asks for bot checks to be bypassed there).
 
+**Web sign-in for production** (the same three settings made for Preview, for pdf-iq.com):
+- Google Cloud, OAuth web client 340733500005-e6guq4…: JavaScript origin `https://pdf-iq.com`, redirect URI `https://pdf-iq.com/account/`.
+- Firebase Authentication, Authorized domains: `pdf-iq.com`.
+- The web API key (restricted to Identity Toolkit and Token Service) as `PDFIQ_FIREBASE_WEB_KEY` in pdf-iq-web Production.
+- And `npm run entitlement:keys -- production`: a production sale build leaves /pro/buy/ out without its public key.
+
 ## 3. Copy that must change in the same release
 
 - /privacy: the checkout section, from the production measurement.
