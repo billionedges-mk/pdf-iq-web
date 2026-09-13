@@ -464,7 +464,7 @@ function accountHeaders() {
   if (policy === m[1]) throw new Error('the site-wide CSP has no connect-src to extend for /account/');
   return [
     '',
-    `# Pro-flag build only: the account page may reach the Google sign-in hosts${PADDLE?.page ? ' (and the purchase page, below, the token host)' : ', and nothing else'}.`,
+    `# Pro-flag build only: the account page may reach the Google sign-in hosts${PADDLE?.page ? ' (and the purchase page, below)' : ', and nothing else'}.`,
     '/account/*',
     '  ! Content-Security-Policy',
     `  Content-Security-Policy: ${policy}`,
@@ -488,13 +488,14 @@ function buyHeaders() {
   let p = /frame-src ([^;]+)/.test(policy)
     ? policy.replace(/frame-src ([^;]+)/, (_, v) => `frame-src ${v} ${PADDLE.checkoutOrigin}`)
     : `${policy}; frame-src ${PADDLE.checkoutOrigin}`;
-  // It confirms a purchase itself, which can mean renewing a sign-in older than an hour: Google's token host,
-  // as /account/'s policy has. Not Identity Toolkit, which only signing in needs.
-  p = p.replace(/connect-src ([^;]+)/, (_, v) => `connect-src ${v} ${AUTH.secureToken}`);
+  // It confirms a purchase itself, which can mean renewing a sign-in older than an hour (Google's token host), and
+  // a sign-in can start and finish here (Identity Toolkit): the same two hosts /account/'s policy has, from the
+  // same list. Approved by the owner on 13 September 2026, this page only.
+  p = p.replace(/connect-src ([^;]+)/, (_, v) => `connect-src ${v} ${AUTH.hosts.join(' ')}`);
   if (/paddle\.com|profitwell/i.test(p)) throw new Error('the purchase page policy names a Paddle or ProfitWell host; Paddle.js must never run on this origin');
   return [
     '',
-    `# Sale build only (Paddle ${PADDLE.env}): the purchase page may frame the checkout origin and reach Google's token host, and nothing else changes.`,
+    `# Sale build only (Paddle ${PADDLE.env}): the purchase page may frame the checkout origin and reach the Google sign-in hosts, and nothing else changes.`,
     '/pro/buy/*',
     '  ! Content-Security-Policy',
     `  Content-Security-Policy: ${p}`,

@@ -107,23 +107,32 @@ export const GATE_CHECKS = [GATE_SENTINEL, ENTITLEMENT_SENTINEL, PENDING_SENTINE
  * What a Pro control shows instead of acting. Signed out: the sign-in prompt. In a sale build, signed in
  * without Pro on this browser: where to buy it, and how a purchase already made reaches this browser.
  */
-export function proPrompt(feature: string, carry?: () => File | null): HTMLElement {
+export interface PromptOptions {
+  /**
+   * The page works on many files (Batch). The handoff store holds one file per key, so Unlock cannot carry them,
+   * and the prompt says so before the button is pressed (owner's decision, 13 September 2026; TECH_DEBT records it).
+   */
+  manyFiles?: boolean;
+}
+
+export function proPrompt(feature: string, carry?: () => File | null, opts: PromptOptions = {}): HTMLElement {
   // The sale prompt is referenced only inside this constant branch. esbuild drops a false branch when it parses,
   // so in a build that is not selling nothing reaches salePrompt, and it, the Unlock module and its /pro/buy/
   // address are left out. Code after an early `return` is dropped only when printing, too late: the references
   // already kept them (tools/verify-sale-build.mjs caught exactly that).
   if (__PDFIQ_SALE__) {
-    if (signedIn()) return salePrompt(feature, carry);
+    return salePrompt(feature, carry, opts);
   }
   return signInPrompt(feature);
 }
 
-function salePrompt(feature: string, carry?: () => File | null): HTMLElement {
+function salePrompt(feature: string, carry: (() => File | null) | undefined, opts: PromptOptions): HTMLElement {
+  const session = signedIn();
   const p = document.createElement('p');
   p.className = 'hint';
   p.dataset.pdfiqGate = GATE_SENTINEL;
   // Paid, not yet confirmed: say so, and offer no second checkout.
-  const pending = readPendingPurchase(signedIn()?.uid);
+  const pending = readPendingPurchase(session?.uid);
   if (pending) {
     const account = document.createElement('a');
     account.href = '/account/';
@@ -141,16 +150,25 @@ function salePrompt(feature: string, carry?: () => File | null): HTMLElement {
   const after = document.createElement('p');
   after.className = 'hint';
   after.style.marginTop = '8px';
-  after.append(carry
-    ? 'After paying you come back here with this file. Meanwhile it is kept on this device only, for up to ten minutes.'
-    : 'After paying you come back here.');
-  const account = document.createElement('a');
-  account.href = '/account/';
-  account.textContent = 'your account page';
+  after.append(opts.manyFiles
+    ? 'These files do not come with you to the checkout: after paying, you come back here and choose them again.'
+    : carry
+      ? 'After paying you come back here with this file. Meanwhile it is kept on this device only, for up to ten minutes.'
+      : 'After paying you come back here.');
+  // Signed out, Unlock signs in with Google first (src/pro/buy.ts), and an account that already owns Pro is found
+  // there before any checkout opens.
+  if (!session) after.append(' Buying needs an account, so you sign in with Google first and come straight back.');
   const already = document.createElement('p');
   already.className = 'hint';
   already.style.marginTop = '4px';
-  already.append('Bought it already? Open ', account, ' once with a connection and this browser will know.');
+  if (session) {
+    const account = document.createElement('a');
+    account.href = '/account/';
+    account.textContent = 'your account page';
+    already.append('Bought it already? Open ', account, ' once with a connection and this browser will know.');
+  } else {
+    already.append('Bought it already, on another browser or the app? Unlock signs you in and checks before offering a checkout.');
+  }
   const wrap = document.createElement('div');
   wrap.dataset.pdfiqGate = GATE_SENTINEL;
   p.removeAttribute('data-pdfiq-gate');

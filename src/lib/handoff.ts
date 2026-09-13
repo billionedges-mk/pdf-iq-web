@@ -152,6 +152,40 @@ export async function peekUnlock(key: string): Promise<{ intent: UnlockIntent; n
 }
 
 /**
+ * The key of the newest Unlock row still inside its ten minutes, or null. For /pro/buy/ coming back from Google's
+ * sign-in: the redirect must match a registered URI exactly, so the `?unlock=` key cannot travel through it, and
+ * this finds the Unlock that sent the buyer to sign in without storing anything extra. Never creates the database.
+ */
+export async function latestUnlockKey(): Promise<string | null> {
+  try {
+    const db = await new Promise<IDBDatabase | null>((resolve) => {
+      const req = indexedDB.open(DB_NAME);
+      req.onupgradeneeded = () => req.transaction?.abort();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+      req.onblocked = () => resolve(null);
+    });
+    if (!db) return null;
+    if (!db.objectStoreNames.contains(STORE)) {
+      db.close();
+      return null;
+    }
+    const tx = db.transaction(STORE, 'readonly');
+    const rows = await new Promise<Row[]>((resolve, reject) => {
+      const req = tx.objectStore(STORE).getAll();
+      req.onsuccess = () => resolve(req.result as Row[]);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    const cutoff = Date.now() - MAX_AGE_MS;
+    const newest = rows.filter((r) => r.unlock && r.at >= cutoff).sort((a, b) => b.at - a.at)[0];
+    return newest?.key ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Wire the "next" links on a result panel so they carry the finished file across.
  * `current` is called at click time, so it always hands over the latest result rather
  * than whatever existed when the panel was first shown.

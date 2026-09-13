@@ -440,3 +440,15 @@ needs a decision on the Stripe `m` and `__cf_bm` cookies, which arrive only afte
 Paddle.js 2.9.7 also injects Retain analytics (public.profitwell.com) outside sandbox. /pro/buy/
 pre-sets the loader's own skip check and leaves that host out of its policy. Only a production
 measurement can confirm both hold, so measure again on the day the sale opens.
+
+## Limit, accepted: Unlock from Batch loses the chosen files (13 September 2026)
+
+Unlock carries the open file to the checkout and back through the IndexedDB handoff (src/lib/handoff.ts), which
+holds one file per key. Batch works on many, so Unlock from /batch/ returns to an empty page. The prompt says so
+before the button: "These files do not come with you to the checkout: after paying, you come back here and choose
+them again." (src/pro/gate.ts, `manyFiles`).
+
+Accepted by the owner for now: carrying many files is a bigger change to the store and to /privacy than it is worth
+before Pro sells. **Revisit when Pro is selling.** Someone who batches twenty files and has to choose them again
+after paying will say so, and that complaint is the signal. The likely shape: one row per file under a shared
+Unlock key, with the same ten-minute limit and pick-up-and-delete, and a /privacy sentence saying so.

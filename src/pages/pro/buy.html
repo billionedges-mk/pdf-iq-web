@@ -11,8 +11,21 @@
     <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="out" hidden>
       <p class="kicker">Sign in first</p>
       <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">Pro is kept with your account, so it
-        follows you to any device you sign in on. That needs an account before paying:
-        <a href="/account/">sign in on your account page</a>, then come back here.</p>
+        follows you to any device you sign in on. That needs an account before paying.</p>
+      <p style="margin: 18px 0 0;"><button class="btn" type="button" data-buy-signin>Sign in with Google</button></p>
+      <p class="hint" style="margin-top: 12px;" role="status" data-buy-out-note hidden>&nbsp;</p>
+      <p class="hint" style="margin-top: 12px;">Google sends you straight back to this page. Nothing free on this site
+        needs an account.</p>
+      <p class="hint" style="margin-top: 8px;" data-buy-back hidden>&nbsp;</p>
+    </section>
+
+    <section class="card card--problem" style="margin-top: 22px; max-width: 700px;" data-buy="signin-failed" hidden>
+      <p class="kicker">Sign-in did not finish</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6; font-weight: 600;" data-buy-signin-title>&nbsp;</p>
+      <p style="margin: 8px 0 0; font-size: 15.5px; line-height: 1.6;" data-buy-signin-body>&nbsp;</p>
+      <p class="hint" style="margin-top: 10px;"><code data-buy-signin-code></code></p>
+      <p style="margin: 18px 0 0;"><button class="btn btn--sm" type="button" data-buy-signin-retry>Sign in again</button></p>
+      <p class="hint" style="margin-top: 12px;" data-buy-back hidden>&nbsp;</p>
     </section>
 
     <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="owned" hidden>
@@ -28,6 +41,7 @@
       <p class="kicker">Ready to pay</p>
       <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">Signed in as <strong data-buy-email></strong>.
         Pro will be recorded against this account.</p>
+      <p class="hint" style="margin-top: 10px;" role="status" data-buy-unchecked hidden>&nbsp;</p>
       <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.6; color: var(--ink-78);">Paying opens Paddle's
         checkout on this page. Paddle is the merchant of record: they take the payment and handle any tax, and
         your card details go to Paddle, never to pdf-iq. Nothing is loaded from Paddle until you press the button.</p>

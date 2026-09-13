@@ -90,6 +90,11 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   const buy = /\/pro\/buy\/\*\s*\n\s*! Content-Security-Policy\s*\n\s*Content-Security-Policy: (.+)/.exec(headers)?.[1] ?? '';
   ok(new RegExp(`frame-src [^;]*${CHECKOUT.replace(/[.]/g, '\\.')}`).test(buy), '/pro/buy/ may frame the checkout origin');
   ok(/connect-src [^;]*https:\/\/securetoken\.googleapis\.com/.test(buy), '/pro/buy/ may renew a sign-in (Google token host)');
+  ok(/connect-src [^;]*https:\/\/identitytoolkit\.googleapis\.com/.test(buy), '/pro/buy/ may finish a sign-in (Identity Toolkit)');
+  // And only those two pages: every other page keeps the site-wide policy, which names no Google host.
+  const googleBlocks = [...headers.matchAll(/^(\/[^\s]*)\s*\n(?:\s+[^\n]*\n)*?\s*Content-Security-Policy: ([^\n]+)/gm)]
+    .filter((m) => /googleapis\.com/.test(m[2])).map((m) => m[1]);
+  ok(googleBlocks.length === 2 && googleBlocks.includes('/account/*') && googleBlocks.includes('/pro/buy/*'), `only /account/ and /pro/buy/ may reach Google (${googleBlocks.join(', ')})`);
   // Hostnames, not the word: the header file's own comment says "Paddle sandbox", and the first version of
   // this check failed on that comment rather than on a policy.
   ok(!/paddle\.com|profitwell\.com/i.test(headers), "no Paddle or ProfitWell host in any of the site's policies");
@@ -106,10 +111,16 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   const returns = /\{"\/compress\/":"Compress","\/ocr\/":"OCR","\/password\/":"Password","\/batch\/":"Batch"\}/.exec(siteJs);
   ok(Boolean(returns), '/pro/buy/ returns only to the four Pro pages (its allow-list, in the bundle)');
   ok(privacyText.includes('or an <em>Unlock with Pro</em> button'), '/privacy says Unlock keeps the file in the handoff store');
-  ok(!privacyText.includes('happens on the account page only') && privacyText.includes('The purchase page may also renew one there')
-    && privacyText.includes('the account page (or the purchase page, while confirming a purchase) renews it'),
-  '/privacy no longer says only the account page contacts Google: the purchase page renews a sign-in too');
-  ok(!/nothing else changes\.|and nothing else, may reach/.test(readFileSync(join(ROOT, 'dist/_headers'), 'utf8').replace(/may frame the checkout origin and reach Google's token host, and nothing else changes\./, '')), "_headers' own comments name the purchase page's token host");
+  ok(!privacyText.includes('happens on the account page only') && privacyText.includes('it happens on the account page and the purchase page only')
+    && privacyText.includes('the account page (or the purchase page, while confirming a purchase) renews it')
+    && privacyText.includes('account page</a>, or the purchase page if you sign in from there, sends you to Google'),
+  '/privacy says sign-in starts and finishes on the purchase page too, and that it renews a sign-in there');
+  ok(!/and nothing else, may reach/.test(headers) && /the purchase page may frame the checkout origin and reach the Google sign-in hosts, and nothing else changes\./.test(headers), "_headers' own comments name the purchase page's Google hosts");
+  // Signing in from a locked feature, and Batch saying its files stay behind.
+  ok(siteJs.includes('Buying needs an account, so you sign in with Google first and come straight back.'), 'signed out, a locked feature offers Unlock and says a Google sign-in comes first');
+  ok(siteJs.includes('These files do not come with you to the checkout: after paying, you come back here and choose them again.'), 'Batch says before Unlock that its files do not come back');
+  const buyHtml = readFileSync(join(ROOT, 'dist/pro/buy/index.html'), 'utf8');
+  ok(buyHtml.includes('data-buy-signin>Sign in with Google</button>') && !buyHtml.includes('sign in on your account page</a>, then come back here'), '/pro/buy/ signs in itself rather than sending the buyer to /account/ and back');
   ok(privacyText.includes('That means deleting the record is the one thing that does take Pro away.') && privacyText.includes('deleting the record is not a refund') && privacyText.includes('The Pro purchase record is the exception, and it is deliberate.'), '/privacy states the purchase record, why it outlives the account, and what deleting it costs');
   const refundsText = readFileSync(join(ROOT, 'dist/refunds/index.html'), 'utf8').replace(/\s+/g, ' ');
   ok(refundsText.includes('a refund takes Pro off a browser the next time your account page is opened there with a connection'), '/refunds says when a refund reaches a browser');

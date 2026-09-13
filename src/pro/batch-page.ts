@@ -127,7 +127,7 @@ function renderGate(): void {
   const account = proAccount();
   $<HTMLButtonElement>('[data-start]')!.hidden = !account;
   $('[data-run-note]')!.hidden = !account;
-  if (!account) gate.append(proPrompt('Running one operation across many files'));
+  if (!account) gate.append(proPrompt('Running one operation across many files', undefined, { manyFiles: true }));
 }
 
 // ---------------------------------------------------------------- the work

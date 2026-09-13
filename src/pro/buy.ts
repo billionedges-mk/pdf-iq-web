@@ -8,7 +8,9 @@
  * the uid and email, by postMessage, addressed to that exact origin. The browser keeps each origin's
  * storage to itself; nothing here has to be careful for that to hold.
  *
- * Visiting the page loads nothing from anyone else. The frame is created only when Pay is pressed.
+ * Visiting the page loads nothing from anyone else. The frame is created only when Pay is pressed, or at once when
+ * an Unlock button sent the buyer here. Signing in starts and finishes here too (a second registered redirect
+ * URI): leaving for Google is a navigation, and finishing contacts Google's Identity Toolkit, as /account/ does.
  *
  * Messages are accepted only from the checkout origin, and only these shapes:
  *   { type: 'pdfiq-checkout-ready' }                     the frame is listening; send it the buyer
@@ -20,7 +22,10 @@
 import { signedIn, proAccount } from './gate.js';
 import { writePendingPurchase, readPendingPurchase } from './pending.js';
 import { confirmPurchase, confirmEndWords } from './confirm.js';
-import { peekUnlock, type UnlockIntent } from '../lib/handoff.js';
+import { peekUnlock, latestUnlockKey, type UnlockIntent } from '../lib/handoff.js';
+import { startSignIn, completeSignIn, AuthError, type AuthErrorKind } from './auth.js';
+import { WORDS } from './auth-words.js';
+import { refreshEntitlement } from './entitlement.js';
 
 /**
  * The pages an Unlock button can send a buyer from, and so the only places this page will send them back to. A
@@ -36,12 +41,56 @@ const RETURN_PAGES: Record<string, string> = {
 /** Set when this page was opened by an Unlock button (src/pro/unlock.ts). */
 let unlock: { key: string; intent: UnlockIntent; page: string; name: string; file: boolean; expired: boolean } | null = null;
 
-async function readUnlock(): Promise<void> {
-  const key = new URLSearchParams(location.search).get('unlock');
+async function readUnlock(backFromGoogle: boolean): Promise<void> {
+  // Back from Google the address carries no key (the redirect must match the registered URI exactly), so the
+  // Unlock that sent the buyer to sign in is the newest one still inside its ten minutes.
+  const key = new URLSearchParams(location.search).get('unlock') ?? (backFromGoogle ? await latestUnlockKey() : null);
   if (!key) return;
   const found = await peekUnlock(key);
   if (!found || !RETURN_PAGES[found.intent.path]) return;
   unlock = { key, intent: found.intent, page: RETURN_PAGES[found.intent.path], name: found.name, file: found.file, expired: found.expired };
+  // Put it back in the address, so a reload still knows where the buyer came from.
+  if (backFromGoogle) history.replaceState(null, '', `${location.pathname}?unlock=${encodeURIComponent(key)}`);
+}
+
+/**
+ * The way back to where Unlock was pressed, with the file, on every view a buyer can stop at without buying:
+ * ready (the checkout closed), signed out, and a sign-in that did not finish.
+ */
+function offerWayBack(): void {
+  if (!unlock) return;
+  for (const back of document.querySelectorAll<HTMLElement>('[data-buy-back]')) {
+    const a = Object.assign(document.createElement('a'), { href: backHref(unlock.file), textContent: `Back to ${unlock.page}` });
+    back.replaceChildren(a, unlock.file ? ` with ${unlock.name}, without buying.` : ', without buying.');
+    back.hidden = false;
+  }
+}
+
+/** Leave for Google's sign-in, which returns to this page. */
+function signIn(): void {
+  try {
+    startSignIn();
+  } catch (e) {
+    signInFailed(e);
+  }
+}
+
+/** The account page's words for the same failure, so both pages say the same true thing. */
+function signInFailed(e: unknown): void {
+  const kind: AuthErrorKind = e instanceof AuthError ? e.kind : 'unknown';
+  const code = e instanceof AuthError ? e.code : e instanceof Error ? e.message : String(e);
+  const words = WORDS[kind];
+  $('[data-buy-signin-title]')!.textContent = words.title;
+  $('[data-buy-signin-body]')!.textContent = words.body;
+  $('[data-buy-signin-code]')!.textContent = `${kind} · ${code}`;
+  $<HTMLButtonElement>('[data-buy-signin-retry]')!.hidden = !words.again;
+  show('signin-failed');
+}
+
+/** A first arrival, not a reload or a return through the back button: only then does this page act by itself. */
+function firstArrival(): boolean {
+  const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+  return nav?.type !== 'reload' && nav?.type !== 'back_forward';
 }
 
 /** The link back to where Unlock was pressed, carrying the file when it is still there. */
@@ -74,7 +123,7 @@ async function returnFromUnlock(): Promise<void> {
 
 export const BUY_SENTINEL = 'pdfiq-pro:buy';
 
-type View = 'working' | 'out' | 'owned' | 'ready' | 'loading' | 'confirming' | 'done' | 'failed';
+type View = 'working' | 'out' | 'signin-failed' | 'owned' | 'ready' | 'loading' | 'confirming' | 'done' | 'failed';
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel);
 
@@ -124,7 +173,7 @@ function removeFrame(): void {
   removeCover();
 }
 
-function pay(): void {
+function pay(lead = ''): void {
   const session = signedIn();
   if (!__PDFIQ_SALE__ || !session) {
     show('out');
@@ -132,7 +181,7 @@ function pay(): void {
   }
   removeFrame();
   show('loading');
-  coverWith("Opening Paddle's secure checkout…");
+  coverWith(`${lead}Opening Paddle's secure checkout…`);
 
   frame = document.createElement('iframe');
   frame.src = `${__PDFIQ_CHECKOUT_ORIGIN__}/`;
@@ -218,14 +267,68 @@ async function confirmHere(txn: string): Promise<void> {
 }
 
 async function start(): Promise<void> {
-  const session = signedIn();
-  if (!__PDFIQ_SALE__ || !session) {
+  if (!__PDFIQ_SALE__) {
     show('out');
     return;
   }
-  await readUnlock();
+  $<HTMLButtonElement>('[data-buy-signin]')!.addEventListener('click', signIn);
+  $<HTMLButtonElement>('[data-buy-signin-retry]')!.addEventListener('click', signIn);
+
+  // Back from Google's sign-in, which returns here (src/pro/auth.ts): finish it on this page.
+  let session = signedIn();
+  let backFromGoogle = false;
+  if (/(^#|&)(id_token|error)=/.test(location.hash)) {
+    show('working');
+    try {
+      const completed = await completeSignIn(location.hash);
+      if (completed) {
+        session = completed;
+        backFromGoogle = true;
+      }
+    } catch (e) {
+      await readUnlock(true);
+      offerWayBack();
+      signInFailed(e);
+      return;
+    }
+  }
+  await readUnlock(backFromGoogle);
+  offerWayBack();
+
+  if (!session) {
+    show('out');
+    // Unlock was the decision to buy, and buying needs an account: go straight to Google, once.
+    if (unlock && firstArrival()) {
+      $('[data-buy-out-note]')!.textContent = 'Taking you to Google to sign in. You come straight back here.';
+      $('[data-buy-out-note]')!.hidden = false;
+      signIn();
+    }
+    return;
+  }
+
+  // Just signed in: this browser has no word yet on whether the account owns Pro (bought on the app, or on another
+  // browser). Ask before offering to sell it again.
+  let owned = proAccount() !== null;
+  // Whether this page may open the checkout by itself. Not after a sign-in whose ownership check got no clear
+  // answer (offline, a server error): the account might already own Pro, and an automatic checkout would invite
+  // paying twice. Pay stays on the page, with the reason.
+  let mayOpen = true;
+  if (backFromGoogle && !owned) {
+    show('working');
+    const checked = await refreshEntitlement(session.idToken, session.uid);
+    owned = checked.state === 'owned';
+    if (checked.state === 'offline' || checked.state === 'unavailable') {
+      mayOpen = false;
+      const note = $('[data-buy-unchecked]')!;
+      note.textContent = checked.state === 'offline'
+        ? 'You are offline, so whether this account already owns Pro could not be checked. If you bought it before, open your account page with a connection instead of paying again.'
+        : 'Whether this account already owns Pro could not be checked just now. If you bought it before, open your account page later instead of paying again.';
+      note.hidden = false;
+    }
+  }
+
   // Already owned on this browser: nothing to buy, and nothing should suggest otherwise.
-  if (proAccount()) {
+  if (owned) {
     show('owned');
     await returnFromUnlock();
     return;
@@ -237,19 +340,14 @@ async function start(): Promise<void> {
     return;
   }
   $('[data-buy-email]')!.textContent = session.email;
-  $<HTMLButtonElement>('[data-buy-pay]')!.addEventListener('click', pay);
-  $<HTMLButtonElement>('[data-buy-retry]')?.addEventListener('click', pay);
+  $<HTMLButtonElement>('[data-buy-pay]')!.addEventListener('click', () => pay());
+  $<HTMLButtonElement>('[data-buy-retry]')?.addEventListener('click', () => pay());
   show('ready');
   if (unlock) {
-    // Closing the checkout without paying lands here: the way back, with the file, is on the page.
-    const back = $('[data-buy-back]')!;
-    const a = Object.assign(document.createElement('a'), { href: backHref(unlock.file), textContent: `Back to ${unlock.page}` });
-    back.replaceChildren(a, unlock.file ? ` with ${unlock.name}, without buying.` : ', without buying.');
-    back.hidden = false;
     // Unlock was the decision to buy: open the checkout now rather than asking for a second press. Not on a
-    // reload, so closing the checkout and reloading does not throw it open again.
-    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
-    if (nav?.type !== 'reload' && nav?.type !== 'back_forward') pay();
+    // reload, so closing the checkout and reloading does not throw it open again. Arriving back from Google counts
+    // as a first arrival: that journey started with Unlock too.
+    if (firstArrival() && mayOpen) pay(backFromGoogle ? `Signed in as ${session.email}. ` : '');
   }
 }
 

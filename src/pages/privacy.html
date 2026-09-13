@@ -142,11 +142,13 @@
          language. It is served from this domain, downloaded once, and then cached. That download
          is a request for a file; it does not carry any part of your document, and no other tool on
          this site fetches anything at all after the page has loaded.</p>
-      <!--PRO--><p>Signing in for Pro is the other exception, and it happens on the account page<!--NOSALE--> only<!--/NOSALE-->: that
+      <!--PRO--><!--NOSALE--><p>Signing in for Pro is the other exception, and it happens on the account page only: that
          page contacts {{authIdentityHost}} when you sign in, and {{authTokenHost}} when it renews a sign-in
-         that is about to expire.<!--SALE--> The purchase page may also renew one there, to confirm a purchase
-         you have just made.<!--/SALE--> Both are Google's, and both are described under <a href="#if-you-sign-in">If
-         you sign in</a>.</p><!--/PRO-->
+         that is about to expire.<!--/NOSALE--><!--SALE--><p>Signing in for Pro is the other exception, and it happens
+         on the account page and the purchase page only: each contacts {{authIdentityHost}} when you sign in there,
+         and {{authTokenHost}} when it renews a sign-in that is about to expire (the purchase page does so only to
+         confirm a purchase you have just made).<!--/SALE--> Both are Google's, and both are described under
+         <a href="#if-you-sign-in">If you sign in</a>.</p><!--/PRO-->
 
       <h3>Server logs</h3>
       <p>The site is static files served by Cloudflare Pages. Asking for a web page necessarily
@@ -161,7 +163,8 @@
       <p>An account exists only for Pro. None of the {{webToolCount}} tools needs one, and signing in changes
          nothing about how they work. It is the same account the Android app uses: signing in here or in
          the app reaches the same record.</p>
-      <p><strong>What happens.</strong> The <a href="/account/">account page</a> sends you to Google's own
+      <p><strong>What happens.</strong> The <a href="/account/">account page</a><!--SALE-->, or the purchase page if you
+         sign in from there,<!--/SALE--> sends you to Google's own
          sign-in page and asks Google for {{authScope}} only: your email address and a Google account
          identifier, not your name or photo. Google sends you back with a signed statement of those two
          things. The page hands that statement to {{authIdentityHost}} &mdash; Firebase Authentication, the
