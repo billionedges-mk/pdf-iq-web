@@ -223,6 +223,15 @@ injects Retain analytics (public.profitwell.com) in every environment except san
 
 ## Things that are not what they look like
 
+- **The Firebase Authentication users are closed-test testers, not unknown accounts.** Investigated 13 September 2026:
+  18 accounts on pdfiq-b14cc. 17 are Google sign-ins with ordinary verified Gmail addresses, one to three a day from 28 August,
+  almost all signing in once. That is closed testers using Summarise, confirmed by the owner against the tester list; two
+  from 13 September are Maneesh's own. Bilva uses its own Firebase project (bilva-27f0e), not this one.
+  The 18th is an email/password account (@billionedges.com, created 28 August 07:45 UTC, never signed in, unverified).
+  Neither the app nor the website has code that creates email/password accounts, and how it was made is not known. It is
+  **kept on purpose** as the only evidence of that. Email/Password sign-in was disabled the same day, so it cannot be used.
+  Delete it only once someone remembers creating it.
+
 - **Firebase App Check's Authentication metrics are not a signal.** They show roughly 85% of Auth
   calls unverified. The app's backend checks every request with `verifyIdToken(token, true)`, whose
   revocation check is a server-side call to Auth that carries no App Check token, and debug builds
