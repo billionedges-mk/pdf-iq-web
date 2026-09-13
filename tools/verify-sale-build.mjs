@@ -61,6 +61,8 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   ok(!existsSync(join(ROOT, 'dist/pro/buy/index.html')), `${label}: no /pro/buy/`);
   const found = hits('dist', /paddle\.com|Paddle\.Checkout|pdfiq-pro:buy|\/pro\/buy\/|pdfiq-checkout|test_[0-9a-z]{20}/);
   ok(found.length === 0, `${label}: no Paddle, checkout message, buy module, /pro/buy/ link or token in any file${found.length ? ` — ${found.slice(0, 4).join(', ')}` : ''}`);
+  const privacyOff = readFileSync(join(ROOT, 'dist/privacy/index.html'), 'utf8');
+  ok(!privacyOff.includes('id="checkout"') && !privacyOff.includes('m.stripe.com') && privacyOff.includes('no third-party script of any kind on this site'), `${label}: /privacy has no checkout section and keeps its original sentence`);
 }
 
 // ---------------------------------------------------------------- site: selling (sandbox)
@@ -71,7 +73,11 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   ok(b.status === 0, 'site sale build: builds');
   const page = existsSync(join(ROOT, 'dist/pro/buy/index.html')) ? readFileSync(join(ROOT, 'dist/pro/buy/index.html'), 'utf8') : '';
   ok(page.includes('Buy Pro') && page.includes('SANDBOX'), '/pro/buy/ exists, with the sandbox banner');
-  ok(hits('dist', /cdn\.paddle\.com|Paddle\.Initialize|Paddle\.Checkout/).length === 0, "no Paddle script, host or call in any file on the site's origin");
+  const runnable = files('dist').map(([n, t]) => [n, n.endsWith('.js') ? t : [...t.matchAll(/<script\b[^>]*>[\s\S]*?<\/script>|<script\b[^>]*>/g)].map((m) => m[0]).join('\n')]);
+  ok(runnable.filter(([, t]) => /cdn\.paddle\.com|Paddle\.Initialize|Paddle\.Checkout/.test(t)).length === 0, "no Paddle script, host or call in any script on the site's origin");
+  const privacy = readFileSync(join(ROOT, 'dist/privacy/index.html'), 'utf8');
+  ok(privacy.includes('id="checkout"') && privacy.includes('pro-sale.pdf-iq-checkout.pages.dev') && privacy.includes('m.stripe.com'), '/privacy carries the checkout section, naming this build\'s checkout address and Stripe');
+  ok(!/\{\{|<!--\/?(SALE|NOSALE)-->/.test(privacy), '/privacy: no token or sale marker survived');
   ok(hits('dist', new RegExp(TOKEN)).length === 0, "the client token is nowhere on the site's origin");
   const withOrigin = hits('dist', new RegExp(CHECKOUT.replace(/[.]/g, '\\.'))).filter((f) => f !== '_headers');
   ok(withOrigin.length === 1 && /^assets\/buy-/.test(withOrigin[0]), `the checkout origin is named only in the buy bundle (${withOrigin.join(', ')})`);
@@ -94,7 +100,9 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
 {
   const b = checkout({});
   ok(b.status === 0, 'checkout, no flags: builds');
-  ok(hits('dist-checkout', /paddle|test_[0-9a-z]{20}/i).length === 0, 'checkout, no flags: nothing of Paddle in any file');
+  ok(hits('dist-checkout', /paddle\.com|Paddle\.Initialize|test_[0-9a-z]{20}/).length === 0, 'checkout, no flags: no Paddle host, call or token in any file');
+  const idx = readFileSync(join(ROOT, 'dist-checkout/index.html'), 'utf8');
+  ok(/href="https:\/\/pdf-iq\.com\/terms\/"/.test(idx) && /\/privacy\/#checkout/.test(idx) && /\/refunds\//.test(idx) && !/<main class="standalone" hidden/.test(idx), 'checkout, no flags: shows what it is, with links to terms, privacy and refunds');
   ok(!readdirSync(join(ROOT, 'dist-checkout')).some((f) => f.endsWith('.js')), 'checkout, no flags: no script at all');
   ok(/frame-ancestors 'none'/.test(readFileSync(join(ROOT, 'dist-checkout/_headers'), 'utf8')), 'checkout, no flags: may not be framed by anyone');
 }
@@ -114,6 +122,9 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   ok(new RegExp(`frame-ancestors ${SITE.replace(/[.]/g, '\\.')}(;|$)`).test(policy), 'policy: framed by the site origin and nothing else');
   ok(!/profitwell/i.test(headers) && !/X-Frame-Options/i.test(headers), 'policy: no ProfitWell host, and no X-Frame-Options to contradict frame-ancestors');
   ok(/noindex/.test(readFileSync(join(ROOT, 'dist-checkout/index.html'), 'utf8')) && /Disallow: \//.test(readFileSync(join(ROOT, 'dist-checkout/robots.txt'), 'utf8')), 'not for search engines');
+  const idx = readFileSync(join(ROOT, 'dist-checkout/index.html'), 'utf8');
+  ok(idx.includes(`href="${SITE}/terms/"`) && idx.includes(`${SITE}/privacy/#checkout`) && idx.includes(`${SITE}/refunds/`), "the standalone text links to the site's terms, privacy and refunds");
+  ok(/<main class="standalone" hidden/.test(idx), 'and starts hidden, so nothing flashes inside the frame');
 }
 
 {

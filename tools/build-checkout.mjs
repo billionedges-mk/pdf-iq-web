@@ -52,6 +52,19 @@ if (SELLING) {
   scriptTag = `<script type="module" src="/${name}"></script>`;
 }
 
+// Opened directly — by Paddle's domain review, or anyone typing the address — the page says what this
+// address is and links to the site's terms, privacy notice and refund policy, which Paddle's website approval
+// asks for. In a build that sells, it starts hidden and the script reveals it only when the page is not inside
+// the site's frame, so nothing flashes over the purchase page. A build that is not selling has no script and
+// shows it plainly.
+const LEGAL = CONFIG?.siteOrigin || 'https://pdf-iq.com';
+const standalone = `<main class="standalone"${SELLING ? ' hidden' : ''}>
+  <p><strong>pdf-iq checkout</strong></p>
+  <p>This address runs Paddle's checkout for Pro, bought on <a href="${LEGAL}/pro/">pdf-iq</a>. It keeps nothing
+  and does nothing on its own.</p>
+  <p><a href="${LEGAL}/terms/">Terms</a> · <a href="${LEGAL}/privacy/#checkout">Privacy</a> · <a href="${LEGAL}/refunds/">Refunds</a></p>
+</main>`;
+
 writeFileSync(join(OUT, 'index.html'), `<!doctype html>
 <html lang="en">
 <head>
@@ -60,10 +73,10 @@ writeFileSync(join(OUT, 'index.html'), `<!doctype html>
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="normal">
 <title>Checkout — pdf-iq</title>
-<style>html,body{margin:0;background:transparent}</style>
+<style>html,body{margin:0;background:transparent}.standalone{font:16px/1.6 system-ui,sans-serif;max-width:560px;margin:48px auto;padding:0 20px;color:#1E2A38}.standalone a{color:#1E2A38}</style>
 ${scriptTag}
 </head>
-<body></body>
+<body>${standalone}</body>
 </html>
 `);
 
@@ -98,7 +111,7 @@ writeFileSync(join(OUT, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
 // may use no storage of any kind, because this origin's promise is that it keeps nothing.
 const files = readdirSync(OUT).map((f) => [f, readFileSync(join(OUT, f), 'utf8')]);
 if (!SELLING) {
-  const leaked = files.filter(([, t]) => /paddle|test_[0-9a-f]{20}|live_[0-9a-f]{20}/i.test(t)).map(([f]) => f);
+  const leaked = files.filter(([, t]) => /paddle\.com|Paddle\.Initialize|test_[0-9a-f]{20}|live_[0-9a-f]{20}/.test(t)).map(([f]) => f);
   if (leaked.length) throw new Error(`the checkout is not selling, but Paddle reached ${leaked.join(', ')}`);
 } else {
   const js = files.filter(([f]) => f.endsWith('.js'));

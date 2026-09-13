@@ -38,6 +38,15 @@ place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
   the `live_` token, the live price id, `PDFIQ_SITE_ORIGIN=https://pdf-iq.com`,
   `PDFIQ_CHECKOUT_ORIGIN=https://checkout.pdf-iq.com`.
 - pdf-iq-web: `PDFIQ_CHECKOUT_ORIGIN=https://checkout.pdf-iq.com` (and no client token: the site never uses it).
+- **Paddle live domain approval** (Paddle → Website approval → Domain approval, /request-domain-approval; separate
+  from the default payment link). Paddle's own note: "Subdomains are not approved by default and must be submitted and
+  approved individually." So checkout.pdf-iq.com needs its own approval; it does not inherit pdf-iq.com's. In sandbox
+  both Preview hosts were approved instantly on 13 September 2026. Live may be reviewed.
+- **The approval requirement** is that the website links to terms of service, privacy notice and refund policy.
+  pdf-iq.com does. The checkout origin, opened directly, shows a short statement of what the address is, with links to
+  the site's terms, privacy (the checkout section) and refunds (tools/build-checkout.mjs), in case a reviewer visits it.
+  Whether live review accepts a checkout-only subdomain is unknown until it is submitted: submit it well before the
+  day, not on it.
 - Paddle live: approve **both** pdf-iq.com and checkout.pdf-iq.com. Paddle's checkout frame sends a
   report-only frame-ancestors policy naming its approved domain; with the checkout origin framed by the site,
   both are ancestors. It only reports today; if Paddle enforces it, an unapproved ancestor breaks checkout.
@@ -91,3 +100,8 @@ place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
   shows 0 bytes sent, because it cannot see bodies the browser posts itself. Approving the site's domain in
   Paddle should remove the violation, and with it the report. Measure again after approving, before the
   /privacy wording names or omits it.
+
+- **Approval does not remove the Sentry report** (re-measured 13 September 2026 after both Preview hosts were
+  approved). Paddle's report-only frame-ancestors still names only the checkout origin, so the site above it is still a
+  violation. The report's URL fields name only Paddle's frame (document-uri and blocked-uri are
+  sandbox-buy.paddle.com), and its referrer field is not a URL. /privacy names the report as a result.

@@ -74,6 +74,7 @@ const setCookies = [];    // { phase, host, names }
 const consoleLines = [];  // CSP refusals and Paddle errors
 const frames = new Map(); // sessionId -> { url, type }
 const byRequest = new Map();
+const violationReports = []; // { phase, to, fields }
 
 const bare = (u) => { try { const x = new URL(u); return x.origin + x.pathname; } catch { return String(u).split(/[?#]/)[0]; } };
 const hostPath = (u) => { try { const x = new URL(u); return { host: x.host, path: x.pathname }; } catch { return { host: u.slice(0, 40), path: '' }; } };
@@ -86,6 +87,20 @@ listeners.push((m) => {
     const row = { phase, frame: bare(frames.get(s)?.url ?? '?'), type: m.params.type ?? '', host, path, blocked: '' };
     byRequest.set(`${s}:${m.params.requestId}`, row);
     requests.push(row);
+    // Policy-violation reports the browser posts on a policy's behalf. They are not our requests, so the
+    // footer counter cannot see their bodies; record the report's field names and its URL-valued fields,
+    // which is what says what the report tells its recipient about this page.
+    if (/\/security\/|csp-report|report-uri/i.test(m.params.request.url) && m.params.request.postData) {
+      let fields = {};
+      try {
+        const body = JSON.parse(m.params.request.postData);
+        const r = body['csp-report'] ?? body.body ?? body;
+        fields = Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === 'string' && /^https?:/.test(v) ? v.split(/[?#]/)[0] : typeof v]));
+      } catch {
+        fields = { unparsed: m.params.request.postData.length + ' bytes' };
+      }
+      violationReports.push({ phase, to: `${host}${path}`, fields });
+    }
   } else if (m.method === 'Network.loadingFailed') {
     const row = byRequest.get(`${s}:${m.params.requestId}`);
     if (row) row.blocked = m.params.blockedReason ?? m.params.errorText ?? 'failed';
@@ -224,6 +239,7 @@ const report = {
   storage: [...storageArrival, ...storageOpen, ...storagePay],
   console: consoleLines,
   footerReadout: readout,
+  violationReports,
   profitwellSeen: requests.some((r) => /profitwell/i.test(r.host)),
 };
 writeFileSync(OUT, JSON.stringify(report, null, 2));
@@ -247,6 +263,8 @@ const leaked = [...seenOrigins].some(([o, st]) => o !== origin && st.signInReada
 const tokenKeys = [...seenOrigins].some(([, st]) => (st.messages ?? []).some((m) => Array.isArray(m.keys) && m.keys.some((k) => /token/i.test(k))));
 const anyMessages = [...seenOrigins].some(([o, st]) => o !== origin && (st.messages ?? []).some((m) => m.from === origin));
 console.log(`  → ${leaked ? 'BOUNDARY BROKEN: a frame outside the site read the sign-in' : 'no frame outside the site could read the sign-in'}; ${!anyMessages ? 'NO MESSAGE FROM THE SITE WAS RECORDED, so what crossed the boundary is unknown' : tokenKeys ? 'A MESSAGE CARRIED A TOKEN FIELD' : 'no message carried a token field'}`);
+console.log(`\nPolicy-violation reports the browser sent (${violationReports.length}):`);
+for (const v of violationReports) console.log(`  ${v.phase}  to ${v.to}\n    ${JSON.stringify(v.fields)}`);
 console.log(`\nProfitWell / Retain requested: ${report.profitwellSeen ? 'YES' : 'no'}`);
 console.log(`Console lines about policy or Paddle: ${consoleLines.length}`);
 console.log(`Final page state: ${finalState?.state}${finalState?.reference ? `, reference ${finalState.reference}` : ''}`);

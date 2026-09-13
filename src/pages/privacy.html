@@ -46,10 +46,17 @@
       <p><strong>No account for the tools.</strong> None of them asks you to sign in.</p>
       <!--PRO--><p><strong>An account, only if you sign in for Pro.</strong> It is described in full under
          <a href="#if-you-sign-in">If you sign in</a>, below.</p><!--/PRO-->
-      <p><strong>No cookies.</strong> We set none, for any purpose, including analytics.</p>
+      <!--NOSALE--><p><strong>No cookies.</strong> We set none, for any purpose, including analytics.</p>
       <p><strong>No analytics and no tracking.</strong> There is no analytics SDK, no tag manager,
          no pixel and no third-party script of any kind on this site. Nothing here reports back
-         what you did.</p>
+         what you did.</p><!--/NOSALE--><!--SALE--><p><strong>No cookies.</strong> We set none, for any purpose, including analytics. Using any
+         of the {{webToolCount}} tools, or reading any page, sets no cookie at all. The one place a cookie can
+         appear is Paddle's checkout, after you press Pay; it is described under
+         <a href="#checkout">If you buy Pro: the checkout</a>.</p>
+      <p><strong>No analytics and no tracking.</strong> There is no analytics SDK, no tag manager,
+         no pixel and no third-party script on any page of this site. Paddle's checkout script runs only at a
+         separate address, {{checkoutHost}}, and only after you press Pay. Nothing here reports back what
+         you did.</p><!--/SALE-->
       <p><strong>No third-party requests from the tools.</strong> Fonts are served from this domain rather than a
          font CDN, so loading a page does not tell anyone else that you visited.</p>
       <p><strong>Only if you choose it:</strong> the form on
@@ -161,12 +168,64 @@
          is switched off or deleted. That is why this site allows scripts from its own address and nowhere
          else &mdash; the <code>script-src 'self'</code> rule in its content security policy &mdash; and loads
          no third-party script on any page: the only code that can read it is this site's own. If that ever
-         changed, this storage would have to change with it. None of this uses a cookie.</p>
+         changed, this storage would have to change with it. None of this uses a cookie.<!--SALE--> Paddle's checkout,
+         which does run a third-party script, is kept at a separate address for exactly this reason: nothing
+         running there can read what this site stores.<!--/SALE--></p>
       <p><strong>Signing out</strong>, on the account page, deletes the sign-in from this browser. It does not
          sign you out of the Android app or of Google. To end every sign-in on every device, write to
          <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> and we will switch the account off; to
          remove it entirely, see <a href="#deleting-your-account">Deleting your account</a>.</p>
       <!--/PRO-->
+      <!--SALE-->
+      <h3 id="checkout">If you buy Pro: the checkout</h3>
+      <p><strong>Nothing is loaded or set before you press Pay.</strong> The purchase page is an ordinary page of
+         this site until then: it makes no request to anyone else, sets no cookie, and the counter at its foot
+         reads zero third-party requests, as on every other page.</p>
+      <p><strong>Pressing Pay opens Paddle's checkout, at a separate address.</strong> Paddle is the merchant of
+         record for Pro: they take the payment and handle any tax, and your card details go to Paddle, never to
+         us. The checkout runs at {{checkoutHost}}, which the purchase page places over itself. It is a different
+         address from this site on purpose. Your browser keeps each address's storage apart, so nothing running
+         there, Paddle's script included, can read the sign-in this site stores. The purchase page hands it two
+         things only, your account identifier and email address, so that the purchase is recorded against your
+         account. The checkout address stores nothing itself. Paddle's script loads there from
+         {{paddleScriptHost}}, and Paddle's checkout opens in a frame from {{paddleCheckoutHost}}.</p>
+      <p><strong>What Paddle's checkout loads is Paddle's decision, not ours.</strong> Our security policies
+         decide what the purchase page and the checkout address may load. Once Paddle's checkout frame is open,
+         what it loads is governed by Paddle. We measured it and set out what we found, but we do not control it,
+         and it can change without any change here. The counter at the foot of the purchase page counts the
+         checkout address and the report described below; it cannot see anything inside Paddle's frame.</p>
+      <p><em>Measured on Paddle's test checkout on 13 September 2026, both opening the checkout and completing a
+         test payment. The live checkout has not been measured yet; this section is checked against it before Pro
+         goes on sale.</em></p>
+      <p><strong>When the checkout opens</strong>, Paddle's frame:</p>
+      <ul>
+        <li><strong>loads Stripe</strong>, from js.stripe.com, m.stripe.network and m.stripe.com. Stripe sets a
+            cookie named <code>m</code> on m.stripe.com that lasts about 13 months. Stripe describes m.stripe.com
+            as the address its script sends fraud-prevention signals to
+            (<a href="https://docs.stripe.com/disputes/prevention/advanced-fraud-detection">Stripe's description</a>).</li>
+        <li><strong>sets a Cloudflare cookie</strong> named <code>__cf_bm</code> on paddle.com, which Cloudflare's
+            bot protection uses and which expires after 30 minutes of inactivity
+            (<a href="https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/">Cloudflare's description</a>).</li>
+        <li><strong>loads Localize</strong>, from global.localizecdn.com;</li>
+        <li><strong>sends requests to Sentry</strong>, at ingest.sentry.io;</li>
+        <li><strong>sends events to Paddle's own checkout services</strong>, at paddle.com addresses;</li>
+        <li><strong>loads fonts from Google Fonts</strong>, at fonts.googleapis.com and fonts.gstatic.com.</li>
+      </ul>
+      <p><strong>When you pay</strong>, it also sends requests to r.stripe.com, another Stripe address; loads an
+         image from www.gstatic.com, a Google address; and loads card-brand images from buy.paddle.com and more of
+         Stripe's scripts. Paying sets no cookie beyond the two above.</p>
+      <p><strong>A report about Paddle's frame.</strong> Paddle's checkout frame carries a policy that expects only
+         the checkout address above it. The purchase page is above that as well, so when the checkout opens your
+         browser sends a short report to Sentry, the address Paddle's policy names. We read what it contains: it
+         names Paddle's own checkout frame, not the page you were on. Your browser sends it on Paddle's behalf,
+         which is why the counter shows it as a third-party request but cannot count its bytes.</p>
+      <p>These cookies are set only because you asked to pay, and they are needed for that payment to go through.
+         That is why there is no cookie banner: declining them would mean not paying, and not pressing Pay sets
+         none.</p>
+      <p><a href="https://www.paddle.com/legal/privacy">Paddle's privacy notice</a> is addressed to people who buy
+         from Paddle and sets out how Paddle handles their personal data. It does not list the services its
+         checkout loads.</p>
+      <!--/SALE-->
 
       <!-- ================================================================ app -->
       <h2>Part two — the PDFiq Android app</h2>
@@ -302,7 +361,8 @@
             <a href="#diagnostics">Diagnostics and analytics</a>. Never receives your document.</li>
         <li><strong>Paddle</strong> — payment processing for the one-time Pro purchase, which is
             made on pdf-iq.com rather than in the app. Will receive, once Pro is on sale: your payment
-            details, handled entirely by Paddle as merchant of record.</li>
+            details, handled entirely by Paddle as merchant of record.<!--SALE--> Paddle's checkout also loads
+            services of its own choosing, listed under <a href="#checkout">the checkout</a>.<!--/SALE--></li>
       </ul>
       <p>We may also disclose information where we are legally required to, or where it is
          necessary to protect our rights or the safety of others.</p>

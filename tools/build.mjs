@@ -13,7 +13,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
-import { applyProBlocks } from './pro-blocks.mjs';
+import { applyProBlocks, applySaleBlocks } from './pro-blocks.mjs';
 import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
 import { AUTH } from './auth-config.mjs';
 import { PADDLE } from './paddle-config.mjs';
@@ -645,7 +645,7 @@ async function build() {
       console.warn(`  (skip) no page body for /${page.slug} — expected src/pages/${page.slug || 'index'}.html`);
       continue;
     }
-    let body = applyProBlocks(readFileSync(file, 'utf8'), PRO, file);
+    let body = applyProBlocks(applySaleBlocks(readFileSync(file, 'utf8'), Boolean(PADDLE?.page), file), PRO, file);
     // The page supplies the grid container; this fills it. Asserting the marker was
     // actually consumed, rather than assuming replace() matched, is the same discipline
     // as grepping the built output — a replace that hits nothing returns success.
@@ -726,7 +726,7 @@ async function build() {
   {
     const file = join(ROOT, 'src/pages/404.html');
     if (!existsSync(file)) throw new Error('src/pages/404.html is missing — every unknown URL would fall back to the homepage');
-    let body = applyProBlocks(readFileSync(file, 'utf8'), PRO, file);
+    let body = applyProBlocks(applySaleBlocks(readFileSync(file, 'utf8'), Boolean(PADDLE?.page), file), PRO, file);
     body = body.replace(/[ 	]*<!--TOOL_GRID-->/, toolGrid());
     if (body.includes('<!--TOOL_GRID-->')) throw new Error('TOOL_GRID marker survived substitution in 404.html');
     body = substituteTokens(body, file);
@@ -797,7 +797,10 @@ async function build() {
     const name = String(rel);
     if (!TEXTLIKE.test(name)) continue;
     const text = readFileSync(join(OUT, name), 'utf8');
-    if (/cdn\.paddle\.com|Paddle\.Initialize|Paddle\.Checkout|test_[0-9a-f]{20}|live_[0-9a-f]{20}/.test(text)) {
+    // What can run: script files, and script tags in pages. Prose may name Paddle's hosts (/privacy does,
+    // describing the checkout); the first version of this guard refused the privacy page for saying so.
+    const runnable = name.endsWith('.js') ? text : [...text.matchAll(/<script\b[^>]*>[\s\S]*?<\/script>|<script\b[^>]*>/g)].map((m) => m[0]).join('\n');
+    if (/cdn\.paddle\.com|Paddle\.Initialize|Paddle\.Checkout/.test(runnable) || /test_[0-9a-f]{20}|live_[0-9a-f]{20}/.test(text)) {
       throw new Error(`Paddle reached the site's own origin in ${name.split(/[\\/]/).join('/')}; it belongs on the checkout origin only`);
     }
   }

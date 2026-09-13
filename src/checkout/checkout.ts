@@ -91,7 +91,11 @@ window.addEventListener('message', (e: MessageEvent) => {
 
 if (window.parent !== window && __CHECKOUT_PADDLE_TOKEN__) {
   tell('pdfiq-checkout-ready');
-} else if (__CHECKOUT_PADDLE_TOKEN__ && new URLSearchParams(location.search).has('_ptxn')) {
+} else {
+  // Not inside the site's frame: show what this address is, with the site's legal links.
+  document.querySelector<HTMLElement>('.standalone')?.removeAttribute('hidden');
+}
+if (window.parent === window && __CHECKOUT_PADDLE_TOKEN__ && new URLSearchParams(location.search).has('_ptxn')) {
   // Opened directly from a Paddle payment link (this origin is Paddle's default payment link, which
   // Paddle requires to run Paddle.js). Paddle.js opens the transaction named in the URL by itself once
   // initialised; nothing from pdf-iq.com is involved, and the Retain guard applies all the same.

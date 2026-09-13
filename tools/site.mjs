@@ -3,7 +3,7 @@
 // specific tool from search, so there is no client-side router anywhere on this site.
 
 import { AUTH } from './auth-config.mjs';
-import { PADDLE } from './paddle-config.mjs';
+import { PADDLE, PADDLE_HOSTS } from './paddle-config.mjs';
 
 export const ORIGIN = 'https://pdf-iq.com';
 
@@ -322,6 +322,11 @@ export const FAQ = [
 ];
 
 export const TOKENS = {
+  // The checkout's address and Paddle's checkout host in this build, for the sale section of /privacy.
+  // Empty in a build that is not selling, where the sale blocks that use them are removed.
+  checkoutHost: PADDLE?.page ? new URL(PADDLE.checkoutOrigin).host : '',
+  paddleCheckoutHost: PADDLE?.page ? new URL(PADDLE_HOSTS[PADDLE.env].frame[0]).host : '',
+  paddleScriptHost: PADDLE?.page ? new URL(PADDLE_HOSTS[PADDLE.env].script[0]).host : '',
   proPrice: PRO.price,
   proTeamPrice: PRO.teamPrice,
 
