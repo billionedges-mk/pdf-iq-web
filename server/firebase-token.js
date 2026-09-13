@@ -55,7 +55,9 @@ export async function verifyFirebaseIdToken(token, {
   nowSeconds = Math.floor(Date.now() / 1000),
   getKeys = fetchGoogleKeys,
 } = {}) {
-  if (typeof token !== 'string') return { ok: false, reason: 'no-token' };
+  // An absent header arrives as an empty string. Found on the Preview deployment: it was reported
+  // as malformed-token, which sends whoever reads the log looking for a bad token that never existed.
+  if (typeof token !== 'string' || !token) return { ok: false, reason: 'no-token' };
   const parts = token.split('.');
   if (parts.length !== 3) return { ok: false, reason: 'malformed-token' };
 

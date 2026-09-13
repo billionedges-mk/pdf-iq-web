@@ -264,7 +264,8 @@ console.log('\n— entitlement');
   r = await ask(await idToken({ sub: 'uid-alice-new' }));
   ok(r.body.pro === false && r.body.revoked === true, 'after a full refund: pro false, revoked true, so the browser removes its token');
 
-  ok((await ask(null)).status === 401, 'no Authorization header: 401');
+  r = await ask(null);
+  ok(r.status === 401 && r.body.reason === 'no-token', 'no Authorization header: 401, reported as no token rather than a malformed one');
   ok((await ask(await idToken({ exp: now - 1 }))).status === 401, 'an expired ID token: 401');
   ok((await ask(await idToken(), { ...env, PDFIQ_SALE: 'false' })).status === 404, 'PDFIQ_SALE not "true": does not exist');
   ok((await ask(await idToken(), { ...env, PDFIQ_PADDLE_ENV: 'live' })).status === 503, 'an environment that is neither sandbox nor production: refuses');
