@@ -176,7 +176,11 @@ Nothing is on sale. `PDFIQ_SALE` is off everywhere except the Preview environmen
   with real SQL, HMACs and signatures; each check was proven by breaking the code it guards.
 - **Bindings and secrets** (Cloudflare → Settings, per environment): `PURCHASES` (D1, sandbox database
   in Preview), `PADDLE_WEBHOOK_SECRET`, `PDFIQ_PADDLE_PRICE_ID`, `PDFIQ_PADDLE_ENV` (`sandbox` |
-  `production`), `PDFIQ_ENTITLEMENT_PRIVATE_KEY`, `PDFIQ_SALE`.
+  `production`), `PDFIQ_ENTITLEMENT_PRIVATE_KEY`, `PDFIQ_SALE`, and for the purchase page
+  `PDFIQ_PADDLE_CLIENT_TOKEN` (`test_` in Preview). **A sale build also needs `PDFIQ_PRO=1`**: `PDFIQ_SALE` is read
+  both at build time (the purchase page) and at runtime (the Functions), and the build refuses a sale without
+  Pro. The first variable list written for this left `PDFIQ_PRO` out, and the Preview build failed on exactly
+  that refusal (13 September 2026).
 - **Keys:** `npm run entitlement:keys -- sandbox|production` writes the public key into
   `src/pro/entitlement-public-keys.json` and prints the private key once for the owner to paste into
   Cloudflare. The private key never goes into the repo or a conversation.
