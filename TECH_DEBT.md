@@ -404,7 +404,8 @@ discovered to disagree. Until then, treat the Firestore tier as dormant.
 
 ## What a Pro entitlement unlocks must be the same on both surfaces
 
-A web purchase covers the Android app (/pro/, /terms, /refunds). The entitlement token from
+A web purchase is meant to cover the Android app, and /pro/, /terms and /refunds say it will. **Today it does not**
+(see "The purchase page says web tools only" below). The entitlement token from
 `GET /api/entitlement` says only `pro: true` for a uid; each surface decides what that unlocks. So
 the two feature lists must be kept in agreement deliberately.
 
@@ -452,3 +453,20 @@ Accepted by the owner for now: carrying many files is a bigger change to the sto
 before Pro sells. **Revisit when Pro is selling.** Someone who batches twenty files and has to choose them again
 after paying will say so, and that complaint is the signal. The likely shape: one row per file under a shared
 Unlock key, with the same ten-minute limit and pick-up-and-delete, and a /privacy sentence saying so.
+
+## The purchase page says "web tools only" until the app honours a web purchase (13 September 2026)
+
+$14.99 covering both the website and the Android app was the pitch. Today a purchase covers one surface: the app cannot
+honour a web purchase until `BILLING_ENABLED` is split (see "What a Pro entitlement unlocks must be the same on both
+surfaces" above; approved in the app session, not built). /pro/buy/ said "covering both the web tools and the Android
+app", on the page where someone hands over money, and "covers the app" is a material part of what they think they are
+buying. The owner pulled it the same day.
+
+**Now:** /pro/buy/ reads "$14.99 once, for Pro in the web tools on this site. It does not unlock anything in the Android
+app." (`PRO.coversToday` in tools/site.mjs; verify:sale-build checks the page says it and no longer carries `PRO.covers`).
+
+**The sentence comes back when the app can honour a web purchase** (the flag split, shipped and walked on a device), and in
+the same change on all three places that make the promise: /pro/buy/, /pro/, and the homepage Pro panel (redesign stage
+4). Until then those two still carry `covers`, in a build that sells nothing, and the stage 5 claims sweep takes them.
+/terms ("the purchase covers both") and /refunds ("a one-time unlock covering both the website and the Android app")
+say the same, in future-tense policy text on production; they are the owner's to decide in the sweep.

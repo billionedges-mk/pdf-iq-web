@@ -145,6 +145,11 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   ok(zones.length === 0, `every tool's drop zone carries its own 42px mark${zones.length ? ` — not: ${zones.join(', ')}` : ''}`);
   ok(/\.site-main:has\(\[data-view="empty"\]:not\(\[hidden\]\)\) \[data-pro-strip\]\{display:none\}/.test(mergeHtml.replace(/\s+/g, ' ').replace(/ \{ /g, '{').replace(/; \}/g, '}').replace(/: /g, ':')) || mergeHtml.includes('[data-view="empty"]:not([hidden])) [data-pro-strip]'), 'the strip is hidden while the empty view shows, from the first paint');
   ok(siteJs.includes('"lock__what"') && siteJs.includes('Free instead: ') && siteJs.includes('"cta"'), 'the locked panel is the gold card: what, the action, "Free instead:"');
+  // Owner, 13 September 2026: the purchase page says what a purchase covers today. Until the app honours web purchases
+  // (BILLING_ENABLED split), not "and the Android app" (TECH_DEBT.md).
+  const buyFlat = readFileSync(join(ROOT, 'dist/pro/buy/index.html'), 'utf8').replace(/\s+/g, ' ');
+  ok(buyFlat.includes(`${PRO_OFFER.price} once, for Pro in the web tools on this site. It does not unlock anything in the Android app.`) && !buyFlat.includes(PRO_OFFER.covers),
+    '/pro/buy/ says a purchase covers the web tools only, and that it unlocks nothing in the Android app');
   const appPromise = [siteJs, readFileSync(join(ROOT, 'dist/pro/buy/index.html'), 'utf8')].some((t) => /or the app\?|any device you sign in on/.test(t));
   ok(!appPromise, 'nothing tells a buyer a purchase crosses to or from the Android app, or follows them to "any device"');
   // Signing in from a locked feature, and Batch saying its files stay behind.

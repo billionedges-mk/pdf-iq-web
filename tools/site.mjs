@@ -238,6 +238,13 @@ export const PRO = {
   /** Rendered next to the amount. Not "/mo" — there is no recurring charge to describe. */
   qualifier: 'once',
   covers: 'both the web tools and the Android app',
+  /**
+   * What a purchase covers TODAY, for the purchase page. The Android app cannot honour a web purchase until its
+   * BILLING_ENABLED flag is split (approved in the app session, not built), so `covers` above is an intention, not a
+   * shipped capability, and the page where someone pays says only what is true (owner, 13 September 2026). When the app
+   * honours web purchases, /pro/buy/, /pro/ and the homepage panel go back to `covers`: TECH_DEBT.md records it.
+   */
+  coversToday: 'Pro in the web tools on this site',
   features: [
     'Batch: compress, read or rotate many files at once',
     'Searchable-PDF output from OCR',
@@ -333,6 +340,7 @@ export const TOKENS = {
   proQualifier: PRO.qualifier,
   proCadence: PRO.cadence,
   proCovers: PRO.covers,
+  proCoversToday: PRO.coversToday,
   webToolCount: word(WEB_TOOLS.length),
   webToolCountCap: cap(word(WEB_TOOLS.length)),
   appToolCount: word(APP_TOOLS.length),

@@ -1431,3 +1431,25 @@ because the code is careful. Weakening the sentence to fit the code was the alte
 3. `verify:sale-build` fails if Paddle's script, a Paddle call or a client token reaches any file on the
    site's origin, and the build itself refuses it. Putting Paddle.js's address back into the site's buy
    bundle made the build fail by name.
+
+### 39. A claim about a second surface is checked on that surface, not planned for it
+
+On 13 September 2026 three authors had written "and the app" into sentences on the strength of an intention: the owner,
+in the redesign mockup ("this browser knows it, and so does the Android app when you sign in there"); the copy document
+behind `PRO.covers` ("covering both the web tools and the Android app", on /pro/buy/, where someone pays); and this
+session, in the entitlement work ("Bought it already, on another browser or the app?" and "follows you to any device you
+sign in on"). Each was true of the plan. None was true of the product: the website sees only Paddle purchases, and the
+app cannot honour one until its `BILLING_ENABLED` flag is split, which was approved and not built.
+
+Every check passed. Nothing on the website could fail on them, because the surface they describe is a different
+codebase. The sentences were found by reading them against the app's state, one at a time.
+
+**The check:**
+
+1. A sentence that names a second surface (the app, "any device", "both") is a claim about that surface. Before it
+   ships, confirm the capability on that surface as it is built and released today, not as it is approved or planned.
+2. If the capability is pending, the sentence says what is true now, and the place that makes it true later is recorded
+   with every page that must change back (TECH_DEBT.md, "The purchase page says web tools only").
+3. On a page where money changes hands, a pending capability is never described, even in the future tense.
+4. verify:sale-build fails if /pro/buy/ carries `PRO.covers`, or if the purchase path says "or the app?" or "any device you
+   sign in on".
