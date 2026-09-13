@@ -31,6 +31,7 @@ import { PRO } from './site.mjs';
 export const PRO_COPY = [
   {
     key: 'batch',
+    strip: 'batch',
     title: 'Batch',
     feature: 'Batch: compress, read or rotate many files at once',
     route: '/batch/',
@@ -44,6 +45,7 @@ export const PRO_COPY = [
   },
   {
     key: 'searchable',
+    strip: 'searchable PDFs',
     title: 'Searchable PDF',
     feature: 'Searchable-PDF output from OCR',
     route: '/ocr/',
@@ -56,6 +58,7 @@ export const PRO_COPY = [
   },
   {
     key: 'target',
+    strip: 'compress-to-a-size',
     title: 'Compress to a target',
     feature: 'Advanced compression — target a file size or a dpi',
     route: '/compress/',
@@ -68,6 +71,7 @@ export const PRO_COPY = [
   },
   {
     key: 'password',
+    strip: 'passwords',
     title: 'Password',
     feature: 'Password protect and password remove',
     route: '/password/',
@@ -84,4 +88,17 @@ export function proState() {
   return PRO.onSale
     ? 'Part of Pro.'
     : 'Part of Pro, which is not on sale yet, on either surface.';
+}
+
+/**
+ * The one line under every free tool's lede (approved by the owner, 13 September 2026): the tools are free, what Pro
+ * adds, and whether it can be bought. Built from `strip` above, in PRO_COPY's order, so a fifth feature reaches every
+ * tool page at once. It names a price only while Pro is on sale, and until then says so. Never shown to someone who
+ * owns Pro: after buying, the site stops selling (a Pro build removes it; production has no owners).
+ */
+export function proStrip() {
+  const names = PRO_COPY.map((c) => c.strip);
+  const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
+  const state = PRO.onSale ? `${PRO.price} ${PRO.qualifier}` : 'not on sale yet';
+  return `<p class="pro-strip" data-pro-strip>Free and unlimited, on your device. <strong>Pro</strong> adds ${list} &mdash; ${state}. <a href="/pro/">What Pro adds</a></p>`;
 }

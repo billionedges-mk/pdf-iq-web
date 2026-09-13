@@ -15,8 +15,13 @@
  *
  *   npm run verify:pro-copy
  */
-import { PRO } from './site.mjs';
-import { PRO_COPY, proState } from './pro-copy.mjs';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { PRO, TOOLS } from './site.mjs';
+import { PRO_COPY, proState, proStrip } from './pro-copy.mjs';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 let fails = 0;
 const ok = (cond, msg) => {
@@ -33,7 +38,7 @@ ok(missing.length === 0, `every Pro feature has copy${missing.length ? ` — not
 ok(extra.length === 0, `and nothing is described that Pro does not include${extra.length ? ` — ${extra.join('; ')}` : ''}`);
 
 // ---------------------------------------------------------------- every entry is complete
-const REQUIRED = ['key', 'title', 'feature', 'route', 'what', 'onDevice', 'instead'];
+const REQUIRED = ['key', 'strip', 'title', 'feature', 'route', 'what', 'onDevice', 'instead'];
 for (const entry of PRO_COPY) {
   const absent = REQUIRED.filter((f) => !entry[f] || String(entry[f]).trim().length < 3);
   ok(absent.length === 0, `${entry.key ?? '(no key)'} carries every field${absent.length ? ` — missing ${absent.join(', ')}` : ''}`);
@@ -56,6 +61,23 @@ if (!PRO.onSale) {
   ok(proState().includes('not on sale yet'), `and the state sentence says so: "${proState()}"`);
 } else {
   ok(!proState().includes('not on sale'), 'Pro is on sale, and the state sentence no longer says otherwise');
+}
+
+// ---------------------------------------------------------------- the strip under every free tool's heading
+// Every free tool page carries it once, straight after the heading block; it names every Pro feature; and it names a
+// price only while Pro is on sale. The line itself is proStrip(), so these read what ships, not a copy of it.
+{
+  const strip = proStrip();
+  ok(PRO_COPY.every((c) => strip.includes(c.strip)), `the strip names every Pro feature: ${PRO_COPY.map((c) => c.strip).join(', ')}`);
+  ok(PRO.onSale ? strip.includes(PRO.price) && !strip.includes('not on sale') : strip.includes('not on sale yet') && !strip.includes(PRO.price),
+    PRO.onSale ? 'on sale, the strip names the price' : 'not on sale, the strip says so and names no price');
+  ok(!SELLING.some((w) => strip.toLowerCase().includes(w)), 'the strip offers no purchase of its own: it links to /pro/ only');
+  for (const tool of TOOLS) {
+    const lines = readFileSync(join(ROOT, `src/pages/${tool.slug}.html`), 'utf8').split(/\r?\n/);
+    const at = lines.map((l, i) => (l.trim() === '{{proStrip}}' ? i : -1)).filter((i) => i >= 0);
+    ok(at.length === 1 && lines[at[0] - 1]?.trim() === '</div>' && lines[at[0] - 2]?.includes('page-lede'),
+      `/${tool.slug}/ carries the strip once, straight under its heading${at.length === 1 ? '' : ` (found ${at.length})`}`);
+  }
 }
 
 console.log(`\n${fails ? `${fails} FAILED` : 'the Pro copy is complete, matches the feature list, and sells nothing that is not for sale'}`);
