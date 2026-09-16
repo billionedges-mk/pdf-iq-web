@@ -677,57 +677,61 @@ textarea.askfield__input { resize: vertical; min-height: 104px; }
 .threeup h2 { margin: 0 0 5px; font-size: 16px; font-weight: 700; }
 .threeup p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-78); }
 
-/* ---------- homepage redesign ---------- */
+/* ---------- the homepage (redesign stage 4, pdf-iq-final.html 01) ---------- */
 
-/* The hero fills the first screen so the tool grid sits at the fold rather than below it.
-   Two corrections to the drawn version:
-   - the header is 52px measured, not the 92px the design assumed;
-   - svh rather than vh, because on mobile `100vh` counts browser chrome that later
-     collapses, which would push the grid below the fold on exactly the devices where
-     the fold matters most. vh stays as the fallback for browsers without svh. */
-.home-hero {
-  min-height: calc(100vh - var(--header-h, 52px));
-  min-height: calc(100svh - var(--header-h, 52px));
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: clamp(16px, 2.6vh, 32px);
-  padding: clamp(16px, 3vh, 38px) 0;
+/* The readout: a quiet line under the bar. Its first item is live instrumentation (src/entries/net.ts). */
+.home-readout {
+  list-style: none; margin: 18px auto 0; max-width: 920px; padding: 10px 16px;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px;
+  border: 1px solid #F2F2F2; border-radius: 20px; background: var(--panel);
+  font-size: 12.5px; color: var(--soft);
 }
-.home-eyebrow {
-  margin: 0; font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--amber-text);
-}
-.home-title {
-  margin: 10px 0 0; font-size: clamp(30px, 4.6vw, 50px); line-height: 1.04;
-  font-weight: 800; letter-spacing: -.032em; text-wrap: balance;
-}
-.home-sub {
-  margin: 14px 0 0; font-size: clamp(16px, 1.4vw, 18px); line-height: 1.5;
-  color: var(--ink-78); max-width: 62ch; text-wrap: pretty;
-}
-
-/* The readout has gone non-zero. The live dot stops signalling 'all clear'. */
+.home-readout li { display: flex; align-items: baseline; gap: 8px; }
+.home-proof__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); flex: 0 0 auto; transform: translateY(-1px); }
+.home-proof__dot--live { background: var(--amber); }
 .netreadout--dirty .home-proof__dot--live { animation: none; background: var(--ink); }
 
-.home-grid {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 30px;
-}
-@media (max-width: 1000px) { .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .home-grid { grid-template-columns: minmax(0, 1fr); } }
-.home-grid .toolcard { padding: 15px 16px 16px; }
+.home-hero { text-align: center; max-width: 760px; margin: 0 auto; padding: clamp(40px, 8vw, 68px) 0 0; }
+.home-title { margin: 0 0 16px; font-size: clamp(32px, 6vw, 46px); line-height: 1.06; font-weight: 600; letter-spacing: -.035em; text-wrap: balance; }
+.home-sub { margin: 0 auto; max-width: 50ch; font-size: clamp(16px, 2.2vw, 18px); line-height: 1.55; color: var(--soft); text-wrap: pretty; }
+
+.home-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-width: 920px; margin: clamp(28px, 5vw, 42px) auto 0; }
+@media (max-width: 860px) { .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Two columns on a phone: one column put the Pro panel about 1,000px down at 375px. */
+@media (max-width: 560px) { .home-grid { gap: 10px; } .home-grid .toolcard { padding: 15px 13px; } .home-grid .toolcard__note { font-size: 13px; } }
+@media (max-width: 339px) { .home-grid { grid-template-columns: minmax(0, 1fr); } }
+.home-grid .toolcard { border: 1px solid #E8E8E8; border-radius: 13px; background: #FFFFFF; padding: 20px 18px; }
+.home-grid .toolcard:hover { border-color: var(--ink-74); background: #FFFFFF; }
 .home-grid .toolcard__mark { width: 24px; height: 24px; }
-.home-grid .toolcard__name { margin-top: 11px; font-size: 17.5px; }
-.home-grid .toolcard__note { margin-top: 4px; font-size: 14px; line-height: 1.45; }
+/* Plain ink: gold is kept for Pro alone (owner, 13 September 2026). */
+.home-grid .toolcard__mark .tm-a { fill: currentColor; }
+.home-grid .toolcard__name { margin-top: 13px; font-size: 15.5px; font-weight: 600; letter-spacing: -.01em; }
+.home-grid .toolcard__note { margin-top: 5px; font-size: 13.5px; line-height: 1.5; color: var(--soft); }
 
-/* The app card is an outline rather than a filled card: it leaves the site. */
-.toolcard--outline { background: none; border-style: dashed; border-color: var(--line-strong); }
-.toolcard--outline:hover { border-color: var(--amber); background: none; }
-.toolcard--outline .toolcard__mark { opacity: .5; }
+/* The Pro panel: one panel, not four gold tiles, because Pro is a tier and not more product. */
+.pro-panel { max-width: 920px; margin: clamp(28px, 5vw, 40px) auto 0; }
+.pro-panel__in {
+  background: var(--gold-bg); border: 1px solid var(--gold-line); border-radius: 16px; padding: clamp(22px, 4vw, 28px) clamp(20px, 4vw, 30px);
+  display: grid; grid-template-columns: 1fr 1.15fr; gap: 34px; align-items: center;
+}
+@media (max-width: 860px) { .pro-panel__in { grid-template-columns: minmax(0, 1fr); gap: 22px; } }
+.pro-panel__who { margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.pro-panel__k { font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--gold-deep); }
+.pro-panel__amt { font-size: 15px; font-weight: 600; color: var(--gold); }
+.pro-panel__line { margin: 0 0 14px; font-size: 16.5px; line-height: 1.5; font-weight: 500; color: var(--gold-text); }
+.pro-panel__sub { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--gold-muted); }
+.pro-panel__list { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+.pro-panel__list li { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; line-height: 1.45; color: var(--gold-text); }
+.pro-panel__list svg { flex: 0 0 auto; margin-top: 3px; color: var(--gold); }
+.pro-panel__list b { font-weight: 600; color: var(--gold-deep); }
 
-.home-jump { margin: 0; font-family: var(--mono); font-size: 12.5px; }
-.home-jump a { text-decoration: none; color: var(--ink-76); }
-.home-jump a:hover { color: var(--amber-text); }
+.home-pitch {
+  max-width: 920px; margin: clamp(36px, 6vw, 46px) auto 0; padding-bottom: clamp(24px, 6vw, 60px);
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px;
+}
+@media (max-width: 860px) { .home-pitch { grid-template-columns: minmax(0, 1fr); } }
+.home-pitch h2 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+.home-pitch p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--soft); }
 
 .home-section { padding: clamp(28px, 5vw, 56px) 0 0; }
 .home-section--last { padding-bottom: clamp(36px, 5vw, 60px); }

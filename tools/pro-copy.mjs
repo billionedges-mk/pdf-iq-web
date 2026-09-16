@@ -32,6 +32,7 @@ export const PRO_COPY = [
   {
     key: 'batch',
     strip: 'batch',
+    panel: ['Batch', 'one operation across many files, a single zip back'],
     title: 'Batch',
     feature: 'Batch: compress, read or rotate many files at once',
     route: '/batch/',
@@ -46,6 +47,7 @@ export const PRO_COPY = [
   {
     key: 'searchable',
     strip: 'searchable PDFs',
+    panel: ['Searchable PDFs', 'OCR written back into the file, not just to text'],
     title: 'Searchable PDF',
     feature: 'Searchable-PDF output from OCR',
     route: '/ocr/',
@@ -59,6 +61,7 @@ export const PRO_COPY = [
   {
     key: 'target',
     strip: 'compress-to-a-size',
+    panel: ['Compress to a size', 'ask for 5 MB; it tries settings and measures'],
     title: 'Compress to a target',
     feature: 'Advanced compression — target a file size or a dpi',
     route: '/compress/',
@@ -72,6 +75,7 @@ export const PRO_COPY = [
   {
     key: 'password',
     strip: 'passwords',
+    panel: ['Passwords', 'add one to a copy, or take one off'],
     title: 'Password',
     feature: 'Password protect and password remove',
     route: '/password/',
@@ -101,4 +105,37 @@ export function proStrip({ selling = PRO.onSale, hidden = false } = {}) {
   const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
   const state = selling ? `${PRO.price} ${PRO.qualifier}` : 'not on sale yet';
   return `<p class="pro-strip" data-pro-strip${hidden ? ' hidden' : ''}>Free and unlimited, on your device. <strong>Pro</strong> adds ${list} &mdash; ${state}. <a href="/pro/">What Pro adds</a></p>`;
+}
+
+/**
+ * The homepage's Pro panel (redesign stage 4, pdf-iq-final.html 01): one panel, not a grid, because Pro is a tier and
+ * not four more tools. Price and reason on the left; the four capabilities as a checked list on the right, from
+ * PRO_COPY in its order. Built here, beside the strip, so the two cannot name different features or prices.
+ *
+ * What it says is what is true of the build (owner, 13 and 16 September 2026):
+ *  - a price only while Pro can be bought; until then "not on sale yet";
+ *  - what a purchase covers today, the web tools, and plainly not the Android app (TECH_DEBT.md, "The purchase page says
+ *    web tools only": this panel is one of the five places that change back together);
+ *  - never shown to someone who owns Pro. A Pro build writes it hidden and src/pro/strip.ts shows it only to someone who
+ *    does not own Pro, as with the strip. Production writes it visible, and has no owners.
+ */
+export function proPanel({ selling = PRO.onSale, hidden = false } = {}) {
+  const tick = '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const items = PRO_COPY.map((c) => `          <li>${tick}<span><b>${c.panel[0]}</b> &mdash; ${c.panel[1]}</span></li>`).join('\n');
+  const amount = selling ? `${PRO.price} ${PRO.qualifier}` : 'not on sale yet';
+  const terms = selling
+    ? `Bought once, not a subscription. It covers ${PRO.coversToday}, and does not unlock anything in the Android app.`
+    : `When it goes on sale: bought once, not a subscription, covering ${PRO.coversToday}. It will not unlock anything in the Android app.`;
+  return `<section class="pro-panel" aria-label="Pro" data-pro-strip${hidden ? ' hidden' : ''}>
+      <div class="pro-panel__in">
+        <div>
+          <p class="pro-panel__who"><span class="pro-panel__k">Pro</span> <span class="pro-panel__amt">${amount}</span></p>
+          <p class="pro-panel__line">The same tools &mdash; without doing it one file at a time.</p>
+          <p class="pro-panel__sub">${terms} Everything above stays free and unlimited.</p>
+        </div>
+        <ul class="pro-panel__list">
+${items}
+        </ul>
+      </div>
+    </section>`;
 }

@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRO, TOOLS } from './site.mjs';
-import { PRO_COPY, proState, proStrip } from './pro-copy.mjs';
+import { PRO_COPY, proState, proStrip, proPanel } from './pro-copy.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -38,7 +38,7 @@ ok(missing.length === 0, `every Pro feature has copy${missing.length ? ` — not
 ok(extra.length === 0, `and nothing is described that Pro does not include${extra.length ? ` — ${extra.join('; ')}` : ''}`);
 
 // ---------------------------------------------------------------- every entry is complete
-const REQUIRED = ['key', 'strip', 'title', 'feature', 'route', 'what', 'onDevice', 'instead'];
+const REQUIRED = ['key', 'strip', 'panel', 'title', 'feature', 'route', 'what', 'onDevice', 'instead'];
 for (const entry of PRO_COPY) {
   const absent = REQUIRED.filter((f) => !entry[f] || String(entry[f]).trim().length < 3);
   ok(absent.length === 0, `${entry.key ?? '(no key)'} carries every field${absent.length ? ` — missing ${absent.join(', ')}` : ''}`);
@@ -78,6 +78,27 @@ if (!PRO.onSale) {
     ok(at.length === 1 && lines[at[0] - 1]?.trim() === '</div>' && lines[at[0] - 2]?.includes('page-lede'),
       `/${tool.slug}/ carries the strip once, straight under its heading${at.length === 1 ? '' : ` (found ${at.length})`}`);
   }
+}
+
+// ---------------------------------------------------------------- the homepage's Pro panel (redesign stage 4)
+// One panel on the homepage, generated beside the strip: every feature, a price only while Pro is on sale, what a purchase
+// covers today (the web tools), plainly not the Android app, and hidden in a Pro build until src/pro/strip.ts settles it.
+{
+  for (const selling of [false, true]) {
+    const panel = proPanel({ selling });
+    const label = selling ? 'on sale' : 'not on sale';
+    ok(PRO_COPY.every((c) => panel.includes(`<b>${c.panel[0]}</b> &mdash; ${c.panel[1]}`)), `${label}: the panel lists every Pro feature`);
+    ok(selling ? panel.includes(`${PRO.price} ${PRO.qualifier}`) && !panel.includes('not on sale') : panel.includes('not on sale yet') && !panel.includes(PRO.price),
+      selling ? 'on sale: the panel names the price' : 'not on sale: the panel says so and names no price');
+    ok(panel.includes(PRO.coversToday) && /(does|will) not unlock anything in the Android app/.test(panel) && !panel.includes(PRO.covers),
+      `${label}: the panel says a purchase covers the web tools, and plainly not the Android app`);
+    ok(!SELLING.some((w) => panel.toLowerCase().includes(w)), `${label}: the panel offers no purchase of its own`);
+  }
+  ok(proPanel({ hidden: true }).includes('data-pro-strip hidden') && !proPanel().includes('data-pro-strip hidden'),
+    'a Pro build writes the panel hidden until settled; production writes it visible');
+  const home = readFileSync(join(ROOT, 'src/pages/index.html'), 'utf8');
+  ok(home.split('{{proPanel}}').length === 2 && !/price-grid|What it costs|Nothing here is for sale today/.test(home),
+    'the homepage carries the panel once, and none of the three old price cards');
 }
 
 console.log(`\n${fails ? `${fails} FAILED` : 'the Pro copy is complete, matches the feature list, and sells nothing that is not for sale'}`);

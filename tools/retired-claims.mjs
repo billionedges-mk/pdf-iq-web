@@ -15,6 +15,17 @@
  * in the same commit that restores the copy, so the two cannot drift apart.
  */
 export const RETIRED = [
+  // The homepage redesign (stage 4, 16 September 2026).
+  {
+    phrase: 'Seven PDF tools that never see your file',
+    why: 'The headline counted tools beside a nav that, in a Pro build, lists nine. It stops counting (owner\'s brief, claim 1).',
+    instead: 'PDF tools that never see your file.',
+  },
+  {
+    phrase: 'Nothing here is for sale today',
+    why: 'Already false on a sale build; the homepage now has one Pro panel whose state comes from the same flag as the strip (brief, claim 3).',
+    instead: 'the Pro panel: "not on sale yet", or the price while Pro can be bought',
+  },
   // A web purchase covering the Android app: true of the plan, false of the product. The app cannot honour a web purchase
   // until BILLING_ENABLED is split (approved in the app session, not built). Owner, 13 September 2026: the pages that
   // define the purchase say only what is true. These come back, deleted from here in the same commit, when the app honours
