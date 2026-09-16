@@ -454,6 +454,14 @@ input, button, select, textarea { font-family: inherit; }
   font-size: inherit; font-weight: 500; color: var(--ink); text-decoration: underline; text-underline-offset: 3px;
 }
 .result .lock { margin: 18px 0 0; max-width: none; }
+.res__head { margin: 0 0 12px; font-size: 15px; line-height: 1.5; color: var(--ink); }
+.res__text { padding: 16px clamp(18px, 4vw, 28px) 0; }
+.res__text textarea {
+  width: 100%; min-height: 260px; padding: 14px; box-sizing: border-box; border: 1px solid #E8E8E8; border-radius: 10px;
+  background: var(--panel); color: var(--ink); font: 15px/1.6 ui-monospace, Consolas, monospace; resize: vertical;
+}
+.result__pro > .card { margin-top: 18px; }
+.res .pro-tag { margin: 0 0 0 4px; vertical-align: 1px; }
 .result .atwork { text-align: center; }
 
 /* ---------- outcome blocks (no-gain, error) ---------- */

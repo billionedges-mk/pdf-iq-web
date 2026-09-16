@@ -63,11 +63,32 @@ for (const [label, env] of [['free build', {}], ['Pro build', { PDFIQ_PRO: '1' }
   ok(/data-res-how/.test(result) && /data-try-smaller hidden/.test(result), `${label}: the summary sentence and "try smaller" (hidden until a harder setting would change the file)`);
   ok(/<div class="nextup">[\s\S]*href="\/split\/"[\s\S]*href="\/ocr\/"[\s\S]*href="\/merge\/"/.test(result), `${label}: the carry-over links are still a .nextup block, which the handoff wires`);
   if (env.PDFIQ_PRO) {
-    ok(/<div data-pro-target-offer><\/div>/.test(result) && /or <a href="\/password\/">protect it<\/a> &mdash; no saving in between\./.test(result),
-      `${label}: the Pro offer's host sits under the result, and "or protect it" ends the sentence`);
+    ok(/<div data-pro-target-offer><\/div>/.test(result) && /or <a href="\/password\/">protect it<\/a> <span class="pro-tag" data-pro-label hidden>PRO<\/span> &mdash; no saving in between\./.test(result),
+      `${label}: the Pro offer's host sits under the result, and "or protect it", tagged PRO, ends the sentence`);
   } else {
     ok(!result.includes('data-pro-target') && !result.includes('/password/') && /, or <a href="\/merge\/">merge it with another<\/a> &mdash; no saving in between\./.test(result),
       `${label}: no Pro host and no Protect link; "or merge it with another" ends the sentence`);
+  }
+
+  // The other result screens, as each is converted (proposal approved 17 September 2026). Every one: no facts table, the
+  // one sentence, and a "protect it" link tagged PRO before the click.
+  const sectionOf = (slug) => /<section aria-label="Result" data-view="result"[\s\S]*?<\/section>/.exec(readFileSync(join(ROOT, `dist/${slug}/index.html`), 'utf8').replace(/\s+/g, ' '))?.[0] ?? '';
+  for (const slug of ['compress', 'ocr']) {
+    const r = sectionOf(slug);
+    ok(r.includes('class="res"') && !r.includes('class="facts"'), `${label}: /${slug}/ result is the one-sentence screen, with no facts table`);
+    const protect = [...r.matchAll(/<a href="\/password\/">[^<]*<\/a>(\s*<span class="pro-tag" data-pro-label hidden>PRO<\/span>)?/g)];
+    ok(protect.every((m) => m[1]), `${label}: /${slug}/ every link to Password says PRO before the click (${protect.length} link${protect.length === 1 ? '' : 's'})`);
+  }
+  const ocr = sectionOf('ocr');
+  ok(/data-res-words/.test(ocr) && /data-res-time/.test(ocr) && /data-res-how/.test(ocr) && /class="visually-hidden" for="ocr-text"/.test(ocr),
+    `${label}: /ocr/ shows the word count large, the time, the characters and "untouched" in the sentence, and its textarea label is hidden`);
+  if (env.PDFIQ_PRO) {
+    ok(ocr.includes('<div class="result__pro" data-pro-searchable></div>') && !ocr.includes('class="lock"'), `${label}: /ocr/ leaves the searchable offer to its Pro module, under the result`);
+  } else {
+    ok(/<div class="result__pro"><div class="lock"> <div class="lock__head"><p class="lock__title">Searchable PDF<\/p><span class="pro-label">PRO<\/span><\/div>/.test(ocr)
+      && ocr.includes('<p class="lock__state">Part of Pro, not on sale yet.</p>') && ocr.includes('Free instead: ')
+      && !ocr.includes('Wanting a searchable PDF instead?') && !ocr.includes('Save as a searchable PDF') && !ocr.includes('data-pro-searchable'),
+    `${label}: /ocr/ carries the gold locked panel, static, with nothing to press, in place of the grey card`);
   }
 }
 

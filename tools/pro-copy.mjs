@@ -146,3 +146,20 @@ ${items}
       </div>
     </section>`;
 }
+
+/**
+ * The locked panel as static HTML, for a build with no Pro code (production). Same classes and order as the runtime one
+ * (src/pro/gate.ts lockedPanel): heading and PRO tag, what it does, the state, the free alternative. No control: the real
+ * control's words are Pro wording (tools/pro-wording.mjs), which a flag-off build must not carry, and "not on sale yet"
+ * offers nothing to press. One treatment for locked Pro everywhere (owner, 17 September 2026).
+ */
+export function lockedPanelStatic(key, title) {
+  const c = PRO_COPY.find((x) => x.key === key);
+  if (!c) throw new Error(`lockedPanelStatic: no Pro copy for "${key}"`);
+  return `<div class="lock">
+        <div class="lock__head"><p class="lock__title">${title}</p><span class="pro-label">PRO</span></div>
+        <p class="lock__what">${c.what}</p>
+        <p class="lock__state">Part of Pro, not on sale yet.</p>
+        <p class="lock__alt">Free instead: ${c.instead}</p>
+      </div>`;
+}

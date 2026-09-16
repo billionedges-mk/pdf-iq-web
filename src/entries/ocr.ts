@@ -317,7 +317,9 @@ function renderResult(took: number): void {
     const mean = Math.round(read.reduce((s, r) => s + r.confidence, 0) / read.length);
     detail.push(`Across the pages we did read, mean confidence was ${mean}%.`);
   }
-  $('[data-result-detail]')!.textContent = detail.join(' ');
+  const detailLine = $('[data-result-detail]')!;
+  detailLine.textContent = detail.join(' ');
+  detailLine.hidden = !detail.length;
 
   // The text itself is the deliverable now, so it is on the screen rather than only behind
   // a download. Page markers are kept: a reader scanning for one page needs them, and they
@@ -330,10 +332,14 @@ function renderResult(took: number): void {
   const area = $<HTMLTextAreaElement>('[data-text-out]')!;
   area.value = joined;
 
-  $('[data-fact-words]')!.textContent = words ? words.toLocaleString() : joined.split(/\s+/).filter(Boolean).length.toLocaleString();
-  $('[data-fact-chars]')!.textContent = joined.length.toLocaleString();
-  $('[data-fact-time]')!.textContent =
-    `${seconds(took)} on this device (${(took / Math.max(1, results.length) / 1000).toFixed(1)}s a page)`;
+  // What the facts table held, all of it: words found (large), time taken, characters, and that the file is untouched.
+  const wordCount = words || joined.split(/\s+/).filter(Boolean).length;
+  $('[data-res-name]')!.textContent = file!.name;
+  $('[data-res-words]')!.textContent = plural(wordCount, 'word');
+  $('[data-res-time]')!.textContent =
+    `in ${seconds(took)} on this device, ${(took / Math.max(1, results.length) / 1000).toFixed(1)}s a page`;
+  $('[data-res-how]')!.textContent =
+    `${plural(joined.length, 'character')} in all. Your file is untouched: nothing was written back into it.`;
 
   const copy = $<HTMLButtonElement>('[data-copy]')!;
   copy.textContent = 'Copy all the text';

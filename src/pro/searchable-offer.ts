@@ -50,6 +50,17 @@ export function introSearchable(host: HTMLElement, source?: () => File | null): 
   host.append(lockedPanel('searchable', 'The searchable PDF', source, { noWhat: true, noInstead: true }));
 }
 
+/** A plain card headed "Searchable PDF", for every answer that is not the locked panel (which has its own heading). */
+function plainCard(host: HTMLElement, ...children: Node[]): void {
+  const card = document.createElement('div');
+  card.className = 'card';
+  const kicker = document.createElement('p');
+  kicker.className = 'kicker';
+  kicker.textContent = 'Searchable PDF';
+  card.append(kicker, ...children);
+  host.append(card);
+}
+
 export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
   host.textContent = '';
   host.dataset.pdfiqPro = searchableMark();
@@ -63,7 +74,7 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     nothing.textContent =
       'No text was read from this document, so there is nothing to write into a searchable copy: '
       + 'the layer is made from the words that were recognised, and there were none.';
-    host.append(nothing);
+    plainCard(host, nothing);
     return;
   }
 
@@ -74,7 +85,7 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
       ? 'Every page of this file has its own text layer, so it is searchable already. A searchable copy would add nothing.'
       : 'The pages that gave text already had their own text layer, so they are searchable already; the rest are named above. ' +
         'A searchable copy would add nothing.';
-    host.append(already);
+    plainCard(host, already);
     return;
   }
 
@@ -89,8 +100,7 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     locked.style.margin = '0';
     locked.append(button);
     lockControls(locked);
-    // The card around this already titles it ("Searchable PDF · Pro"), so the panel has no heading of its own.
-    host.append(lockedPanel('searchable', 'A searchable PDF', o.source, { controls: locked }));
+    host.append(lockedPanel('searchable', 'A searchable PDF', o.source, { title: 'Searchable PDF', controls: locked }));
     return;
   }
   const hint = document.createElement('p');
@@ -121,5 +131,8 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     }
   };
 
-  host.append(button, hint);
+  const row = document.createElement('p');
+  row.style.margin = '10px 0 0';
+  row.append(button);
+  plainCard(host, row, hint);
 }
