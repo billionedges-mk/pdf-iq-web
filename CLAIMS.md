@@ -51,7 +51,8 @@ the work is done.
 35. [A check that reads a shared mutable location describes whatever wrote there last](#35-a-check-that-reads-a-shared-mutable-location-describes-whatever-wrote-there-last)  
 36. [A claim in metadata is invisible to everyone who reads the page](#36-a-claim-in-metadata-is-invisible-to-everyone-who-reads-the-page)  
 37. [The host edits the page after you write it, and only the served copy shows it](#37-the-host-edits-the-page-after-you-write-it-and-only-the-served-copy-shows-it)  
-38. [A claim and a new feature that contradict each other are a design review nobody scheduled](#38-a-claim-and-a-new-feature-that-contradict-each-other-are-a-design-review-nobody-scheduled)
+38. [A claim and a new feature that contradict each other are a design review nobody scheduled](#38-a-claim-and-a-new-feature-that-contradict-each-other-are-a-design-review-nobody-scheduled)  
+39. [A claim about a second surface is checked on that surface, not planned for it](#39-a-claim-about-a-second-surface-is-checked-on-that-surface-not-planned-for-it)
 
 <!-- /index -->
 
