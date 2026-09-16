@@ -26,6 +26,9 @@
   /* Text on the gold ground. --gold-muted is the mockup's #8A7A5A taken to AA (it measured 3.97:1). tools/contrast.mjs measures both. */
   --gold-text: #6B5C3E;
   --gold-muted: #7A6B4E;
+  /* The saving, on the result screen. */
+  --ok: #1F6F45;
+  --ok-bg: #F1F8F3;
   --ink-80: rgba(17, 18, 20, .80);
   --ink-78: rgba(17, 18, 20, .78);
   --ink-76: rgba(17, 18, 20, .76);
@@ -423,6 +426,35 @@ input, button, select, textarea { font-family: inherit; }
   padding: 8px 13px; border: 1px solid rgba(17, 18, 20, .2); border-radius: 4px;
   font-size: 14.5px; text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
 .nextup a:hover { border-color: var(--amber); color: var(--ink); }
+
+/* ---------- the result screen (redesign stage 3, pdf-iq-final.html 03) ---------- */
+
+/* The number is the design: the new size large, then "from" the old one as a small aside, then the saving. The old size
+   is secondary-coloured honestly, because "from" carries the meaning before the strike-through has to. */
+.result { max-width: 700px; margin: 18px auto 0; }
+.res { border: 1px solid #E8E8E8; border-radius: 16px; overflow: hidden; background: #FFFFFF; text-align: left; }
+.res__top { padding: clamp(20px, 4vw, 26px) clamp(18px, 4vw, 28px); border-bottom: 1px solid #F2F2F2; }
+.res__fname { margin: 0 0 14px; font-size: 14px; font-weight: 400; color: var(--soft); overflow-wrap: anywhere; }
+.res__nums { margin: 0; display: flex; align-items: baseline; gap: 10px 12px; flex-wrap: wrap; }
+.res__now { font-size: clamp(32px, 7vw, 38px); font-weight: 600; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
+.res__was { font-size: 15px; color: var(--soft); }
+.res__was s { text-decoration-thickness: 1.5px; }
+.res__pct { font-size: 13px; font-weight: 600; color: var(--ok); background: var(--ok-bg); border-radius: 20px; padding: 5px 11px; }
+.res__how { padding: 16px clamp(18px, 4vw, 28px); background: var(--panel); border-bottom: 1px solid #F2F2F2; }
+.res__how p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--soft); }
+.res__how p + p { margin-top: 8px; }
+.res__acts { padding: 20px clamp(18px, 4vw, 28px); display: flex; gap: 10px; flex-wrap: wrap; }
+.res .nextup {
+  margin: 0; display: block; padding: 16px clamp(18px, 4vw, 28px); border-top: 1px solid #F2F2F2;
+  background: var(--panel); font-size: 13.5px; line-height: 1.8; color: var(--soft);
+}
+.res .nextup__label { font-size: inherit; color: inherit; }
+.res .nextup a {
+  display: inline; min-height: 0; padding: 0; border: 0; border-radius: 0;
+  font-size: inherit; font-weight: 500; color: var(--ink); text-decoration: underline; text-underline-offset: 3px;
+}
+.result .lock { margin: 18px 0 0; max-width: none; }
+.result .atwork { text-align: center; }
 
 /* ---------- outcome blocks (no-gain, error) ---------- */
 

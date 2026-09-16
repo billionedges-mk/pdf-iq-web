@@ -8,7 +8,7 @@
  */
 
 import { PDFDocument } from 'pdf-lib';
-import { PRESETS, STAGES, analyse, compress, explainNoGain, harderOffer, noGainFoot, type Analysis, type CompressResult, type Preset, worthIt, worthShowing } from '../lib/compress.js';
+import { PRESETS, STAGES, analyse, compress, describeCompressed, explainNoGain, harderOffer, noGainFoot, type Analysis, type CompressResult, type Preset, worthIt, worthShowing } from '../lib/compress.js';
 import { openPdf } from '../lib/open-pdf.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, percent } from '../lib/format.js';
@@ -96,6 +96,7 @@ function renderSelected(): void {
       void import('../pro/compress-target-ui.js').then((m) => m.mountTarget(host as HTMLElement, {
         state: () => (file && analysis ? { fileName: file.name, fileSize: file.size, analysis } : null),
         source: () => file,
+        offerHost: () => $('[data-pro-target-offer]'),
         pass: async ({ preset: which, plan, label, signal }) => {
           // Every pass from the original file: a previous pass mutated its own copy.
           const fresh = await PDFDocument.load(sourceBytes!, { updateMetadata: false });
@@ -126,7 +127,7 @@ function renderSelected(): void {
         },
         showResult: (r, note) => {
           result = r;
-          renderResult(r);
+          renderResult(r, null);
           const line = $('[data-pro-target-note]');
           if (line) { line.textContent = note; line.hidden = false; }
         },
@@ -252,7 +253,7 @@ async function run(which: Preset, explicit = false): Promise<void> {
   const show = explicit
     ? worthShowing(result.beforeBytes, result.afterBytes)
     : worthIt(result.beforeBytes, result.afterBytes);
-  if (show) renderResult(result);
+  if (show) renderResult(result, which);
   else renderNoGain(result, which);
 }
 
@@ -262,27 +263,20 @@ $('[data-stop]')?.addEventListener('click', () => {
 
 // ---------------------------------------------------------------- outcomes
 
-function renderResult(r: CompressResult): void {
+/**
+ * The result screen. `which` is the preset that ran, or null for a Pro target pass (which picks its own settings, so
+ * there is no harder preset to offer after it).
+ */
+function renderResult(r: CompressResult, which: Preset | null): void {
   const targetNote = $('[data-pro-target-note]');
   if (targetNote) targetNote.hidden = true;
   const saved = r.beforeBytes - r.afterBytes;
-  $('[data-before]')!.textContent = formatBytes(r.beforeBytes);
+  $('[data-res-name]')!.textContent = file!.name;
+  $('[data-res-pages]')!.textContent = plural(analysis!.pageCount, 'page');
   $('[data-after]')!.textContent = formatBytes(r.afterBytes);
+  $('[data-before]')!.textContent = formatBytes(r.beforeBytes);
   $('[data-saved]')!.textContent = `${percent(saved / r.beforeBytes)} smaller`;
-  ($('[data-after-bar]') as HTMLElement).style.width = `${Math.max(2, (r.afterBytes / r.beforeBytes) * 100)}%`;
-
-  const n = analysis!.pageCount;
-  $('[data-fact-pages]')!.textContent = `${n} in, ${n} out`;
-
-  const imgBits: string[] = [];
-  if (r.imagesRecompressed) {
-    imgBits.push(`${r.imagesRecompressed} recompressed at q${r.writtenQuality}`);
-    if (r.downscaled) imgBits.push(`${r.downscaled} downscaled${r.writtenDpi ? ` to about ${r.writtenDpi} dpi` : ''}`);
-  }
-  if (r.imagesSkipped) imgBits.push(`${r.imagesSkipped} left as they were`);
-  $('[data-fact-images]')!.textContent = imgBits.length ? imgBits.join(', ') : 'none to change';
-
-  $('[data-fact-meta]')!.textContent = r.metadataStripped ? 'author and timestamps removed' : 'kept as-is';
+  $('[data-res-how]')!.textContent = describeCompressed(r);
   $('[data-signed-warning]')!.hidden = !r.signed;
 
   const outName = suffixName(file!.name, '-small');
@@ -290,6 +284,19 @@ function renderResult(r: CompressResult): void {
   const save = $<HTMLButtonElement>('[data-save]')!;
   save.textContent = `Save ${outName}`;
   save.onclick = () => saveFile(r.bytes, outName);
+
+  // "Try smaller" only when a harder preset would actually change this file: the same decision the no-gain card uses,
+  // and the button names the setting it runs rather than promising a smaller file it has not measured.
+  const smaller = $<HTMLButtonElement>('[data-try-smaller]')!;
+  const offer = which ? harderOffer(analysis!, which) : null;
+  smaller.hidden = !offer?.preset;
+  if (offer?.preset) {
+    const target = offer.preset;
+    smaller.textContent = `Try the ${target.name} setting`;
+    smaller.onclick = () => void run(target, true);
+  } else {
+    smaller.onclick = null;
+  }
 
   shell.show('result');
   shell.announce(`Done. ${formatBytes(r.beforeBytes)} became ${formatBytes(r.afterBytes)}.`);

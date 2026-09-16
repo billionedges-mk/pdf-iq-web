@@ -20,6 +20,8 @@ export interface TargetContext {
   state(): { fileName: string; fileSize: number; analysis: Analysis } | null;
   /** The file as chosen, for Unlock to carry to the checkout and back. */
   source(): File | null;
+  /** Where the locked offer goes for someone who does not own Pro: under the result, not among the options. */
+  offerHost(): HTMLElement | null;
   /** One complete pass from the original file. `plan` absent means the preset applies to every image. */
   pass(opts: { preset: Preset; plan?: (img: PdfImage) => ImagePlan; label: string; signal: AbortSignal }): Promise<{ result: CompressResult; analysis: Analysis }>;
   /** Show progress and return the signal the page's Stop button aborts. */
@@ -107,13 +109,16 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   // Not owned: the same controls, locked, and the words under them (approved copy, 13 September 2026). Not a
   // description of the controls in their place: the reader sees what they would get. No handler is attached.
   if (!account) {
-    // The gold panel carries the heading and the PRO tag, with the real controls inside it (pdf-iq-final.html 03).
-    legend.remove();
-    note.remove();
+    // Not among the options: nothing is sold to someone who has not seen the tool work. The gold panel goes under the
+    // result instead (pdf-iq-final.html 03), carrying the heading, the PRO tag and the real controls, locked.
+    host.textContent = '';
+    host.hidden = true;
     lockControls(controls);
-    host.append(lockedPanel('target', 'Compressing to a size or a resolution you choose', () => ctx.source(), { title: 'Or aim for a target', controls }));
+    ctx.offerHost()?.replaceChildren(lockedPanel('target', 'Compressing to a size or a resolution you choose', () => ctx.source(), { title: 'Or aim for a target', controls }));
     return;
   }
+  host.hidden = false;
+  ctx.offerHost()?.replaceChildren();
 
   dpiGo.onclick = async () => {
     if (!proAccount()) return;

@@ -53,6 +53,7 @@ const AMBER = hex(token('amber')), AMBER_TEXT = hex(token('amber-text'));
 const SOFT = hex(token('soft')), PANEL = hex(token('panel'));
 const GOLD = hex(token('gold')), GOLD_BG = hex(token('gold-bg')), GOLD_DEEP = hex(token('gold-deep'));
 const GOLD_TEXT = hex(token('gold-text')), GOLD_MUTED = hex(token('gold-muted'));
+const OK = hex(token('ok')), OK_BG = hex(token('ok-bg'));
 
 /**
  * `--amber` is measured against the 3:1 non-text threshold below, and that is only correct
@@ -121,6 +122,9 @@ const pairs = [
   ['gold-text on gold-bg',        GOLD_TEXT,               GOLD_BG, 'body'],
   ['gold-muted on gold-bg',       GOLD_MUTED,              GOLD_BG, 'small'],
   ['paper on ink (Unlock)',       PAPER,                   INK,   'body'],
+  // The result screen: the saving pill, and the old size and the summary on the panel grey.
+  ['ok on ok-bg (saving)',        OK,                      OK_BG, 'small'],
+  ['soft on panel (result how)',  SOFT,                    PANEL, 'small'],
 ];
 
 let fail = assertAmberIsNeverText() ? 0 : 1;
