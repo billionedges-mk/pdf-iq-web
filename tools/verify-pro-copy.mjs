@@ -93,6 +93,12 @@ if (!PRO.onSale) {
     ok(panel.includes(PRO.coversToday) && /(does|will) not unlock anything in the Android app/.test(panel) && !panel.includes(PRO.covers),
       `${label}: the panel says a purchase covers the web tools, and plainly not the Android app`);
     ok(!SELLING.some((w) => panel.toLowerCase().includes(w)), `${label}: the panel offers no purchase of its own`);
+    // The line under "Pro" has to fit all of them: "Four things the free tools don't do", counted from PRO_COPY. Not the
+    // mockup's "without doing it one file at a time", which is Batch alone.
+    const words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+    ok(panel.includes(`${words[PRO_COPY.length]} things the free tools don&rsquo;t do.`) && !/one file at a time/.test(panel),
+      `${label}: the panel's line counts the Pro features and fits all of them`);
+    ok(panel.includes('<a href="/pro/">What Pro adds</a>'), `${label}: the panel links to /pro/`);
   }
   ok(proPanel({ hidden: true }).includes('data-pro-strip hidden') && !proPanel().includes('data-pro-strip hidden'),
     'a Pro build writes the panel hidden until settled; production writes it visible');

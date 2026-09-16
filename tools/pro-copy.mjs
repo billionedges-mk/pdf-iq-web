@@ -123,6 +123,12 @@ export function proPanel({ selling = PRO.onSale, hidden = false } = {}) {
   const tick = '<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const items = PRO_COPY.map((c) => `          <li>${tick}<span><b>${c.panel[0]}</b> &mdash; ${c.panel[1]}</span></li>`).join('\n');
   const amount = selling ? `${PRO.price} ${PRO.qualifier}` : 'not on sale yet';
+  // What all of them share, and only that: each is something the free tools do not do, not more of what they do. The
+  // mockup's "The same tools — without doing it one file at a time" described Batch alone (owner, 17 September 2026).
+  // The count is PRO_COPY's, so a fifth feature cannot leave it saying four.
+  const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+  const count = WORDS[PRO_COPY.length] ?? String(PRO_COPY.length);
+  const line = `${count} ${PRO_COPY.length === 1 ? 'thing' : 'things'} the free tools don&rsquo;t do.`;
   const terms = selling
     ? `Bought once, not a subscription. It covers ${PRO.coversToday}, and does not unlock anything in the Android app.`
     : `When it goes on sale: bought once, not a subscription, covering ${PRO.coversToday}. It will not unlock anything in the Android app.`;
@@ -130,8 +136,9 @@ export function proPanel({ selling = PRO.onSale, hidden = false } = {}) {
       <div class="pro-panel__in">
         <div>
           <p class="pro-panel__who"><span class="pro-panel__k">Pro</span> <span class="pro-panel__amt">${amount}</span></p>
-          <p class="pro-panel__line">The same tools &mdash; without doing it one file at a time.</p>
+          <p class="pro-panel__line">${line}</p>
           <p class="pro-panel__sub">${terms} Everything above stays free and unlimited.</p>
+          <p class="pro-panel__more"><a href="/pro/">What Pro adds</a></p>
         </div>
         <ul class="pro-panel__list">
 ${items}
