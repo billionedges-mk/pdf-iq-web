@@ -19,7 +19,12 @@ export function ascii85Decode(input: Uint8Array): Uint8Array {
   while (i < input.length && isSpace(input[i])) i++;
   if (input[i] === 0x3c && input[i + 1] === 0x7e) i += 2;
 
-  const out = new Uint8Array(Math.ceil(input.length * 4 / 5) + 4);
+  // Sized exactly. Five characters give four bytes, but one "z" gives four: the first version allowed 4/5 of the input
+  // and a typed array drops writes past its end without a word, so 4,003 zero-heavy bytes decoded to 809, and a JPEG with
+  // runs of zeros was cut short (found on production the day it shipped, 16 September 2026).
+  let zs = 0;
+  for (let k = i; k < input.length; k++) if (input[k] === 0x7a) zs++;
+  const out = new Uint8Array(Math.ceil((input.length - i) * 4 / 5) + zs * 4 + 4);
   let o = 0;
   const group = new Array<number>(5);
   let n = 0;

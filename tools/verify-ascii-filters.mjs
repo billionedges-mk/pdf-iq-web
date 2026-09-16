@@ -52,6 +52,10 @@ const cases = [
   ['all ones (largest group)', [0xff, 0xff, 0xff, 0xff]],
   ['1,000 random bytes', Array.from({ length: 1000 }, () => Math.floor(rand() * 256))],
   ['997 random bytes (partial final group)', Array.from({ length: 997 }, () => Math.floor(rand() * 256))],
+  // One "z" is one character for four bytes. The first decoder sized its output at 4/5 of the input and silently lost
+  // everything past that: these came back as 809 bytes of 4,003, and a production JPEG with zero runs was cut short.
+  ['4,000 zero bytes then a tail (mostly "z")', [...Array(4000).fill(0), 1, 2, 3]],
+  ['zero runs between random bytes, as in a JPEG', Array.from({ length: 6000 }, (_, k) => (k % 50 < 20 ? 0 : Math.floor(rand() * 256)))],
 ];
 const py = String.raw`
 import base64, json, sys
