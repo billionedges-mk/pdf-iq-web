@@ -18,6 +18,7 @@ import {
   PDFDocument, PDFRawStream, PDFName, PDFDict, PDFArray, PDFNumber,
   PDFRef, PDFBool, type PDFObject,
 } from 'pdf-lib';
+import { ASCII_FILTERS, unwrapAscii } from './ascii-filters.js';
 
 // ---------------------------------------------------------------- inflate
 
@@ -86,6 +87,17 @@ export function filterNames(dict: PDFDict): string[] {
     return f.asArray().map((x) => (x instanceof PDFName ? x.asString().replace(/^\//, '') : '?'));
   }
   return [];
+}
+
+/** The /DecodeParms entry for the filter at `index` in the stream's chain: a dict for a lone filter, else the array slot. */
+export function decodeParms(dict: PDFDict, index: number): PDFDict | null {
+  const parms = dict.lookup(PDFName.of('DecodeParms'));
+  if (parms instanceof PDFDict) return index === 0 || filterNames(dict).length === 1 ? parms : null;
+  if (parms instanceof PDFArray && index < parms.size()) {
+    const p = parms.lookup(index);
+    return p instanceof PDFDict ? p : null;
+  }
+  return null;
 }
 
 function num(dict: PDFDict, key: string, fallback = 0): number {
@@ -257,20 +269,23 @@ export interface Placement {
 async function streamBytes(doc: PDFDocument, stream: PDFRawStream): Promise<Uint8Array> {
   const filters = filterNames(stream.dict);
   let bytes = stream.getContents();
-  for (const f of filters) {
+  for (let i = 0; i < filters.length; i++) {
+    const f = filters[i];
     if (f === 'FlateDecode') {
       bytes = await inflate(bytes);
-      const parms = stream.dict.lookup(PDFName.of('DecodeParms'));
-      const p = parms instanceof PDFDict ? parms : parms instanceof PDFArray ? parms.lookup(0) : null;
-      if (p instanceof PDFDict) {
+      const p = decodeParms(stream.dict, i);
+      if (p) {
         const predictor = num(p, 'Predictor', 1);
         if (predictor >= 10) {
           bytes = unpredict(bytes, predictor, num(p, 'Colors', 1), num(p, 'BitsPerComponent', 8), num(p, 'Columns', 1));
         }
       }
-    } else if (f === 'ASCIIHexDecode' || f === 'ASCII85Decode') {
-      // Rare in modern writers; treat as opaque rather than mis-parsing it.
-      return new Uint8Array(0);
+    } else if (ASCII_FILTERS.has(f)) {
+      // ReportLab writes page content as [/ASCII85Decode /FlateDecode] by default (src/lib/ascii-filters.ts). A wrapper
+      // that does not decode still leaves the stream opaque: better no placements than placements read from garbage.
+      const unwrapped = unwrapAscii(bytes, [f]);
+      if (!unwrapped) return new Uint8Array(0);
+      bytes = unwrapped.bytes;
     }
   }
   return bytes;
@@ -406,7 +421,12 @@ export interface PdfImage {
   width: number;
   height: number;
   bitsPerComponent: number;
+  /** The filter chain with any leading ASCII wrappers removed (src/lib/ascii-filters.ts). */
   filters: string[];
+  /** The stream's bytes with those wrappers decoded: what `filters` applies to. */
+  data: Uint8Array;
+  /** How many wrappers were removed, for indexing /DecodeParms, which follows the original chain. */
+  parmsOffset: number;
   colorSpace: string | null;
   components: number;
   encodedBytes: number;
@@ -449,12 +469,18 @@ export async function findImages(doc: PDFDocument): Promise<PdfImage[]> {
     const width = num(obj.dict, 'Width');
     const height = num(obj.dict, 'Height');
     const bpc = num(obj.dict, 'BitsPerComponent', 8);
-    const filters = filterNames(obj.dict);
+    const rawFilters = filterNames(obj.dict);
     const cs = colorSpaceOf(doc, obj.dict);
     const maskFlag = obj.dict.lookup(PDFName.of('ImageMask'));
     const isMask = maskFlag instanceof PDFBool ? maskFlag.asBoolean() : false;
     const encoded = obj.getContents();
     const placement = placements.get(key) ?? null;
+    // ASCII wrappers at the front of the chain are only a text encoding of the real image: ReportLab writes JPEGs as
+    // [/ASCII85Decode /DCTDecode]. Unwrapped here, the rest of the pipeline sees a JPEG. Left as they are if they do not
+    // decode, and judge() then says so.
+    const unwrapped = unwrapAscii(encoded, rawFilters);
+    const filters = unwrapped ? unwrapped.filters : rawFilters;
+    const data = unwrapped ? unwrapped.bytes : encoded;
 
     const dpi = placement && placement.widthPt > 0.01
       ? (width / placement.widthPt) * 72
@@ -462,7 +488,7 @@ export async function findImages(doc: PDFDocument): Promise<PdfImage[]> {
 
     let jpeg = null;
     if (filters.includes('DCTDecode') && filters.length === 1) {
-      jpeg = readJpeg(encoded);
+      jpeg = readJpeg(data);
     }
 
     const { recompressible, skipReason } = judge({
@@ -471,7 +497,7 @@ export async function findImages(doc: PDFDocument): Promise<PdfImage[]> {
 
     images.push({
       ref, key, stream: obj, width, height,
-      bitsPerComponent: bpc, filters,
+      bitsPerComponent: bpc, filters, data, parmsOffset: unwrapped?.removed ?? 0,
       colorSpace: cs.name, components: cs.components,
       encodedBytes: encoded.length,
       isMask, isSoftMask: softMaskRefs.has(key),
@@ -501,7 +527,8 @@ function judge(o: {
       return no(`${f} bilevel scan — already far denser than JPEG could manage`);
     }
     if (f === 'JPXDecode') return no('JPEG 2000 — this page ships no JPEG 2000 decoder');
-    if (f === 'ASCIIHexDecode' || f === 'ASCII85Decode') return no(`${f} wrapper we do not unwrap`);
+    // Leading ASCII wrappers are removed before this runs; one still here did not decode, or sits mid-chain.
+    if (f === 'ASCIIHexDecode' || f === 'ASCII85Decode') return no(`${f} wrapper that could not be read`);
   }
   const supported = o.filters.length === 0
     || (o.filters.length === 1 && (o.filters[0] === 'DCTDecode' || o.filters[0] === 'FlateDecode' || o.filters[0] === 'RunLengthDecode'));

@@ -18,6 +18,7 @@ import { describeOcr } from '../lib/ocr-result.js';
 import { MAX_BYTES, MEASURED_COLLAPSE_BYTES } from '../lib/ui.js';
 import { tooBig } from '../lib/errors.js';
 import { formatBytes } from '../lib/format.js';
+import { openDocument, renderPage } from '../lib/pdfjs.js';
 
 type Log = (line: string) => void;
 type Case = { name: string; run: (log: Log) => Promise<void> };
@@ -383,6 +384,50 @@ const CASES: Case[] = [
       note(`1240 px across a 595.28 pt page → ${dpi === null ? 'null' : dpi.toFixed(1)} dpi`);
       // 1240 / (595.28/72) = 150.0
       ok(dpi !== null && Math.abs(dpi - 150) < 2, 'dpi within 2 of the constructed 150');
+    },
+  },
+  {
+    // Every other case builds its PDF with pdf-lib, which never writes ASCII85. ReportLab does, by default, for page
+    // content and images, and until 16 September 2026 this path told people its images were "never drawn on any page"
+    // and compressed nothing. A real ReportLab page (tools/fixtures/reportlab), not one written by our own code.
+    name: 'A ReportLab file (ASCII85 content and images) is read as drawn, and gets smaller',
+    async run() {
+      const pdf = new Uint8Array(await (await fetch('/fixtures/reportlab-scan-1p.pdf')).arrayBuffer());
+      ok(pdf.length > 100000, `the fixture was fetched (${formatBytes(pdf.length)})`);
+      const doc = await PDFDocument.load(pdf);
+      const a = await analyse(doc, pdf.length);
+      note(`in: ${a.images.length} image(s), median q${a.medianQuality}, ${a.medianDpi?.toFixed(0)} dpi; skip: ${a.images.map((i) => i.skipReason).filter(Boolean).join('; ') || 'none'}`);
+      ok(a.images.length === 1 && a.images[0].placement !== null, 'its image is found where the page draws it');
+      ok(a.recompressible.length === 1, 'and is recompressible');
+
+      const r = await compress(doc, pdf.length, a, { preset: PRESETS[0], stripMetadata: true });
+      note(`out: ${formatBytes(r.afterBytes)} (${((1 - r.afterBytes / r.beforeBytes) * 100).toFixed(1)}% smaller), ${r.imagesRecompressed} recompressed, ${r.imagesUndecodable} undecodable`);
+      ok(r.imagesRecompressed === 1 && r.imagesUndecodable === 0, 'the unwrapped JPEG decodes in the browser and is re-encoded');
+      ok(r.afterBytes < r.beforeBytes, 'the output is smaller than the input');
+
+      const check = await PDFDocument.load(r.bytes);
+      ok(check.getPageCount() === 1, 'the output still has its page');
+      const images = await findImages(check);
+      ok(images.length === 1 && images[0].placement !== null && images[0].filters.join() === 'DCTDecode', 'and one JPEG, still drawn on it');
+      const bitmap = await createImageBitmap(new Blob([images[0].data as BlobPart], { type: 'image/jpeg' }));
+      ok(bitmap.width === images[0].width && bitmap.height === images[0].height, `the new JPEG decodes at its declared ${images[0].width}x${images[0].height}`);
+
+      // And a real renderer draws it as the original was drawn. "Not blank" alone would pass an inverted or garbled
+      // image, so the output is compared with the input, both rendered by pdf.js at the same size.
+      const darkShare = async (bytes: Uint8Array) => {
+        const opened = await openDocument(bytes);
+        const canvas = document.createElement('canvas');
+        await renderPage(await opened.doc.getPage(1), 300, canvas, true, 'print');
+        const px = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+        let dark = 0;
+        for (let i = 0; i < px.length; i += 4) if (px[i] + px[i + 1] + px[i + 2] < 384) dark++;
+        opened.close();
+        return (dark / (px.length / 4)) * 100;
+      };
+      const before = await darkShare(pdf);
+      const after = await darkShare(r.bytes);
+      note(`pdf.js: ${before.toFixed(1)}% of pixels dark before, ${after.toFixed(1)}% after`);
+      ok(before > 1 && Math.abs(after - before) < 3, 'pdf.js renders the output page as it rendered the input, within 3 points of dark coverage');
     },
   },
   {

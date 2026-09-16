@@ -18,7 +18,7 @@
  */
 
 import { PDFDocument, PDFRawStream, PDFName, PDFNumber, PDFArray, PDFDict, PDFRef, PDFString, PDFHexString } from 'pdf-lib';
-import { findImages, inflate, unpredict, filterNames, type PdfImage } from './pdf-inspect.js';
+import { findImages, inflate, unpredict, filterNames, decodeParms, type PdfImage } from './pdf-inspect.js';
 import { formatBytes, plural } from './format.js';
 
 export interface Preset {
@@ -202,7 +202,8 @@ export async function analyse(doc: PDFDocument, totalBytes: number): Promise<Ana
 type Decoded = { bitmap: ImageBitmap } | { data: ImageData };
 
 async function decodeImage(doc: PDFDocument, img: PdfImage): Promise<Decoded | null> {
-  const raw = img.stream.getContents();
+  // With any ASCII wrapper already decoded (pdf-inspect.ts): the stream's own bytes would be ASCII85 text, not a JPEG.
+  const raw = img.data;
 
   if (img.filters.includes('DCTDecode')) {
     try {
@@ -223,9 +224,9 @@ async function decodeImage(doc: PDFDocument, img: PdfImage): Promise<Decoded | n
     } catch {
       return null;
     }
-    const parms = img.stream.dict.lookup(PDFName.of('DecodeParms'));
-    const p = parms instanceof PDFDict ? parms : parms instanceof PDFArray ? parms.lookup(0) : null;
-    if (p instanceof PDFDict) {
+    // The slot for FlateDecode in the original chain, which still counts any ASCII wrapper removed in front of it.
+    const p = decodeParms(img.stream.dict, img.parmsOffset + img.filters.indexOf('FlateDecode'));
+    if (p) {
       const pred = p.lookup(PDFName.of('Predictor'));
       const predictor = pred instanceof PDFNumber ? pred.asNumber() : 1;
       if (predictor >= 10) {

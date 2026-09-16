@@ -2,7 +2,7 @@
 // nothing links to it, it is excluded from the sitemap, and `npm run build` alone
 // does not produce it.
 import * as esbuild from 'esbuild';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { buildEncryptedPdf } from './encrypt-fixture.mjs';
 import { ALL, href } from './site.mjs';
 import { join, dirname } from 'node:path';
@@ -38,6 +38,9 @@ mkdirSync(join(OUT, 'fixtures'), { recursive: true });
 writeFileSync(join(OUT, 'fixtures', 'encrypted-rc4.pdf'),
   buildEncryptedPdf({ userPassword: 'correct-horse', pages: 3 }));
 console.log('encrypted fixture -> dist/fixtures/encrypted-rc4.pdf');
+
+// A real ReportLab page: ASCII85-wrapped content and image, which pdf-lib never writes (src/lib/ascii-filters.ts).
+copyFileSync(join(ROOT, 'tools/fixtures/reportlab/reportlab-scan-1p.pdf'), join(OUT, 'fixtures', 'reportlab-scan-1p.pdf'));
 // /P is 0xFFFFF0C0, so under PASSWORD_RULE.md the tools refuse the user password here — it
 // authenticates, but using it would strip the author's limits. Only the owner password opens it for a tool.
 console.log('  user password: correct-horse (authenticates; the tools refuse it, /P restricts)   owner password: correct-horse-owner (opens and lifts)');

@@ -52,7 +52,9 @@ the work is done.
 36. [A claim in metadata is invisible to everyone who reads the page](#36-a-claim-in-metadata-is-invisible-to-everyone-who-reads-the-page)  
 37. [The host edits the page after you write it, and only the served copy shows it](#37-the-host-edits-the-page-after-you-write-it-and-only-the-served-copy-shows-it)  
 38. [A claim and a new feature that contradict each other are a design review nobody scheduled](#38-a-claim-and-a-new-feature-that-contradict-each-other-are-a-design-review-nobody-scheduled)  
-39. [A claim about a second surface is checked on that surface, not planned for it](#39-a-claim-about-a-second-surface-is-checked-on-that-surface-not-planned-for-it)
+39. [A claim about a second surface is checked on that surface, not planned for it](#39-a-claim-about-a-second-surface-is-checked-on-that-surface-not-planned-for-it)  
+40. [A comment asserting rarity is a claim, and an unchecked one narrows what the code handles](#40-a-comment-asserting-rarity-is-a-claim-and-an-unchecked-one-narrows-what-the-code-handles)  
+41. [A check whose list predates what it guards passes on everything added since](#41-a-check-whose-list-predates-what-it-guards-passes-on-everything-added-since)
 
 <!-- /index -->
 
@@ -1459,3 +1461,47 @@ it consistent, which is not the same as making it true.
 3. On a page where money changes hands, a pending capability is never described, even in the future tense.
 4. verify:sale-build fails if /pro/buy/ carries `PRO.covers`, or if the purchase path says "or the app?" or "any device you
    sign in on".
+
+### 40. A comment asserting rarity is a claim, and an unchecked one narrows what the code handles
+
+`src/lib/pdf-inspect.ts` read page content streams, and on meeting ASCII85Decode or ASCIIHexDecode it returned nothing,
+with the comment "Rare in modern writers; treat as opaque rather than mis-parsing it." Nobody had checked the frequency.
+ReportLab, one of the most common PDF libraries, writes page content as [/ASCII85Decode /FlateDecode] and images as
+[/ASCII85Decode /DCTDecode] by default; 13 of the 20 test PDFs in the Android repo are ReportLab files.
+
+With the content unreadable, no image was found drawn anywhere, and production Compress told people "Its 2 images are
+never drawn on any page" about scans that fill the page, and compressed nothing. Found 16 September 2026 while walking the
+redesigned result screen with corpus files, not by any check: every case in the compression self-test builds its PDF with
+pdf-lib, which never writes ASCII85, so the suite could not meet the filter the comment dismissed.
+
+The assertion was the defect. It turned an unknown into a reason not to handle a case, and the skip then produced a
+sentence about the person's own document that was false.
+
+**The check:**
+
+1. A comment that says a case is rare, unusual, legacy or "not seen in practice" is a claim. Before it justifies not
+   handling the case, count it: in a corpus of real files from more than one writer, or name who writes it.
+2. When a case is declined, the words shown to the person say it was declined ("a wrapper that could not be read"), never
+   a statement about the document that only holds if the declined case did not exist ("never drawn on any page").
+3. Test fixtures come from other writers as well as our own. `verify:ascii-filters` compares the decoders with Python's
+   encoders and reads a real ReportLab page; the browser self-test compresses that page and compares the pdf.js render
+   before and after.
+
+### 41. A check whose list predates what it guards passes on everything added since
+
+`tools/contrast.mjs` measures a list of foreground and background pairs read from the stylesheet's tokens. The redesign
+(13 September 2026) added a secondary grey, a panel grey and Pro's gold family. The check passed stages 1 and 2 without
+measuring any of them: its list was written before they existed, and nothing about adding a colour made the list grow.
+Found only by asking what the check had actually read. Extended on the redesign branch (pro-sale, 4220a0d); with the mockup's #8A7A5A restored as `--gold-muted`, the extended
+check fails at 3.97:1.
+
+This is not a check that cannot fail (CLAIMS 27). It could fail, on exactly the pairs it was written for. It silently
+stopped covering the thing it guards as that thing grew, and a pass looked the same as before.
+
+**The check:**
+
+1. When a change adds to what a check guards (a colour, a route, a filter, a page), open the check and confirm the new
+   thing is in what it reads. A pass is evidence only about the inputs it measured.
+2. Prove the addition is covered by making it fail: put a known-bad value into the new entry and watch the check name it.
+3. Where the guarded set can be enumerated (every colour token, every route, every tool), derive the check's list from
+   it, so a new member is measured or the check fails for not knowing it.
