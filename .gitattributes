@@ -1,0 +1,18 @@
+# Binary formats are never line-ending converted.
+#
+# Git decides "text" by looking for NUL bytes. A PDF whose streams are ASCII85 or hex-encoded has none, so with
+# core.autocrlf=true a Windows checkout rewrote every LF in tools/fixtures/reportlab/reportlab-scan-1p.pdf as CRLF:
+# 305,940 bytes committed, 306,036 checked out, every xref offset wrong (found 16 September 2026, on the commit that
+# added it). Listed by extension, not left to detection.
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.wasm  binary
+*.gz    binary
+*.zip   binary
