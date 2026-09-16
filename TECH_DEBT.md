@@ -475,3 +475,21 @@ buying. The owner pulled it the same day.
 in one change, on all five places that made the promise: /pro/buy/, /pro/, the homepage Pro panel, /terms and /refunds.
 Delete the three retired-claims entries in the same commit. Until then /pro/ and the homepage still carry `covers` in
 production, which sells nothing; the redesign (stage 4) and the claims sweep (stage 5) take them.
+
+## Split: the "Where to split" choices appear only after every thumbnail has rendered (found 16 September 2026)
+
+**What it is.** `src/entries/split.ts` switches to the options view (`shell.show('selected')`, line 85), then awaits
+`grid.load()` — rendering every page thumbnail — and only then calls `renderModes()` (line 88). Until the thumbnails are
+done, the "Where to split" fieldset is empty: no Extract a page range, no Split every N pages, no bookmarks choice.
+
+**How it showed up.** `src/test/e2e-selftest.ts`, "Split — every-N produces parts whose pages add up", counts the mode
+buttons as soon as the view appears and fails "two modes offered (no bookmarks in this file)", because it counts zero.
+It fails on production code (8b9273a) and after the ASCII85 change alike. Measured in an off-screen frame set up as the
+harness sets it up, on the same 11-page text file: the options view was showing at 22 ms with 0 mode buttons, and the 2
+buttons arrived at 54 ms. The test reads the count at the moment the view appears. So the test is racing, but the race is
+a real gap: on a long document a person sees the options with no choices in them for as long as the thumbnails take.
+
+**Not fixed** (owner, 16 September 2026: after stage 5 of the redesign). The likely fix is to render the modes before
+awaiting the grid, since neither depends on the other, and to make the test wait for the buttons (as `waitForEl` already
+does for the grid) rather than for the view. Check the other tools for the same order: a view shown, then a long await,
+then the controls drawn.

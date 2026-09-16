@@ -54,7 +54,8 @@ the work is done.
 38. [A claim and a new feature that contradict each other are a design review nobody scheduled](#38-a-claim-and-a-new-feature-that-contradict-each-other-are-a-design-review-nobody-scheduled)  
 39. [A claim about a second surface is checked on that surface, not planned for it](#39-a-claim-about-a-second-surface-is-checked-on-that-surface-not-planned-for-it)  
 40. [A comment asserting rarity is a claim, and an unchecked one narrows what the code handles](#40-a-comment-asserting-rarity-is-a-claim-and-an-unchecked-one-narrows-what-the-code-handles)  
-41. [A check whose list predates what it guards passes on everything added since](#41-a-check-whose-list-predates-what-it-guards-passes-on-everything-added-since)
+41. [A check whose list predates what it guards passes on everything added since](#41-a-check-whose-list-predates-what-it-guards-passes-on-everything-added-since)  
+42. [A test built from a generator's output covers only what that generator happened to produce](#42-a-test-built-from-a-generators-output-covers-only-what-that-generator-happened-to-produce)
 
 <!-- /index -->
 
@@ -1350,6 +1351,12 @@ variation was expected is the cheapest available signal that the instrument is p
    and refuse if that is not the one it just made. `verify-pro-gate` is correct only because each
    section rebuilds immediately before reading — an ordering that is load-bearing and easy to
    break by inserting a check between a build and its assertions.
+
+**It recurred on 16 September 2026, with a browser as the reader.** The in-browser end-to-end self-test was served from
+`dist/` while Node checks ran in another shell, and several of those rebuild `dist/`. The self-test pages and the
+encrypted fixture were deleted under the running test, and it reported five failures, four of them in the password
+paths the change under test never touched. A clean re-run with nothing else writing gave one, the same one the code
+before the change gave. A browser test is a reader of the directory too: nothing that writes it runs while it runs.
 3. Two processes must not share an output directory. A dev server serving `dist/` while a suite
    writes to it will mislead one of them, and the one it misleads is whichever you are watching.
 
@@ -1505,3 +1512,28 @@ stopped covering the thing it guards as that thing grew, and a pass looked the s
 2. Prove the addition is covered by making it fail: put a known-bad value into the new entry and watch the check name it.
 3. Where the guarded set can be enumerated (every colour token, every route, every tool), derive the check's list from
    it, so a new member is measured or the check fails for not knowing it.
+
+### 42. A test built from a generator's output covers only what that generator happened to produce
+
+The ASCII85 decoder added on 16 September 2026 was tested against Python's `base64.a85encode`: another implementation,
+which was the point. Every case passed. On production the same day it cut a JPEG short, because one `z` character
+stands for four zero bytes, the output buffer was sized at four fifths of the input, and a typed array drops writes past
+its end without a word. 4,003 bytes of mostly zeros decoded to 809.
+
+The cases were a handful of short byte strings and 1,000 random bytes. Random bytes almost never contain a zero group,
+so the encoder almost never wrote `z`, and the one input that `z` exists for was never in the suite. The fixture was too
+small to hold the failure, which the owner counts as the fourth time on this project; the one before it is CLAIMS 40,
+where every compression case was built with pdf-lib, which never writes ASCII85.
+
+A decoder that fails loudly on bad input was tested for that. One that silently returns less was not, because nothing
+compared lengths on the input shape that shortens it.
+
+**The check:**
+
+1. A test of a format is built from the format's edge cases, chosen on purpose, not sampled from typical output. For
+   ASCII85 that is `z` groups, runs of them, a final partial group, the largest group value, whitespace and the end
+   marker; each is named in `verify:ascii-filters`.
+2. Read the specification's special cases and ask of each: which test input makes the encoder produce it? If none does,
+   the case is untested, however many cases pass.
+3. Where output size is computed rather than grown, test the input that maximises expansion. A buffer that is too small
+   in a typed array is silent truncation, not an error.
