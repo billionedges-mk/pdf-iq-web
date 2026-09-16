@@ -50,7 +50,11 @@ the work is done.
 34. [A check is not trusted against the fix until it has failed against the defect](#34-a-check-is-not-trusted-against-the-fix-until-it-has-failed-against-the-defect)  
 35. [A check that reads a shared mutable location describes whatever wrote there last](#35-a-check-that-reads-a-shared-mutable-location-describes-whatever-wrote-there-last)  
 36. [A claim in metadata is invisible to everyone who reads the page](#36-a-claim-in-metadata-is-invisible-to-everyone-who-reads-the-page)  
-37. [The host edits the page after you write it, and only the served copy shows it](#37-the-host-edits-the-page-after-you-write-it-and-only-the-served-copy-shows-it)
+37. [The host edits the page after you write it, and only the served copy shows it](#37-the-host-edits-the-page-after-you-write-it-and-only-the-served-copy-shows-it)  
+38. [A claim and a new feature that contradict each other are a design review nobody scheduled](#38-a-claim-and-a-new-feature-that-contradict-each-other-are-a-design-review-nobody-scheduled)  
+39. [A claim about a second surface is checked on that surface, not planned for it](#39-a-claim-about-a-second-surface-is-checked-on-that-surface-not-planned-for-it)  
+40. [A comment asserting rarity is a claim, and an unchecked one narrows what the code handles](#40-a-comment-asserting-rarity-is-a-claim-and-an-unchecked-one-narrows-what-the-code-handles)  
+41. [A check whose list predates what it guards passes on everything added since](#41-a-check-whose-list-predates-what-it-guards-passes-on-everything-added-since)
 
 <!-- /index -->
 
@@ -1399,3 +1403,105 @@ one of this build's own `/assets/` bundles, and on the markers email obfuscation
 It failed on production the day it was written, for the obfuscation this entry records; it passes
 once the setting is off. A host can add a third-party script to a page you wrote, and the only way to
 know is to read what is served.
+
+---
+
+### 38. A claim and a new feature that contradict each other are a design review nobody scheduled
+
+On 13 September 2026 the /privacy wording for Paddle's checkout was drafted, researched and approved,
+and was one step from being applied. Applying it meant reading the section it would sit beside, and
+that section already said of the stored Pro sign-in: "loads no third-party script on any page: the only
+code that can read it is this site's own. If that ever changed, this storage would have to change with
+it."
+
+/pro/buy/, as built, loaded Paddle.js into a page on the same origin. Any script in that page can read
+the origin's localStorage, and the sign-in there holds a Firebase refresh token that can act as the
+account. The page under construction and the sentence on /privacy could not both be true. Neither the
+builds, the gates nor the measurement found it: each checked what it was written to check. The
+contradiction was the finding.
+
+The fix was structural, not a rewrite of the sentence. Paddle.js now runs only on a separate origin (its
+own Cloudflare Pages project), which /pro/buy/ frames and hands a uid and an email by postMessage. The
+browser keeps each origin's storage to itself, so the claim holds because the platform enforces it, not
+because the code is careful. Weakening the sentence to fit the code was the alternative and was refused.
+
+**The check:**
+
+1. Before applying new copy, read the page it lands on for statements the new copy, or the feature it
+   describes, would make false. Applying a draft beside a sentence it contradicts buries the finding.
+2. When a claim and a feature disagree, change the design before the words. The claim was written for a
+   reason; the disagreement is the review.
+3. `verify:sale-build` fails if Paddle's script, a Paddle call or a client token reaches any file on the
+   site's origin, and the build itself refuses it. Putting Paddle.js's address back into the site's buy
+   bundle made the build fail by name.
+
+### 39. A claim about a second surface is checked on that surface, not planned for it
+
+On 13 September 2026 three authors had written "and the app" into sentences on the strength of an intention: the owner,
+in the redesign mockup ("this browser knows it, and so does the Android app when you sign in there"); the copy document
+behind `PRO.covers` ("covering both the web tools and the Android app", on /pro/buy/, where someone pays); and this
+session, in the entitlement work ("Bought it already, on another browser or the app?" and "follows you to any device you
+sign in on"). Each was true of the plan. None was true of the product: the website sees only Paddle purchases, and the
+app cannot honour one until its `BILLING_ENABLED` flag is split, which was approved and not built.
+
+Every check passed. Nothing on the website could fail on them, because the surface they describe is a different
+codebase. The sentences were found by reading them against the app's state, one at a time.
+
+The scale is the finding. It was not one sentence: five places said it (/pro/buy/, /pro/, the homepage Pro panel, /terms
+and /refunds), plus the two lines of this session's and the mockup's. It was in the product's description of itself, set
+once in `PRO.covers` and substituted everywhere, and it propagated because it was true of the plan. A single source made
+it consistent, which is not the same as making it true.
+
+**The check:**
+
+1. A sentence that names a second surface (the app, "any device", "both") is a claim about that surface. Before it
+   ships, confirm the capability on that surface as it is built and released today, not as it is approved or planned.
+2. If the capability is pending, the sentence says what is true now, and the place that makes it true later is recorded
+   with every page that must change back (TECH_DEBT.md, "The purchase page says web tools only").
+3. On a page where money changes hands, a pending capability is never described, even in the future tense.
+4. verify:sale-build fails if /pro/buy/ carries `PRO.covers`, or if the purchase path says "or the app?" or "any device you
+   sign in on".
+
+### 40. A comment asserting rarity is a claim, and an unchecked one narrows what the code handles
+
+`src/lib/pdf-inspect.ts` read page content streams, and on meeting ASCII85Decode or ASCIIHexDecode it returned nothing,
+with the comment "Rare in modern writers; treat as opaque rather than mis-parsing it." Nobody had checked the frequency.
+ReportLab, one of the most common PDF libraries, writes page content as [/ASCII85Decode /FlateDecode] and images as
+[/ASCII85Decode /DCTDecode] by default; 13 of the 20 test PDFs in the Android repo are ReportLab files.
+
+With the content unreadable, no image was found drawn anywhere, and production Compress told people "Its 2 images are
+never drawn on any page" about scans that fill the page, and compressed nothing. Found 16 September 2026 while walking the
+redesigned result screen with corpus files, not by any check: every case in the compression self-test builds its PDF with
+pdf-lib, which never writes ASCII85, so the suite could not meet the filter the comment dismissed.
+
+The assertion was the defect. It turned an unknown into a reason not to handle a case, and the skip then produced a
+sentence about the person's own document that was false.
+
+**The check:**
+
+1. A comment that says a case is rare, unusual, legacy or "not seen in practice" is a claim. Before it justifies not
+   handling the case, count it: in a corpus of real files from more than one writer, or name who writes it.
+2. When a case is declined, the words shown to the person say it was declined ("a wrapper that could not be read"), never
+   a statement about the document that only holds if the declined case did not exist ("never drawn on any page").
+3. Test fixtures come from other writers as well as our own. `verify:ascii-filters` compares the decoders with Python's
+   encoders and reads a real ReportLab page; the browser self-test compresses that page and compares the pdf.js render
+   before and after.
+
+### 41. A check whose list predates what it guards passes on everything added since
+
+`tools/contrast.mjs` measures a list of foreground and background pairs read from the stylesheet's tokens. The redesign
+(13 September 2026) added a secondary grey, a panel grey and Pro's gold family. The check passed stages 1 and 2 without
+measuring any of them: its list was written before they existed, and nothing about adding a colour made the list grow.
+Found only by asking what the check had actually read. Extended on the redesign branch (pro-sale, 4220a0d); with the mockup's #8A7A5A restored as `--gold-muted`, the extended
+check fails at 3.97:1.
+
+This is not a check that cannot fail (CLAIMS 27). It could fail, on exactly the pairs it was written for. It silently
+stopped covering the thing it guards as that thing grew, and a pass looked the same as before.
+
+**The check:**
+
+1. When a change adds to what a check guards (a colour, a route, a filter, a page), open the check and confirm the new
+   thing is in what it reads. A pass is evidence only about the inputs it measured.
+2. Prove the addition is covered by making it fail: put a known-bad value into the new entry and watch the check name it.
+3. Where the guarded set can be enumerated (every colour token, every route, every tool), derive the check's list from
+   it, so a new member is measured or the check fails for not knowing it.
