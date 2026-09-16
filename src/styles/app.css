@@ -462,6 +462,8 @@ input, button, select, textarea { font-family: inherit; }
 }
 .result__pro > .card { margin-top: 18px; }
 .res .pro-tag { margin: 0 0 0 4px; vertical-align: 1px; }
+.res__parts { padding: 4px clamp(18px, 4vw, 28px) 0; }
+.res__parts .tray { margin-top: 12px; }
 .result .atwork { text-align: center; }
 
 /* ---------- outcome blocks (no-gain, error) ---------- */

@@ -108,29 +108,32 @@
       <button type="button" class="btn-quiet" style="margin-top: 14px;" data-stop>Stop</button>
     </section>
 
-    <section aria-label="Result" data-view="result" style="margin-top: 18px;" hidden>
-      <div class="card">
-        <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
-        <p class="outcome__head" data-result-head>&nbsp;</p>
-        <p class="outcome__body" data-size-note hidden>&nbsp;</p>
-        <div class="actions" style="margin-top: 24px;">
+    <section aria-label="Result" data-view="result" class="result" hidden>
+      <!-- The result screen (proposal approved 17 September 2026): the pages large, "from" the files, what was kept in one
+           sentence (src/lib/result-words.ts), the size note when the merged file is larger. -->
+      <div class="res">
+        <div class="res__top">
+          <h2 class="res__fname" data-focus><span data-res-name>&nbsp;</span> &middot; <span data-fact-bytes>&nbsp;</span></h2>
+          <p class="res__nums">
+            <span class="res__now" data-res-now>&nbsp;</span>
+            <span class="res__was" data-res-was>&nbsp;</span>
+          </p>
+        </div>
+        <div class="res__how">
+          <p data-res-how>&nbsp;</p>
+          <p data-size-note hidden>&nbsp;</p>
+        </div>
+        <div class="res__acts">
           <button type="button" class="btn" data-save>Save</button>
           <button type="button" class="btn-quiet" data-keep-adjusting>Change the order</button>
         </div>
-        <dl class="facts">
-          <div><dt>size</dt><dd data-fact-bytes>&mdash;</dd></div>
-          <div><dt>pages</dt><dd data-fact-pages>&mdash;</dd></div>
-          <div><dt>bookmarks</dt><dd data-fact-bookmarks>&mdash;</dd></div>
-          <div><dt>page sizes</dt><dd data-fact-sizes>&mdash;</dd></div>
-          <div><dt>form fields</dt><dd data-fact-forms>&mdash;</dd></div>
-        </dl>
-      </div>
-      <div class="nextup">
-        <span class="nextup__label">Next, with this merged file:</span>
-        <a href="/compress/">Compress it</a>
-        <a href="/reorder/">Reorder pages</a>
-        <a href="/ocr/">Read the text from it</a>
-        <!--PRO--><a href="/password/">Protect it</a><!--/PRO-->
+        <div class="nextup">
+          <span class="nextup__label">Next, with this merged file:</span>
+          <a href="/compress/">compress it</a>,
+          <a href="/reorder/">reorder its pages</a>,
+          <!--FREE-->or <!--/FREE--><a href="/ocr/">read the text from it</a><!--PRO-->, or
+          <a href="/password/">protect it</a> <span class="pro-tag" data-pro-label hidden>PRO</span><!--/PRO--> &mdash; no saving in between.
+        </div>
       </div>
     </section>
 

@@ -106,27 +106,30 @@
       <button type="button" class="btn-quiet" style="margin-top: 14px;" data-stop>Stop</button>
     </section>
 
-    <section aria-label="Result" data-view="result" style="margin-top: 18px;" hidden>
-      <div class="card">
-        <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
-        <p class="outcome__head" data-result-head>&nbsp;</p>
-        <div class="actions" style="margin-top: 24px;">
+    <section aria-label="Result" data-view="result" class="result" hidden>
+      <!-- The result screen (proposal approved 17 September 2026): the pages large, "from" the images, one sentence. -->
+      <div class="res">
+        <div class="res__top">
+          <h2 class="res__fname" data-focus><span data-res-name>&nbsp;</span> &middot; <span data-res-line>&nbsp;</span></h2>
+          <p class="res__nums">
+            <span class="res__now" data-res-now>&nbsp;</span>
+            <span class="res__was" data-res-was>&nbsp;</span>
+          </p>
+        </div>
+        <div class="res__how">
+          <p data-res-how>&nbsp;</p>
+        </div>
+        <div class="res__acts">
           <button type="button" class="btn" data-save>Save</button>
           <button type="button" class="btn-quiet" data-keep-adjusting>Change the order</button>
         </div>
-        <dl class="facts">
-          <div><dt>images</dt><dd data-fact-images>&mdash;</dd></div>
-          <div><dt>resolution</dt><dd data-fact-res>&mdash;</dd></div>
-          <div><dt>EXIF</dt><dd data-fact-exif>&mdash;</dd></div>
-          <div><dt>page size</dt><dd data-fact-size>&mdash;</dd></div>
-        </dl>
-      </div>
-      <div class="nextup">
-        <span class="nextup__label">Next, with the file you just made:</span>
-        <a href="/compress/">Compress it</a>
-        <a href="/ocr/">Read the text in it</a>
-        <a href="/merge/">Merge with another PDF</a>
-        <!--PRO--><a href="/password/">Protect it</a><!--/PRO-->
+        <div class="nextup">
+          <span class="nextup__label">Next, with the file you just made:</span>
+          <a href="/compress/">compress it</a>,
+          <a href="/ocr/">read the text in it</a>,
+          <!--FREE-->or <!--/FREE--><a href="/merge/">merge it with another PDF</a><!--PRO-->, or
+          <a href="/password/">protect it</a> <span class="pro-tag" data-pro-label hidden>PRO</span><!--/PRO--> &mdash; no saving in between.
+        </div>
       </div>
     </section>
 

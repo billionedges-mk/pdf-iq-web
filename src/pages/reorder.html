@@ -94,22 +94,30 @@
       <button type="button" class="btn-quiet" style="margin-top: 14px;" data-stop>Stop</button>
     </section>
 
-    <section aria-label="Result" data-view="result" style="margin-top: 18px;" hidden>
-      <div class="card">
-        <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
-        <p class="outcome__head" data-result-head>&nbsp;</p>
-        <p class="outcome__mono" style="margin-top: 12px;" data-result-mono>&nbsp;</p>
-        <div class="actions" style="margin-top: 24px;">
+    <section aria-label="Result" data-view="result" class="result" hidden>
+      <!-- The result screen (proposal approved 17 September 2026): the pages large, what was kept in one sentence. -->
+      <div class="res">
+        <div class="res__top">
+          <h2 class="res__fname" data-focus><span data-res-name>&nbsp;</span> &middot; <span data-res-line>&nbsp;</span></h2>
+          <p class="res__nums">
+            <span class="res__now" data-res-now>&nbsp;</span>
+            <span class="res__was" data-res-was>&nbsp;</span>
+          </p>
+        </div>
+        <div class="res__how">
+          <p data-res-how>&nbsp;</p>
+        </div>
+        <div class="res__acts">
           <button type="button" class="btn" data-save>Save</button>
           <button type="button" class="btn-quiet" data-keep-adjusting>Keep adjusting</button>
         </div>
-      </div>
-      <div class="nextup">
-        <span class="nextup__label">Next, with the file you just made:</span>
-        <a href="/rotate/">Rotate pages</a>
-        <a href="/compress/">Compress it</a>
-        <a href="/split/">Split it</a>
-        <!--PRO--><a href="/password/">Protect it</a><!--/PRO-->
+        <div class="nextup">
+          <span class="nextup__label">Next, with the file you just made:</span>
+          <a href="/rotate/">rotate its pages</a>,
+          <a href="/compress/">compress it</a>,
+          <!--FREE-->or <!--/FREE--><a href="/split/">split it</a><!--PRO-->, or
+          <a href="/password/">protect it</a> <span class="pro-tag" data-pro-label hidden>PRO</span><!--/PRO--> &mdash; no saving in between.
+        </div>
       </div>
     </section>
 

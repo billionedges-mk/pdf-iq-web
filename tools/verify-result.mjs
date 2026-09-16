@@ -51,6 +51,42 @@ s = say({});
 ok(s === `No images to change. ${TAIL} Author and timestamps removed.`, `no images: "${s}"`);
 ok(!/byte-identical|120 dpi/.test(say({ imagesRecompressed: 2 })), 'nothing from the mockup\'s sample sentence');
 
+// ---------------------------------------------------------------- the other five tools' sentences
+// Each replaced a facts table or a mono line, and must still carry every fact it showed.
+await esbuild.build({
+  entryPoints: [join(ROOT, 'src/lib/result-words.ts')],
+  bundle: true, platform: 'node', format: 'esm', outfile: join(WORK, 'result-words.mjs'), logLevel: 'silent',
+}).catch(() => {});
+const W = await import(pathToFileURL(join(WORK, 'result-words.mjs')).href).catch(() => ({}));
+const call = (name, arg) => (typeof W[name] === 'function' ? W[name](arg) : `(no ${name})`);
+
+s = call('describeMerged', { pagesPerFile: [3, 4, 2], bookmarks: 5, sizes: ['A4', 'Letter'], forms: { fields: 4, renamed: 1 } });
+ok(s === '3 + 4 + 2 pages, in the order you set. 5 bookmarks kept, in 3 groups. Page sizes A4 and Letter, all kept as they were. 4 form fields kept, 1 renamed to avoid a clash.',
+  `merge, every fact present: "${s}"`);
+s = call('describeMerged', { pagesPerFile: [1, 1], bookmarks: 0, sizes: ['A4'], forms: { fields: 0, renamed: 0 } });
+ok(s === '1 + 1 pages, in the order you set. No bookmarks: none of the files had any. Page size A4, unchanged. No form fields in these files.', `merge, none of them: "${s}"`);
+
+s = call('describeSplit', { pagesPerPart: [8, 8, 4], totalLabel: '12 KB' });
+ok(s === '8 + 8 + 4 pages, 12 KB in total. Your original file is untouched, on your disk, where it was.', `split, several parts: "${s}"`);
+s = call('describeSplit', { pagesPerPart: [4], totalLabel: '3 KB' });
+ok(s === '4 pages, 3 KB. Your original file is untouched, on your disk, where it was.', `split, one part: "${s}"`);
+
+s = call('describeImagesToPdf', { images: 3, converted: 2, maxW: 4032, maxH: 3024, hadMetadata: 2, stripped: true, pageSize: null });
+ok(s === 'Each page matches its image. Largest image 4032 × 3024; 2 converted. Photo EXIF (GPS coordinates, phone model, capture time) removed from 2 of 3.',
+  `images, converted and stripped: "${s}"`);
+s = call('describeImagesToPdf', { images: 2, converted: 0, maxW: 800, maxH: 600, hadMetadata: 1, stripped: false, pageSize: 'A4' });
+ok(s === 'Every page is A4. Images unchanged, the largest 800 × 600. Photo EXIF kept on 1 of 2.', `images, kept and a fixed page size: "${s}"`);
+s = call('describeImagesToPdf', { images: 1, converted: 0, maxW: 10, maxH: 10, hadMetadata: 0, stripped: true, pageSize: null });
+ok(s.endsWith('None of these carried photo EXIF.'), `images, no EXIF at all: "${s}"`);
+
+s = call('describeRotated', { inLabel: '2.1 MB', outLabel: '2.1 MB', drift: '+312 bytes' });
+ok(s === 'Every page is still here, and no image was re-encoded. 2.1 MB in, 2.1 MB out (+312 bytes).', `rotate: "${s}"`);
+
+s = call('describeReordered', { inLabel: '2 MB', outLabel: '1.8 MB', pageCount: 12, kept: 10, hadOutline: true, bookmarks: 0 });
+ok(s === '12 → 10 pages, and no image re-encoded. 2 MB in, 1.8 MB out. Bookmarks dropped: their pages are gone.', `reorder, pages and bookmarks dropped: "${s}"`);
+s = call('describeReordered', { inLabel: '2 MB', outLabel: '2 MB', pageCount: 6, kept: 6, hadOutline: false, bookmarks: 0 });
+ok(s === '6 → 6 pages, and no image re-encoded. 2 MB in, 2 MB out.', `reorder, no outline to speak of: "${s}"`);
+
 // The built page, in a free build (production's) and a Pro build.
 const clean = { PDFIQ_PRO: '', PDFIQ_SALE: '', PDFIQ_LOCAL: '', CF_PAGES: '', CF_PAGES_BRANCH: '' };
 for (const [label, env] of [['free build', {}], ['Pro build', { PDFIQ_PRO: '1' }]]) {
@@ -73,12 +109,22 @@ for (const [label, env] of [['free build', {}], ['Pro build', { PDFIQ_PRO: '1' }
   // The other result screens, as each is converted (proposal approved 17 September 2026). Every one: no facts table, the
   // one sentence, and a "protect it" link tagged PRO before the click.
   const sectionOf = (slug) => /<section aria-label="Result" data-view="result"[\s\S]*?<\/section>/.exec(readFileSync(join(ROOT, `dist/${slug}/index.html`), 'utf8').replace(/\s+/g, ' '))?.[0] ?? '';
-  for (const slug of ['compress', 'ocr']) {
+  for (const slug of ['compress', 'ocr', 'merge', 'split', 'images-to-pdf', 'rotate', 'reorder']) {
     const r = sectionOf(slug);
     ok(r.includes('class="res"') && !r.includes('class="facts"'), `${label}: /${slug}/ result is the one-sentence screen, with no facts table`);
     const protect = [...r.matchAll(/<a href="\/password\/">[^<]*<\/a>(\s*<span class="pro-tag" data-pro-label hidden>PRO<\/span>)?/g)];
     ok(protect.every((m) => m[1]), `${label}: /${slug}/ every link to Password says PRO before the click (${protect.length} link${protect.length === 1 ? '' : 's'})`);
   }
+  for (const slug of ['merge', 'split', 'images-to-pdf', 'rotate', 'reorder']) {
+    const r = sectionOf(slug);
+    ok(/class="res__now" data-res-now/.test(r) && /class="res__was" data-res-was/.test(r) && /data-res-how/.test(r) && !/data-result-head|data-result-mono/.test(r),
+      `${label}: /${slug}/ shows its number large with what it came from, and one sentence, not the old heading or mono line`);
+    const sentence = /<div class="nextup">[\s\S]*?no saving in between\./.exec(r)?.[0] ?? '';
+    ok(env.PDFIQ_PRO ? /, or <a href="\/password\/">protect it<\/a> <span class="pro-tag"/.test(sentence) : /, or <a href="\/[a-z-]+\/">[^<]+<\/a> &mdash; no saving/.test(sentence) && !sentence.includes('/password/'),
+      `${label}: /${slug}/ carry-over is one sentence ending "or ${env.PDFIQ_PRO ? 'protect it' : '…'}"`);
+  }
+  ok(sectionOf('merge').includes('data-fact-bytes') && sectionOf('merge').includes('data-size-note'), `${label}: /merge/ still shows size in and out, and the note when the merged file is larger`);
+  ok(sectionOf('split').includes('<ul class="tray" data-outputs>'), `${label}: /split/ still lists each part to save`);
   const ocr = sectionOf('ocr');
   ok(/data-res-words/.test(ocr) && /data-res-time/.test(ocr) && /data-res-how/.test(ocr) && /class="visually-hidden" for="ocr-text"/.test(ocr),
     `${label}: /ocr/ shows the word count large, the time, the characters and "untouched" in the sentence, and its textarea label is hidden`);
