@@ -23,6 +23,9 @@
   --gold-bg: #FFF8EC;
   --gold-line: #F0DFC2;
   --gold-deep: #6E5318;
+  /* Text on the gold ground. --gold-muted is the mockup's #8A7A5A taken to AA (it measured 3.97:1). tools/contrast.mjs measures both. */
+  --gold-text: #6B5C3E;
+  --gold-muted: #7A6B4E;
   --ink-80: rgba(17, 18, 20, .80);
   --ink-78: rgba(17, 18, 20, .78);
   --ink-76: rgba(17, 18, 20, .76);
@@ -235,7 +238,7 @@ input, button, select, textarea { font-family: inherit; }
 }
 .lock__head { display: flex; align-items: center; gap: 10px; margin: 0 0 9px; }
 .lock__title { margin: 0; font-size: 16.5px; font-weight: 600; color: var(--ink); }
-.lock__what { margin: 0 0 16px; font-size: 14.5px; line-height: 1.6; color: #6B5C3E; }
+.lock__what { margin: 0 0 16px; font-size: 14.5px; line-height: 1.6; color: var(--gold-text); }
 .lock__controls { margin: 0 0 16px; }
 .lock__controls .actions { margin-top: 8px; }
 .lock__controls input, .lock__controls select { border-color: var(--gold-line); background: #FFFFFF; }
@@ -245,11 +248,11 @@ input, button, select, textarea { font-family: inherit; }
 }
 .lock .cta:hover { background: #000000; }
 .lock .cta:disabled { opacity: .7; cursor: progress; }
-.lock__after, .lock__alt, .lock__already { margin: 12px 0 0; font-size: 13.5px; line-height: 1.6; color: #7A6B4E; text-align: center; }
+.lock__after, .lock__alt, .lock__already { margin: 12px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--gold-muted); text-align: center; }
 .lock__alt { margin-top: 15px; }
 .lock__already { margin-top: 8px; }
-.lock__after a, .lock__alt a, .lock__already a, .lock__state a { color: #6B5C3E; }
-.lock__state { margin: 0; font-size: 14.5px; line-height: 1.6; color: #6B5C3E; }
+.lock__after a, .lock__alt a, .lock__already a, .lock__state a { color: var(--gold-text); }
+.lock__state { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--gold-text); }
 .pro-locked :disabled { cursor: not-allowed; }
 .kicker {
   margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase;
