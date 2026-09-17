@@ -74,7 +74,31 @@ place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
 - The web API key (restricted to Identity Toolkit and Token Service) as `PDFIQ_FIREBASE_WEB_KEY` in pdf-iq-web Production.
 - And `npm run entitlement:keys -- production`: a production sale build leaves /pro/buy/ out without its public key.
 
-## 3. Copy that must change in the same release
+## 3. The price, against the production price id
+
+The pages say $14.99. That is the total in most of the world and **not** in the United States or Canada, where Paddle
+adds sales tax on top of a tax-inclusive price. Measured on the sandbox price on 17 September 2026 (TECH_DEBT.md has the
+table): New York $16.32, Texas $16.23, Ontario $16.94; UAE, Germany, the UK, India, Australia and Japan all $14.99.
+
+**Run the same measurement against the production price before the sale is announced**, because it is a different price
+id in a different Paddle account, and the pages' wording depends on the answer:
+
+1. Open a page that is not this site (the site's own policy blocks Paddle), load `https://cdn.paddle.com/paddle/v2/paddle.js`,
+   then `Paddle.Environment.set('production')` and `Paddle.Initialize({ token: <the live client token> })`.
+2. For each of UAE, Germany, the UK, India, Australia, Japan, US-NY, US-TX, US-CA and Canada-ON, call
+   `Paddle.PricePreview({ items: [{ priceId: <live price id>, quantity: 1 }], address: { countryCode, postalCode } })`
+   and read `data.details.lineItems[0].formattedTotals`.
+   `scratchpad/pricecheck/index.html` is the sandbox version of exactly this.
+3. If any total outside the US and Canada is not $14.99, the price is **not** tax-inclusive there and every page that
+   names $14.99 is wrong: stop and change the copy before announcing.
+4. If the pattern holds, the sentence already on /pro/, /app/, /terms and /pro/buy/ is correct as it stands, and
+   `verify:price-offers` keeps it on the purchase page.
+
+**Also unestablished: what Paddle returns as tax on a refund.** /refunds deliberately says only that Paddle issues the
+refund and the amount is theirs. To replace that with something specific, refund one sandbox purchase and read the
+credit note: if the tax is returned in full, /refunds can say so.
+
+## 4. Copy that must change in the same release
 
 - /privacy: the checkout section, from the production measurement.
 - /refunds: when a refund takes effect on a device.
