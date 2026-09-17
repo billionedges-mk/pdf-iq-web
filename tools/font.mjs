@@ -11,18 +11,19 @@
  * alongside the `.woff2` the browser gets, and WOFF1 is a plain container whose tables are
  * zlib-deflated — which Node decompresses without help. So: .woff -> inflate -> the seven
  * tables below -> quadratic outlines -> scanline fill. No new package, and the type on the
- * card is the same Public Sans the page is set in, from the same file the page loads.
+ * card is the same Inter Tight the page is set in, from the same package the page loads.
+ * (It was Public Sans until the redesign moved both, 17 September 2026.)
  *
  * What it does not do, stated so nobody discovers it in a preview:
  *
  *  - No kerning. There is no `kern` table in these fonts; the pairs live in GPOS, which is
- *    a far larger specification. Public Sans is evenly spaced and a loose "Av" on a share
- *    card is not worth that. Accepted deliberately, not overlooked.
- *  - No composite glyphs. 89 of Public Sans's 278 glyphs are composites — accented letters,
- *    mostly. `glyph()` THROWS on one rather than returning nothing, which is the whole point
- *    of this paragraph: an empty return is what made the old share images fail silently, and
- *    reproducing that here, in the fix for it, would be indefensible. If a card ever needs an
- *    accent, the build stops and someone implements composites.
+ *    a far larger specification. A loose "Av" on a share card is not worth that. Accepted
+ *    deliberately, not overlooked. No letter-spacing either: the page sets headings at -.03em.
+ *  - Composite glyphs are assembled (Inter Tight builds i, j and the comma from components;
+ *    until the move this file threw on them). The one placement form not read, matching
+ *    points, THROWS rather than returning nothing: an empty or misplaced return is what made
+ *    the old share images fail silently. tools/verify-font.mjs compares every assembled glyph
+ *    with the bounding box the font's compiler wrote for it.
  *  - Latin subset only. Same reason, same behaviour: an unmapped codepoint throws.
  */
 
@@ -115,16 +116,66 @@ export function loadFont(file) {
         `the font actually has; nothing may render as a blank.`
       );
     }
+    return { contours: outline(gid, show(cp), 0), advance: advanceOf(gid) };
+  }
+
+  /** Contour count from the glyph header: negative for a composite, null for no outline. */
+  function contourCount(gid) {
     const a = locaAt(gid), b = locaAt(gid + 1);
-    if (a === b) return { contours: [], advance: advanceOf(gid) };   // a real space
+    return a === b ? null : t.glyf.readInt16BE(a);
+  }
+
+  /** The glyph's header bounding box, as the font compiler wrote it: [xMin, yMin, xMax, yMax]. */
+  function bbox(gid) {
+    const a = locaAt(gid), b = locaAt(gid + 1);
+    if (a === b) return null;
+    const d = t.glyf.subarray(a, b);
+    return [d.readInt16BE(2), d.readInt16BE(4), d.readInt16BE(6), d.readInt16BE(8)];
+  }
+
+  /**
+   * Contours for one glyph id. A composite (Inter Tight builds i, j and the comma this way) is
+   * its components' contours, each put through the component's transform. Placement by
+   * matching points is the one form not handled, and it throws rather than drawing a glyph in
+   * the wrong place.
+   */
+  function outline(gid, name, depth) {
+    if (depth > 8) throw new Error(`${name}: composite glyphs nested more than 8 deep`);
+    const a = locaAt(gid), b = locaAt(gid + 1);
+    if (a === b) return [];   // a real space
     const d = t.glyf.subarray(a, b);
     const numContours = d.readInt16BE(0);
     if (numContours < 0) {
-      throw new Error(
-        `${show(cp)} is a composite glyph and this rasteriser does not assemble composites, ` +
-        `so it would draw nothing. Either use a character built from a simple glyph, or ` +
-        `implement composites in tools/font.mjs. It must not silently render blank.`
-      );
+      const contours = [];
+      let p = 10, flags;
+      const f2dot14 = () => { const v = d.readInt16BE(p) / 16384; p += 2; return v; };
+      do {
+        flags = d.readUInt16BE(p);
+        const component = d.readUInt16BE(p + 2);
+        p += 4;
+        let arg1, arg2;
+        if (flags & 0x0001) { arg1 = d.readInt16BE(p); arg2 = d.readInt16BE(p + 2); p += 4; }
+        else { arg1 = d.readInt8(p); arg2 = d.readInt8(p + 1); p += 2; }
+        if (!(flags & 0x0002)) {
+          throw new Error(
+            `${name} places a component by matching points, which tools/font.mjs does not ` +
+            `implement. It would draw in the wrong place, so it does not draw.`
+          );
+        }
+        // x' = xx·x + yx·y + dx, y' = xy·x + yy·y + dy (the spec's a, b, c, d in file order).
+        let xx = 1, xy = 0, yx = 0, yy = 1;
+        if (flags & 0x0008) { xx = yy = f2dot14(); }
+        else if (flags & 0x0040) { xx = f2dot14(); yy = f2dot14(); }
+        else if (flags & 0x0080) { xx = f2dot14(); xy = f2dot14(); yx = f2dot14(); yy = f2dot14(); }
+        let dx = arg1, dy = arg2;
+        if (flags & 0x0800) {   // SCALED_COMPONENT_OFFSET: the offset is transformed too
+          dx = xx * arg1 + yx * arg2; dy = xy * arg1 + yy * arg2;
+        }
+        for (const pts of outline(component, name, depth + 1)) {
+          contours.push(pts.map((q) => ({ x: xx * q.x + yx * q.y + dx, y: xy * q.x + yy * q.y + dy, on: q.on })));
+        }
+      } while (flags & 0x0020);   // MORE_COMPONENTS
+      return contours;
     }
     const ends = [];
     for (let i = 0; i < numContours; i++) ends.push(d.readUInt16BE(10 + i * 2));
@@ -158,10 +209,10 @@ export function loadFont(file) {
       contours.push(pts);
       start = end + 1;
     }
-    return { contours, advance: advanceOf(gid) };
+    return contours;
   }
 
-  return { file, unitsPerEm, numGlyphs, ascender, descender, glyph };
+  return { file, unitsPerEm, numGlyphs, ascender, descender, glyph, glyphId, outline, bbox, contourCount };
 }
 
 /** Flatten one glyph's contours into device-space polygons. */

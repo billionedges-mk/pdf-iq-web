@@ -322,7 +322,7 @@ ${footer()}
 // break the offline test and would put two cross-origin requests behind a readout
 // that claims zero.
 const FONT_FILES = [
-  // Inter Tight: the redesign's type (owner's brief, 13 September 2026). Share images still use Public Sans (og-images.mjs).
+  // Inter Tight: the redesign's type (owner's brief, 13 September 2026). Share images use it too (og-images.mjs).
   ['@fontsource/inter-tight/files/inter-tight-latin-400-normal.woff2', 'inter-tight-400.woff2'],
   ['@fontsource/inter-tight/files/inter-tight-latin-500-normal.woff2', 'inter-tight-500.woff2'],
   ['@fontsource/inter-tight/files/inter-tight-latin-600-normal.woff2', 'inter-tight-600.woff2'],
