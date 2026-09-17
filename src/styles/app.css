@@ -255,6 +255,22 @@ input, button, select, textarea { font-family: inherit; }
   padding: 22px; text-align: left; max-width: 700px;
 }
 .lock__head { display: flex; align-items: center; gap: 10px; margin: 0 0 9px; }
+
+/* The account page, signed in (pdf-iq-final.html 04): the Pro card, then the account row. */
+.acct-page { margin-top: 22px; max-width: 640px; }
+.acct-owned { background: var(--gold-bg); border: 1px solid var(--gold-line); border-radius: 14px; padding: 22px 24px; margin-bottom: 16px; }
+.acct-owned__head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.acct-owned__title { margin: 0; font-size: 17.5px; font-weight: 600; }
+.acct-owned__body { margin: 0 0 8px; font-size: 14.5px; line-height: 1.6; color: var(--gold-text); }
+.acct-owned__links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.acct-owned__links a { border: 1px solid var(--gold-line); background: var(--paper); border-radius: 10px; padding: 12px 14px; text-decoration: none; color: var(--ink); font-size: 14.5px; font-weight: 500; min-height: 44px; }
+.acct-owned__links a:hover { border-color: var(--gold); }
+.acct-owned__ref { margin: 16px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--gold-text); }
+.acct-owned__ref code { font-family: var(--mono); font-size: 13px; color: var(--ink); overflow-wrap: anywhere; }
+.acct-row { border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 10px; background: var(--paper); }
+.acct-row__title { margin: 0 0 4px; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.acct-row__body { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-76); }
+@media (max-width: 420px) { .acct-owned__links { grid-template-columns: 1fr; } }
 .lock__title { margin: 0; font-size: 16.5px; font-weight: 600; color: var(--ink); }
 .lock__what { margin: 0 0 16px; font-size: 14.5px; line-height: 1.6; color: var(--gold-text); }
 .lock__controls { margin: 0 0 16px; }

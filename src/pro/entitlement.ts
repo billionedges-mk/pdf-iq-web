@@ -85,6 +85,22 @@ export async function storedEntitlementUid(uid: string | null): Promise<string |
   return (await verifyToken(read(), uid)) ? uid : null;
 }
 
+/**
+ * Paddle's reference for the purchase the stored token proves, for the account page to show as the one thing support can
+ * act on. Read from the token only after it verifies for this uid; null when there is no valid token or no well-formed
+ * reference in it. No request.
+ */
+export async function storedPaymentReference(uid: string | null): Promise<string | null> {
+  const token = read();
+  if (!uid || !(await verifyToken(token, uid))) return null;
+  try {
+    const claims = JSON.parse(dec.decode(b64urlBytes((token as string).split('.')[0]))) as Record<string, unknown>;
+    return typeof claims.txn === 'string' && /^txn_[a-z0-9]{26}$/.test(claims.txn) ? claims.txn : null;
+  } catch {
+    return null;
+  }
+}
+
 export type RefreshResult =
   | { state: 'owned' }
   | { state: 'not-owned' }
