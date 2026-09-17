@@ -492,7 +492,8 @@ harness sets it up, on the same 11-page text file: the options view was showing 
 buttons arrived at 54 ms. The test reads the count at the moment the view appears. So the test is racing, but the race is
 a real gap: on a long document a person sees the options with no choices in them for as long as the thumbnails take.
 
-**Not fixed** (owner, 16 September 2026: after stage 5 of the redesign). The likely fix is to render the modes before
-awaiting the grid, since neither depends on the other, and to make the test wait for the buttons (as `waitForEl` already
-does for the grid) rather than for the view. Check the other tools for the same order: a view shown, then a long await,
-then the controls drawn.
+**Fixed 17 September 2026.** `renderModes()` and `recompute()` now run before the view is shown and before `grid.load()`;
+`recompute()` runs again after the grid, to mark the cells. The e2e case failed on the old order (0 buttons, recorded above)
+and passes on the new one (169 checks, 0 failed). The test was deliberately left reading the count the moment the view
+appears: waiting for the buttons would have passed on the broken order too. Rotate and Reorder load the grid the same way,
+but every control they offer acts on the grid's cells, so nothing is shown before it can work; left as they are.

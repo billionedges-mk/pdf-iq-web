@@ -83,11 +83,14 @@ async function parse(password?: string): Promise<void> {
   ].join(' · ');
 
   ($('[data-ranges]') as HTMLInputElement).value = `1-${Math.min(pageCount, Math.ceil(pageCount / 2))}`;
+  // The choices first: none of them needs a thumbnail, and on a long document the grid takes as long as the document is
+  // long. Drawn after it, the options showed an empty "Where to split" until every page had rendered (TECH_DEBT.md).
+  renderModes();
+  recompute();
   shell.show('selected');
   await grid.load(sourceBytes, pageCount);
   $('[data-preview-title]')!.textContent = `All ${pageCount} pages`;
-  renderModes();
-  recompute();
+  recompute();   // again, now there are cells to mark
 }
 
 const topLevel = () => outline.length;
