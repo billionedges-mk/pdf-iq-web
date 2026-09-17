@@ -350,15 +350,6 @@ input, button, select, textarea { font-family: inherit; }
 .dropzone__sub { margin: 7px 0 0; font-size: 15px; color: var(--soft); }
 .dropzone__meta { margin: 0; font-family: var(--mono); font-size: 12.5px; color: var(--ink-74); letter-spacing: .02em; }
 
-/* ---------- the verification notes ---------- */
-
-.assurances {
-  margin: 28px auto 0; max-width: 920px; display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 28px;
-}
-.assurances h2 { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
-.assurances p { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-76); }
-
 /* ---------- file chip ---------- */
 
 .filechip { display: flex; gap: 14px; align-items: flex-start; }

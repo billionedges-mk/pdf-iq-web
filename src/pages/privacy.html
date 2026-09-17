@@ -357,11 +357,22 @@
          marketing purposes.</p>
 
       <h3>Purchases and app integrity</h3>
-      <p>PDFiq Pro is not on sale yet. When it is, it will be a one-time purchase, not a
+      <!-- What is recorded, not "only confirmation that a purchase was made": the purchase record holds Paddle's
+           reference, the account identifier, the email signed in with, the status and when it last changed, and the sale
+           build says so further down this page. Two sections of one page may not disagree about what we hold (owner,
+           17 September 2026). A purchase's status is payment information of a kind, so that phrase went; card details and
+           billing address stay named. -->
+      <!--NOSALE--><p>PDFiq Pro is not on sale yet. When it is, it will be a one-time purchase, not a
          subscription, sold through Paddle, who will act as the merchant of record and handle payment
-         and any tax due. We will never see or handle your card details, billing address, or payment
-         information — we will receive only confirmation that a purchase was made. Purchases are not
-         made inside the Android app.</p>
+         and any tax due. We will never see or handle your card details or billing address. When a purchase
+         goes through, we will record Paddle's reference for it against your account, with the email address
+         you were signed in with. Purchases are not made inside the Android app.</p><!--/NOSALE-->
+      <!--SALE--><p>PDFiq Pro is sold on pdf-iq.com: a one-time purchase, not a subscription, sold through
+         Paddle, who act as the merchant of record and handle payment and any tax due. We never see or handle
+         your card details or billing address. When a purchase goes through, we record Paddle's reference for it
+         against your account, with the email address you were signed in with; what that record holds, and how
+         long it is kept, is set out under <a href="#purchase-record">If you buy Pro: the
+         purchase record</a>. Purchases are not made inside the Android app.</p><!--/SALE-->
       <p>We use Firebase App Check with Google Play Integrity to confirm that requests to our
          servers come from a genuine installation of PDFiq rather than an automated script. This
          protects our AI costs and does not involve your documents.</p>

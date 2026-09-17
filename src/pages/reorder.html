@@ -19,23 +19,6 @@
         </div>
         <p class="dropzone__meta">Up to {{maxFileSize}} &middot; no account, no watermark &middot; stays on this device</p>
       </div>
-
-      <div class="assurances">
-        <div>
-          <h2>Pages are copied, not re-encoded.</h2>
-          <p>Moving a page copies it whole. Nothing inside it is decoded or recompressed, so a page looks
-             the same after twenty rearrangements as it did after none.</p>
-        </div>
-        <div>
-          <h2>Dropped pages stay in your original.</h2>
-          <p>Leaving a page out builds a new file without it. The file you opened keeps every page, because
-             we never write over it.</p>
-        </div>
-        <div>
-          <h2>Rendered here, by you.</h2>
-          <p>The cards are your own browser drawing your own file. They exist only in this tab's memory.</p>
-        </div>
-      </div>
     </section>
 
     <section aria-label="Reorder pages" data-view="selected" hidden>
@@ -53,7 +36,8 @@
       </div>
 
       <p class="hint">Drag a card to move it, or use the arrows. Keyboard: Tab to a card, then use the
-         &larr; and &rarr; buttons on it.</p>
+         &larr; and &rarr; buttons on it. The cards are your own browser drawing your own file, and they exist only in
+         this tab.</p>
 
       <div class="pagegrid" data-grid></div>
 

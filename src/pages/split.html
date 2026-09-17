@@ -19,23 +19,9 @@
         </div>
         <p class="dropzone__meta">Up to {{maxFileSize}} &middot; no account, no watermark &middot; stays on this device</p>
       </div>
-
-      <div class="assurances">
-        <div>
-          <h2>Page count is not the limit here.</h2>
-          <p>Splitting copies pages rather than rendering them, so a long document is not harder than a short
-             one. The {{maxFileSize}} ceiling is about what a browser tab can write out, not a page count or an upload.</p>
-        </div>
-        <div>
-          <h2>Your original is untouched.</h2>
-          <p>Splitting builds new files and your browser saves them as downloads; the file you opened is never written to.</p>
-        </div>
-        <div>
-          <h2>Check the network tab.</h2>
-          <p>Split a file with developer tools open and you will see zero requests. That is the whole claim,
-             and you can verify it yourself.</p>
-        </div>
-      </div>
+      <p class="hint" style="margin-top: 12px;">There is no page limit: splitting copies pages rather than rendering them,
+         so a long document is no harder than a short one. The {{maxFileSize}} ceiling is what a browser tab can write
+         out, not a page count and not an upload.</p>
     </section>
 
     <section aria-label="Split options" data-view="selected" class="tool-cols" hidden>

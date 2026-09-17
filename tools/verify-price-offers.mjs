@@ -14,9 +14,17 @@
  *   2. No "not on sale" wording anywhere in the page.
  *   3. /pro/buy/ exists, so every such link lands.
  *
- * Out of scope, by name: /pro/buy/ is the purchase itself. /terms and /refunds define the purchase as legal text and are
- * being redrafted separately (owner reads them as legal text); they are named here so the exemption is visible, not
- * silent. A price rendered at runtime is the Unlock button itself (src/pro/unlock.ts), which is the purchase.
+ * Out of scope, by name: /pro/buy/ is the purchase itself. /refunds defines the refund as legal text and its sale wording
+ * is not written yet; /terms is a contract, and the purchase page links to it rather than the other way round (owner,
+ * 17 September 2026: no Buy button on a contract). They are named here so the exemption is visible, not silent. A price
+ * rendered at runtime is the Unlock button itself (src/pro/unlock.ts), which is the purchase.
+ *
+ * It builds the sale variant itself, so it runs in `prebuild` on EVERY build, production included (owner, 17 September
+ * 2026): the day the flag is flipped, stale "not on sale" copy has to fail loudly rather than ship quietly. A production
+ * build of this repo therefore also proves the sale build it does not ship.
+ *
+ * It leaves dist/ holding that sale build, as the other build-variant checks do. `npm run build` clears dist/ before
+ * writing, so the build that follows it in prebuild is unaffected.
  *
  *   npm run verify:price-offers
  */
@@ -39,7 +47,6 @@ const EXEMPT = new Map([
   ['pro/buy/index.html', 'the purchase page itself'],
   ['terms/index.html', 'legal text, redrafted separately'],
   ['refunds/index.html', 'legal text, redrafted separately'],
-  ['privacy/index.html', 'the Play policy: sale wording proposed to the owner, not applied (17 September 2026)'],
 ]);
 // "For firms · not on sale yet" on /for-professionals is about the firm tier, which is not for sale; it is not about Pro.
 const NOT_ON_SALE = [/not on sale/i, /for sale yet/i, /not yet on sale/i, /when it opens/i, /nothing to buy/i, /not purchasable/i, /when it goes on sale/i];

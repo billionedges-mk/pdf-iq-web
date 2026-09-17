@@ -19,23 +19,6 @@
         </div>
         <p class="dropzone__meta">Up to {{maxFileSize}} &middot; no account, no watermark &middot; stays on this device</p>
       </div>
-
-      <div class="assurances">
-        <div>
-          <h2>Nothing is re-encoded.</h2>
-          <p>Rotating writes a single flag on each page. The pictures and text inside are copied across
-             untouched, so quality cannot drop however many times you turn a page.</p>
-        </div>
-        <div>
-          <h2>Every page, rendered here.</h2>
-          <p>The thumbnails you are about to see are drawn by your own browser from your own file. They exist
-             only in this tab's memory.</p>
-        </div>
-        <div>
-          <h2>Your original is not modified.</h2>
-          <p>Saving produces a new file through your browser&rsquo;s download; the file you opened is never written to.</p>
-        </div>
-      </div>
     </section>
 
     <section aria-label="Rotate pages" data-view="selected" hidden>
@@ -67,7 +50,8 @@
         <button type="button" class="btn" data-start disabled>Save the rotations</button>
         <span class="outcome__mono" data-changed>no pages turned yet</span>
       </div>
-      <p class="hint">Rotating only writes a flag on each page, so nothing is re-encoded and quality cannot drop.</p>
+      <p class="hint">Rotating only writes a flag on each page, so nothing is re-encoded and quality cannot drop. Saving
+         produces a new file through your browser&rsquo;s download; the file you opened is never written to.</p>
     </section>
 
     <section aria-label="Writing the rotations" data-view="processing" class="card" style="margin-top: 18px;" hidden>
