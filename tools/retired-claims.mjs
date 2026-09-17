@@ -29,12 +29,17 @@ export const RETIRED = [
   // A web purchase covering the Android app: true of the plan, false of the product. The app cannot honour a web purchase
   // until BILLING_ENABLED is split (approved in the app session, not built). Owner, 13 September 2026: the pages that
   // define the purchase say only what is true. These come back, deleted from here in the same commit, when the app honours
-  // web purchases and it has been tested on a device (TECH_DEBT.md lists all five places). "both the web tools and the
-  // Android app" itself is not retired yet: /pro/ and the homepage still carry it, and the redesign takes them.
+  // web purchases and it has been tested on a device (TECH_DEBT.md lists the places).
   {
     phrase: 'covering both the website and the Android app',
     why: 'The app cannot honour a web purchase (BILLING_ENABLED not split). /refunds, the page that defines a refund of what was bought.',
     instead: 'A Pro purchase is a one-time unlock covering Pro in the web tools on this site; it does not unlock anything in the Android app.',
+  },
+  {
+    phrase: 'both the web tools and the Android app',
+    why: 'PRO.covers, written into /pro/ (lede and price card) and /app/ (price card) through {{proCovers}}. TECH_DEBT listed '
+      + '/pro/ for stage 5; /app/ was not in its list of five and was found by the stage 5 sweep, 17 September 2026.',
+    instead: 'Pro in the web tools on this site (PRO.coversToday); it does not unlock anything in the Android app',
   },
   {
     phrase: 'the purchase covers both',

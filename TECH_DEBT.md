@@ -472,9 +472,12 @@ buying. The owner pulled it the same day.
 - The old phrases from /terms and /refunds are in tools/retired-claims.mjs, so verify:retired refuses them.
 
 **The sentence comes back when the app can honour a web purchase and it has been tested on a device** (the flag split),
-in one change, on all five places that made the promise: /pro/buy/, /pro/, the homepage Pro panel, /terms and /refunds.
-Delete the three retired-claims entries in the same commit. Until then /pro/ and the homepage still carry `covers` in
-production, which sells nothing; the redesign (stage 4) and the claims sweep (stage 5) take them.
+in one change, on all six places that made the promise: /pro/buy/, /pro/ (lede and price card), the homepage Pro panel,
+/app/ (price card), /terms and /refunds. Delete the four retired-claims entries in the same commit, and restore a token for
+`PRO.covers` if one is wanted (removed so it cannot be reused unlisted). /app/ was not in this list: the stage 5 sweep
+found it (17 September 2026), because it took the wording through `{{proCovers}}` and nobody searched the token's uses.
+On pro-sale all six now say `coversToday`. Production still carries `covers` on /pro/, the homepage and /app/ until the
+redesign release.
 
 ## Split: the "Where to split" choices appear only after every thumbnail has rendered (found 16 September 2026)
 

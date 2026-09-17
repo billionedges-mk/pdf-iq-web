@@ -339,7 +339,8 @@ export const TOKENS = {
 
   proQualifier: PRO.qualifier,
   proCadence: PRO.cadence,
-  proCovers: PRO.covers,
+  // No proCovers token: PRO.covers (the app honouring a web purchase) is not true yet, and a token for it is how it got
+  // onto /app/ unlisted. It comes back with the places TECH_DEBT.md names, not before.
   proCoversToday: PRO.coversToday,
   webToolCount: word(WEB_TOOLS.length),
   webToolCountCap: cap(word(WEB_TOOLS.length)),
