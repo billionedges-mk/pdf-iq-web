@@ -61,7 +61,8 @@ the work is done.
 45. [Naming a price without offering the purchase is a defect, not a layout choice](#45-naming-a-price-without-offering-the-purchase-is-a-defect-not-a-layout-choice)  
 46. [A check can pass because of the defect, and then the defect is what keeps it green](#46-a-check-can-pass-because-of-the-defect-and-then-the-defect-is-what-keeps-it-green)  
 47. [Four defects this week were found by looking at the page, and none of them by a check](#47-four-defects-this-week-were-found-by-looking-at-the-page-and-none-of-them-by-a-check)  
-48. [A caveat is a guess until it has a number](#48-a-caveat-is-a-guess-until-it-has-a-number)
+48. [A caveat is a guess until it has a number](#48-a-caveat-is-a-guess-until-it-has-a-number)  
+49. [An instrument that cannot fail reports confidently about the wrong thing](#49-an-instrument-that-cannot-fail-reports-confidently-about-the-wrong-thing)
 
 <!-- /index -->
 
@@ -1671,3 +1672,25 @@ than an assertion.
    phone" is not.
 2. Measure the thing being replaced in the same units, so the improvement is a number too.
 3. Check a proposed fix against the constraint it might break (here, the 44px touch target) before recommending it.
+
+### 49. An instrument that cannot fail reports confidently about the wrong thing
+
+Two of the same shape, a week apart. A poll for "has the new build deployed yet?" printed nothing about what it was
+actually seeing, so a slow deploy and a deploy that would never come looked identical; it now prints the served build id
+on every attempt (CLAIMS 33's relative). And on 18 September 2026 a second `python -m http.server` on a port that was
+already taken failed to bind, silently, while the first process kept serving an older `dist/` — so a CSS change that had
+landed in the file, and in the build, read as absent in the browser. Ten minutes went into a file that was already
+correct.
+
+In both cases the instrument answered the question it was asked. Neither could say "I am not measuring what you think".
+
+**The check:**
+
+1. An instrument reports its subject, not just its reading: the build id it fetched, the port it bound, the file it
+   read, the viewport it measured. A reading with no subject cannot be wrong out loud.
+2. When a change appears not to have taken effect, verify the chain from the source outwards — file, build output,
+   what the server returns — before editing anything. The first disagreement in that chain is the answer.
+3. A background process that takes a port prints what it bound, and a second one that cannot bind is an error, never a
+   quiet no-op. `python -m http.server` is the counterexample to copy carefully: serve with `--directory`, from outside
+   the folder, and stop the old one first (a server whose working directory is inside `dist/` also makes the next build
+   fail with EBUSY).
