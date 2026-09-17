@@ -328,7 +328,8 @@ export const TOKENS = {
 
   proQualifier: PRO.qualifier,
   proCadence: PRO.cadence,
-  proCovers: PRO.covers,
+  // No proCovers placeholder: PRO.covers (the app honouring a web purchase) is not true yet, and the placeholder is how it
+  // reached /app/ without anyone listing it. It comes back when the app honours web purchases, found by searching the build.
   proCoversToday: PRO.coversToday,
   webToolCount: word(WEB_TOOLS.length),
   webToolCountCap: cap(word(WEB_TOOLS.length)),
