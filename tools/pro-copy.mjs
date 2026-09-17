@@ -22,6 +22,8 @@
  */
 import { PRO } from './site.mjs';
 
+const NL = '\n';
+
 /**
  * `feature` must match its line in PRO.features exactly: that is the tie between the list the
  * homepage prints and the thing each mark describes, and verify-pro-copy asserts the two sets are
@@ -149,6 +151,41 @@ ${items}
         </ul>
       </div>
     </section>`;
+}
+
+/**
+ * The phone bar's Pro sheet (owner's phone design, 17 September 2026). The same facts as the homepage panel, from the
+ * same PRO_COPY: the price only while Pro can be bought, the count taken from the list, what a purchase covers today
+ * and plainly not the Android app, and — while selling — the way to pay beside the price, which is the rule the desktop
+ * panel already follows. Never shown to someone who owns Pro: written hidden in a Pro build and settled by
+ * src/pro/strip.ts, exactly as the strip and the panel are.
+ *
+ * The mockup's line here was "The same tools, without doing it one file at a time", which describes Batch alone. The
+ * owner replaced it on the desktop panel; the panel's line ships in both.
+ */
+export function proSheet({ selling = PRO.onSale, hidden = false } = {}) {
+  const tick = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
+  const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+  const count = WORDS[PRO_COPY.length] ?? String(PRO_COPY.length);
+  const items = PRO_COPY.map((c) => `        <li>${tick}<span><b>${c.panel[0]}</b> &mdash; ${c.panel[1]}</span></li>`).join(NL);
+  const terms = selling
+    ? `Bought once, not a subscription. It covers ${PRO.coversToday}, and does not unlock anything in the Android app.`
+    : `When it goes on sale: bought once, not a subscription, covering ${PRO.coversToday}. It will not unlock anything in the Android app.`;
+  const action = selling
+    ? `      <a class="btn sheet__buy" href="/pro/buy/">Buy Pro &mdash; ${PRO.price} ${PRO.qualifier}</a>` + NL
+    : '';
+  const amount = selling ? `${PRO.price} ${PRO.qualifier}` : 'not on sale yet';
+  return [
+    `      <div class="prosheet" data-pro-strip${hidden ? ' hidden' : ''}>`,
+    `        <p class="prosheet__who"><span class="prosheet__k">Pro</span> <span class="prosheet__amt">${amount}</span></p>`,
+    `        <p class="prosheet__line">${count} ${PRO_COPY.length === 1 ? 'thing' : 'things'} the free tools don&rsquo;t do.</p>`,
+    '        <ul class="prosheet__list">',
+    items,
+    '        </ul>',
+    `        <p class="prosheet__sub">${terms} Everything free stays free and unlimited.</p>`,
+    action + `        <p class="prosheet__more"><a href="/pro/">What Pro adds, and what stays free</a></p>`,
+    '      </div>',
+  ].join(NL);
 }
 
 /**

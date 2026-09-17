@@ -186,6 +186,73 @@ input, button, select, textarea { font-family: inherit; }
   }
   .toolnav a { padding: 6px 11px; }
 }
+
+/* ---------- the phone bar: two buttons, two sheets (owner's phone design, 17 September 2026) ---------- */
+
+/* Hidden until the strip is: above that width the bar shows the tools itself. */
+.barbtn { display: none; }
+.wherenow { display: none; }
+.scrim { display: none; }
+
+@media (max-width: 700px) {
+  /* The strip showed four of the seven tools at 375px (measured). The sheet shows all of them. */
+  .toolnav, .toolnav__pro--top { display: none; }
+  .site-header__inner {
+    grid-template-columns: auto 1fr auto auto; grid-template-areas: "brand tools pro acct" "where where where where";
+    column-gap: 8px; padding: 0 14px;
+  }
+  .barbtn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px;
+    background: var(--paper); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+  .barbtn:nth-of-type(1) { grid-area: tools; justify-self: end; }
+  .barbtn--pro { grid-area: pro; color: var(--gold-deep); background: var(--gold-bg); border-color: var(--gold-line); font-weight: 600; }
+  .wherenow {
+    display: block; grid-area: where; margin: 0; padding: 0 0 8px;
+    font-size: 13px; color: var(--ink-76);
+  }
+  .wherenow b { color: var(--ink); font-weight: 600; }
+  .scrim {
+    display: block; position: fixed; inset: 0; z-index: 50;
+    background: rgba(17, 18, 20, .42);
+  }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--paper); border-top-left-radius: 22px; border-top-right-radius: 22px;
+    padding: 8px 16px 20px; border-top: 1px solid var(--line);
+    max-height: calc(100dvh - 56px); overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  .sheet__grab { display: block; width: 38px; height: 4px; border-radius: 2px; background: var(--line-strong); margin: 0 auto 14px; }
+  .sheet__list { display: grid; gap: 2px; }
+  .sheetrow {
+    display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px 10px;
+    border-radius: 11px; text-decoration: none; color: var(--ink); font-size: 15.5px;
+  }
+  .sheetrow[aria-current="page"] { background: var(--panel); font-weight: 600; }
+  .sheetrow__mark { width: 22px; flex: none; display: grid; place-items: center; }
+  .sheetrow__glyph { display: block; }
+  .sheetrow__name { min-width: 0; }
+  /* The Pro sheet is the panel’s content at phone width; its own block so the panel can stay a grid. */
+  .prosheet { display: block; }
+  .sheetrow__here { margin-left: auto; font-size: 12.5px; color: var(--ink-74); font-weight: 400; }
+  .sheetrow--pro { color: var(--gold-deep); }
+  .sheetsep { display: flex; align-items: center; gap: 9px; margin: 12px 2px 6px; }
+  .sheetsep__line { flex: 1; height: 1px; background: var(--gold-line); }
+  .sheet__close { display: block; width: 100%; margin-top: 14px; }
+  .prosheet__who { display: flex; align-items: baseline; gap: 9px; margin: 0 0 6px; }
+  .prosheet__k { font-size: 19px; font-weight: 700; color: var(--gold-deep); letter-spacing: -.02em; }
+  .prosheet__amt { font-size: 14px; font-weight: 600; color: var(--gold-text); }
+  .prosheet__line { margin: 0 0 12px; font-size: 15px; font-weight: 500; color: var(--gold-text); line-height: 1.45; }
+  .prosheet__list { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .prosheet__list li { display: flex; gap: 9px; font-size: 13.5px; color: var(--gold-text); line-height: 1.45; }
+  .prosheet__list li svg { flex: none; margin-top: 2px; color: var(--gold-deep); }
+  .prosheet__list b { color: var(--gold-deep); font-weight: 600; }
+  .prosheet__sub { margin: 0 0 14px; font-size: 13px; color: var(--gold-text); line-height: 1.6; }
+  .sheet__buy { display: block; text-align: center; }
+  .prosheet__more { margin: 12px 0 0; font-size: 14px; }
+  .prosheet__more a { color: var(--gold-text); font-weight: 600; }
+}
 /* The narrowest phones: the tag goes before a link would. The gold and the group's label still say what it is. */
 @media (max-width: 350px) {
   .toolnav__pro--top .pro-tag { display: none; }
@@ -729,6 +796,15 @@ textarea.askfield__input { resize: vertical; min-height: 104px; }
 
 .home-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-width: 920px; margin: clamp(28px, 5vw, 42px) auto 0; }
 @media (max-width: 860px) { .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* A phone screen is about 700px of usable height once the browser chrome is off. The hero was 223px of it and two tiles
+   reached the fold; the design shows four. Measured at 375x702: header 51, readout 58, hero 223. */
+@media (max-width: 700px) {
+  .home-readout { margin-top: 12px; padding: 8px 14px; gap: 4px 14px; font-size: 12px; }
+  .home-hero { padding-top: 22px; }
+  .home-title { margin-bottom: 10px; font-size: clamp(27px, 7.6vw, 32px); }
+  .home-sub { font-size: 15px; line-height: 1.5; }
+  .home-grid { margin-top: 18px; }
+}
 /* Two columns on a phone: one column put the Pro panel about 1,000px down at 375px. */
 @media (max-width: 560px) { .home-grid { gap: 10px; } .home-grid .toolcard { padding: 15px 13px; } .home-grid .toolcard__note { font-size: 13px; } }
 @media (max-width: 339px) { .home-grid { grid-template-columns: minmax(0, 1fr); } }

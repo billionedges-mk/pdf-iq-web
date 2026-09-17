@@ -18,7 +18,7 @@ import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, 
 import { AUTH } from './auth-config.mjs';
 import { PADDLE } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
-import { PRO_COPY, proState, proStrip, proPanel, lockedPanelStatic } from './pro-copy.mjs';
+import { PRO_COPY, proState, proStrip, proPanel, proSheet, lockedPanelStatic } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
 import { ogImage } from './og-images.mjs';
 import { LANGUAGES } from './langs.mjs';
@@ -180,9 +180,21 @@ ${proPages.map((t) => `${indent}  ${link(t)}`).join('\n')}
 ${indent}</span>`;
   const pro = proPages.length ? `\n        ${group('bar', '        ')}` : '';
   const proTop = proPages.length ? `\n      ${group('top', '      ')}` : '';
+  // The account control is the one bar item that never goes: an owner loses the Pro button, and on a phone the footer is
+  // the furthest thing on the page (owner, 17 September 2026 — the third purchase-path hole of this shape).
   const account = PRO
     ? `\n      <a class="acct" href="/account/" data-account-control hidden${activeSlug === 'account' ? ' aria-current="page"' : ''}>Sign in</a>`
     : '';
+  // Phones: two buttons instead of a scrolling strip that showed four of seven tools at 375px (measured, 17 September
+  // 2026). Both open a sheet, so the pattern is learned once. The Pro button goes when Pro is owned; the account control
+  // does not. CSS shows these only where the strip is hidden.
+  const bars = `
+      <button class="barbtn" type="button" data-sheet-open="tools" aria-controls="sheet-tools" aria-expanded="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Tools
+      </button>
+      <button class="barbtn barbtn--pro" type="button" data-sheet-open="pro" aria-controls="sheet-pro" aria-expanded="false" data-pro-strip${PRO ? ' hidden' : ''}>Pro</button>`;
+  const here = [...TOOLS, ...proPages].find((t) => t.slug === activeSlug);
+  const where = here ? `\n      <p class="wherenow">You are on <b>${esc(here.nav)}</b></p>` : '';
   return `  <header class="site-header">
     <div class="site-header__inner">
       <a class="brand" href="/"${activeSlug === '' ? ' aria-current="page"' : ''}>
@@ -191,9 +203,47 @@ ${indent}</span>`;
       </a>
       <nav class="toolnav" aria-label="PDF tools">
 ${free}${pro}
-      </nav>${proTop}${account}
+      </nav>${proTop}${bars}${account}${where}
     </div>
   </header>`;
+}
+
+/**
+ * The two phone sheets (owner's phone design, 17 September 2026). Written into every page, hidden, and opened by the bar
+ * buttons; src/entries/net.ts does the opening. The list is the nav's list, from the same TOOLS and PRO_PAGES, so a tool
+ * cannot appear in one and not the other. The sheet scrolls: nine rows at 45px do not fit a 360x640 phone with browser
+ * chrome (Password measured off-screen at 493-539), and shorter rows would break the 44px touch target.
+ */
+function sheets(activeSlug) {
+  const row = (t, cls) => {
+    const current = t.slug === activeSlug;
+    return `        <a class="sheetrow${cls}" href="${href(t.slug)}"${current ? ' aria-current="page"' : ''}>`
+      + `<span class="sheetrow__mark" aria-hidden="true">${icon(t.slug).replace('class="toolcard__mark"', 'class="sheetrow__glyph"').replace('width="24" height="24"', 'width="19" height="19"')}</span>`
+      + `<span class="sheetrow__name">${esc(t.nav)}</span>`
+      + `${current ? '<span class="sheetrow__here">you are here</span>' : ''}</a>`;
+  };
+  const proPages = PRO ? PRO_PAGES.filter((p) => p.nav) : [];
+  const proRows = proPages.length
+    ? `\n        <p class="sheetsep"><span class="pro-tag" data-pro-label hidden>PRO</span><span class="sheetsep__line" aria-hidden="true"></span></p>\n`
+      + proPages.map((t) => row(t, ' sheetrow--pro')).join('\n')
+    : '';
+  const proSheetMarkup = proSheet({ selling: Boolean(PADDLE?.page) || PRO_OFFER.onSale, hidden: PRO });
+  return `  <div class="scrim" data-sheet="tools" id="sheet-tools" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Tools">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <nav class="sheet__list" aria-label="Tools">
+${[...TOOLS.map((t) => row(t, '')), proRows].filter(Boolean).join('\n')}
+      </nav>
+      <button class="btn-quiet sheet__close" type="button" data-sheet-close>Close</button>
+    </div>
+  </div>
+  <div class="scrim" data-sheet="pro" id="sheet-pro" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Pro">
+      <span class="sheet__grab" aria-hidden="true"></span>
+${proSheetMarkup}
+      <button class="btn-quiet sheet__close" type="button" data-sheet-close>Close</button>
+    </div>
+  </div>`;
 }
 
 function footer() {
@@ -312,6 +362,7 @@ ${header(page.slug)}
   <main class="site-main${page.slug === '' ? ' site-main--home' : ''}" id="main">
 ${body}
   </main>
+${sheets(page.slug)}
 ${footer()}
   <script type="module" src="/assets/${assets.get('net')}"></script>${LOCAL ? `\n  <script type="module" src="/assets/${assets.get('local-badge')}"></script>` : ''}${script}
 </body>

@@ -303,6 +303,57 @@ const bringCurrentIntoView = (): void => {
   addEventListener('load', bring, { once: true });
 }
 
+
+/**
+ * The phone bar's two sheets (owner's phone design, 17 September 2026). Both buttons open one, so the pattern is
+ * learned once. Escape, the scrim and the Close button all close it; focus goes into the sheet and back to the button
+ * that opened it, and the page behind does not scroll while one is open.
+ *
+ * The sheet scrolls inside itself. Nine rows at the 44px minimum do not fit a 360x640 phone once browser chrome is
+ * taken off (Password was measured off-screen at 493-539), and shrinking the rows would trade reachability for
+ * pixels — which is what the sheet exists to fix.
+ */
+function wireSheets(): void {
+  const openers = Array.from(document.querySelectorAll<HTMLElement>('[data-sheet-open]'));
+  if (!openers.length) return;
+  let open: { scrim: HTMLElement; opener: HTMLElement } | null = null;
+
+  const close = (): void => {
+    if (!open) return;
+    open.scrim.hidden = true;
+    open.opener.setAttribute('aria-expanded', 'false');
+    open.opener.focus();
+    document.body.style.removeProperty('overflow');
+    open = null;
+  };
+
+  const show = (name: string, opener: HTMLElement): void => {
+    const scrim = document.querySelector<HTMLElement>(`[data-sheet="${name}"]`);
+    if (!scrim) return;
+    close();
+    scrim.hidden = false;
+    opener.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    open = { scrim, opener };
+    scrim.querySelector<HTMLElement>('a, button')?.focus();
+  };
+
+  for (const opener of openers) {
+    opener.addEventListener('click', () => {
+      const name = opener.dataset.sheetOpen ?? '';
+      if (open && open.opener === opener) close(); else show(name, opener);
+    });
+  }
+  for (const button of document.querySelectorAll<HTMLElement>('[data-sheet-close]')) button.addEventListener('click', close);
+  for (const scrim of document.querySelectorAll<HTMLElement>('[data-sheet]')) {
+    scrim.addEventListener('click', (e) => { if (e.target === scrim) close(); });
+  }
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  // A sheet is a phone control: if the window is widened to where the bar shows its own nav again, it goes.
+  addEventListener('resize', () => { if (open && !open.opener.offsetParent) close(); });
+}
+wireSheets();
+
 // Pro builds only, and on every page because the nav is on every page: show the selling marks to someone who does not
 // own Pro, remove them for someone who does (src/pro/strip.ts). No request. With the flag off the branch is dropped.
 // Settling can reveal the PRO tag, which widens the bar: bring the current item into view again after it.
