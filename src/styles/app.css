@@ -203,7 +203,7 @@ input, button, select, textarea { font-family: inherit; }
   }
   .barbtn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px;
+    min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px;
     background: var(--paper); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
   }
   .barbtn:nth-of-type(1) { grid-area: tools; justify-self: end; }
