@@ -266,11 +266,15 @@
          marketing purposes.</p>
 
       <h3>Purchases and app integrity</h3>
+      <!-- What is recorded, not "only confirmation that a purchase was made": a purchase record holds Paddle's reference,
+           the account identifier, the email signed in with, the status and when it last changed. A purchase's status is
+           payment information of a kind, so that phrase went; card details and billing address stay named (owner,
+           17 September 2026). -->
       <p>PDFiq Pro is not on sale yet. When it is, it will be a one-time purchase, not a
          subscription, sold through Paddle, who will act as the merchant of record and handle payment
-         and any tax due. We will never see or handle your card details, billing address, or payment
-         information — we will receive only confirmation that a purchase was made. Purchases are not
-         made inside the Android app.</p>
+         and any tax due. We will never see or handle your card details or billing address. When a purchase
+         goes through, we will record Paddle's reference for it against your account, with the email address
+         you were signed in with. Purchases are not made inside the Android app.</p>
       <p>We use Firebase App Check with Google Play Integrity to confirm that requests to our
          servers come from a genuine installation of PDFiq rather than an automated script. This
          protects our AI costs and does not involve your documents.</p>
