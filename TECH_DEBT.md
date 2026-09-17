@@ -394,3 +394,19 @@ a real gap: on a long document a person sees the options with no choices in them
 and passes on the new one (169 checks, 0 failed). The test was deliberately left reading the count the moment the view
 appears: waiting for the buttons would have passed on the broken order too. Rotate and Reorder load the grid the same way,
 but every control they offer acts on the grid's cells, so nothing is shown before it can work; left as they are.
+## Two /refunds sentences waiting on a real purchase (17 September 2026)
+
+/refunds told people two things nobody here has seen:
+
+1. **"use the receipt Paddle emailed you — it links to their buyer portal, where you can request a refund directly."**
+   Walk A reached Paddle's confirmation on 13 September, but the receipt email itself was never opened, and this repo
+   has no Paddle API key to read a transaction's receipt with. **Rewritten** to say only what we control (write to
+   support, quote the reference). Restore a description of the receipt when a sandbox receipt has been read, and say
+   what it actually links to.
+2. **"Paddle is the name on your card statement."** The descriptor is set in Paddle's account and is only visible on a
+   real charge. **Rewritten** to "the charge on your statement comes from Paddle rather than from pdf-iq", with the
+   exact name left open. Name it after the first live purchase.
+
+A refunds page is read by someone who is already unhappy; an instruction on it that turns out to be wrong makes that
+worse (owner, 17 September 2026). Both sentences are live on production, so both were softened there rather than only in
+the sale draft.
