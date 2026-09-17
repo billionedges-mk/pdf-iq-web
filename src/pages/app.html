@@ -28,7 +28,7 @@
           </ul>
           <p class="price__sub" style="margin-top: 14px;">No store link yet &mdash; the app is not publicly listed.</p>
         </div>
-        <div class="price">
+        <!--NOSALE--><div class="price">
           <p class="kicker">Pro &mdash; not yet</p>
           <p class="price__amount">{{proPrice}}<span>{{proQualifier}}</span></p>
           <p class="price__sub">paid once, not a subscription · covers {{proCoversToday}}, not the Android app &middot; <a href="/refunds/">refunds</a></p>
@@ -37,7 +37,17 @@
             model; this is bought once and kept. Not on sale yet on either surface.</p>
           <!--PRO_FEATURES-->
           <p class="price__sub" style="margin-top: 12px;">Nothing to buy on this page today.</p>
-        </div>
+        </div><!--/NOSALE--><!--SALE-->
+        <!-- Selling: the price comes with the way to pay, and neither is shown to someone who owns Pro (src/pro/strip.ts). -->
+        <div class="price" data-pro-strip hidden>
+          <p class="kicker">Pro &mdash; on the website</p>
+          <p class="price__amount">{{proPrice}}<span>{{proQualifier}}</span></p>
+          <p class="price__sub">paid once, not a subscription · covers {{proCoversToday}}, not the Android app &middot; <a href="/refunds/">refunds</a></p>
+          <p class="price__note">A PDF tool gets used a few times a year. Subscription is the usual
+            model; this is bought once and kept. It is bought on the website, and it does not unlock anything in this app.</p>
+          <!--PRO_FEATURES-->
+          <p style="margin: 16px 0 0;"><a class="btn" href="/pro/buy/">Buy Pro &mdash; {{proPrice}} {{proQualifier}}</a></p>
+        </div><!--/SALE-->
       </div>
       <p style="margin: 14px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink-80); max-width: 640px;">
         The seven web tools stay free and unlimited either way. Pro adds work the browser tools do

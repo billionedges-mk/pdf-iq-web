@@ -71,7 +71,11 @@ if (!PRO.onSale) {
   ok(PRO_COPY.every((c) => strip.includes(c.strip)), `the strip names every Pro feature: ${PRO_COPY.map((c) => c.strip).join(', ')}`);
   ok(PRO.onSale ? strip.includes(PRO.price) && !strip.includes('not on sale') : strip.includes('not on sale yet') && !strip.includes(PRO.price),
     PRO.onSale ? 'on sale, the strip names the price' : 'not on sale, the strip says so and names no price');
-  ok(!SELLING.some((w) => strip.toLowerCase().includes(w)), 'the strip offers no purchase of its own: it links to /pro/ only');
+  // Not selling, nothing to buy. Selling, the price comes with a link to the purchase page (owner, 17 September 2026:
+  // naming a price without offering the purchase is a defect); still no checkout on a tool page.
+  const notSelling = proStrip({ selling: false }), sellingStrip = proStrip({ selling: true });
+  ok(!SELLING.some((w) => notSelling.toLowerCase().includes(w)) && !notSelling.includes('/pro/buy/'), 'not on sale, the strip offers no purchase: it links to /pro/ only');
+  ok(sellingStrip.includes('href="/pro/buy/"') && sellingStrip.includes(PRO.price), 'on sale, the strip names the price and links to the purchase page beside it');
   for (const tool of TOOLS) {
     const lines = readFileSync(join(ROOT, `src/pages/${tool.slug}.html`), 'utf8').split(/\r?\n/);
     const at = lines.map((l, i) => (l.trim() === '{{proStrip}}' ? i : -1)).filter((i) => i >= 0);
@@ -92,7 +96,8 @@ if (!PRO.onSale) {
       selling ? 'on sale: the panel names the price' : 'not on sale: the panel says so and names no price');
     ok(panel.includes(PRO.coversToday) && /(does|will) not unlock anything in the Android app/.test(panel) && !panel.includes(PRO.covers),
       `${label}: the panel says a purchase covers the web tools, and plainly not the Android app`);
-    ok(!SELLING.some((w) => panel.toLowerCase().includes(w)), `${label}: the panel offers no purchase of its own`);
+    ok(selling ? panel.includes('href="/pro/buy/"') : !SELLING.some((w) => panel.toLowerCase().includes(w)) && !panel.includes('/pro/buy/'),
+      selling ? 'on sale: the panel offers the purchase beside the price' : 'not on sale: the panel offers no purchase');
     // The line under "Pro" has to fit all of them: "Four things the free tools don't do", counted from PRO_COPY. Not the
     // mockup's "without doing it one file at a time", which is Batch alone.
     const words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];

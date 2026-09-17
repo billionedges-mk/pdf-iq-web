@@ -40,7 +40,8 @@
     "verify:result": "node tools/verify-result.mjs",
     "verify:ascii-filters": "node tools/verify-ascii-filters.mjs",
     "verify:classes": "node tools/verify-classes.mjs",
-    "verify:font": "node tools/verify-font.mjs"
+    "verify:font": "node tools/verify-font.mjs",
+    "verify:price-offers": "node tools/verify-price-offers.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

@@ -160,6 +160,8 @@ export const PAGES = [
     title: 'Pro — what it adds, and what stays free — pdf-iq',
     description:
       'What pdf-iq Pro adds to the free browser tools: batch across many files, a searchable PDF from OCR, compression to a target size or dpi, and password protect and remove. Not on sale yet.',
+    saleDescription:
+      'What pdf-iq Pro adds to the free browser tools: batch across many files, a searchable PDF from OCR, compression to a target size or dpi, and password protect and remove. Bought once, for the web tools on this site.',
     ogSubject: 'Pro',
     ogLine: 'Bought once, not rented',
   },
@@ -168,6 +170,8 @@ export const PAGES = [
     title: 'PDF tools for law firms and accountants — nothing uploaded',
     description:
       'We build PDF tools that run on your own device and we are asking firms what to build next, before building it. Nothing is on sale; three questions and an email.',
+    saleDescription:
+      'We build PDF tools that run on your own device and we are asking firms what to build next, before building it. Nothing for firms is on sale; three questions and an email.',
     ogSubject: 'For firms',
     ogLine: 'Three questions, and an email',
   },
@@ -279,8 +283,8 @@ export const PRO = {
   /**
    * True only in a build that sells for real: a purchase page against Paddle's production
    * environment (tools/paddle-config.mjs), which no build can make until the sale is switched on in
-   * code. A sandbox build has a purchase page but sells nothing real, so Pro is still "not on sale",
-   * and its banner says test payments only.
+   * code. What a page says follows `selling` instead (a purchase page exists, sandbox included; owner, 17 September
+   * 2026): the Preview shows what launch will say, and its banner says test payments only.
    */
   onSale: Boolean(PADDLE?.page && PADDLE.env === 'production'),
 };

@@ -42,12 +42,29 @@ export function introSearchable(host: HTMLElement, source?: () => File | null): 
   host.textContent = '';
   if (proAccount()) {
     // Owned: no word of Pro, only what will happen (owner, 13 September 2026: after buying, the site stops selling).
-    host.append('Saving it as a searchable PDF is offered with the text, once reading finishes.');
+    const p = document.createElement('p');
+    p.className = 'hint';
+    p.textContent = 'Saving it as a searchable PDF is offered with the text, once reading finishes.';
+    host.append(p);
     return;
   }
-  // The card around this already says what it does, and the real button does not exist before reading, so there is
-  // nothing to show locked here: the action only (approved copy, 13 September 2026).
-  host.append(lockedPanel('searchable', 'The searchable PDF', source, { noWhat: true, noInstead: true }));
+  // The same treatment as every locked feature (owner, 17 September 2026): the real button, disabled, then Unlock, one
+  // line of what it does, and the free alternative. It used to be a card with a paragraph and an Unlock button and no
+  // control, which read as a justification rather than an offer. The button does nothing here: reading comes first.
+  host.append(lockedPanel('searchable', 'A searchable PDF', source, { title: 'Searchable PDF', controls: lockedButton() }));
+}
+
+/** The real "Save as a searchable PDF" button, locked, as both locked panels show it. No handler is attached. */
+function lockedButton(): HTMLElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn-quiet';
+  button.textContent = 'Save as a searchable PDF';
+  const locked = document.createElement('p');
+  locked.style.margin = '0';
+  locked.append(button);
+  lockControls(locked);
+  return locked;
 }
 
 /** A plain card headed "Searchable PDF", for every answer that is not the locked panel (which has its own heading). */
@@ -96,11 +113,7 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
 
   // Not owned: the real button, locked, then the words (approved copy, 13 September 2026). No handler is attached.
   if (!proAccount()) {
-    const locked = document.createElement('p');
-    locked.style.margin = '0';
-    locked.append(button);
-    lockControls(locked);
-    host.append(lockedPanel('searchable', 'A searchable PDF', o.source, { title: 'Searchable PDF', controls: locked }));
+    host.append(lockedPanel('searchable', 'A searchable PDF', o.source, { title: 'Searchable PDF', controls: lockedButton() }));
     return;
   }
   const hint = document.createElement('p');

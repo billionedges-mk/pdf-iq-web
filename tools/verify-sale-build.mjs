@@ -110,7 +110,12 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   // Hostnames, not the word: the header file's own comment says "Paddle sandbox", and the first version of
   // this check failed on that comment rather than on a policy.
   ok(!/paddle\.com|profitwell\.com/i.test(headers), "no Paddle or ProfitWell host in any of the site's policies");
-  ok(/not on sale yet/i.test(readFileSync(join(ROOT, 'dist/pro/index.html'), 'utf8')), 'a sandbox purchase page sells nothing real, so /pro/ still says not on sale');
+  // A sandbox build shows what launch will say (owner, 17 September 2026): /pro/ offers the purchase and nowhere, metadata
+  // included, says Pro is not on sale. tools/verify-price-offers.mjs checks every page this way.
+  {
+    const pro = readFileSync(join(ROOT, 'dist/pro/index.html'), 'utf8');
+    ok(!/not on sale/i.test(pro) && pro.includes('href="/pro/buy/"'), 'a sale build: /pro/ offers the purchase and does not say Pro is not on sale');
+  }
   const privacyText = readFileSync(join(ROOT, 'dist/privacy/index.html'), 'utf8').replace(/\s+/g, ' ');
   ok(privacyText.includes('pdfiq.entitlement') && privacyText.includes('up to four more if you sign in'), '/privacy lists the stored entitlement token');
   ok(privacyText.includes('pdfiq.pending-purchase') && privacyText.includes('on your account page and the purchase page'), '/privacy lists the pending-purchase note, and the purchase page as a place the token is fetched');

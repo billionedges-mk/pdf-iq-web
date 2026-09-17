@@ -274,7 +274,10 @@ function document_({ page, body, css, assets }) {
   // leftover assertion. Without this a {{token}} in page metadata shipped verbatim into
   // <meta name="description"> — which it just did, because the check only ran on the body.
   const title = substituteTokens(page.title, `${page.slug || "index"} title`);
-  const description = substituteTokens(page.description, `${page.slug || "index"} description`);
+  // A build that sells uses a route's saleDescription where it has one: a description is copy too, and /pro/'s said "Not on
+  // sale yet." in a sale build, where no reader of the page could see it (tools/verify-price-offers.mjs reads metadata).
+  const selling = Boolean(PADDLE?.page) || PRO_OFFER.onSale;
+  const description = substituteTokens((selling && page.saleDescription) || page.description, `${page.slug || "index"} description`);
   const shell = page.shell ? ` style="--shell: ${page.shell}"` : '';
   const script = page.entry ? `\n  <script type="module" src="/assets/${assets.get(page.entry)}"></script>` : '';
   return `<!doctype html>
@@ -730,7 +733,7 @@ async function build() {
         `        <p class="outcome__body" style="margin-top: 10px;">${esc(c.what)}</p>`,
         `        <p class="outcome__body" style="margin-top: 10px;">${esc(c.onDevice)}</p>`,
         `        <p class="hint" style="margin-top: 12px;"><strong>Instead, today:</strong> ${esc(c.instead)}</p>`,
-        `        <p class="outcome__mono" style="margin-top: 10px;">${esc(proState())}</p>`,
+        `        <p class="outcome__mono" style="margin-top: 10px;">${esc(proState(Boolean(PADDLE?.page) || PRO_OFFER.onSale))}</p>`,
         '      </section>',
       ].join(NL)).join(NL);
       body = body.replace(/[ 	]*<!--PRO_COPY-->/, sections);

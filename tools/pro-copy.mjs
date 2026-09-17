@@ -51,8 +51,9 @@ export const PRO_COPY = [
     title: 'Searchable PDF',
     feature: 'Searchable-PDF output from OCR',
     route: '/ocr/',
-    what: 'The words recognised in a scan, written back into the file as an invisible layer, so the '
-      + 'document itself can be searched and copied from in any reader.',
+    // One short line (owner, 17 September 2026: the disabled button explains it). "In any reader" went with the long
+    // version: it was universal, and the output is read back by two readers (tools/verify-pro-features.mjs).
+    what: 'Writes the recognised words into the PDF as an invisible layer, so the file itself can be searched.',
     onDevice: 'The scan is not changed and nothing is redrawn: the words sit behind the picture, '
       + 'written on your device like the recognition itself.',
     instead: 'Reading the text off a scan is free and unlimited. You get the words to copy or save '
@@ -88,8 +89,8 @@ export const PRO_COPY = [
 ];
 
 /** The state sentence, from the one flag that decides it. The wording matches the Android app's. */
-export function proState() {
-  return PRO.onSale
+export function proState(selling = PRO.onSale) {
+  return selling
     ? 'Part of Pro.'
     : 'Part of Pro, which is not on sale yet, on either surface.';
 }
@@ -104,7 +105,10 @@ export function proStrip({ selling = PRO.onSale, hidden = false } = {}) {
   const names = PRO_COPY.map((c) => c.strip);
   const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
   const state = selling ? `${PRO.price} ${PRO.qualifier}` : 'not on sale yet';
-  return `<p class="pro-strip" data-pro-strip${hidden ? ' hidden' : ''}>Free and unlimited, on your device. <strong>Pro</strong> adds ${list} &mdash; ${state}. <a href="/pro/">What Pro adds</a></p>`;
+  // Selling, the price comes with the way to pay (owner, 17 September 2026): naming a price without offering the purchase is
+  // a defect. The link goes to the purchase page; no checkout opens on a tool page.
+  const buy = selling ? ' &middot; <a href="/pro/buy/">Buy Pro</a>' : '';
+  return `<p class="pro-strip" data-pro-strip${hidden ? ' hidden' : ''}>Free and unlimited, on your device. <strong>Pro</strong> adds ${list} &mdash; ${state}. <a href="/pro/">What Pro adds</a>${buy}</p>`;
 }
 
 /**
@@ -138,7 +142,7 @@ export function proPanel({ selling = PRO.onSale, hidden = false } = {}) {
           <p class="pro-panel__who"><span class="pro-panel__k">Pro</span> <span class="pro-panel__amt">${amount}</span></p>
           <p class="pro-panel__line">${line}</p>
           <p class="pro-panel__sub">${terms} Everything above stays free and unlimited.</p>
-          <p class="pro-panel__more"><a href="/pro/">What Pro adds</a></p>
+          <p class="pro-panel__more">${selling ? `<a class="btn btn--sm" href="/pro/buy/">Buy Pro &mdash; ${PRO.price} ${PRO.qualifier}</a> ` : ''}<a href="/pro/">What Pro adds</a></p>
         </div>
         <ul class="pro-panel__list">
 ${items}
