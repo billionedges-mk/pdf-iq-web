@@ -130,6 +130,14 @@ for (const rel of pages) {
     ok(/<a\s[^>]*href="\/pro\/buy\/[^"]*"/.test(block), `${where} offers the purchase beside it (a link to /pro/buy/ in the same <${strip.name} data-pro-strip>)`);
   }
 }
+// The purchase page turns the figure into a charge, and the figure is not the total everywhere: Paddle adds US and
+// Canadian sales tax on top of a tax-inclusive price (measured 17 September 2026, TECH_DEBT.md). Whoever is about to pay
+// is told before they press the button.
+{
+  const buy = readFileSync(join(DIST, 'pro/buy/index.html'), 'utf8').replace(/\s+/g, ' ');
+  ok(/includes VAT or GST where it applies/.test(buy) && /United States and Canada, sales tax is added/.test(buy),
+    'the purchase page says what the price includes, and where tax is added on top');
+}
 ok(named > 0, `${named} places name the price in this build`);
 
 console.log(`\n${fails ? `${fails} FAILED` : 'every price in a sale build comes with a way to pay, and nothing says Pro is not for sale'}`);
