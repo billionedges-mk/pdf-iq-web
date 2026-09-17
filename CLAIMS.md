@@ -56,7 +56,9 @@ the work is done.
 40. [A comment asserting rarity is a claim, and an unchecked one narrows what the code handles](#40-a-comment-asserting-rarity-is-a-claim-and-an-unchecked-one-narrows-what-the-code-handles)  
 41. [A check whose list predates what it guards passes on everything added since](#41-a-check-whose-list-predates-what-it-guards-passes-on-everything-added-since)  
 42. [A test built from a generator's output covers only what that generator happened to produce](#42-a-test-built-from-a-generators-output-covers-only-what-that-generator-happened-to-produce)  
-43. [A style class that does not exist fails silently, and the page still looks finished](#43-a-style-class-that-does-not-exist-fails-silently-and-the-page-still-looks-finished)
+43. [A style class that does not exist fails silently, and the page still looks finished](#43-a-style-class-that-does-not-exist-fails-silently-and-the-page-still-looks-finished)  
+44. [A hand-written list of where a claim appears misses the places a placeholder carries it](#44-a-hand-written-list-of-where-a-claim-appears-misses-the-places-a-placeholder-carries-it)  
+45. [Naming a price without offering the purchase is a defect, not a layout choice](#45-naming-a-price-without-offering-the-purchase-is-a-defect-not-a-layout-choice)
 
 <!-- /index -->
 
@@ -1565,3 +1567,32 @@ counted as defined. A class being mentioned in CSS is not the same as it being s
    the rule that styles it and confirm the element is inside that rule's selector.
 3. When a page "looks fine", check one computed style that the intended class sets (line length, a hidden label's
    clip) before calling it styled.
+
+### 44. A hand-written list of where a claim appears misses the places a placeholder carries it
+
+"Pro covers the Android app" was false, and TECH_DEBT listed the five places that made the promise. The stage 5 sweep
+found a sixth, /app/, which nobody had listed because nobody had typed it there: it arrived through `{{proCovers}}`, and
+the list was written from memory of the pages rather than from the placeholder's uses. The same placeholder fed the
+homepage and /pro/ as well. The claim sat on production for days after it was known to be false.
+
+**The check:**
+
+1. Find where a claim appears by searching the built site for its words, and separately for every placeholder or
+   data field that writes them. Never from a list of pages.
+2. When a claim is withdrawn, retire the phrase (tools/retired-claims.mjs) so the build finds every place, including
+   ones added later, and remove the placeholder that carried it so it cannot be reused unlisted.
+
+### 45. Naming a price without offering the purchase is a defect, not a layout choice
+
+Three times the purchase path had a hole beside a price: /account/ had no way to buy, /batch/ looked free, and /pro/, the
+page that explains what Pro adds, named $14.99 and ended with nowhere to go. Four pages also said "not on sale yet" in
+words typed into the page, which would have survived the sale going live. A sale build's /pro/ meta description still
+said "Not on sale yet." after the visible page had stopped: metadata nobody reads while looking at the page.
+
+**The check:**
+
+1. `verify:price-offers` (pro-sale) builds a sale build and requires every text naming the price to sit inside an
+   owner-hidden element that also links to /pro/buy/, no "not on sale" wording anywhere, and no price or sale-state
+   wording in titles or descriptions. It failed 17 times on the code before the fix. Its exemptions are named in the
+   file with reasons, never silent.
+2. State that changes when something goes on sale comes from the flag that decides it, never from typed words.
