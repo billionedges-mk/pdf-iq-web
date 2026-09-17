@@ -138,6 +138,28 @@ for (const rel of pages) {
   ok(/includes VAT or GST where it applies/.test(buy) && /United States and Canada, sales tax is added/.test(buy),
     'the purchase page says what the price includes, and where tax is added on top');
 }
+// The phone bar's Pro button belongs on exactly the pages that already sell — the strip, the panel or a price card —
+// and nowhere else (owner, 18 September 2026: a legal page is not a place to sell). Both sides are read from the built
+// page, so neither a new selling page nor a new quiet one can drift from the other. /pro/buy/ is the purchase itself.
+{
+  let wrong = 0;
+  for (const rel of pages) {
+    if (rel === 'pro/buy/index.html') continue;
+    const html = readFileSync(join(DIST, rel), 'utf8');
+    // The stylesheet is inlined in every page and names these classes in its rules, so it is cut out first: the first
+    // version of this check read `.price__amount` out of the CSS and called /terms a selling page.
+    // The three things that sell, and not the bar button itself, whose own marker would make this test agree with
+    // whatever the build did.
+    const content = html.replace(/<style[\s\S]*?<\/style>/g, ' ');
+    const sells = /class="pro-strip"|class="pro-panel"|class="price__amount"/.test(content);
+    const button = html.includes('data-sheet-open="pro"');
+    if (sells !== button) {
+      wrong++;
+      ok(false, `${rel}: ${sells ? 'sells but has no phone Pro button' : 'has a phone Pro button and sells nothing'}`);
+    }
+  }
+  ok(wrong === 0, 'the phone Pro button is on the pages that sell, and on no others');
+}
 ok(named > 0, `${named} places name the price in this build`);
 
 console.log(`\n${fails ? `${fails} FAILED` : 'every price in a sale build comes with a way to pay, and nothing says Pro is not for sale'}`);

@@ -166,7 +166,14 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
  * The label and the control are written hidden and shown once settled, so an owner never sees the label flash and a
  * signed-in person never sees "Sign in". A build without the Pro flag has neither: no Pro pages, no sign-in.
  */
-function header(activeSlug) {
+/**
+ * A page "sells" when it carries one of the three things that offer Pro: the strip under a tool's heading, the homepage
+ * panel, or a price card. Read from the built body rather than from a list of pages, so a page that starts or stops
+ * selling takes its phone Pro button with it (tools/verify-price-offers.mjs checks the two agree).
+ */
+const SELLS = /data-pro-strip|class="price__amount"/;
+
+function header(activeSlug, sells) {
   const link = (t) => `<a href="${href(t.slug)}"${t.slug === activeSlug ? ' aria-current="page"' : ''}>${t.nav}</a>`;
   const free = TOOLS.map((t) => `        ${link(t)}`).join('\n');
   const proPages = PRO ? PRO_PAGES.filter((p) => p.nav) : [];
@@ -192,7 +199,8 @@ ${indent}</span>`;
       <button class="barbtn" type="button" data-sheet-open="tools" aria-controls="sheet-tools" aria-expanded="false">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Tools
       </button>
-      <button class="barbtn barbtn--pro" type="button" data-sheet-open="pro" aria-controls="sheet-pro" aria-expanded="false" data-pro-strip${PRO ? ' hidden' : ''}>Pro</button>`;
+${sells ? `
+      <button class="barbtn barbtn--pro" type="button" data-sheet-open="pro" aria-controls="sheet-pro" aria-expanded="false" data-pro-strip${PRO ? ' hidden' : ''}>Pro</button>` : ''}`;
   const here = [...TOOLS, ...proPages].find((t) => t.slug === activeSlug);
   const where = here ? `\n      <p class="wherenow">You are on <b>${esc(here.nav)}</b></p>` : '';
   return `  <header class="site-header">
@@ -214,7 +222,7 @@ ${free}${pro}
  * cannot appear in one and not the other. The sheet scrolls: nine rows at 45px do not fit a 360x640 phone with browser
  * chrome (Password measured off-screen at 493-539), and shorter rows would break the 44px touch target.
  */
-function sheets(activeSlug) {
+function sheets(activeSlug, sells) {
   const row = (t, cls) => {
     const current = t.slug === activeSlug;
     return `        <a class="sheetrow${cls}" href="${href(t.slug)}"${current ? ' aria-current="page"' : ''}>`
@@ -227,7 +235,7 @@ function sheets(activeSlug) {
     ? `\n        <p class="sheetsep"><span class="pro-tag" data-pro-label hidden>PRO</span><span class="sheetsep__line" aria-hidden="true"></span></p>\n`
       + proPages.map((t) => row(t, ' sheetrow--pro')).join('\n')
     : '';
-  const proSheetMarkup = proSheet({ selling: Boolean(PADDLE?.page) || PRO_OFFER.onSale, hidden: PRO });
+  const proSheetMarkup = sells ? proSheet({ selling: Boolean(PADDLE?.page) || PRO_OFFER.onSale, hidden: PRO }) : '';
   return `  <div class="scrim" data-sheet="tools" id="sheet-tools" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-label="Tools">
       <span class="sheet__grab" aria-hidden="true"></span>
@@ -237,13 +245,14 @@ ${[...TOOLS.map((t) => row(t, '')), proRows].filter(Boolean).join('\n')}
       <button class="btn-quiet sheet__close" type="button" data-sheet-close>Close</button>
     </div>
   </div>
+${sells ? `
   <div class="scrim" data-sheet="pro" id="sheet-pro" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-label="Pro">
       <span class="sheet__grab" aria-hidden="true"></span>
 ${proSheetMarkup}
       <button class="btn-quiet sheet__close" type="button" data-sheet-close>Close</button>
     </div>
-  </div>`;
+  </div>` : ''}`;
 }
 
 function footer() {
@@ -320,6 +329,7 @@ const hasShareImage = (page) => !page.noindex;
 
 function document_({ page, body, css, assets }) {
   const url = ORIGIN + href(page.slug);
+  const sells = SELLS.test(body);
   // Titles and descriptions go through the same substitution as the body, and the same
   // leftover assertion. Without this a {{token}} in page metadata shipped verbatim into
   // <meta name="description"> — which it just did, because the check only ran on the body.
@@ -358,11 +368,11 @@ ${FONT_PRELOADS}
 </head>
 <body${shell}>
 ${PRO ? PREVIEW_BANNER + '\n' : ''}<a class="skip-link" href="#main">${TOOLS.some((t) => t.slug === page.slug) ? 'Skip to the tool' : 'Skip to content'}</a>
-${header(page.slug)}
+${header(page.slug, sells)}
   <main class="site-main${page.slug === '' ? ' site-main--home' : ''}" id="main">
 ${body}
   </main>
-${sheets(page.slug)}
+${sheets(page.slug, sells)}
 ${footer()}
   <script type="module" src="/assets/${assets.get('net')}"></script>${LOCAL ? `\n  <script type="module" src="/assets/${assets.get('local-badge')}"></script>` : ''}${script}
 </body>
