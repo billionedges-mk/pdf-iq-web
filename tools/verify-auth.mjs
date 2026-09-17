@@ -31,7 +31,9 @@ await esbuild.build({
   // .mjs, so Node does not have to guess the module type and print a warning about it: noise in a
   // check's output is where a real failure goes to hide (CLAIMS 27).
   outExtension: { '.js': '.mjs' },
-  define: { __PDFIQ_AUTH__: JSON.stringify({ ...CONFIG, apiKey: 'test-key' }) },
+  // A sale build: that is where /pro/buy/ exists and signs in to itself. tools/verify-sale-build.mjs proves a build
+  // that is not selling carries no /pro/buy/ address.
+  define: { __PDFIQ_AUTH__: JSON.stringify({ ...CONFIG, apiKey: 'test-key' }), __PDFIQ_SALE__: 'true' },
 });
 const auth = await import(pathToFileURL(join(WORK, 'auth.mjs')).href);
 const session = await import(pathToFileURL(join(WORK, 'session.mjs')).href);
@@ -98,6 +100,21 @@ ok(requests.length === 0, 'and sends nothing from the page: leaving for Google i
 const first = pending.state;
 reset(); auth.startSignIn();
 ok(JSON.parse(sessionStorage.getItem(AUTH.pendingKey)).state !== first, 'a second sign-in gets a different state');
+
+// The purchase page signs in to itself (a second registered redirect URI); every other page through /account/.
+for (const [from, to] of [['/pro/buy/', '/pro/buy/'], ['/compress/', '/account/'], ['/pro/', '/account/'], ['/pro/buy/x', '/account/']]) {
+  reset(); loc.pathname = from; auth.startSignIn();
+  ok(new URL(loc.assigned).searchParams.get('redirect_uri') === `https://preview.example${to}`, `a sign-in started on ${from} returns to ${to}`);
+}
+{
+  reset(); loc.pathname = '/pro/buy/'; auth.startSignIn();
+  const pb = JSON.parse(sessionStorage.getItem(AUTH.pendingKey));
+  respond = () => ({ status: 200, body: { localId: 'uid-b', email: 'b@example.com', idToken: 'ID-B', refreshToken: 'RT-B', expiresIn: '3600' } });
+  await auth.completeSignIn(`#state=${pb.state}&id_token=${jwt({ nonce: pb.nonce })}`);
+  const sent = JSON.parse(requests.find((r) => r.url.includes('signInWithIdp'))?.init.body ?? '{}');
+  ok(sent.requestUri === 'https://preview.example/pro/buy/', 'and completes there, telling Firebase the same page it returned to');
+}
+loc.pathname = '/account/';
 
 // ---------------------------------------------------------------- completing
 console.log('\n— coming back from Google');

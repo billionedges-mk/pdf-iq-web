@@ -30,10 +30,21 @@ export interface Handoff {
   name: string;
 }
 
+/**
+ * Where an Unlock button was pressed (src/pro/unlock.ts): the Pro feature and the page, so /pro/buy/ can bring
+ * the buyer back to it after paying. Held with the file, under the same one-shot, ten-minute rules.
+ */
+export interface UnlockIntent {
+  feature: string;
+  path: string;
+}
+
 interface Row {
   key: string;
   name: string;
-  bytes: ArrayBuffer;
+  /** Absent for an Unlock pressed with no file open. */
+  bytes?: ArrayBuffer;
+  unlock?: UnlockIntent;
   at: number;
 }
 
@@ -57,7 +68,7 @@ const done = (tx: IDBTransaction) =>
   });
 
 /** Put a finished file aside and return the key to fetch it with. */
-export async function stash(bytes: Uint8Array, name: string): Promise<string | null> {
+export async function stash(bytes: Uint8Array | null, name: string, unlock?: UnlockIntent): Promise<string | null> {
   try {
     const db = await openDb();
     const key = `h${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -76,8 +87,10 @@ export async function stash(bytes: Uint8Array, name: string): Promise<string | n
     };
 
     // Copy into a plain ArrayBuffer: a view over a larger buffer would store the lot.
-    const copy = bytes.slice().buffer;
-    store.put({ key, name, bytes: copy, at: Date.now() } satisfies Row);
+    const row: Row = { key, name, at: Date.now() };
+    if (bytes) row.bytes = bytes.slice().buffer;
+    if (unlock) row.unlock = { feature: unlock.feature, path: unlock.path };
+    store.put(row);
     await done(tx);
     db.close();
     return key;
@@ -113,10 +126,72 @@ export async function claim(key: string): Promise<Handoff | null> {
 }
 
 /**
+ * Read an Unlock intent without taking it: /pro/buy/ needs to know where to return, while the file stays put for
+ * that page's own claim. `file` is false when no file was carried, or when it is older than the ten minutes a
+ * handoff is kept (it is then deleted here rather than waiting for the next sweep).
+ */
+export async function peekUnlock(key: string): Promise<{ intent: UnlockIntent; name: string; file: boolean; expired: boolean } | null> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    const req = store.get(key);
+    const row = await new Promise<Row | undefined>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result as Row | undefined);
+      req.onerror = () => reject(req.error);
+    });
+    const stale = !row?.at || Date.now() - row.at > MAX_AGE_MS;
+    if (row && stale) store.delete(key);
+    await done(tx);
+    db.close();
+    if (!row?.unlock) return null;
+    return { intent: row.unlock, name: row.name, file: Boolean(row.bytes) && !stale, expired: Boolean(row.bytes) && stale };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The key of the newest Unlock row still inside its ten minutes, or null. For /pro/buy/ coming back from Google's
+ * sign-in: the redirect must match a registered URI exactly, so the `?unlock=` key cannot travel through it, and
+ * this finds the Unlock that sent the buyer to sign in without storing anything extra. Never creates the database.
+ */
+export async function latestUnlockKey(): Promise<string | null> {
+  try {
+    const db = await new Promise<IDBDatabase | null>((resolve) => {
+      const req = indexedDB.open(DB_NAME);
+      req.onupgradeneeded = () => req.transaction?.abort();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+      req.onblocked = () => resolve(null);
+    });
+    if (!db) return null;
+    if (!db.objectStoreNames.contains(STORE)) {
+      db.close();
+      return null;
+    }
+    const tx = db.transaction(STORE, 'readonly');
+    const rows = await new Promise<Row[]>((resolve, reject) => {
+      const req = tx.objectStore(STORE).getAll();
+      req.onsuccess = () => resolve(req.result as Row[]);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    const cutoff = Date.now() - MAX_AGE_MS;
+    const newest = rows.filter((r) => r.unlock && r.at >= cutoff).sort((a, b) => b.at - a.at)[0];
+    return newest?.key ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Wire the "next" links on a result panel so they carry the finished file across.
  * `current` is called at click time, so it always hands over the latest result rather
  * than whatever existed when the panel was first shown.
  */
+let carrying = false;
+
 export function wireNextLinks(root: ParentNode, current: () => Handoff | null): void {
   for (const link of Array.from(root.querySelectorAll<HTMLAnchorElement>('.nextup a[href^="/"]'))) {
     if (link.dataset.handoffWired) continue;
@@ -125,11 +200,24 @@ export function wireNextLinks(root: ParentNode, current: () => Handoff | null): 
       const result = current();
       if (!result) return; // nothing to carry: behave as an ordinary link
       event.preventDefault();
+      // One handoff at a time. A second click used to start a second copy of the document into storage and a
+      // second navigation: on the walk of 13 September 2026 a slow Compress-to-Protect handoff was clicked three
+      // times, because nothing on the link itself changed.
+      if (carrying) return;
+      carrying = true;
+      const row = link.closest('.nextup');
+      for (const other of Array.from(row?.querySelectorAll<HTMLAnchorElement>('a') ?? [])) {
+        other.setAttribute('aria-disabled', 'true');
+        other.style.pointerEvents = 'none';
+        if (other !== link) other.style.opacity = '0.45';
+      }
+      link.setAttribute('aria-busy', 'true');
+      link.textContent = `${link.textContent?.trim() ?? ''} — opening…`;
       const href = link.getAttribute('href')!;
       // Say something before the navigation. Copying a large document into IndexedDB takes a
       // moment, and the page it happens on showed nothing at all: a reader clicked and watched
       // an unchanged screen, unable to tell a slow handoff from a broken link.
-      const where = link.textContent?.trim() || 'the next tool';
+      const where = link.textContent?.replace(/ — opening…$/, '').trim() || 'the next tool';
       say(link.closest('.nextup') ?? link.parentElement, `Taking ${result.name} to ${where}…`);
       void stash(result.bytes, result.name).then((key) => {
         location.href = key ? `${href}?from=${encodeURIComponent(key)}` : href;
@@ -195,7 +283,8 @@ export async function claimIncoming(): Promise<File | null> {
   // And say something on arrival. The file still has to be read out of storage and parsed by the
   // tool that receives it, which on a large document is seconds of a page that looks empty and
   // idle — the same silence, on the other side of the navigation.
-  const note = say(document.querySelector('main'), 'Bringing your file over from the last tool…', true);
+  // Not "from the last tool": since Unlock (src/pro/unlock.ts) a file also arrives back from the purchase page.
+  const note = say(document.querySelector('main'), 'Bringing your file over…', true);
   try {
     const handed = await claim(key);
     if (!handed) {

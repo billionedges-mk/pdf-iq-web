@@ -46,10 +46,17 @@
       <p><strong>No account for the tools.</strong> None of them asks you to sign in.</p>
       <!--PRO--><p><strong>An account, only if you sign in for Pro.</strong> It is described in full under
          <a href="#if-you-sign-in">If you sign in</a>, below.</p><!--/PRO-->
-      <p><strong>No cookies.</strong> We set none, for any purpose, including analytics.</p>
+      <!--NOSALE--><p><strong>No cookies.</strong> We set none, for any purpose, including analytics.</p>
       <p><strong>No analytics and no tracking.</strong> There is no analytics SDK, no tag manager,
          no pixel and no third-party script of any kind on this site. Nothing here reports back
-         what you did.</p>
+         what you did.</p><!--/NOSALE--><!--SALE--><p><strong>No cookies.</strong> We set none, for any purpose, including analytics. Using any
+         of the {{webToolCount}} tools, or reading any page, sets no cookie at all. The one place a cookie can
+         appear is Paddle's checkout, after you press Pay; it is described under
+         <a href="#checkout">If you buy Pro: the checkout</a>.</p>
+      <p><strong>No analytics and no tracking.</strong> There is no analytics SDK, no tag manager,
+         no pixel and no third-party script on any page of this site. Paddle's checkout script runs only at a
+         separate address, {{checkoutHost}}, and only after you press Pay. Nothing here reports back what
+         you did.</p><!--/SALE-->
       <p><strong>No third-party requests from the tools.</strong> Fonts are served from this domain rather than a
          font CDN, so loading a page does not tell anyone else that you visited.</p>
       <p><strong>Only if you choose it:</strong> the form on
@@ -89,7 +96,7 @@
       <p>Ask at <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> and it is deleted. Using any
          of the {{webToolCount}} tools never involves this form, and none of them asks you for anything.</p>
 
-      <h3>Four things stored in your browser<!--PRO-->, and two more if you sign in<!--/PRO--></h3>
+      <h3>Four things stored in your browser<!--PRO-->, and <!--NOSALE-->two<!--/NOSALE--><!--SALE-->up to four<!--/SALE--> more if you sign in<!--/PRO--></h3>
       <p><!--FREE-->These stay<!--/FREE--><!--PRO-->The first four stay<!--/PRO--> on your device and are never sent to us. You can clear all of them at any time
          through your browser's "clear site data" control.</p>
       <ul>
@@ -104,7 +111,10 @@
             in the same step. Anything left behind by a link you did not follow is deleted after
             ten minutes. This is the only time a document of yours is written to storage rather
             than only held in memory, it never leaves your device, and it does not happen unless
-            you click one of those links.</li>
+            you click one of those links<!--SALE-->, or an <em>Unlock with Pro</em> button. Unlock keeps the file you have
+            open in the same way while you pay, together with the name of the Pro feature and the page you pressed it
+            on, so the purchase page can bring you back there with the file; it is picked up and deleted when you
+            arrive back<!--/SALE-->.</li>
         <li><strong>The memory probe&rsquo;s last result.</strong> An internal page, linked from nowhere,
             measures the largest file this device can process. If someone runs it, it keeps the
             result &mdash; file sizes, timings, the browser&rsquo;s name, and the device&rsquo;s memory
@@ -113,7 +123,18 @@
         <!--PRO--><li><strong>If you sign in for Pro: your sign-in</strong>, under {{authSessionKey}}, and — only
             while you are away at Google's sign-in page — a check under {{authPendingKey}}. Unlike the four
             above, part of your sign-in is sent to Google each time it is renewed. Both are described
-            under <a href="#if-you-sign-in">If you sign in</a>.</li><!--/PRO-->
+            under <a href="#if-you-sign-in">If you sign in</a>.</li><!--SALE-->
+        <li><strong>If you own Pro: a signed note saying so</strong>, under <code>pdfiq.entitlement</code>, so the
+            Pro features keep working in a page that is already open with no connection; opening a page still needs one. It holds your account identifier and Paddle's reference for the
+            purchase, is checked on your device without sending anything, and is removed when you sign out of this
+            browser, or when your account page finds the purchase was refunded. It is fetched from this site only
+            on your account page and the purchase page, never by a tool.</li>
+        <li><strong>Straight after paying: a note that your payment is being confirmed</strong>, under
+            <code>pdfiq.pending-purchase</code>. Paddle can say a payment went through a few seconds before it tells us, and
+            this note means that, if you close the page in between, the Pro features say your payment is being
+            confirmed rather than offering to sell Pro again. It holds Paddle's reference, your account identifier and
+            the time, and is removed when the purchase is confirmed or refunded, or when you sign out. After 24 hours it
+            is ignored, and removed the next time a page of this site looks for it.</li><!--/SALE--><!--/PRO-->
       </ul>
 
       <h3><!--FREE-->The one request this site makes<!--/FREE--><!--PRO-->Requests this site makes<!--/PRO--></h3>
@@ -121,10 +142,13 @@
          language. It is served from this domain, downloaded once, and then cached. That download
          is a request for a file; it does not carry any part of your document, and no other tool on
          this site fetches anything at all after the page has loaded.</p>
-      <!--PRO--><p>Signing in for Pro is the other exception, and it happens on the account page only: that
+      <!--PRO--><!--NOSALE--><p>Signing in for Pro is the other exception, and it happens on the account page only: that
          page contacts {{authIdentityHost}} when you sign in, and {{authTokenHost}} when it renews a sign-in
-         that is about to expire. Both are Google's, and both are described under <a href="#if-you-sign-in">If
-         you sign in</a>.</p><!--/PRO-->
+         that is about to expire.<!--/NOSALE--><!--SALE--><p>Signing in for Pro is the other exception, and it happens
+         on the account page and the purchase page only: each contacts {{authIdentityHost}} when you sign in there,
+         and {{authTokenHost}} when it renews a sign-in that is about to expire (the purchase page does so only to
+         confirm a purchase you have just made).<!--/SALE--> Both are Google's, and both are described under
+         <a href="#if-you-sign-in">If you sign in</a>.</p><!--/PRO-->
 
       <h3>Server logs</h3>
       <p>The site is static files served by Cloudflare Pages. Asking for a web page necessarily
@@ -139,7 +163,8 @@
       <p>An account exists only for Pro. None of the {{webToolCount}} tools needs one, and signing in changes
          nothing about how they work. It is the same account the Android app uses: signing in here or in
          the app reaches the same record.</p>
-      <p><strong>What happens.</strong> The <a href="/account/">account page</a> sends you to Google's own
+      <p><strong>What happens.</strong> The <a href="/account/">account page</a><!--SALE-->, or the purchase page if you
+         sign in from there,<!--/SALE--> sends you to Google's own
          sign-in page and asks Google for {{authScope}} only: your email address and a Google account
          identifier, not your name or photo. Google sends you back with a signed statement of those two
          things. The page hands that statement to {{authIdentityHost}} &mdash; Firebase Authentication, the
@@ -150,8 +175,8 @@
       <p><strong>What this browser keeps</strong>, in its local storage under {{authSessionKey}}:
          {{authSessionFields}}. In that order: the account identifier, your email address, a proof of
          sign-in that lasts about an hour, when that proof expires, and the refresh token that renews it.
-         When the proof is within five minutes of expiring, the account page renews it at {{authTokenHost}},
-         sending the refresh token.</p>
+         When the proof is within five minutes of expiring, the account page<!--SALE--> (or the purchase page,
+         while confirming a purchase)<!--/SALE--> renews it at {{authTokenHost}}, sending the refresh token.</p>
       <p>While you are away at Google's sign-in page it also keeps {{authPendingFields}} under
          {{authPendingKey}}, in session storage: two random values that let the page check that Google's
          answer belongs to a sign-in it started, and the time it started. The two random values travel to
@@ -161,12 +186,78 @@
          is switched off or deleted. That is why this site allows scripts from its own address and nowhere
          else &mdash; the <code>script-src 'self'</code> rule in its content security policy &mdash; and loads
          no third-party script on any page: the only code that can read it is this site's own. If that ever
-         changed, this storage would have to change with it. None of this uses a cookie.</p>
+         changed, this storage would have to change with it. None of this uses a cookie.<!--SALE--> Paddle's checkout,
+         which does run a third-party script, is kept at a separate address for exactly this reason: nothing
+         running there can read what this site stores.<!--/SALE--></p>
       <p><strong>Signing out</strong>, on the account page, deletes the sign-in from this browser. It does not
          sign you out of the Android app or of Google. To end every sign-in on every device, write to
          <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> and we will switch the account off; to
          remove it entirely, see <a href="#deleting-your-account">Deleting your account</a>.</p>
       <!--/PRO-->
+      <!--SALE-->
+      <h3 id="checkout">If you buy Pro: the checkout</h3>
+      <p><strong>Nothing is loaded or set before you press Pay.</strong> The purchase page is an ordinary page of
+         this site until then: it makes no request to anyone else, sets no cookie, and the counter at its foot
+         reads zero third-party requests, as on every other page.</p>
+      <p><strong>Pressing Pay opens Paddle's checkout, at a separate address.</strong> Paddle is the merchant of
+         record for Pro: they take the payment and handle any tax, and your card details go to Paddle, never to
+         us. The checkout runs at {{checkoutHost}}, which the purchase page places over itself. It is a different
+         address from this site on purpose. Your browser keeps each address's storage apart, so nothing running
+         there, Paddle's script included, can read the sign-in this site stores. The purchase page hands it two
+         things only, your account identifier and email address, so that the purchase is recorded against your
+         account. The checkout address stores nothing itself. Paddle's script loads there from
+         {{paddleScriptHost}}, and Paddle's checkout opens in a frame from {{paddleCheckoutHost}}.</p>
+      <p><strong>What Paddle's checkout loads is Paddle's decision, not ours.</strong> Our security policies
+         decide what the purchase page and the checkout address may load. Once Paddle's checkout frame is open,
+         what it loads is governed by Paddle. We measured it and set out what we found, but we do not control it,
+         and it can change without any change here. The counter at the foot of the purchase page counts the
+         checkout address and the report described below; it cannot see anything inside Paddle's frame.</p>
+      <p><em>Measured on Paddle's test checkout on 13 September 2026, both opening the checkout and completing a
+         test payment. The live checkout has not been measured yet; this section is checked against it before Pro
+         goes on sale.</em></p>
+      <p><strong>When the checkout opens</strong>, Paddle's frame:</p>
+      <ul>
+        <li><strong>loads Stripe</strong>, from js.stripe.com, m.stripe.network and m.stripe.com. Stripe sets a
+            cookie named <code>m</code> on m.stripe.com that lasts about 13 months. Stripe describes m.stripe.com
+            as the address its script sends fraud-prevention signals to
+            (<a href="https://docs.stripe.com/disputes/prevention/advanced-fraud-detection">Stripe's description</a>).</li>
+        <li><strong>sets a Cloudflare cookie</strong> named <code>__cf_bm</code> on paddle.com, which Cloudflare's
+            bot protection uses and which expires after 30 minutes of inactivity
+            (<a href="https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/">Cloudflare's description</a>).</li>
+        <li><strong>loads Localize</strong>, from global.localizecdn.com;</li>
+        <li><strong>sends requests to Sentry</strong>, at ingest.sentry.io;</li>
+        <li><strong>sends events to Paddle's own checkout services</strong>, at paddle.com addresses;</li>
+        <li><strong>loads fonts from Google Fonts</strong>, at fonts.googleapis.com and fonts.gstatic.com.</li>
+      </ul>
+      <p><strong>When you pay</strong>, it also sends requests to r.stripe.com, another Stripe address; loads an
+         image from www.gstatic.com, a Google address; and loads card-brand images from buy.paddle.com and more of
+         Stripe's scripts. Paying sets no cookie beyond the two above.</p>
+      <p><strong>A report about Paddle's frame.</strong> Paddle's checkout frame carries a policy that expects only
+         the checkout address above it. The purchase page is above that as well, so when the checkout opens your
+         browser sends a short report to Sentry, the address Paddle's policy names. We read what it contains: it
+         names Paddle's own checkout frame, not the page you were on. Your browser sends it on Paddle's behalf,
+         which is why the counter shows it as a third-party request but cannot count its bytes.</p>
+      <p>These cookies are set only because you asked to pay, and they are needed for that payment to go through.
+         That is why there is no cookie banner: declining them would mean not paying, and not pressing Pay sets
+         none.</p>
+      <p><a href="https://www.paddle.com/legal/privacy">Paddle's privacy notice</a> is addressed to people who buy
+         from Paddle and sets out how Paddle handles their personal data. It does not list the services its
+         checkout loads.</p>
+
+      <h3 id="purchase-record">If you buy Pro: the purchase record</h3>
+      <p>When Paddle tells this site a payment went through, we record the purchase, so that Pro follows your account
+         to any browser you sign in on. The record holds Paddle's reference for the transaction, your account
+         identifier, the email address you were signed in with, whether the purchase stands or was refunded, and when
+         that last changed. It holds no card details, no amount, no billing address and no IP address.</p>
+      <p>It is kept in a Cloudflare database. We asked Cloudflare to place it in Asia-Pacific, which Cloudflare
+         describes as a location hint for where the database runs
+         (<a href="https://developers.cloudflare.com/d1/configuration/data-location/">Cloudflare's description</a>).</p>
+      <p><strong>The record outlives your account, on purpose.</strong> Deleting your account does not take Pro away,
+         and this record is how that promise is kept: sign in again with the same Google account and Pro is found
+         again. That means deleting the record is the one thing that does take Pro away. You can ask us to delete it,
+         and we will. Before we do, we will tell you that Pro will end on every device you use it on, and that
+         deleting the record is not a refund. Refunds are covered on <a href="/refunds/">the refunds page</a>.</p>
+      <!--/SALE-->
 
       <!-- ================================================================ app -->
       <h2>Part two — the PDFiq Android app</h2>
@@ -266,15 +357,22 @@
          marketing purposes.</p>
 
       <h3>Purchases and app integrity</h3>
-      <!-- What is recorded, not "only confirmation that a purchase was made": a purchase record holds Paddle's reference,
-           the account identifier, the email signed in with, the status and when it last changed. A purchase's status is
-           payment information of a kind, so that phrase went; card details and billing address stay named (owner,
-           17 September 2026). -->
-      <p>PDFiq Pro is not on sale yet. When it is, it will be a one-time purchase, not a
+      <!-- What is recorded, not "only confirmation that a purchase was made": the purchase record holds Paddle's
+           reference, the account identifier, the email signed in with, the status and when it last changed, and the sale
+           build says so further down this page. Two sections of one page may not disagree about what we hold (owner,
+           17 September 2026). A purchase's status is payment information of a kind, so that phrase went; card details and
+           billing address stay named. -->
+      <!--NOSALE--><p>PDFiq Pro is not on sale yet. When it is, it will be a one-time purchase, not a
          subscription, sold through Paddle, who will act as the merchant of record and handle payment
          and any tax due. We will never see or handle your card details or billing address. When a purchase
          goes through, we will record Paddle's reference for it against your account, with the email address
-         you were signed in with. Purchases are not made inside the Android app.</p>
+         you were signed in with. Purchases are not made inside the Android app.</p><!--/NOSALE-->
+      <!--SALE--><p>PDFiq Pro is sold on pdf-iq.com: a one-time purchase, not a subscription, sold through
+         Paddle, who act as the merchant of record and handle payment and any tax due. We never see or handle
+         your card details or billing address. When a purchase goes through, we record Paddle's reference for it
+         against your account, with the email address you were signed in with; what that record holds, and how
+         long it is kept, is set out under <a href="#purchase-record">If you buy Pro: the
+         purchase record</a>. Purchases are not made inside the Android app.</p><!--/SALE-->
       <p>We use Firebase App Check with Google Play Integrity to confirm that requests to our
          servers come from a genuine installation of PDFiq rather than an automated script. This
          protects our AI costs and does not involve your documents.</p>
@@ -292,7 +390,7 @@
       <!-- ============================================================= shared -->
       <h2>Who your data is shared with</h2>
       <p>Nothing from this website is shared with anyone for their own purposes. What it collects —
-         the form on the firms page, if you use it, and the server logs described above — stays with
+         the form on the firms page, if you use it,<!--SALE--> a Pro purchase record, if you buy Pro,<!--/SALE--> and the server logs described above — stays with
          this site and Cloudflare, which hosts it.<!--PRO--> Signing in for Pro uses Google Firebase, the
          same as the app; see <a href="#if-you-sign-in">If you sign in</a>.<!--/PRO--> The app uses a small
          number of providers, each for a specific purpose:</p>
@@ -306,7 +404,8 @@
             <a href="#diagnostics">Diagnostics and analytics</a>. Never receives your document.</li>
         <li><strong>Paddle</strong> — payment processing for the one-time Pro purchase, which is
             made on pdf-iq.com rather than in the app. Will receive, once Pro is on sale: your payment
-            details, handled entirely by Paddle as merchant of record.</li>
+            details, handled entirely by Paddle as merchant of record.<!--SALE--> Paddle's checkout also loads
+            services of its own choosing, listed under <a href="#checkout">the checkout</a>.<!--/SALE--></li>
       </ul>
       <p>We may also disclose information where we are legally required to, or where it is
          necessary to protect our rights or the safety of others.</p>
@@ -322,7 +421,10 @@
         <li><strong>Document text and summaries:</strong> not kept at all — discarded when the
             request completes.</li>
         <li><strong>Account and usage counters:</strong> kept while your account is active, and
-            deleted when you delete your account.</li>
+            deleted when you delete your account.</li><!--SALE-->
+        <li><strong>Your Pro purchase record:</strong> kept for as long as Pro is yours, including after you delete
+            your account, so that signing in again restores it. Deleted if you ask, which ends Pro; see
+            <a href="#purchase-record">the purchase record</a>.</li><!--/SALE-->
         <li><strong>Analytics events</strong> — which features were used, which operations succeeded or failed, and
             the device details sent with each: kept for 2 months, then deleted in Google's monthly
             deletion pass. That is the event retention setting on our Google Analytics property.
@@ -360,7 +462,10 @@
       <p>Deleting your account removes your account record and usage counters from our servers. It
          does not affect any PDF you have already saved — those files are yours and are not ours to
          delete. A one-time Pro purchase is not affected either: it is not a subscription, so
-         there is nothing to cancel, and deleting your account does not refund or revoke it.</p>
+         there is nothing to cancel, and deleting your account does not refund or revoke it.</p><!--SALE-->
+      <p><strong>The Pro purchase record is the exception, and it is deliberate.</strong> It is not deleted with your
+         account, because it is what keeps Pro yours afterwards. Deleting it is a separate request, and it ends Pro on
+         every device. It is described under <a href="#purchase-record">the purchase record</a>.</p><!--/SALE-->
       <p><!--FREE-->If you have only ever used this website, or have never used Summarise<!--/FREE--><!--PRO-->If you
          have never signed in, in the app or on this website<!--/PRO-->, we hold nothing
          about you and there is nothing to delete.</p>
@@ -368,7 +473,8 @@
       <h2>Your rights</h2>
       <p>Depending on where you live, you may have rights to access, correct, export, restrict or
          delete the personal information we hold about you, and to object to certain processing.
-         Because we hold so little — an email address and a set of counters — most such requests
+         Because we hold so little — an email address and a set of counters<!--SALE-->, and a purchase record if you
+         bought Pro<!--/SALE--> — most such requests
          are straightforward.</p>
       <p>Write to <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> and we will
          respond within 30 days. We will not charge you for exercising these rights and will not

@@ -6,7 +6,7 @@
   "description": "pdf-iq.com - client-side PDF tools. Files never leave the device.",
   "type": "module",
   "scripts": {
-    "prebuild": "node tools/licenses.mjs && node tools/contrast.mjs && node tools/claims-index.mjs --check && node tools/verify-classes.mjs",
+    "prebuild": "node tools/licenses.mjs && node tools/contrast.mjs && node tools/claims-index.mjs --check && node tools/verify-classes.mjs && node tools/verify-font.mjs && node tools/verify-price-offers.mjs",
     "build": "node tools/build.mjs",
     "dev": "node tools/build.mjs --watch --serve",
     "licenses": "node tools/licenses.mjs",
@@ -29,12 +29,23 @@
     "verify:pro-copy": "node tools/verify-pro-copy.mjs",
     "verify:retired": "node tools/verify-retired.mjs",
     "verify:live": "node tools/verify-live.mjs",
+    "verify:paddle": "node --no-warnings tools/verify-paddle.mjs",
+    "verify:entitlement-client": "node tools/verify-entitlement-client.mjs",
+    "entitlement:keys": "node tools/entitlement-keys.mjs",
+    "paddle:test-events": "node tools/paddle-test-events.mjs",
+    "verify:sale-build": "node tools/verify-sale-build.mjs",
+    "measure:paddle": "node tools/measure-paddle.mjs",
+    "build:checkout": "node tools/build-checkout.mjs",
     "verify:size-claims": "node tools/verify-size-claims.mjs",
+    "verify:result": "node tools/verify-result.mjs",
     "verify:ascii-filters": "node tools/verify-ascii-filters.mjs",
-    "verify:classes": "node tools/verify-classes.mjs"
+    "verify:classes": "node tools/verify-classes.mjs",
+    "verify:font": "node tools/verify-font.mjs",
+    "verify:price-offers": "node tools/verify-price-offers.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/inter-tight": "^5.3.0",
     "@fontsource/public-sans": "^5.3.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289",

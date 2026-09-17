@@ -255,7 +255,7 @@ const CASES: Case[] = [
       await waitFor(p.doc, 'result');
       const out = await capture(p);
       const doc = await reopen(out, 'merge');
-      note(`facts: ${p.doc.querySelector('[data-fact-pages]')!.textContent}`);
+      note(`what was kept: ${p.doc.querySelector('[data-res-how]')!.textContent}`);
       ok(doc.getPageCount() === 9, 'output has 2+3+4 = 9 pages');
       ok(clean(p), 'nothing sent');
       p.frame.remove();
@@ -333,7 +333,7 @@ const CASES: Case[] = [
       const doc = await reopen(out, 'rotate');
       ok(doc.getPageCount() === 4, 'still 4 pages');
       const angles = doc.getPages().map((pg) => ((pg.getRotation().angle % 360) + 360) % 360);
-      note(`rotations: ${angles.join(', ')} — ${p.doc.querySelector('[data-result-mono]')!.textContent}`);
+      note(`rotations: ${angles.join(', ')} — ${p.doc.querySelector('[data-res-how]')!.textContent}`);
       ok(angles.every((a) => a === 90), 'every page is now at 90 degrees');
       ok(clean(p), 'nothing sent');
       p.frame.remove();

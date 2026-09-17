@@ -54,7 +54,14 @@ const NO_KEY = 'no Firebase web API key in this build';
 const b64url = (bytes: Uint8Array) =>
   btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const random = () => b64url(crypto.getRandomValues(new Uint8Array(32)));
-const redirectUri = () => `${location.origin}/account/`;
+/**
+ * Where Google sends the person back: the page the sign-in started on. /pro/buy/ exists only in a sale build, and
+ * signing in there brings a buyer straight back to the purchase rather than to /account/. Each of the two is an
+ * authorised redirect URI on the OAuth web client, registered by the owner (both Preview URIs on 13 September
+ * 2026; the production /pro/buy/ URI is on the go-live checklist). Any other page signs in through /account/.
+ */
+// The sale constant first, so a build that is not selling drops the /pro/buy/ address with the branch.
+const redirectUri = () => `${location.origin}${__PDFIQ_SALE__ && location.pathname === '/pro/buy/' ? '/pro/buy/' : '/account/'}`;
 
 function guarded<T>(fn: () => T): T {
   try {

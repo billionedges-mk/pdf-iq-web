@@ -15,6 +15,7 @@ import { readOutline, writeOutline, shiftOutline, countOutline, type OutlineNode
 import { rebuildAcroForm, hasFormFields } from '../lib/acroform.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural } from '../lib/format.js';
+import { describeMerged } from '../lib/result-words.js';
 import { describeMergedSize } from '../lib/size-report.js';
 import { wireNextLinks, claimIncoming } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
@@ -301,9 +302,6 @@ function renderResult(
   sizes: string[],
   forms: { fields: number; renamed: number }
 ): void {
-  $('[data-result-head]')!.textContent =
-    `${plural(items.length, 'file')} became one — ${plural(pages, 'page')}, ${formatBytes(bytes.length)}.`;
-
   // What it was given beside what it wrote. Before this the head gave the output size alone, so
   // a merged file larger than its inputs arrived with nothing to say it was.
   const size = describeMergedSize(items.map((i) => i.file.size), bytes.length);
@@ -312,22 +310,15 @@ function renderResult(
   sizeNote.textContent = size.note;
   sizeNote.hidden = !size.note;
 
-  $('[data-fact-pages]')!.textContent =
-    `${items.map((i) => i.pageCount).join(' + ')} = ${pages}`;
-  $('[data-fact-bookmarks]')!.textContent = bookmarks
-    ? `${bookmarks} entries, ${items.length} groups`
-    : 'none — no source file had any';
-  $('[data-fact-sizes]')!.textContent = sizes.length > 1
-    ? `${sizes.join(' and ')}, all kept`
-    : `${sizes[0] ?? 'unknown'}, unchanged`;
-  $('[data-fact-forms]')!.textContent = forms.fields
-    ? `${plural(forms.fields, 'field')} kept${forms.renamed ? `, ${forms.renamed} renamed to avoid a clash` : ''}`
-    : 'none in these files';
+  $('[data-res-now]')!.textContent = plural(pages, 'page');
+  $('[data-res-was]')!.textContent = `from ${plural(items.length, 'file')}`;
+  $('[data-res-how]')!.textContent = describeMerged({ pagesPerFile: items.map((i) => i.pageCount), bookmarks, sizes, forms });
 
   const name = ($<HTMLInputElement>('[data-outname]')!.value || 'merged.pdf').replace(/(\.pdf)?$/i, '.pdf');
   lastResult = { bytes, name };
   const save = $<HTMLButtonElement>('[data-save]')!;
   save.textContent = `Save ${name}`;
+  $('[data-res-name]')!.textContent = name;
   save.onclick = () => saveFile(bytes, name);
 
   shell.show('result');

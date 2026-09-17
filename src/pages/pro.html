@@ -1,8 +1,16 @@
     <div class="tool-head">
       <h1 class="page-title">Pro</h1>
-      <p class="page-lede">{{proFeatureCountCap}} things the {{webToolCount}} free tools do not do &mdash; not on sale yet, on either
-        surface. When it is: bought once, covering {{proCoversToday}}. It will not unlock anything in the Android app.</p>
+      <!--NOSALE--><p class="page-lede">{{proFeatureCountCap}} things the {{webToolCount}} free tools do not do &mdash; not on sale yet, on either
+        surface. When it is: bought once, covering {{proCoversToday}}. It will not unlock anything in the Android app.</p><!--/NOSALE-->
+      <!--SALE--><p class="page-lede">{{proFeatureCountCap}} things the {{webToolCount}} free tools do not do.</p><!--/SALE-->
     </div>
+    <!--SALE-->
+    <!-- The price, the terms and the way to pay, together, at the top and again at the foot; none of it for an owner. -->
+    <div data-pro-strip hidden>
+      <p class="outcome__body" style="margin-top: 12px; max-width: 760px;">{{proPrice}} {{proQualifier}}, not a subscription, covering
+        {{proCoversToday}}. It does not unlock anything in the Android app.</p>
+      <p style="margin: 16px 0 0;"><a class="btn" href="/pro/buy/">Buy Pro &mdash; {{proPrice}} {{proQualifier}}</a></p>
+    </div><!--/SALE-->
 
     <div class="card" style="margin-top: 22px; max-width: 760px;">
       <p class="kicker">What stays free</p>
@@ -14,7 +22,7 @@
 
     <!--PRO_COPY-->
 
-    <div class="card" style="margin-top: 22px; max-width: 760px;">
+    <!--NOSALE--><div class="card" style="margin-top: 22px; max-width: 760px;">
       <p class="kicker">Price</p>
       <p class="price__amount" style="margin-top: 6px;">{{proPrice}}<span>{{proQualifier}}</span></p>
       <p class="price__sub">paid once, not a subscription &middot; covers {{proCoversToday}}, not the Android app</p>
@@ -24,9 +32,19 @@
         per-file limit to hit, because the free tools have neither.</p>
       <p style="margin: 14px 0 0; font-size: 15px; font-weight: 700;">Not on sale yet, on either surface.
         Nothing here takes payment, and there is no date.</p>
-    </div>
+    </div><!--/NOSALE-->
 
     <p class="atwork" style="margin-top: 20px;">Buying this for a firm? Pro is one person's licence, bought once. A firm tool would be a
       different product for a different buyer, and we are <a href="/for-professionals/">asking firms
       what it should be</a> before building it &mdash; the {{proTeamPrice}} named there is a question,
       not an offer.</p>
+    <!--SALE--><div class="card" style="margin-top: 22px; max-width: 760px;" data-pro-strip hidden>
+      <p class="kicker">Price</p>
+      <p class="price__amount" style="margin-top: 6px;">{{proPrice}}<span>{{proQualifier}}</span></p>
+      <p class="price__sub">paid once, not a subscription &middot; covers {{proCoversToday}}, not the Android app</p>
+      <p class="hint" style="margin-top: 8px;">The price includes VAT or GST where it applies. In the United States and Canada, sales tax is added at the checkout, which shows the total before you pay.</p>
+      <p class="outcome__body" style="margin-top: 12px;">A PDF tool gets used a few times a year. Subscription
+        is the usual model; this is bought once and kept. There is no trial to expire and no
+        per-file limit to hit, because the free tools have neither.</p>
+      <p style="margin: 16px 0 0;"><a class="btn" href="/pro/buy/">Buy Pro &mdash; {{proPrice}} {{proQualifier}}</a></p>
+    </div><!--/SALE-->

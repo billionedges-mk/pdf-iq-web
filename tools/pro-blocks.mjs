@@ -41,3 +41,39 @@ export function applyProBlocks(body, pro, file = 'template') {
   if (/<!--\/?(PRO|FREE)-->/.test(out)) throw new Error(`${file}: a Pro marker survived resolution`);
   return out;
 }
+
+/**
+ * Sale-only and not-selling markup, resolved before the Pro blocks:
+ *
+ *   <!--SALE-->   ... <!--/SALE-->     kept only in a build that has a purchase page (tools/paddle-config.mjs)
+ *   <!--NOSALE--> ... <!--/NOSALE-->   kept only in any other build
+ *
+ * A separate pass with its own markers, so a sale block may sit inside a PRO block: the sign-in section
+ * of /privacy is Pro-only, and one of its sentences is true only while nothing is sold. Same strictness
+ * as the Pro blocks: unbalanced, nested or surviving markers throw.
+ */
+const SALE_TAG = /<!--(\/?)(SALE|NOSALE)-->/g;
+
+export function applySaleBlocks(body, sale, file = 'template') {
+  let out = '';
+  let at = 0;
+  let open = null;
+  for (const m of body.matchAll(SALE_TAG)) {
+    const [whole, slash, kind] = m;
+    if (!slash) {
+      if (open) throw new Error(`${file}: <!--${kind}--> opened inside <!--${open.kind}--> — sale blocks do not nest`);
+      out += body.slice(at, m.index);
+      open = { kind, start: m.index + whole.length };
+    } else {
+      if (!open) throw new Error(`${file}: <!--/${kind}--> with nothing open`);
+      if (open.kind !== kind) throw new Error(`${file}: <!--/${kind}--> closes <!--${open.kind}-->`);
+      if (kind === 'SALE' ? sale : !sale) out += body.slice(open.start, m.index);
+      open = null;
+    }
+    at = m.index + whole.length;
+  }
+  if (open) throw new Error(`${file}: <!--${open.kind}--> is never closed`);
+  out += body.slice(at);
+  if (/<!--\/?(SALE|NOSALE)-->/.test(out)) throw new Error(`${file}: a sale marker survived resolution`);
+  return out;
+}

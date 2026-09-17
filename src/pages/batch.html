@@ -18,24 +18,6 @@
         </div>
         <p class="dropzone__meta">Up to {{maxFileSize}} each &middot; stays on this device</p>
       </div>
-
-      <div class="assurances">
-        <div>
-          <h2>Every file, on your own machine.</h2>
-          <p>Twenty files is twenty times the work, and all of it happens here. Nothing is uploaded, so
-             the tab has to stay open &mdash; there is no server carrying on without you.</p>
-        </div>
-        <div>
-          <h2>A file that fails puts nothing in the zip.</h2>
-          <p>No zero-byte placeholder, no copy of the input. What is in the archive worked, and anything
-             that did not is named underneath with the reason.</p>
-        </div>
-        <div>
-          <h2>Stopping keeps what finished.</h2>
-          <p>Stop is not undo. The files already done stay done and come back in the zip; the ones not
-             reached are listed as not attempted.</p>
-        </div>
-      </div>
     </section>
 
     <section aria-label="What to do with them" data-view="selected" hidden>
@@ -56,6 +38,8 @@
         <button type="button" class="btn" data-start>Run on every file</button>
       </div>
       <p class="hint" data-run-note>The tab has to stay open while this runs, and your screen is kept awake where the browser allows it.</p>
+      <p class="hint">A file that fails puts nothing in the zip &mdash; no zero-byte placeholder and no copy of the input.
+         What comes back worked, and anything that did not is named with the reason.</p>
       <div data-gate style="margin-top: 12px;"></div>
     </section>
 

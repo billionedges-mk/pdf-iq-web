@@ -1,7 +1,7 @@
 /**
  * The share image for one route: the wordmark small at the top, the page's subject large
  * under it, one true line under that, and the route's own mark to the right as support.
- * Colours come from app.css; the type is the site's own Public Sans, read out of the .woff
+ * Colours come from app.css; the type is the site's own Inter Tight, read out of the .woff
  * we already ship; the mark comes from tools/icons.mjs.
  *
  * These used to be wordless, and the argument for that was that drawing text needs a native
@@ -32,7 +32,13 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const FONTS = join(ROOT, 'node_modules/@fontsource/public-sans/files');
+// The site's type since the redesign (owner's brief, 13 September 2026), at the weights the page actually
+// renders: it ships 400 to 700, so an 800 in the stylesheet draws as 700. tools/verify-font.mjs checks every
+// glyph in these files is assembled where the font says it is (Inter Tight's i, j and comma are composites).
+export const SHARE_FONTS = [
+  'node_modules/@fontsource/inter-tight/files/inter-tight-latin-700-normal.woff',
+  'node_modules/@fontsource/inter-tight/files/inter-tight-latin-600-normal.woff',
+];
 
 const W = 1200, H = 630;
 const LEFT = 90;
@@ -42,8 +48,8 @@ let fonts = null;
 function type() {
   if (!fonts) {
     fonts = {
-      bold: loadFont(join(FONTS, 'public-sans-latin-800-normal.woff')),
-      mid: loadFont(join(FONTS, 'public-sans-latin-700-normal.woff')),
+      bold: loadFont(join(ROOT, SHARE_FONTS[0])),
+      mid: loadFont(join(ROOT, SHARE_FONTS[1])),
     };
   }
   return fonts;

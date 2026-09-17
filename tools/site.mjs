@@ -3,6 +3,7 @@
 // specific tool from search, so there is no client-side router anywhere on this site.
 
 import { AUTH } from './auth-config.mjs';
+import { PADDLE, PADDLE_HOSTS } from './paddle-config.mjs';
 
 export const ORIGIN = 'https://pdf-iq.com';
 
@@ -159,6 +160,8 @@ export const PAGES = [
     title: 'Pro — what it adds, and what stays free — pdf-iq',
     description:
       'What pdf-iq Pro adds to the free browser tools: batch across many files, a searchable PDF from OCR, compression to a target size or dpi, and password protect and remove. Not on sale yet.',
+    saleDescription:
+      'What pdf-iq Pro adds to the free browser tools: batch across many files, a searchable PDF from OCR, compression to a target size or dpi, and password protect and remove. Bought once, for the web tools on this site.',
     ogSubject: 'Pro',
     ogLine: 'Bought once, not rented',
   },
@@ -167,6 +170,8 @@ export const PAGES = [
     title: 'PDF tools for law firms and accountants — nothing uploaded',
     description:
       'We build PDF tools that run on your own device and we are asking firms what to build next, before building it. Nothing is on sale; three questions and an email.',
+    saleDescription:
+      'We build PDF tools that run on your own device and we are asking firms what to build next, before building it. Nothing for firms is on sale; three questions and an email.',
     ogSubject: 'For firms',
     ogLine: 'Three questions, and an email',
   },
@@ -275,8 +280,13 @@ export const PRO = {
    * open. That is better known than papered over with a cadence nobody asked for.
    */
   teamCadenceIsAsked: true,
-  /** Kept prominent: it is not on sale, on either surface. */
-  onSale: false,
+  /**
+   * True only in a build that sells for real: a purchase page against Paddle's production
+   * environment (tools/paddle-config.mjs), which no build can make until the sale is switched on in
+   * code. What a page says follows `selling` instead (a purchase page exists, sandbox included; owner, 17 September
+   * 2026): the Preview shows what launch will say, and its banner says test payments only.
+   */
+  onSale: Boolean(PADDLE?.page && PADDLE.env === 'production'),
 };
 
 export const PRO_FEATURES = PRO.features;
@@ -323,13 +333,18 @@ export const FAQ = [
 ];
 
 export const TOKENS = {
+  // The checkout's address and Paddle's checkout host in this build, for the sale section of /privacy.
+  // Empty in a build that is not selling, where the sale blocks that use them are removed.
+  checkoutHost: PADDLE?.page ? new URL(PADDLE.checkoutOrigin).host : '',
+  paddleCheckoutHost: PADDLE?.page ? new URL(PADDLE_HOSTS[PADDLE.env].frame[0]).host : '',
+  paddleScriptHost: PADDLE?.page ? new URL(PADDLE_HOSTS[PADDLE.env].script[0]).host : '',
   proPrice: PRO.price,
   proTeamPrice: PRO.teamPrice,
 
   proQualifier: PRO.qualifier,
   proCadence: PRO.cadence,
-  // No proCovers placeholder: PRO.covers (the app honouring a web purchase) is not true yet, and the placeholder is how it
-  // reached /app/ without anyone listing it. It comes back when the app honours web purchases, found by searching the build.
+  // No proCovers token: PRO.covers (the app honouring a web purchase) is not true yet, and a token for it is how it got
+  // onto /app/ unlisted. It comes back with the places TECH_DEBT.md names, not before.
   proCoversToday: PRO.coversToday,
   webToolCount: word(WEB_TOOLS.length),
   webToolCountCap: cap(word(WEB_TOOLS.length)),
@@ -433,6 +448,16 @@ export const PRO_PAGES = [
     description: 'Add a password to a PDF, or take one off, on your device. Part of Pro.',
     ogSubject: 'Password',
     ogLine: 'Nothing leaves your device',
+  },
+  {
+    // The one page that loads a third-party script: Paddle's checkout. It exists only in a sale build
+    // (`sale: true`), gets its own content security policy, and loads Paddle.js only when someone
+    // chooses to pay. See src/pro/buy.ts.
+    slug: 'pro/buy', name: 'Buy Pro', entry: 'buy', entryDir: 'pro', noindex: true, sale: true,
+    title: 'Buy Pro — pdf-iq',
+    description: 'Pay for Pro once, through Paddle. Nothing free needs this.',
+    ogSubject: 'Buy Pro',
+    ogLine: 'Paid once',
   },
 ];
 

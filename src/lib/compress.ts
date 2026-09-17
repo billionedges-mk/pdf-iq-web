@@ -19,7 +19,7 @@
 
 import { PDFDocument, PDFRawStream, PDFName, PDFNumber, PDFArray, PDFDict, PDFRef, PDFString, PDFHexString } from 'pdf-lib';
 import { findImages, inflate, unpredict, filterNames, decodeParms, type PdfImage } from './pdf-inspect.js';
-import { formatBytes } from './format.js';
+import { formatBytes, plural } from './format.js';
 
 export interface Preset {
   key: 'balanced' | 'smaller' | 'smallest';
@@ -663,3 +663,30 @@ export function explainNoGain(analysis: Analysis, preset: Preset, result?: Compr
     : ` ${harder.nothingLeft || 'There is no harder setting that would change it.'}`;
   return sentence;
 }
+
+/**
+ * What was done to the file, in one or two sentences, for the result screen (redesign stage 3). Generated from the
+ * result's own counts, never written by hand: the mockup's sample ("Images re-encoded at 120 dpi… the words are
+ * byte-identical") described a file that did not exist, and every clause here has to be true of the file that does.
+ *
+ * `imagesSkipped` includes the undecodable ones, so "left as they were" is the difference.
+ */
+export function describeCompressed(r: CompressResult): string {
+  const parts: string[] = [];
+  if (r.imagesRecompressed) {
+    let s = `${plural(r.imagesRecompressed, 'image')} re-encoded at quality ${r.writtenQuality}`;
+    if (r.downscaled) {
+      const to = r.writtenDpi ? ` to about ${r.writtenDpi} dpi` : '';
+      s += r.downscaled === r.imagesRecompressed ? ` and downscaled${to}` : `, ${r.downscaled} of them downscaled${to}`;
+    }
+    parts.push(s);
+  }
+  const kept = r.imagesSkipped - r.imagesUndecodable;
+  if (kept > 0) parts.push(`${plural(kept, 'image')} left as ${kept === 1 ? 'it was' : 'they were'}, because re-encoding would not have made ${kept === 1 ? 'it' : 'them'} smaller`);
+  if (r.imagesUndecodable > 0) parts.push(`${plural(r.imagesUndecodable, 'image')} this browser could not read, left as ${r.imagesUndecodable === 1 ? 'it was' : 'they were'}`);
+  const images = parts.length ? `${capitalise(parts.join('; '))}.` : 'No images to change.';
+  const rest = `Text, vectors and form fields copied byte-for-byte. ${r.metadataStripped ? 'Author and timestamps removed.' : 'Metadata kept as it was.'}`;
+  return `${images} ${rest}`;
+}
+
+const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

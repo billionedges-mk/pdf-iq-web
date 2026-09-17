@@ -13,11 +13,12 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
-import { applyProBlocks } from './pro-blocks.mjs';
-import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN } from './site.mjs';
+import { applyProBlocks, applySaleBlocks } from './pro-blocks.mjs';
+import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN, PRO as PRO_OFFER } from './site.mjs';
 import { AUTH } from './auth-config.mjs';
+import { PADDLE } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
-import { PRO_COPY, proState, proStrip } from './pro-copy.mjs';
+import { PRO_COPY, proState, proStrip, proPanel, proSheet, lockedPanelStatic } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
 import { ogImage } from './og-images.mjs';
 import { LANGUAGES } from './langs.mjs';
@@ -87,7 +88,8 @@ const PRO_SENTINEL_PREFIX = 'pdfiq-pro:';
  * The routes this build emits. Pro-only pages (site.mjs PRO_PAGES) join only when the flag is on:
  * in any other build they are absent — no page, no bundle, no link — not hidden.
  */
-const ROUTES = PRO ? [...ALL, ...PRO_PAGES] : ALL;
+// A `sale` page (/pro/buy/) joins only a build that can actually sell: tools/paddle-config.mjs.
+const ROUTES = PRO ? [...ALL, ...PRO_PAGES.filter((p) => !p.sale || PADDLE?.page)] : ALL;
 if (PRO && !AUTH.apiKey) {
   console.warn('  (pro) no PDFIQ_FIREBASE_WEB_KEY: /account/ will say signing in is not set up, and make no request');
 }
@@ -118,7 +120,9 @@ if (LOCAL) {
 const PREVIEW_BANNER =
   '<div data-pdfiq-pro="pdfiq-pro:preview" role="note" style="background:#1E2A38;color:#FAF8F4;' +
   'font:600 14px/1.45 system-ui,sans-serif;padding:9px 16px;text-align:center">' +
-  'Preview build with the Pro flag on \u2014 not the live site, and nothing here is for sale.</div>';
+  (PADDLE?.page
+    ? 'Preview build with the Pro flag on, selling through the Paddle SANDBOX \u2014 test payments only; no real card is charged.</div>'
+    : 'Preview build with the Pro flag on \u2014 not the live site, and nothing here is for sale.</div>');
 
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 
@@ -151,13 +155,54 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 // ---------------------------------------------------------------- shell
 
-function header(activeSlug) {
-  // Pro routes that declare a nav label join the bar in a flag-on build, and exist in no other.
-  const navTools = PRO ? [...TOOLS, ...PRO_PAGES.filter((p) => p.nav)] : TOOLS;
-  const links = navTools.map((t) => {
-    const cur = t.slug === activeSlug ? ' aria-current="page"' : '';
-    return `        <a href="${href(t.slug)}"${cur}>${t.nav}</a>`;
-  }).join('\n');
+/**
+ * The bar (redesign stage 1, pdf-iq-final.html): the free tools; in a Pro build a divider, then the Pro group in gold
+ * with its PRO label, then the account control. Three states, settled in the page by src/pro/strip.ts:
+ *
+ *   signed out            "Sign in" pill      Pro group with PRO label
+ *   signed in, no Pro     avatar + name       Pro group with PRO label
+ *   signed in, owns Pro   avatar + name       Pro group, no label (it marks a category, not a lock)
+ *
+ * The label and the control are written hidden and shown once settled, so an owner never sees the label flash and a
+ * signed-in person never sees "Sign in". A build without the Pro flag has neither: no Pro pages, no sign-in.
+ */
+/**
+ * A page "sells" when it carries one of the three things that offer Pro: the strip under a tool's heading, the homepage
+ * panel, or a price card. Read from the built body rather than from a list of pages, so a page that starts or stops
+ * selling takes its phone Pro button with it (tools/verify-price-offers.mjs checks the two agree).
+ */
+const SELLS = /data-pro-strip|class="price__amount"/;
+
+function header(activeSlug, sells) {
+  const link = (t) => `<a href="${href(t.slug)}"${t.slug === activeSlug ? ' aria-current="page"' : ''}>${t.nav}</a>`;
+  const free = TOOLS.map((t) => `        ${link(t)}`).join('\n');
+  const proPages = PRO ? PRO_PAGES.filter((p) => p.nav) : [];
+  // The Pro group is written twice: inside the scrolling bar for wider screens, and on the top row beside the account
+  // control for phones, where inside the bar it started past the right edge (owner, 13 September 2026: "a redesign that
+  // fixes it on desktop and not on mobile has fixed nothing"). CSS shows exactly one; the other is display: none, which
+  // also takes it out of the accessibility tree, so nobody hears the links twice.
+  const group = (where, indent) => `<span class="toolnav__pro toolnav__pro--${where}" role="group" aria-label="Pro">
+${indent}  <span class="pro-tag" data-pro-label hidden>PRO</span>
+${proPages.map((t) => `${indent}  ${link(t)}`).join('\n')}
+${indent}</span>`;
+  const pro = proPages.length ? `\n        ${group('bar', '        ')}` : '';
+  const proTop = proPages.length ? `\n      ${group('top', '      ')}` : '';
+  // The account control is the one bar item that never goes: an owner loses the Pro button, and on a phone the footer is
+  // the furthest thing on the page (owner, 17 September 2026 — the third purchase-path hole of this shape).
+  const account = PRO
+    ? `\n      <a class="acct" href="/account/" data-account-control hidden${activeSlug === 'account' ? ' aria-current="page"' : ''}>Sign in</a>`
+    : '';
+  // Phones: two buttons instead of a scrolling strip that showed four of seven tools at 375px (measured, 17 September
+  // 2026). Both open a sheet, so the pattern is learned once. The Pro button goes when Pro is owned; the account control
+  // does not. CSS shows these only where the strip is hidden.
+  const bars = `
+      <button class="barbtn" type="button" data-sheet-open="tools" aria-controls="sheet-tools" aria-expanded="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Tools
+      </button>
+${sells ? `
+      <button class="barbtn barbtn--pro" type="button" data-sheet-open="pro" aria-controls="sheet-pro" aria-expanded="false" data-pro-strip${PRO ? ' hidden' : ''}>Pro</button>` : ''}`;
+  const here = [...TOOLS, ...proPages].find((t) => t.slug === activeSlug);
+  const where = here ? `\n      <p class="wherenow">You are on <b>${esc(here.nav)}</b></p>` : '';
   return `  <header class="site-header">
     <div class="site-header__inner">
       <a class="brand" href="/"${activeSlug === '' ? ' aria-current="page"' : ''}>
@@ -165,10 +210,49 @@ function header(activeSlug) {
         <span class="brand__word">pdf-iq</span>
       </a>
       <nav class="toolnav" aria-label="PDF tools">
-${links}
-      </nav>
+${free}${pro}
+      </nav>${proTop}${bars}${account}${where}
     </div>
   </header>`;
+}
+
+/**
+ * The two phone sheets (owner's phone design, 17 September 2026). Written into every page, hidden, and opened by the bar
+ * buttons; src/entries/net.ts does the opening. The list is the nav's list, from the same TOOLS and PRO_PAGES, so a tool
+ * cannot appear in one and not the other. The sheet scrolls: nine rows at 45px do not fit a 360x640 phone with browser
+ * chrome (Password measured off-screen at 493-539), and shorter rows would break the 44px touch target.
+ */
+function sheets(activeSlug, sells) {
+  const row = (t, cls) => {
+    const current = t.slug === activeSlug;
+    return `        <a class="sheetrow${cls}" href="${href(t.slug)}"${current ? ' aria-current="page"' : ''}>`
+      + `<span class="sheetrow__mark" aria-hidden="true">${icon(t.slug).replace('class="toolcard__mark"', 'class="sheetrow__glyph"').replace('width="24" height="24"', 'width="19" height="19"')}</span>`
+      + `<span class="sheetrow__name">${esc(t.nav)}</span>`
+      + `${current ? '<span class="sheetrow__here">you are here</span>' : ''}</a>`;
+  };
+  const proPages = PRO ? PRO_PAGES.filter((p) => p.nav) : [];
+  const proRows = proPages.length
+    ? `\n        <p class="sheetsep"><span class="pro-tag" data-pro-label hidden>PRO</span><span class="sheetsep__line" aria-hidden="true"></span></p>\n`
+      + proPages.map((t) => row(t, ' sheetrow--pro')).join('\n')
+    : '';
+  const proSheetMarkup = sells ? proSheet({ selling: Boolean(PADDLE?.page) || PRO_OFFER.onSale, hidden: PRO }) : '';
+  return `  <div class="scrim" data-sheet="tools" id="sheet-tools" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Tools">
+      <span class="sheet__grab" aria-hidden="true"></span>
+      <nav class="sheet__list" aria-label="Tools">
+${[...TOOLS.map((t) => row(t, '')), proRows].filter(Boolean).join('\n')}
+      </nav>
+      <button class="btn-quiet sheet__close" type="button" data-sheet-close>Close</button>
+    </div>
+  </div>
+${sells ? `
+  <div class="scrim" data-sheet="pro" id="sheet-pro" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Pro">
+      <span class="sheet__grab" aria-hidden="true"></span>
+${proSheetMarkup}
+      <button class="btn-quiet sheet__close" type="button" data-sheet-close>Close</button>
+    </div>
+  </div>` : ''}`;
 }
 
 function footer() {
@@ -196,7 +280,7 @@ function footer() {
 // would sit there reporting "2 requests" for its own typography. Preloading moves them
 // into the initial load where they belong, and the readout can honestly say zero.
 const FONT_PRELOADS = [
-  'public-sans-400.woff2', 'public-sans-700.woff2', 'public-sans-800.woff2',
+  'inter-tight-400.woff2', 'inter-tight-500.woff2', 'inter-tight-600.woff2', 'inter-tight-700.woff2',
   'ibm-plex-mono-400.woff2', 'ibm-plex-mono-500.woff2',
 ].map((f) => `<link rel="preload" href="/fonts/${f}" as="font" type="font/woff2" crossorigin>`).join('\n');
 
@@ -222,7 +306,10 @@ function toolGrid() {
  */
 function substituteTokens(body, file) {
   // {{proStrip}} is generated from tools/pro-copy.mjs, which site.mjs cannot import (pro-copy imports site).
-  const tokens = { ...TOKENS, proStrip: proStrip() };
+  // A sale build names the price. A Pro build writes the strip hidden: src/pro/strip.ts shows it only to someone who
+  // does not own Pro, so an owner never sees it, not even for a moment. Production writes it visible, and has no owners.
+  const selling = Boolean(PADDLE?.page) || PRO_OFFER.onSale;
+  const tokens = { ...TOKENS, proStrip: proStrip({ selling, hidden: PRO }), proPanel: proPanel({ selling, hidden: PRO }), searchableLocked: lockedPanelStatic('searchable', 'Searchable PDF') };
   const out = body.replace(/\{\{(\w+)\}\}/g, (_, name) => {
     if (!(name in tokens)) throw new Error(`unknown token {{${name}}} in ${file}`);
     return tokens[name];
@@ -242,11 +329,15 @@ const hasShareImage = (page) => !page.noindex;
 
 function document_({ page, body, css, assets }) {
   const url = ORIGIN + href(page.slug);
+  const sells = SELLS.test(body);
   // Titles and descriptions go through the same substitution as the body, and the same
   // leftover assertion. Without this a {{token}} in page metadata shipped verbatim into
   // <meta name="description"> — which it just did, because the check only ran on the body.
   const title = substituteTokens(page.title, `${page.slug || "index"} title`);
-  const description = substituteTokens(page.description, `${page.slug || "index"} description`);
+  // A build that sells uses a route's saleDescription where it has one: a description is copy too, and /pro/'s said "Not on
+  // sale yet." in a sale build, where no reader of the page could see it (tools/verify-price-offers.mjs reads metadata).
+  const selling = Boolean(PADDLE?.page) || PRO_OFFER.onSale;
+  const description = substituteTokens((selling && page.saleDescription) || page.description, `${page.slug || "index"} description`);
   const shell = page.shell ? ` style="--shell: ${page.shell}"` : '';
   const script = page.entry ? `\n  <script type="module" src="/assets/${assets.get(page.entry)}"></script>` : '';
   return `<!doctype html>
@@ -269,7 +360,7 @@ ${hasShareImage(page) ? `<meta property="og:image" content="${ORIGIN}/og/${page.
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <meta name="twitter:image" content="${ORIGIN}/og/${page.slug || 'home'}.png">
-<meta name="theme-color" content="#FAF8F4">
+<meta name="theme-color" content="#FFFFFF">
 <meta name="pdfiq-build" content="${BUILD_ID}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 ${FONT_PRELOADS}
@@ -277,10 +368,11 @@ ${FONT_PRELOADS}
 </head>
 <body${shell}>
 ${PRO ? PREVIEW_BANNER + '\n' : ''}<a class="skip-link" href="#main">${TOOLS.some((t) => t.slug === page.slug) ? 'Skip to the tool' : 'Skip to content'}</a>
-${header(page.slug)}
+${header(page.slug, sells)}
   <main class="site-main${page.slug === '' ? ' site-main--home' : ''}" id="main">
 ${body}
   </main>
+${sheets(page.slug, sells)}
 ${footer()}
   <script type="module" src="/assets/${assets.get('net')}"></script>${LOCAL ? `\n  <script type="module" src="/assets/${assets.get('local-badge')}"></script>` : ''}${script}
 </body>
@@ -294,9 +386,11 @@ ${footer()}
 // break the offline test and would put two cross-origin requests behind a readout
 // that claims zero.
 const FONT_FILES = [
-  ['@fontsource/public-sans/files/public-sans-latin-400-normal.woff2', 'public-sans-400.woff2'],
-  ['@fontsource/public-sans/files/public-sans-latin-700-normal.woff2', 'public-sans-700.woff2'],
-  ['@fontsource/public-sans/files/public-sans-latin-800-normal.woff2', 'public-sans-800.woff2'],
+  // Inter Tight: the redesign's type (owner's brief, 13 September 2026). Share images use it too (og-images.mjs).
+  ['@fontsource/inter-tight/files/inter-tight-latin-400-normal.woff2', 'inter-tight-400.woff2'],
+  ['@fontsource/inter-tight/files/inter-tight-latin-500-normal.woff2', 'inter-tight-500.woff2'],
+  ['@fontsource/inter-tight/files/inter-tight-latin-600-normal.woff2', 'inter-tight-600.woff2'],
+  ['@fontsource/inter-tight/files/inter-tight-latin-700-normal.woff2', 'inter-tight-700.woff2'],
   ['@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2', 'ibm-plex-mono-400.woff2'],
   ['@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2', 'ibm-plex-mono-500.woff2'],
 ];
@@ -304,9 +398,10 @@ const FONT_FILES = [
 function fontCss() {
   const face = (family, weight, file) => `@font-face{font-family:"${family}";font-style:normal;font-weight:${weight};font-display:swap;src:url("/fonts/${file}") format("woff2");}`;
   return [
-    face('Public Sans', 400, 'public-sans-400.woff2'),
-    face('Public Sans', 700, 'public-sans-700.woff2'),
-    face('Public Sans', 800, 'public-sans-800.woff2'),
+    face('Inter Tight', 400, 'inter-tight-400.woff2'),
+    face('Inter Tight', 500, 'inter-tight-500.woff2'),
+    face('Inter Tight', 600, 'inter-tight-600.woff2'),
+    face('Inter Tight', 700, 'inter-tight-700.woff2'),
     face('IBM Plex Mono', 400, 'ibm-plex-mono-400.woff2'),
     face('IBM Plex Mono', 500, 'ibm-plex-mono-500.woff2'),
   ].join('');
@@ -443,7 +538,7 @@ function copyVendor() {
 function copyStatic() {
   const pub = join(ROOT, 'public');
   if (existsSync(pub)) cpSync(pub, OUT, { recursive: true });
-  if (PRO) writeFileSync(join(OUT, '_headers'), readFileSync(join(OUT, '_headers'), 'utf8') + accountHeaders());
+  if (PRO) writeFileSync(join(OUT, '_headers'), readFileSync(join(OUT, '_headers'), 'utf8') + accountHeaders() + (PADDLE?.page ? buyHeaders() : ''));
 }
 
 /**
@@ -462,10 +557,41 @@ function accountHeaders() {
   if (policy === m[1]) throw new Error('the site-wide CSP has no connect-src to extend for /account/');
   return [
     '',
-    '# Pro-flag build only: the account page, and nothing else, may reach the Google sign-in hosts.',
+    `# Pro-flag build only: the account page may reach the Google sign-in hosts${PADDLE?.page ? ' (and the purchase page, below)' : ', and nothing else'}.`,
     '/account/*',
     '  ! Content-Security-Policy',
     `  Content-Security-Policy: ${policy}`,
+    '',
+  ].join(NL);
+}
+
+/**
+ * The purchase page is the one page that may load a third-party script, Paddle's, so it alone
+ * gets a policy naming Paddle's hosts for this build's environment. Derived from the site-wide
+ * policy like the account page's. Not the Retain analytics host: Paddle.js injects
+ * public.profitwell.com outside sandbox, and this policy is the second of two things that stop it
+ * (src/pro/buy.ts is the first).
+ */
+function buyHeaders() {
+  const site = readFileSync(join(ROOT, 'public/_headers'), 'utf8');
+  const policy = site.match(/^\s*Content-Security-Policy: (.+)$/m)?.[1];
+  if (!policy) throw new Error('public/_headers has no Content-Security-Policy to derive the purchase page policy from');
+  // One addition: the checkout origin, as a frame. No Paddle host at all — Paddle.js runs on that origin,
+  // never on this one, so it cannot read this origin's storage (tools/paddle-config.mjs explains why).
+  let p = /frame-src ([^;]+)/.test(policy)
+    ? policy.replace(/frame-src ([^;]+)/, (_, v) => `frame-src ${v} ${PADDLE.checkoutOrigin}`)
+    : `${policy}; frame-src ${PADDLE.checkoutOrigin}`;
+  // It confirms a purchase itself, which can mean renewing a sign-in older than an hour (Google's token host), and
+  // a sign-in can start and finish here (Identity Toolkit): the same two hosts /account/'s policy has, from the
+  // same list. Approved by the owner on 13 September 2026, this page only.
+  p = p.replace(/connect-src ([^;]+)/, (_, v) => `connect-src ${v} ${AUTH.hosts.join(' ')}`);
+  if (/paddle\.com|profitwell/i.test(p)) throw new Error('the purchase page policy names a Paddle or ProfitWell host; Paddle.js must never run on this origin');
+  return [
+    '',
+    `# Sale build only (Paddle ${PADDLE.env}): the purchase page may frame the checkout origin and reach the Google sign-in hosts, and nothing else changes.`,
+    '/pro/buy/*',
+    '  ! Content-Security-Policy',
+    `  Content-Security-Policy: ${p}`,
     '',
   ].join(NL);
 }
@@ -517,7 +643,9 @@ async function bundle() {
     sourcemap: WATCH,
     logLevel: 'warning',
     metafile: true,
-    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null' },
+    define: { 'process.env.NODE_ENV': '"production"', __PDFIQ_BUILD__: JSON.stringify(BUILD_ID), __PDFIQ_PRO__: PRO ? 'true' : 'false', __PDFIQ_LOCAL__: LOCAL ? 'true' : 'false', __PDFIQ_AUTH__: PRO ? JSON.stringify(AUTH) : 'null', __PDFIQ_SALE__: PADDLE?.page ? 'true' : 'false', __PDFIQ_PADDLE_ENV__: JSON.stringify(PADDLE?.page ? PADDLE.env : ''), __PDFIQ_CHECKOUT_ORIGIN__: JSON.stringify(PADDLE?.page ? PADDLE.checkoutOrigin : ''), __PDFIQ_PRO_PRICE__: JSON.stringify(PRO_OFFER.price), __PDFIQ_PRO_COPY__: JSON.stringify(PRO ? JSON.stringify(Object.fromEntries(PRO_COPY.map((c) => [c.key, { what: c.what, instead: c.instead }]))) : '{}') },
+    // Scalars, not one object: esbuild hoists an object-valued define into a shared module, and the
+    // first version put the token, price and Paddle.js URL into a chunk every Pro page loads.
   });
 
   const hashed = new Map();
@@ -614,7 +742,7 @@ async function build() {
       console.warn(`  (skip) no page body for /${page.slug} — expected src/pages/${page.slug || 'index'}.html`);
       continue;
     }
-    let body = applyProBlocks(readFileSync(file, 'utf8'), PRO, file);
+    let body = applyProBlocks(applySaleBlocks(readFileSync(file, 'utf8'), Boolean(PADDLE?.page), file), PRO, file);
     // The page supplies the grid container; this fills it. Asserting the marker was
     // actually consumed, rather than assuming replace() matched, is the same discipline
     // as grepping the built output — a replace that hits nothing returns success.
@@ -623,6 +751,14 @@ async function build() {
       if (body.includes('<!--TOOL_GRID-->')) {
         throw new Error(`TOOL_GRID marker survived substitution in ${file}`);
       }
+    }
+    // The drop zone carries the tool's own mark (redesign stage 2; finding #3: every tool had a distinct icon on the
+    // homepage and the same brand square in every drop zone, so the specificity vanished at the moment someone checks
+    // they are in the right place). The same shapes as the homepage tile, in plain ink, at 42px.
+    const ZONE_MARK = '<span class="dropzone__mark" aria-hidden="true"></span>';
+    if (body.includes(ZONE_MARK)) {
+      body = body.replace(ZONE_MARK, `<span class="dropzone__mark" aria-hidden="true">${icon(page.slug).replace('class="toolcard__mark"', 'class="dropzone__glyph"').replace('width="24" height="24"', 'width="42" height="42"')}</span>`);
+      if (body.includes(ZONE_MARK)) throw new Error(`the drop zone mark was not replaced in ${file}`);
     }
     // The homepage describes the application itself. Not added elsewhere: a tool page is a
     // page about one feature, and claiming each is a separate application would be untrue.
@@ -658,7 +794,7 @@ async function build() {
         `        <p class="outcome__body" style="margin-top: 10px;">${esc(c.what)}</p>`,
         `        <p class="outcome__body" style="margin-top: 10px;">${esc(c.onDevice)}</p>`,
         `        <p class="hint" style="margin-top: 12px;"><strong>Instead, today:</strong> ${esc(c.instead)}</p>`,
-        `        <p class="outcome__mono" style="margin-top: 10px;">${esc(proState())}</p>`,
+        `        <p class="outcome__mono" style="margin-top: 10px;">${esc(proState(Boolean(PADDLE?.page) || PRO_OFFER.onSale))}</p>`,
         '      </section>',
       ].join(NL)).join(NL);
       body = body.replace(/[ 	]*<!--PRO_COPY-->/, sections);
@@ -695,7 +831,7 @@ async function build() {
   {
     const file = join(ROOT, 'src/pages/404.html');
     if (!existsSync(file)) throw new Error('src/pages/404.html is missing — every unknown URL would fall back to the homepage');
-    let body = applyProBlocks(readFileSync(file, 'utf8'), PRO, file);
+    let body = applyProBlocks(applySaleBlocks(readFileSync(file, 'utf8'), Boolean(PADDLE?.page), file), PRO, file);
     body = body.replace(/[ 	]*<!--TOOL_GRID-->/, toolGrid());
     if (body.includes('<!--TOOL_GRID-->')) throw new Error('TOOL_GRID marker survived substitution in 404.html');
     body = substituteTokens(body, file);
@@ -758,6 +894,33 @@ async function build() {
   }
   if (PRO && !carrying.some((f) => f.startsWith('assets/'))) {
     throw new Error('the Pro flag is on, but no Pro module reached the bundle');
+  }
+
+  // Paddle.js never runs on this origin, sale build or not (tools/paddle-config.mjs). No file this build
+  // writes may call Paddle or carry a client token; only the /pro/buy/ header may name the checkout origin.
+  for (const rel of readdirSync(OUT, { recursive: true })) {
+    const name = String(rel);
+    if (!TEXTLIKE.test(name)) continue;
+    const text = readFileSync(join(OUT, name), 'utf8');
+    // What can run: script files, and script tags in pages. Prose may name Paddle's hosts (/privacy does,
+    // describing the checkout); the first version of this guard refused the privacy page for saying so.
+    const runnable = name.endsWith('.js') ? text : [...text.matchAll(/<script\b[^>]*>[\s\S]*?<\/script>|<script\b[^>]*>/g)].map((m) => m[0]).join('\n');
+    if (/cdn\.paddle\.com|Paddle\.Initialize|Paddle\.Checkout/.test(runnable) || /test_[0-9a-f]{20}|live_[0-9a-f]{20}/.test(text)) {
+      throw new Error(`Paddle reached the site's own origin in ${name.split(/[\\/]/).join('/')}; it belongs on the checkout origin only`);
+    }
+  }
+
+  // The sale, checked the same way. A build that cannot sell may carry no purchase path at all:
+  // no Paddle host, no client token, no checkout call, in any file it wrote (check 14).
+  if (!PADDLE?.page) {
+    const selling = [];
+    for (const rel of readdirSync(OUT, { recursive: true })) {
+      const name = String(rel);
+      if (!TEXTLIKE.test(name) && !name.endsWith('_headers')) continue;
+      const text = readFileSync(join(OUT, name), 'utf8');
+      if (/paddle\.com|Paddle\.Checkout|Paddle\.Initialize|test_[0-9a-f]{20}|live_[0-9a-f]{20}|pdfiq-checkout-open/.test(text)) selling.push(name.split(/[\\/]/).join('/'));
+    }
+    if (selling.length) throw new Error(`a purchase path reached a build that is not selling: ${selling.slice(0, 8).join(', ')}`);
   }
 
   console.log(`built ${ROUTES.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images${PRO ? '  — PRO PREVIEW' : ''}`);

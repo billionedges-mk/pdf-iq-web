@@ -13,7 +13,7 @@
  * free path's sentence (src/lib/ocr-result.ts) cannot say "searchable" at all.
  */
 import { writeSearchable, describeSearchable, searchableMark, pagesToLayer, type SearchablePage } from './searchable.js';
-import { signedIn, signInPrompt } from './gate.js';
+import { proAccount, lockedPanel, lockControls } from './gate.js';
 import { saveFile } from '../lib/ui.js';
 import { suffixName } from '../lib/format.js';
 
@@ -23,11 +23,59 @@ export interface SearchableOffer {
   pages: SearchablePage[];
   scaleFor: (index: number) => number;
   counts: { pagesRead: number; pageCount: number; fromLayer: number };
+  /** The file as chosen, for Unlock to carry to the checkout and back. */
+  source?: () => File | null;
   /**
    * Called once the file has been written, with the regenerated result sentence and the copy
    * itself — the page has a PDF of its own making to offer onward only from this moment.
    */
   onWritten: (said: { head: string; announce: string }, copy: { bytes: Uint8Array; name: string }) => void;
+}
+
+/**
+ * The options step, before any reading: whether this browser can use the searchable PDF. Before this the
+ * feature was invisible until a run finished, and not always then (reported four times). Said in words about
+ * what the person can do.
+ */
+export function introSearchable(host: HTMLElement, source?: () => File | null): void {
+  host.dataset.pdfiqPro = searchableMark();
+  host.textContent = '';
+  if (proAccount()) {
+    // Owned: no word of Pro, only what will happen (owner, 13 September 2026: after buying, the site stops selling).
+    const p = document.createElement('p');
+    p.className = 'hint';
+    p.textContent = 'Saving it as a searchable PDF is offered with the text, once reading finishes.';
+    host.append(p);
+    return;
+  }
+  // The same treatment as every locked feature (owner, 17 September 2026): the real button, disabled, then Unlock, one
+  // line of what it does, and the free alternative. It used to be a card with a paragraph and an Unlock button and no
+  // control, which read as a justification rather than an offer. The button does nothing here: reading comes first.
+  host.append(lockedPanel('searchable', 'A searchable PDF', source, { title: 'Searchable PDF', controls: lockedButton() }));
+}
+
+/** The real "Save as a searchable PDF" button, locked, as both locked panels show it. No handler is attached. */
+function lockedButton(): HTMLElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn-quiet';
+  button.textContent = 'Save as a searchable PDF';
+  const locked = document.createElement('p');
+  locked.style.margin = '0';
+  locked.append(button);
+  lockControls(locked);
+  return locked;
+}
+
+/** A plain card headed "Searchable PDF", for every answer that is not the locked panel (which has its own heading). */
+function plainCard(host: HTMLElement, ...children: Node[]): void {
+  const card = document.createElement('div');
+  card.className = 'card';
+  const kicker = document.createElement('p');
+  kicker.className = 'kicker';
+  kicker.textContent = 'Searchable PDF';
+  card.append(kicker, ...children);
+  host.append(card);
 }
 
 export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
@@ -43,7 +91,7 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     nothing.textContent =
       'No text was read from this document, so there is nothing to write into a searchable copy: '
       + 'the layer is made from the words that were recognised, and there were none.';
-    host.append(nothing);
+    plainCard(host, nothing);
     return;
   }
 
@@ -54,12 +102,7 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
       ? 'Every page of this file has its own text layer, so it is searchable already. A searchable copy would add nothing.'
       : 'The pages that gave text already had their own text layer, so they are searchable already; the rest are named above. ' +
         'A searchable copy would add nothing.';
-    host.append(already);
-    return;
-  }
-
-  if (!signedIn()) {
-    host.append(signInPrompt('A searchable PDF'));
+    plainCard(host, already);
     return;
   }
 
@@ -67,6 +110,12 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
   button.type = 'button';
   button.className = 'btn-quiet';
   button.textContent = 'Save as a searchable PDF';
+
+  // Not owned: the real button, locked, then the words (approved copy, 13 September 2026). No handler is attached.
+  if (!proAccount()) {
+    host.append(lockedPanel('searchable', 'A searchable PDF', o.source, { title: 'Searchable PDF', controls: lockedButton() }));
+    return;
+  }
   const hint = document.createElement('p');
   hint.className = 'hint';
   hint.textContent =
@@ -74,6 +123,7 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     'and copied from. The scan is not changed, and it is written here, on this device.';
 
   button.onclick = async () => {
+    if (!proAccount()) return;
     button.disabled = true;
     button.textContent = 'Writing the text layer…';
     try {
@@ -94,5 +144,8 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     }
   };
 
-  host.append(button, hint);
+  const row = document.createElement('p');
+  row.style.margin = '10px 0 0';
+  row.append(button);
+  plainCard(host, row, hint);
 }

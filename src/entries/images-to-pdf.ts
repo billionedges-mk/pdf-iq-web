@@ -12,6 +12,7 @@ import { PDFDocument, degrees } from 'pdf-lib';
 import { loadImage, isHeic, type LoadedImage } from '../lib/image.js';
 import { ToolShell, Progress, wireDropzone, saveFile, readHead, $, $$, breathe, warnWhileBusy, MAX_BYTES } from '../lib/ui.js';
 import { formatBytes, plural } from '../lib/format.js';
+import { describeImagesToPdf } from '../lib/result-words.js';
 // Only the outgoing half: this tool takes images, so a handed-over PDF is not for it.
 import { wireNextLinks } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
@@ -366,27 +367,20 @@ function place(
 }
 
 function renderResult(bytes: Uint8Array): void {
-  $('[data-result-head]')!.textContent =
-    `${plural(items.length, 'image')} became ${plural(items.length, 'page')} — ${formatBytes(bytes.length)}.`;
-
   const reencoded = items.filter((i) => i.reencoded).length;
-  $('[data-fact-images]')!.textContent = `${items.length} in, ${items.length} pages out`;
-
   const maxW = Math.max(...items.map((i) => i.width));
   const maxH = Math.max(...items.map((i) => i.height));
-  $('[data-fact-res]')!.textContent = reencoded
-    ? `${maxW} × ${maxH} max, ${reencoded} converted`
-    : `unchanged, ${maxW} × ${maxH} max`;
-
   const stripped = $<HTMLInputElement>('[data-strip-exif]')!.checked;
   const had = items.filter((i) => i.hadMetadata).length;
-  $('[data-fact-exif]')!.textContent = !had
-    ? 'none of these carried any'
-    : stripped ? `removed from ${had} of ${items.length}` : `kept on ${had} of ${items.length}`;
 
-  $('[data-fact-size]')!.textContent = pageSize.key === 'fit'
-    ? 'each page matches its image'
-    : pageSize.name;
+  $('[data-res-name]')!.textContent = 'images.pdf';
+  $('[data-res-line]')!.textContent = formatBytes(bytes.length);
+  $('[data-res-now]')!.textContent = plural(items.length, 'page');
+  $('[data-res-was]')!.textContent = `from ${plural(items.length, 'image')}`;
+  $('[data-res-how]')!.textContent = describeImagesToPdf({
+    images: items.length, converted: reencoded, maxW, maxH, hadMetadata: had, stripped,
+    pageSize: pageSize.key === 'fit' ? null : pageSize.name,
+  });
 
   const name = 'images.pdf';
   lastResult = { bytes, name };

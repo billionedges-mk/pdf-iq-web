@@ -14,6 +14,7 @@ import { readOutline, writeOutline, remapOutline, countOutline, type OutlineNode
 import { makeZip, safeName } from '../lib/zip.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, parseRanges, describeRanges } from '../lib/format.js';
+import { describeSplit } from '../lib/result-words.js';
 import { wireNextLinks, claimIncoming } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
 
@@ -292,9 +293,11 @@ async function run(): Promise<void> {
 
 function renderResult(): void {
   const total = parts.reduce((n, p) => n + (p.bytes?.length ?? 0), 0);
-  $('[data-result-head]')!.textContent = parts.length === 1
-    ? `One file, ${plural(parts[0].pages.length, 'page')}, ${formatBytes(parts[0].bytes?.length ?? 0)}.`
-    : `${plural(parts.length, 'file')}, ${formatBytes(total)} in total.`;
+  $('[data-res-name]')!.textContent = file?.name ?? 'document.pdf';
+  $('[data-res-line]')!.textContent = formatBytes(file?.size ?? 0);
+  $('[data-res-now]')!.textContent = plural(parts.length, 'file');
+  $('[data-res-was]')!.textContent = `from ${plural(pageCount, 'page')}`;
+  $('[data-res-how]')!.textContent = describeSplit({ pagesPerPart: parts.map((p) => p.pages.length), totalLabel: formatBytes(total) });
 
   const list = $('[data-outputs]')!;
   list.textContent = '';

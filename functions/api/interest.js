@@ -1,8 +1,10 @@
 /**
  * Registering interest in professional access.
  *
- * This is the only endpoint on the site, and the only thing anywhere that receives data
- * from a visitor. Everything about it is shaped by that.
+ * The only endpoint a visitor's browser sends their own words to. (The Pro purchase endpoints,
+ * functions/api/paddle/webhook.js and functions/api/entitlement.js, exist only where PDFIQ_SALE
+ * is on: one is called by Paddle's server, the other by /account/ in a Pro build.) Everything
+ * about it is shaped by that.
  *
  * Same origin, deliberately. The site's Content-Security-Policy is `connect-src 'self'`,
  * so a hosted form service — Formspree, Google Forms, Tally — is blocked by the browser

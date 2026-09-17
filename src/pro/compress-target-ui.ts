@@ -7,7 +7,7 @@
  * words, and asks the page for passes through `TargetContext`. Every pass is a fresh compression
  * from the original file, run by the same compressor the presets use.
  */
-import { signedIn, signInPrompt } from './gate.js';
+import { proAccount, lockedPanel, lockControls } from './gate.js';
 import {
   MAX_PASSES, searchSize, describeSize, resolutionPlan, resolutionNothingToDo, describeResolution,
   parseTarget, targetMark, type Step,
@@ -18,6 +18,10 @@ import { seconds } from '../lib/format.js';
 
 export interface TargetContext {
   state(): { fileName: string; fileSize: number; analysis: Analysis } | null;
+  /** The file as chosen, for Unlock to carry to the checkout and back. */
+  source(): File | null;
+  /** Where the locked offer goes for someone who does not own Pro: under the result, not among the options. */
+  offerHost(): HTMLElement | null;
   /** One complete pass from the original file. `plan` absent means the preset applies to every image. */
   pass(opts: { preset: Preset; plan?: (img: PdfImage) => ImagePlan; label: string; signal: AbortSignal }): Promise<{ result: CompressResult; analysis: Analysis }>;
   /** Show progress and return the signal the page's Stop button aborts. */
@@ -53,10 +57,7 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   legend.textContent = 'Or aim for a target';
   host.append(legend);
 
-  if (!signedIn()) {
-    host.append(signInPrompt('Compressing to a size or a resolution you choose'));
-    return;
-  }
+  const account = proAccount();
 
   const note = document.createElement('p');
   note.className = 'hint';
@@ -98,13 +99,29 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   sizeGo.className = 'btn-quiet';
   sizeGo.textContent = 'Compress to this size';
 
-  host.append(
+  const controls = document.createElement('div');
+  controls.append(
     row('No image above ', dpi, ' dpi', dpiGo),
     row('No larger than ', amount, unit, sizeGo),
-    note,
   );
+  host.append(controls, note);
+
+  // Not owned: the same controls, locked, and the words under them (approved copy, 13 September 2026). Not a
+  // description of the controls in their place: the reader sees what they would get. No handler is attached.
+  if (!account) {
+    // Not among the options: nothing is sold to someone who has not seen the tool work. The gold panel goes under the
+    // result instead (pdf-iq-final.html 03), carrying the heading, the PRO tag and the real controls, locked.
+    host.textContent = '';
+    host.hidden = true;
+    lockControls(controls);
+    ctx.offerHost()?.replaceChildren(lockedPanel('target', 'Compressing to a size or a resolution you choose', () => ctx.source(), { title: 'Or aim for a target', controls }));
+    return;
+  }
+  host.hidden = false;
+  ctx.offerHost()?.replaceChildren();
 
   dpiGo.onclick = async () => {
+    if (!proAccount()) return;
     const s = ctx.state();
     if (!s) return;
     const n = Math.round(Number(dpi.value));
@@ -130,6 +147,7 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   };
 
   sizeGo.onclick = async () => {
+    if (!proAccount()) return;
     const s = ctx.state();
     if (!s) return;
     const target = parseTarget(amount.value, unit.value as 'KB' | 'MB');

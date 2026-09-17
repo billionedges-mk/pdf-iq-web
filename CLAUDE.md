@@ -120,6 +120,16 @@ back with `git ls-remote origin main` and compare it against the commit you mean
 task branch for twenty minutes while a Cloudflare build was assumed to be queued or failing
 (CLAIMS 32).
 
+**"No deployment available" is at least two different failures.** A build that ran and failed (e56b881,
+which refused a sale without Pro in its own log) and a build that was never started (f3c2dbf, "Failed: unable
+to submit build job", before any clone) show the same status and the same warning icon on 13 September 2026.
+Only the deployment log tells them apart. The second is fixed by Retry deployment with no change; the first is
+not. Read the log before reproducing anything.
+
+**A poll must say what it is still seeing.** Any wait for a deploy prints the build it is currently served on
+every attempt (verify:live does: "serving X, waiting for Y"). A wait that only reports success cannot tell
+slow from never. One waited silently for a build Cloudflare had not queued.
+
 **When a deploy misbehaves, reproduce the build from the pushed commit**, not from the tree you
 have: `git worktree add <dir> <commit>`, link `node_modules` into it (the build resolves fonts by
 path from its own root), then `CF_PAGES=1 CF_PAGES_BRANCH=main npm run build`. A clean checkout is
@@ -162,7 +172,71 @@ everyone — there is no entitlement check yet, which is acceptable only because
   prove nothing, so the local build is built and searched too.
 - **`npm run verify:pro-gate`** builds with the flag off, on, and on-for-production, and proves each.
 
+## Selling Pro (Paddle)
+
+Nothing is on sale. `PDFIQ_SALE` is off everywhere except the Preview environment's sandbox test.
+
+**Paddle.js never runs on the site's origin.** The Pro sign-in keeps a refresh token in pdf-iq.com's
+localStorage, and /privacy promises only this site's own code can read it. So the checkout is a separate
+Cloudflare Pages project (`pdf-iq-checkout`, built by `tools/build-checkout.mjs` into `dist-checkout`),
+which /pro/buy/ frames and hands a uid and an email by postMessage. The site build refuses any Paddle
+script, call or token in its own output (CLAIMS 38).
+
+**Before the sale opens: measure Paddle.js in production.** Sandbox cannot show what matters most: Paddle.js
+injects Retain analytics (public.profitwell.com) in every environment except sandbox. The go-live checklist is
+`docs/sale-go-live.md`, and the production refusal in `tools/paddle-config.mjs` points to it.
+
+- **Never a live Paddle credential in Preview.** A `live_` client token on a preview checkout takes
+  real money from whoever tests it. Preview uses the Paddle **sandbox** account: its `test_` token,
+  its price, its notification destination and secret, and its own D1 database. Live values go into
+  the Production environment only, on the day the sale is switched on.
+- **Server side:** `functions/api/paddle/webhook.js` (Paddle → D1) and `functions/api/entitlement.js`
+  (Firebase ID token → signed entitlement), with shared logic in `server/`. Both answer 404 unless
+  `PDFIQ_SALE` is `"true"` in that deployment's runtime environment. `npm run verify:paddle` drives them
+  with real SQL, HMACs and signatures; each check was proven by breaking the code it guards.
+- **Bindings and secrets** (Cloudflare → Settings, per environment): `PURCHASES` (D1, sandbox database
+  in Preview), `PADDLE_WEBHOOK_SECRET`, `PDFIQ_PADDLE_PRICE_ID`, `PDFIQ_PADDLE_ENV` (`sandbox` |
+  `production`), `PDFIQ_ENTITLEMENT_PRIVATE_KEY`, `PDFIQ_SALE`, and for the purchase page
+  `PDFIQ_PADDLE_CLIENT_TOKEN` (`test_` in Preview). **A sale build also needs `PDFIQ_PRO=1`**: `PDFIQ_SALE` is read
+  both at build time (the purchase page) and at runtime (the Functions), and the build refuses a sale without
+  Pro. The first variable list written for this left `PDFIQ_PRO` out, and the Preview build failed on exactly
+  that refusal (13 September 2026).
+- **Keys:** `npm run entitlement:keys -- sandbox|production` writes the public key into
+  `src/pro/entitlement-public-keys.json` and prints the private key once for the owner to paste into
+  Cloudflare. The private key never goes into the repo or a conversation.
+- **Offline is the constraint.** A buyer with no connection must not be locked out: tool pages verify a
+  stored signed token locally and send nothing. The token does not expire; a refund takes effect on a
+  browser at its next online visit to `/account/`.
+- **The browser side:** `src/pro/entitlement.ts`. /account/ fetches the signed token once, and it is stored only if it
+  verifies. `src/pro/gate.ts` verifies it once, before any Pro feature code runs, with no request, and Pro features act
+  through `proAccount()`, never `signedIn()`. Offline, a server error or a refused sign-in never removes a stored
+  token; only a clear refund or not-owned answer does. `npm run verify:entitlement-client` runs it against the server's
+  signing code; seven deliberate breaks were each caught.
+- **The app backend's Firestore `tier` is dormant**, not the source of truth (TECH_DEBT).
+- **Cloudflare's variables screen, two traps** (13 September 2026): saving two variables in one dialog
+  hangs, so add them one at a time; and a new variable's type defaults to **Text**, so every secret
+  must be switched to **Secret** before saving or it is stored in the clear.
+- **Sandbox, as configured:** D1 `pdf-iq-purchases-sandbox` (Asia Pacific) bound to Preview as
+  `PURCHASES`; Paddle sandbox price `pri_01m2cv2xegy64zmhtxrbk0b1bf`; notification destination
+  `https://pro-sale.pdf-iq-web.pages.dev/api/paddle/webhook` for exactly the three events. Production
+  has none of it.
+
 ## Things that are not what they look like
+
+- **The Firebase Authentication users are closed-test testers, not unknown accounts.** Investigated 13 September 2026:
+  18 accounts on pdfiq-b14cc. 17 are Google sign-ins with ordinary verified Gmail addresses, one to three a day from 28 August,
+  almost all signing in once. That is closed testers using Summarise, confirmed by the owner against the tester list; two
+  from 13 September are Maneesh's own. Bilva uses its own Firebase project (bilva-27f0e), not this one.
+  The 18th is an email/password account (@billionedges.com, created 28 August 07:45 UTC, never signed in, unverified).
+  Neither the app nor the website has code that creates email/password accounts, and how it was made is not known. It is
+  **kept on purpose** as the only evidence of that. Email/Password sign-in was disabled the same day, so it cannot be used.
+  Delete it only once someone remembers creating it.
+
+- **Rows in the sandbox purchases table (D1 `pdf-iq-purchases-sandbox`) are test walks, not sales.** Every one is a
+  Paddle sandbox payment made on Preview by the owner or Maneesh, with card 4242, from 13 September 2026: at that date
+  `txn_01m2dfspkzdtepgr1660jqbsae` and `txn_01m2dg6d7yy7n4bt923kazct9s`, two tester accounts that therefore own Pro in
+  the sandbox (useful for walking the already-owned path). The walk-A row `txn_01m2dynw6ehyt9amw066vhvqp8` was deleted
+  by the owner the same day. Clear the table before anything counts rows; never read it as revenue.
 
 - **Firebase App Check's Authentication metrics are not a signal.** They show roughly 85% of Auth
   calls unverified. The app's backend checks every request with `verifyIdToken(token, true)`, whose

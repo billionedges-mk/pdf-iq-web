@@ -376,6 +376,109 @@ The repo containing billing code and the artefact containing it are different cl
 is what makes the second checkable. When Pro ships, these four pages change in the same release
 that turns the gate on. Until then, check the artefact rather than the source.
 
+## Deliberately not used: the app backend's Firestore `tier` and `revenueCatWebhook`
+
+The Android app's Firebase backend (app repo, `functions/src/index.ts`, region asia-south1) has
+entitlement infrastructure that looks live and is not:
+
+- a `tier` field (`free` | `pro`) on each user's Firestore record;
+- `revenueCatWebhook`, which writes `tier` from RevenueCat events, with event-time ordering and a
+  constant-time shared-secret check;
+- `entitlement` and `usageSync` endpoints that return `isPro` from that field.
+
+It was built for Play billing through RevenueCat, which `BILLING_ENABLED` keeps off in the shipped
+app. Nothing server-side reads `tier` for a limit any more: summaries are ten a month for everyone.
+
+**Pro bought on the web does not use it** (decided 13 September 2026). Paddle purchases are
+recorded by a Cloudflare Pages Function in D1 (`functions/api/paddle/webhook.js`,
+`functions/purchases-schema.sql`), and the entitlement both surfaces read is
+`GET https://pdf-iq.com/api/entitlement`. The reasons:
+
+- Paddle's five-second response deadline against a Firebase cold start;
+- one repo owning checkout, webhook and refunds;
+- no Google service-account key stored in Cloudflare.
+
+So a Firestore record showing `tier: free` for someone who bought Pro on the web is correct, not a
+bug. If Play billing is ever switched on, the two stores must be reconciled deliberately, not
+discovered to disagree. Until then, treat the Firestore tier as dormant.
+
+## What a Pro entitlement unlocks must be the same on both surfaces
+
+A web purchase is meant to cover the Android app, and /pro/, /terms and /refunds say it will. **Today it does not**
+(see "The purchase page says web tools only" below). The entitlement token from
+`GET /api/entitlement` says only `pro: true` for a uid; each surface decides what that unlocks. So
+the two feature lists must be kept in agreement deliberately.
+
+**The app cannot honour a web purchase yet** (app session, 13 September 2026). `BILLING_ENABLED`
+does two jobs there: it compiles the Pro features in, and it turns on the Play purchase path. A
+Paddle buyer needs the first and must never get the second. The flag has to be split before the app
+reads this entitlement. That is app work, recorded here because a web sale that says "covers both"
+depends on it.
+
+## Paddle's checkout frame talks to hosts this site's policy cannot govern
+
+Measured with `npm run measure:paddle` on the Preview deployment f3c2dbf with the real sandbox token
+(13 September 2026), through opening the checkout, before any payment. Arrival alone: nothing third-party.
+After pressing Pay, Paddle.js loaded from cdn.paddle.com and opened its checkout frame (sandbox-buy.paddle.com),
+and inside that frame:
+
+- **Stripe:** js.stripe.com/v3, a frame from m.stripe.network, and m.stripe.com, which sets a cookie `m` on
+  m.stripe.com lasting about 13 months (httpOnly). Stripe's frame also writes sessionStorage keys `_ab`,
+  `_mf`, `1` and `id`.
+- **Localize** (global.localizecdn.com), Paddle's translation service: a tl.gif image request plus XHRs, and
+  localStorage keys in Paddle's frame including `ljs-visits` and `ljs-cache`.
+- **Sentry** (o522631.ingest.sentry.io): five envelopes.
+- **Google Fonts:** fonts.googleapis.com and fonts.gstatic.com.
+- **Paddle's own analytics and checkout events:** sandbox-checkout-analytics.paddle.com, and pings to
+  sandbox-checkout-service.paddle.com.
+- **Cloudflare bot management:** a `__cf_bm` cookie on .paddle.com, about 30 minutes.
+
+None of this is governed by /pro/buy/'s policy. It belongs to Paddle's frame, and once the frame is
+allowed our policy has no say over what it loads. /privacy's wording for the purchase page has to
+describe this from the measurement. The standing rule against anything needing a cookie or consent banner
+needs a decision on the Stripe `m` and `__cf_bm` cookies, which arrive only after someone presses Pay.
+
+Paddle.js 2.9.7 also injects Retain analytics (public.profitwell.com) outside sandbox. /pro/buy/
+pre-sets the loader's own skip check and leaves that host out of its policy. Only a production
+measurement can confirm both hold, so measure again on the day the sale opens.
+
+## Limit, accepted: Unlock from Batch loses the chosen files (13 September 2026)
+
+Unlock carries the open file to the checkout and back through the IndexedDB handoff (src/lib/handoff.ts), which
+holds one file per key. Batch works on many, so Unlock from /batch/ returns to an empty page. The prompt says so
+before the button: "These files do not come with you to the checkout: after paying, you come back here and choose
+them again." (src/pro/gate.ts, `manyFiles`).
+
+Accepted by the owner for now: carrying many files is a bigger change to the store and to /privacy than it is worth
+before Pro sells. **Revisit when Pro is selling.** Someone who batches twenty files and has to choose them again
+after paying will say so, and that complaint is the signal. The likely shape: one row per file under a shared
+Unlock key, with the same ten-minute limit and pick-up-and-delete, and a /privacy sentence saying so.
+
+## The purchase page says "web tools only" until the app honours a web purchase (13 September 2026)
+
+$14.99 covering both the website and the Android app was the pitch. Today a purchase covers one surface: the app cannot
+honour a web purchase until `BILLING_ENABLED` is split (see "What a Pro entitlement unlocks must be the same on both
+surfaces" above; approved in the app session, not built). /pro/buy/ said "covering both the web tools and the Android
+app", on the page where someone hands over money, and "covers the app" is a material part of what they think they are
+buying. The owner pulled it the same day.
+
+**Now:** the pages that define the purchase say what it covers today (`PRO.coversToday` in tools/site.mjs):
+- /pro/buy/: "$14.99 once, for Pro in the web tools on this site. It does not unlock anything in the Android app."
+  (verify:sale-build checks it and that the page no longer carries `PRO.covers`).
+- /terms: "It covers Pro in the web tools on this site. It does not unlock anything in the Android app." and "Buying
+  happens on this website rather than inside the Android app." (production, 8b9273a; /terms is linked from the checkout).
+- /refunds: "A Pro purchase is a one-time unlock covering Pro in the web tools on this site; it does not unlock anything
+  in the Android app. A refund removes it from this website." (production, 8b9273a).
+- The old phrases from /terms and /refunds are in tools/retired-claims.mjs, so verify:retired refuses them.
+
+**The sentence comes back when the app can honour a web purchase and it has been tested on a device** (the flag split),
+in one change, on all six places that made the promise: /pro/buy/, /pro/ (lede and price card), the homepage Pro panel,
+/app/ (price card), /terms and /refunds. Delete the four retired-claims entries in the same commit, and restore a token for
+`PRO.covers` if one is wanted (removed so it cannot be reused unlisted). /app/ was not in this list: the stage 5 sweep
+found it (17 September 2026), because it took the wording through `{{proCovers}}` and nobody searched the token's uses.
+On pro-sale all six now say `coversToday`. Production still carries `covers` on /pro/, the homepage and /app/ until the
+redesign release.
+
 ## Split: the "Where to split" choices appear only after every thumbnail has rendered (found 16 September 2026)
 
 **What it is.** `src/entries/split.ts` switches to the options view (`shell.show('selected')`, line 85), then awaits

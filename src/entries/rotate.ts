@@ -12,6 +12,7 @@ import { openPdf } from '../lib/open-pdf.js';
 import { PageGrid, readShapes, type PageShape } from '../lib/pagegrid.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, describeRanges } from '../lib/format.js';
+import { describeRotated } from '../lib/result-words.js';
 import { wireNextLinks, claimIncoming } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
 
@@ -215,8 +216,6 @@ async function run(): Promise<void> {
 
 function renderResult(bytes: Uint8Array): void {
   const changed = turns.filter((t) => t !== 0).length;
-  $('[data-result-head]')!.textContent =
-    `${plural(changed, 'page')} turned. Every page is still here, and no image was re-encoded.`;
 
   // Measured, not asserted: rewriting a PDF rarely lands on exactly the same size.
   const before = file!.size;
@@ -224,8 +223,11 @@ function renderResult(bytes: Uint8Array): void {
   const drift = delta === 0
     ? 'identical size'
     : `${delta > 0 ? '+' : '−'}${formatBytes(Math.abs(delta), { precise: true })}`;
-  $('[data-result-mono]')!.textContent =
-    `${formatBytes(before)} in, ${formatBytes(bytes.length)} out (${drift}) · ${plural(pageCount, 'page')}, none re-encoded`;
+  $('[data-res-name]')!.textContent = file!.name;
+  $('[data-res-line]')!.textContent = formatBytes(before);
+  $('[data-res-now]')!.textContent = `${plural(changed, 'page')} turned`;
+  $('[data-res-was]')!.textContent = `of ${pageCount}`;
+  $('[data-res-how]')!.textContent = describeRotated({ inLabel: formatBytes(before), outLabel: formatBytes(bytes.length), drift });
 
   const outName = suffixName(file!.name, '-rotated');
   lastResult = { bytes, name: outName };

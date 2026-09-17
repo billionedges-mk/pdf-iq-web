@@ -22,7 +22,7 @@ import { openPdf } from '../lib/open-pdf.js';
 import { PRESETS, analyse, compress, worthIt } from '../lib/compress.js';
 import { readDocumentText } from '../lib/ocr-run.js';
 import * as E from '../lib/errors.js';
-import { signedIn, signInPrompt } from './gate.js';
+import { proAccount, lockedPanel, lockControls, proLabel } from './gate.js';
 import {
   OPERATIONS, runBatch, describeRun, BATCH_SENTINEL,
   type BatchOp, type FileResult, type Produced, type RunReport,
@@ -124,10 +124,17 @@ function renderOps(): void {
 function renderGate(): void {
   const gate = $('[data-gate]')!;
   gate.textContent = '';
-  const account = signedIn();
-  $<HTMLButtonElement>('[data-start]')!.hidden = !account;
+  const account = proAccount();
   $('[data-run-note]')!.hidden = !account;
-  if (!account) gate.append(signInPrompt('Running one operation across many files'));
+  // Not owned: the operation choices and the run button, locked, then the words (approved copy, 13 September 2026).
+  // The file list stays live, so the files can be reviewed. run() checks the gate as well.
+  if (!account) {
+    const legend = $('[data-ops]')!.closest('fieldset')!.querySelector('legend')!;
+    if (!legend.querySelector('.pro-label')) legend.append(proLabel());
+    lockControls($('[data-ops]')!.closest('fieldset')!);
+    lockControls($('[data-start]')!.closest('.actions') as HTMLElement);
+    gate.append(lockedPanel('batch', 'Running one operation across many files', undefined, { manyFiles: true }));
+  }
 }
 
 // ---------------------------------------------------------------- the work
@@ -194,7 +201,7 @@ $('[data-retry]')?.addEventListener('click', () => {
 });
 
 async function run(files: File[]): Promise<void> {
-  if (busy || !files.length || !signedIn()) return;
+  if (busy || !files.length || !proAccount()) return;
   busy = true;
   controller = new AbortController();
   const signal = controller.signal;

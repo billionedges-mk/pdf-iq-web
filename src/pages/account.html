@@ -25,13 +25,18 @@
       <p style="margin: 18px 0 0;"><button class="btn" type="button" data-signin>Sign in with Google</button></p>
     </section>
 
-    <section class="card" style="margin-top: 22px; max-width: 700px;" data-account="in" hidden>
-      <p class="kicker">Signed in</p>
-      <p style="margin: 10px 0 0; font-size: 16px; line-height: 1.6;">Signed in as <strong data-account-email></strong> in this browser.</p>
-      <p style="margin: 16px 0 0;"><button class="btn-quiet" type="button" data-signout>Sign out in this browser</button></p>
-      <p class="hint" style="margin-top: 10px;">Signing out deletes this browser's copy of the sign-in. It does
-        not sign you out of the Android app, or of Google.</p>
-    </section>
+    <!-- Signed in (owner's layout, pdf-iq-final.html 04; the words are what the page can know, approved 17 September 2026).
+         The Pro card above the account row is written by src/pro/account.ts in a sale build, once it knows. -->
+    <div class="acct-page" data-account="in" hidden>
+      <div data-account-pro-host></div>
+      <section class="acct-row">
+        <h2 class="acct-row__title" data-account-email>&nbsp;</h2>
+        <p class="acct-row__body">Signed in with Google, in this browser.<span data-account-forgets hidden> Sign out and this
+          browser forgets Pro until you sign in again.</span> Signing out deletes this browser's copy of the sign-in; it does
+          not sign you out of the Android app, or of Google.</p>
+        <p style="margin: 14px 0 0;"><button class="btn-quiet" type="button" data-signout>Sign out in this browser</button></p>
+      </section>
+    </div>
 
     <section class="card" style="margin-top: 22px; max-width: 700px;" data-account="error" hidden>
       <p class="kicker">Not signed in</p>

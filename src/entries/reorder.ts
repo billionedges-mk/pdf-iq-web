@@ -13,6 +13,7 @@ import { PageGrid } from '../lib/pagegrid.js';
 import { readOutline, writeOutline, remapOutline, countOutline, type OutlineNode } from '../lib/outline.js';
 import { ToolShell, Progress, wireDropzone, acceptPdf, saveFile, $, $$, breathe, warnWhileBusy } from '../lib/ui.js';
 import { formatBytes, plural, suffixName, describeRanges } from '../lib/format.js';
+import { describeReordered } from '../lib/result-words.js';
 import { wireNextLinks, claimIncoming } from '../lib/handoff.js';
 import * as E from '../lib/errors.js';
 
@@ -252,19 +253,13 @@ async function run(): Promise<void> {
 
 function renderResult(bytes: Uint8Array, kept: number, bookmarks: number): void {
   const lost = pageCount - kept;
-  $('[data-result-head]')!.textContent = lost
-    ? `${plural(kept, 'page')} in the new order, ${lost} left out.`
-    : `${plural(kept, 'page')}, in the order you set.`;
-
-  const bits = [
-    `${formatBytes(file!.size)} in, ${formatBytes(bytes.length)} out`,
-    `${pageCount} → ${kept} pages`,
-    'no images re-encoded',
-  ];
-  if (outline.length) {
-    bits.push(bookmarks ? `${plural(bookmarks, 'bookmark')} kept` : 'bookmarks dropped — their pages are gone');
-  }
-  $('[data-result-mono]')!.textContent = bits.join(' · ');
+  $('[data-res-name]')!.textContent = file!.name;
+  $('[data-res-line]')!.textContent = formatBytes(file!.size);
+  $('[data-res-now]')!.textContent = plural(kept, 'page');
+  $('[data-res-was]')!.textContent = lost ? `${lost} left out` : 'in the order you set';
+  $('[data-res-how]')!.textContent = describeReordered({
+    inLabel: formatBytes(file!.size), outLabel: formatBytes(bytes.length), pageCount, kept, hadOutline: outline.length > 0, bookmarks,
+  });
 
   const outName = suffixName(file!.name, '-reordered');
   lastResult = { bytes, name: outName };

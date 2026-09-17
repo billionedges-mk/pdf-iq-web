@@ -19,26 +19,6 @@
         </div>
         <p class="dropzone__meta">Up to {{maxFileSize}} &middot; no account, no watermark &middot; stays on this device</p>
       </div>
-
-      <div class="assurances">
-        <div>
-          <h2>The heavy job is the one to keep at home.</h2>
-          <p>OCR is what people usually hand to a server, because it is expensive. Expensive is the reason not
-             to: a scanned passport, medical letter or contract is the last thing you want sitting in
-             someone's processing queue.</p>
-        </div>
-        <div>
-          <h2>Your scan is never changed.</h2>
-          <p>Reading the text leaves the file exactly as it was: you get the words to copy or save, and the
-             PDF you chose is not written to.</p>
-        </div>
-        <div>
-          <h2>One download, then nothing.</h2>
-          <p>The language model comes from this site the first time you use it and is then cached. That is
-             the only request this page ever makes, and the footer counts it. After that, OCR works with no
-             connection like everything else here.</p>
-        </div>
-      </div>
     </section>
 
     <section aria-label="OCR options" data-view="selected" class="tool-cols" hidden>
@@ -62,6 +42,8 @@
           <p class="outcome__body" style="margin: 0;" data-hastext-note>&nbsp;</p>
         </div>
 
+        <!--PRO--><div style="margin-top: 16px;" data-pro-searchable-state></div><!--/PRO-->
+
         <div class="actions" style="margin-top: 22px;">
           <button type="button" class="btn" data-start>Start reading</button>
         </div>
@@ -83,9 +65,7 @@
            Android app has it too, as Read a scan: it gives you the text on screen, to copy or save
            as a .txt file.</p>
           <p class="hint">Free here means all of it, one file at a time, with no account: reading a
-           document of any length, as many documents as you like. What Pro adds is a different
-           capability rather than a bigger allowance &mdash; doing many files in one go, and writing
-           the words back into the PDF so the file itself is searchable.</p>
+           document of any length, as many documents as you like.</p>
       </div>
     </section>
 
@@ -128,42 +108,43 @@
       <button type="button" class="btn-quiet" style="margin-top: 14px;" data-stop>Stop</button>
     </section>
 
-    <section aria-label="Result" data-view="result" style="margin-top: 18px;" hidden>
-      <div class="card">
-        <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
-        <p class="outcome__head" data-result-head>&nbsp;</p>
-        <p class="outcome__body" data-result-detail>&nbsp;</p>
-        <label class="visually-hidden" for="ocr-text">The text read out of this document</label>
-        <textarea id="ocr-text" data-text-out readonly spellcheck="false"
-          style="width: 100%; min-height: 260px; margin-top: 18px; padding: 14px; box-sizing: border-box;
-                 border: 1px solid var(--line); border-radius: 6px; background: var(--paper);
-                 color: var(--ink); font-family: ui-monospace, Consolas, monospace; font-size: 16px; line-height: 1.6; resize: vertical;"></textarea>
-        <div class="actions" style="margin-top: 18px;">
+    <section aria-label="Result" data-view="result" class="result" hidden>
+      <!-- The result screen (redesign, result screens proposal approved 17 September 2026): the file and what was read,
+           the word count large, then the detail in one place, the text itself, the actions. Every word below the
+           heading is written by src/entries/ocr.ts from this run. -->
+      <div class="res">
+        <div class="res__top">
+          <h2 class="res__fname" data-focus><span data-res-name>&nbsp;</span></h2>
+          <p class="res__head" data-result-head>&nbsp;</p>
+          <p class="res__nums">
+            <span class="res__now" data-res-words>&nbsp;</span>
+            <span class="res__was" data-res-time>&nbsp;</span>
+          </p>
+        </div>
+        <div class="res__how">
+          <p data-result-detail hidden>&nbsp;</p>
+          <p data-res-how>&nbsp;</p>
+        </div>
+        <div class="res__text">
+          <label class="visually-hidden" for="ocr-text">The text read out of this document</label>
+          <textarea id="ocr-text" data-text-out readonly spellcheck="false"></textarea>
+        </div>
+        <div class="res__acts">
           <button type="button" class="btn" data-copy>Copy all the text</button>
           <button type="button" class="btn-quiet" data-save-text>Download it as a .txt file</button>
           <button type="button" class="btn-quiet" data-again>Read another</button>
         </div>
-        <!--PRO--><div data-pro-searchable style="margin-top: 14px;"></div><!--/PRO-->
-        <dl class="facts">
-          <div><dt>words found</dt><dd data-fact-words>&mdash;</dd></div>
-          <div><dt>characters</dt><dd data-fact-chars>&mdash;</dd></div>
-          <div><dt>your file</dt><dd>untouched &mdash; nothing was written back into it</dd></div>
-          <div><dt>time taken</dt><dd data-fact-time>&mdash;</dd></div>
-        </dl>
+        <!--PRO--><div class="nextup" data-pro-next hidden>
+          <span class="nextup__label">Next, with the searchable copy:</span>
+          <a href="/compress/">compress it</a>,
+          <a href="/merge/">merge it with another</a>, or
+          <a href="/password/">protect it</a> <span class="pro-tag" data-pro-label hidden>PRO</span> &mdash; no saving in between.
+        </div><!--/PRO-->
       </div>
-      <!--FREE--><div class="card card--flag" style="margin-top: 18px;">
-        <h2 class="kicker">Wanting a searchable PDF instead?</h2>
-        <p class="outcome__body">That is a different thing from the text above: the same words written
-          back into the document as an invisible layer, so the file itself becomes searchable in any
-          reader while looking exactly as it does now. It is part of Pro, which is not on sale yet, on
-          either surface, so there is no button for it here.</p>
-      </div><!--/FREE-->
-      <!--PRO--><div class="nextup" data-pro-next hidden>
-        <span class="nextup__label">Next, with the searchable copy:</span>
-        <a href="/compress/">Compress it</a>
-        <a href="/password/">Protect it</a>
-        <a href="/merge/">Merge with another</a>
-      </div><!--/PRO-->
+      <!-- Searchable PDF, offered after the tool has done its job. Pro builds: src/pro/searchable-offer.ts, which also says
+           when there is nothing to write. Production: the same panel, static, with nothing to press. -->
+      <!--PRO--><div class="result__pro" data-pro-searchable></div><!--/PRO-->
+      <!--FREE--><div class="result__pro">{{searchableLocked}}</div><!--/FREE-->
       <p class="atwork">Reading documents at work? <a href="/for-professionals/">We are asking firms what they need</a>.</p>
     </section>
 

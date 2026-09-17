@@ -19,23 +19,9 @@
         </div>
         <p class="dropzone__meta">Up to {{maxFileSize}} &middot; no account, no watermark &middot; stays on this device</p>
       </div>
-
-      <div class="assurances">
-        <div>
-          <h2>Page count is not the limit here.</h2>
-          <p>Splitting copies pages rather than rendering them, so a long document is not harder than a short
-             one. The {{maxFileSize}} ceiling is about what a browser tab can write out, not a page count or an upload.</p>
-        </div>
-        <div>
-          <h2>Your original is untouched.</h2>
-          <p>Splitting builds new files and your browser saves them as downloads; the file you opened is never written to.</p>
-        </div>
-        <div>
-          <h2>Check the network tab.</h2>
-          <p>Split a file with developer tools open and you will see zero requests. That is the whole claim,
-             and you can verify it yourself.</p>
-        </div>
-      </div>
+      <p class="hint" style="margin-top: 12px;">There is no page limit: splitting copies pages rather than rendering them,
+         so a long document is no harder than a short one. The {{maxFileSize}} ceiling is what a browser tab can write
+         out, not a page count and not an upload.</p>
     </section>
 
     <section aria-label="Split options" data-view="selected" class="tool-cols" hidden>
@@ -106,23 +92,31 @@
       <button type="button" class="btn-quiet" style="margin-top: 14px;" data-stop>Stop</button>
     </section>
 
-    <section aria-label="Result" data-view="result" style="margin-top: 18px;" hidden>
-      <div class="card">
-        <h2 class="kicker" data-focus>Done &mdash; on this device</h2>
-        <p class="outcome__head" data-result-head>&nbsp;</p>
-        <ul class="tray" data-outputs></ul>
-        <div class="actions" style="margin-top: 20px;">
+    <section aria-label="Result" data-view="result" class="result" hidden>
+      <!-- The result screen (proposal approved 17 September 2026): the parts large, "from" the pages, each part to save. -->
+      <div class="res">
+        <div class="res__top">
+          <h2 class="res__fname" data-focus><span data-res-name>&nbsp;</span> &middot; <span data-res-line>&nbsp;</span></h2>
+          <p class="res__nums">
+            <span class="res__now" data-res-now>&nbsp;</span>
+            <span class="res__was" data-res-was>&nbsp;</span>
+          </p>
+        </div>
+        <div class="res__how">
+          <p data-res-how>&nbsp;</p>
+        </div>
+        <div class="res__parts"><ul class="tray" data-outputs></ul></div>
+        <div class="res__acts">
           <button type="button" class="btn" data-save-zip>Save all as a zip</button>
           <button type="button" class="btn-quiet" data-again>Split another</button>
         </div>
-        <p class="hint">Your original file is untouched, on your disk, where it was.</p>
-      </div>
-      <div class="nextup">
-        <span class="nextup__label">Next, with the first part:</span>
-        <a href="/compress/">Compress a part</a>
-        <a href="/merge/">Merge with something else</a>
-        <a href="/ocr/">Read the text from it</a>
-        <!--PRO--><a href="/password/">Protect it</a><!--/PRO-->
+        <div class="nextup">
+          <span class="nextup__label">Next, with the first part:</span>
+          <a href="/compress/">compress it</a>,
+          <a href="/merge/">merge it with something else</a>,
+          <!--FREE-->or <!--/FREE--><a href="/ocr/">read the text from it</a><!--PRO-->, or
+          <a href="/password/">protect it</a> <span class="pro-tag" data-pro-label hidden>PRO</span><!--/PRO--> &mdash; no saving in between.
+        </div>
       </div>
     </section>
 

@@ -10,25 +10,39 @@
 */
 
 :root {
-  --paper: #FAF8F4;
-  --card: #FFFDF9;
-  --card-hover: #FFFCF6;
-  --ink: #1E2A38;
-  --ink-hover: #16202B;
-  --ink-80: rgba(30, 42, 56, .80);
-  --ink-78: rgba(30, 42, 56, .78);
-  --ink-76: rgba(30, 42, 56, .76);
-  --ink-74: rgba(30, 42, 56, .74);
-  --line: rgba(30, 42, 56, .16);
-  --line-soft: rgba(30, 42, 56, .14);
-  --line-strong: rgba(30, 42, 56, .28);
-  --wash: rgba(30, 42, 56, .06);
+  /* The redesign (owner's brief and pdf-iq-final.html, 13 September 2026): white, near-black ink, Inter Tight; Pro is
+     gold. The alpha inks below are the same near-black, so every existing use follows without a second palette. */
+  --paper: #FFFFFF;
+  --card: #FFFFFF;
+  --card-hover: #FCFCFC;
+  --panel: #FCFCFC;
+  --ink: #111214;
+  --ink-hover: #000000;
+  --soft: #63666B;
+  --gold: #8A6A24;
+  --gold-bg: #FFF8EC;
+  --gold-line: #F0DFC2;
+  --gold-deep: #6E5318;
+  /* Text on the gold ground. --gold-muted is the mockup's #8A7A5A taken to AA (it measured 3.97:1). tools/contrast.mjs measures both. */
+  --gold-text: #6B5C3E;
+  --gold-muted: #7A6B4E;
+  /* The saving, on the result screen. */
+  --ok: #1F6F45;
+  --ok-bg: #F1F8F3;
+  --ink-80: rgba(17, 18, 20, .80);
+  --ink-78: rgba(17, 18, 20, .78);
+  --ink-76: rgba(17, 18, 20, .76);
+  --ink-74: rgba(17, 18, 20, .74);
+  --line: rgba(17, 18, 20, .16);
+  --line-soft: rgba(17, 18, 20, .14);
+  --line-strong: rgba(17, 18, 20, .28);
+  --wash: rgba(17, 18, 20, .06);
   --amber: #C87A1E;
   --amber-text: #A45F13;
   --amber-wash: rgba(200, 122, 30, .05);
   --shell: 1080px;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --sans: "Public Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sans: "Inter Tight", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -49,8 +63,8 @@ body {
   flex-direction: column;
 }
 
-a { color: var(--ink); text-decoration-color: rgba(30, 42, 56, .5); text-underline-offset: 3px; }
-a:hover { color: var(--amber-text); text-decoration-color: var(--amber-text); }
+a { color: var(--ink); text-decoration-color: rgba(17, 18, 20, .5); text-underline-offset: 3px; }
+a:hover { color: var(--ink-hover); text-decoration-color: var(--ink); }
 
 input, button, select, textarea { font-family: inherit; }
 
@@ -84,45 +98,164 @@ input, button, select, textarea { font-family: inherit; }
 
 .site-header {
   position: sticky; top: 0; z-index: 20;
-  background: rgba(250, 248, 244, .94);
+  background: rgba(255, 255, 255, .96);
   backdrop-filter: blur(6px);
-  border-bottom: 1px solid var(--line-soft);
+  border-bottom: 1px solid #E8E8E8;
 }
+/* The bar (pdf-iq-final.html): wordmark, the free tools, a divider and the gold Pro group, then the account control.
+   Desktop is one row. At 1000px and below the wordmark, the Pro group and the account control share the top row and the
+   free tools scroll sideways beneath them, full width: nine labels stay one tap away, where a menu would put every one of them two taps away. */
 .site-header__inner {
-  max-width: var(--shell); margin: 0 auto; padding: 10px 20px;
-  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  max-width: var(--shell); margin: 0 auto; padding: 0 20px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "brand nav acct";
+  align-items: center; column-gap: 18px;
 }
-.brand { display: flex; align-items: center; gap: 9px; text-decoration: none; flex: 0 0 auto; min-height: 44px; }
-.brand:hover { color: var(--ink); }
+.brand { grid-area: brand; display: flex; align-items: center; gap: 9px; text-decoration: none; min-height: 56px; }
+/* The brand square stays beside the wordmark (owner, 13 September 2026: the mockup only left it undrawn). */
 .brand__mark {
-  width: 22px; height: 22px; border-radius: 3px;
-  background: linear-gradient(135deg, var(--ink) 0 50%, var(--amber) 50% 100%);
+  width: 22px; height: 22px; border-radius: 3px; flex: 0 0 auto;
+  background: linear-gradient(135deg, #1E2A38 0 50%, var(--amber) 50% 100%);
 }
-.brand__word { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.brand:hover { color: var(--ink); }
+.brand__word { font-size: 16.5px; font-weight: 700; letter-spacing: -.03em; }
 
 .toolnav {
-  flex: 1 1 320px; min-width: 0; display: flex; gap: 2px;
-  overflow-x: auto; white-space: nowrap; padding-bottom: 2px;
+  grid-area: nav; min-width: 0; display: flex; align-items: center; gap: 0;
+  overflow-x: auto; white-space: nowrap; scrollbar-width: none;
 }
-/* The nav scrolls sideways on a narrow screen rather than collapsing into a menu button.
-   Seven short labels stay one tap away; a menu would put every one of them two taps away and
-   cost the drop zone its place above the fold. What it needed was a real tap target — these
-   were 29px tall — and an edge fade so it is discoverable that there is more to the right. */
+.toolnav::-webkit-scrollbar { display: none; }
+/* Nothing in the bar shrinks: a shrunk Pro group let its links spill past the scrollable width, so Password could not be scrolled to. */
+.toolnav > * { flex: 0 0 auto; }
 .toolnav a {
-  padding: 6px 10px; border-radius: 4px; font-size: 14.5px;
-  text-decoration: none; color: var(--ink-78);
+  padding: 6px 10px; font-size: 14.5px;
+  text-decoration: none; color: var(--soft);
   display: inline-flex; align-items: center; min-height: 44px;
 }
-@media (max-width: 700px) {
+.toolnav a:hover { color: var(--ink); }
+.toolnav a[aria-current="page"] { font-weight: 600; color: var(--ink); }
+/* The Pro group: a category in gold, after a divider. The PRO tag goes once someone owns Pro (src/pro/strip.ts); the
+   gold stays, because it marks a category, not a lock. */
+.toolnav__pro {
+  display: inline-flex; align-items: center; gap: 2px;
+  margin-left: 10px; padding-left: 12px; border-left: 1px solid #E8E8E8;
+}
+.toolnav__pro a { color: var(--gold); padding: 6px 6px; }
+.toolnav__pro a:hover { color: var(--gold-deep); }
+.toolnav__pro a[aria-current="page"] { color: var(--gold-deep); font-weight: 600; }
+.pro-tag, .pro-label {
+  display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; line-height: 1.3;
+  color: var(--gold); background: var(--gold-bg); border: 1px solid var(--gold-line); border-radius: 11px; padding: 2px 8px;
+}
+.pro-tag { margin-right: 4px; }
+.toolnav__pro--top { display: none; }
+
+/* The account control: "Sign in" in a pill, or the signed-in person's initial and name. Pro builds only. */
+.acct {
+  grid-area: acct; display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+  font-size: 14px; color: var(--ink); text-decoration: none; white-space: nowrap;
+}
+.acct--out { border: 1px solid #E8E8E8; border-radius: 20px; padding: 0 16px; min-height: 38px; }
+.acct--out:hover { border-color: var(--ink-74); color: var(--ink); }
+.acct__av {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #FFFFFF;
+  display: grid; place-items: center; font-size: 11.5px; font-weight: 600; flex: 0 0 auto;
+}
+.acct__name { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; }
+
+/* Up to 1000px the whole bar does not fit on one row (measured: it needs about 980px with a signed-in name), and the Pro
+   group would start past the right edge on phones and tablets alike. */
+@media (max-width: 1000px) {
+  /* Top row: brand, the Pro group, the account control (initial only). Beneath: the free tools, scrolling. */
+  .site-header__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "brand pro acct" "nav nav nav";
+    column-gap: 8px; padding: 0 14px;
+  }
+  .brand { min-height: 50px; gap: 7px; }
+  .brand__mark { width: 20px; height: 20px; }
+  .toolnav__pro--bar { display: none; }
+  .toolnav__pro--top { display: inline-flex; grid-area: pro; justify-self: end; margin: 0; padding: 0; border: 0; gap: 0; }
+  .toolnav__pro--top a { color: var(--gold); text-decoration: none; font-size: 14px; padding: 0 6px; min-height: 44px; display: inline-flex; align-items: center; }
+  .toolnav__pro--top a[aria-current="page"] { color: var(--gold-deep); font-weight: 600; }
+  .toolnav__pro--top .pro-tag { margin-right: 2px; }
+  .acct__name { display: none; }
+  .acct--out { padding: 0 12px; min-height: 36px; }
   .toolnav {
+    grid-area: nav; margin: 0 -14px; padding: 0 30px 0 8px; border-top: 1px solid #F2F2F2;
     -webkit-overflow-scrolling: touch;
     mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
   }
-  .toolnav a { padding: 6px 12px; }
+  .toolnav a { padding: 6px 11px; }
 }
-.toolnav a:hover { background: var(--wash); color: var(--ink); }
-.toolnav a[aria-current="page"] {
-  font-weight: 700; color: var(--ink); box-shadow: inset 0 -2px 0 var(--amber);
+
+/* ---------- the phone bar: two buttons, two sheets (owner's phone design, 17 September 2026) ---------- */
+
+/* Hidden until the strip is: above that width the bar shows the tools itself. */
+.barbtn { display: none; }
+.wherenow { display: none; }
+.scrim { display: none; }
+
+@media (max-width: 700px) {
+  /* The strip showed four of the seven tools at 375px (measured). The sheet shows all of them. */
+  .toolnav, .toolnav__pro--top { display: none; }
+  .site-header__inner {
+    grid-template-columns: auto 1fr auto auto; grid-template-areas: "brand tools pro acct" "where where where where";
+    column-gap: 8px; padding: 0 14px;
+  }
+  .barbtn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px;
+    background: var(--paper); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+  .barbtn:nth-of-type(1) { grid-area: tools; justify-self: end; }
+  .barbtn--pro { grid-area: pro; color: var(--gold-deep); background: var(--gold-bg); border-color: var(--gold-line); font-weight: 600; }
+  .wherenow {
+    display: block; grid-area: where; margin: 0; padding: 0 0 8px;
+    font-size: 13px; color: var(--ink-76);
+  }
+  .wherenow b { color: var(--ink); font-weight: 600; }
+  .scrim {
+    display: block; position: fixed; inset: 0; z-index: 50;
+    background: rgba(17, 18, 20, .42);
+  }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--paper); border-top-left-radius: 22px; border-top-right-radius: 22px;
+    padding: 8px 16px 20px; border-top: 1px solid var(--line);
+    max-height: calc(100dvh - 56px); overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  .sheet__grab { display: block; width: 38px; height: 4px; border-radius: 2px; background: var(--line-strong); margin: 0 auto 14px; }
+  .sheet__list { display: grid; gap: 2px; }
+  .sheetrow {
+    display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px 10px;
+    border-radius: 11px; text-decoration: none; color: var(--ink); font-size: 15.5px;
+  }
+  .sheetrow[aria-current="page"] { background: var(--panel); font-weight: 600; }
+  .sheetrow__mark { width: 22px; flex: none; display: grid; place-items: center; }
+  .sheetrow__glyph { display: block; }
+  .sheetrow__name { min-width: 0; }
+  /* The Pro sheet is the panel’s content at phone width; its own block so the panel can stay a grid. */
+  .prosheet { display: block; }
+  .sheetrow__here { margin-left: auto; font-size: 12.5px; color: var(--ink-74); font-weight: 400; }
+  .sheetrow--pro { color: var(--gold-deep); }
+  .sheetsep { display: flex; align-items: center; gap: 9px; margin: 12px 2px 6px; }
+  .sheetsep__line { flex: 1; height: 1px; background: var(--gold-line); }
+  .sheet__close { display: block; width: 100%; margin-top: 14px; }
+  .prosheet__who { display: flex; align-items: baseline; gap: 9px; margin: 0 0 6px; }
+  .prosheet__k { font-size: 19px; font-weight: 700; color: var(--gold-deep); letter-spacing: -.02em; }
+  .prosheet__amt { font-size: 14px; font-weight: 600; color: var(--gold-text); }
+  .prosheet__line { margin: 0 0 12px; font-size: 15px; font-weight: 500; color: var(--gold-text); line-height: 1.45; }
+  .prosheet__list { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .prosheet__list li { display: flex; gap: 9px; font-size: 13.5px; color: var(--gold-text); line-height: 1.45; }
+  .prosheet__list li svg { flex: none; margin-top: 2px; color: var(--gold-deep); }
+  .prosheet__list b { color: var(--gold-deep); font-weight: 600; }
+  .prosheet__sub { margin: 0 0 14px; font-size: 13px; color: var(--gold-text); line-height: 1.6; }
+  .sheet__buy { display: block; text-align: center; }
+  .prosheet__more { margin: 12px 0 0; font-size: 14px; }
+  .prosheet__more a { color: var(--gold-text); font-weight: 600; }
+}
+/* The narrowest phones: the tag goes before a link would. The gold and the group's label still say what it is. */
+@media (max-width: 350px) {
+  .toolnav__pro--top .pro-tag { display: none; }
 }
 
 .site-main {
@@ -130,7 +263,7 @@ input, button, select, textarea { font-family: inherit; }
   padding: clamp(20px, 4vw, 44px) 20px 40px;
 }
 
-.site-footer { border-top: 1px solid var(--line-soft); background: rgba(250, 248, 244, .94); }
+.site-footer { border-top: 1px solid var(--line-soft); background: rgba(255, 255, 255, .94); }
 .site-footer__inner {
   max-width: var(--shell); margin: 0 auto; padding: 11px 20px;
   display: flex; align-items: center; justify-content: space-between;
@@ -169,9 +302,59 @@ input, button, select, textarea { font-family: inherit; }
 .prose__updated { margin: 4px 0 22px; font-size: 13.5px; line-height: 1.5; color: var(--ink-76); }
 .prose .prose__updated { margin: 28px 0 0; }
 .tool-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.site-main:has([data-dropzone]) .tool-head {
+  display: block; text-align: center; max-width: 700px; margin: clamp(8px, 3vw, 28px) auto 0;
+}
+.site-main:has([data-dropzone]) .page-title { font-size: clamp(28px, 5vw, 38px); font-weight: 600; letter-spacing: -.03em; line-height: 1.12; }
+.site-main:has([data-dropzone]) .page-lede { margin-top: 12px; color: var(--soft); font-size: clamp(15px, 2.2vw, 17px); line-height: 1.55; }
+/* No Pro strip before a file is chosen: nothing is sold to someone who has not started (brief, stage 2). It appears
+   once the empty view gives way. :has() so it holds from the first paint, before any script runs. */
+.site-main:has([data-view="empty"]:not([hidden])) [data-pro-strip] { display: none; }
+.site-main:has([data-dropzone]) .pro-strip { text-align: center; max-width: 700px; margin: 12px auto 0; }
 /* The one Pro line under a tool's heading (tools/pro-copy.mjs proStrip): the page's own hint type, nothing louder. */
 .pro-strip { margin: 0 0 10px; font-size: 13.5px; line-height: 1.5; color: var(--ink-76); }
 .pro-strip strong { color: var(--ink-78); font-weight: 700; }
+/* The small "Pro" label, and a real control shown locked: still itself, visibly unavailable. Pro builds only. */
+.pro-label { margin-left: 8px; vertical-align: 2px; }
+.pro-locked { opacity: .5; }
+.lock {
+  margin-top: 18px; background: var(--gold-bg); border: 1px solid var(--gold-line); border-radius: 14px;
+  padding: 22px; text-align: left; max-width: 700px;
+}
+.lock__head { display: flex; align-items: center; gap: 10px; margin: 0 0 9px; }
+
+/* The account page, signed in (pdf-iq-final.html 04): the Pro card, then the account row. */
+.acct-page { margin-top: 22px; max-width: 640px; }
+.acct-owned { background: var(--gold-bg); border: 1px solid var(--gold-line); border-radius: 14px; padding: 22px 24px; margin-bottom: 16px; }
+.acct-owned__head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.acct-owned__title { margin: 0; font-size: 17.5px; font-weight: 600; }
+.acct-owned__body { margin: 0 0 8px; font-size: 14.5px; line-height: 1.6; color: var(--gold-text); }
+.acct-owned__links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.acct-owned__links a { border: 1px solid var(--gold-line); background: var(--paper); border-radius: 10px; padding: 12px 14px; text-decoration: none; color: var(--ink); font-size: 14.5px; font-weight: 500; min-height: 44px; }
+.acct-owned__links a:hover { border-color: var(--gold); }
+.acct-owned__ref { margin: 16px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--gold-text); }
+.acct-owned__ref code { font-family: var(--mono); font-size: 13px; color: var(--ink); overflow-wrap: anywhere; }
+.acct-row { border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 10px; background: var(--paper); }
+.acct-row__title { margin: 0 0 4px; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.acct-row__body { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-76); }
+@media (max-width: 420px) { .acct-owned__links { grid-template-columns: 1fr; } }
+.lock__title { margin: 0; font-size: 16.5px; font-weight: 600; color: var(--ink); }
+.lock__what { margin: 0 0 16px; font-size: 14.5px; line-height: 1.6; color: var(--gold-text); }
+.lock__controls { margin: 0 0 16px; }
+.lock__controls .actions { margin-top: 8px; }
+.lock__controls input, .lock__controls select { border-color: var(--gold-line); background: #FFFFFF; }
+.lock .cta {
+  display: block; width: 100%; background: var(--ink); color: #FFFFFF; border: none; border-radius: 10px;
+  padding: 13px; font: 600 15.5px/1.3 var(--sans); text-align: center; cursor: pointer;
+}
+.lock .cta:hover { background: #000000; }
+.lock .cta:disabled { opacity: .7; cursor: progress; }
+.lock__after, .lock__alt, .lock__already { margin: 12px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--gold-muted); text-align: center; }
+.lock__alt { margin-top: 15px; }
+.lock__already { margin-top: 8px; }
+.lock__after a, .lock__alt a, .lock__already a, .lock__state a { color: var(--gold-text); }
+.lock__state { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--gold-text); }
+.pro-locked :disabled { cursor: not-allowed; }
 .kicker {
   margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .08em; color: var(--ink-74);
@@ -204,44 +387,35 @@ input, button, select, textarea { font-family: inherit; }
 .btn--sm { padding: 13px 20px; font-size: 16px; }
 
 .btn-quiet {
-  background: none; border: 1px solid rgba(30, 42, 56, .24); border-radius: 4px;
+  background: none; border: 1px solid rgba(17, 18, 20, .24); border-radius: 4px;
   padding: 12px 16px; font-size: 15px; color: var(--ink); cursor: pointer;
   text-decoration: none; display: inline-block; line-height: 1.2;
 }
 .btn-quiet:hover { border-color: var(--ink); color: var(--ink); }
-.btn-quiet--xs { padding: 6px 10px; font-size: 13.5px; border-color: rgba(30, 42, 56, .2); }
+.btn-quiet--xs { padding: 6px 10px; font-size: 13.5px; border-color: rgba(17, 18, 20, .2); }
 
 .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 
 /* ---------- drop zone ---------- */
 
 .dropzone {
-  position: relative; border: 2px dashed var(--line-strong); border-radius: 6px;
-  background: var(--card); min-height: clamp(300px, 46vh, 460px);
+  position: relative; border: 2px dashed #DEDEDE; border-radius: 16px;
+  background: var(--panel); min-height: clamp(280px, 42vh, 420px); max-width: 700px; margin: 0 auto;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 18px; padding: 32px 24px; cursor: pointer; text-align: center;
 }
-.dropzone:hover { border-color: var(--amber); background: var(--card-hover); }
+.dropzone:hover { border-color: var(--ink-74); background: #FFFFFF; }
 .dropzone__ring {
   position: absolute; inset: -2px; border: 2px solid var(--amber);
-  border-radius: 6px; background: var(--amber-wash); pointer-events: none;
+  border-radius: 16px; background: var(--amber-wash); pointer-events: none;
 }
-.dropzone__mark {
-  width: 62px; height: 62px; border-radius: 5px;
-  background: linear-gradient(135deg, var(--ink) 0 50%, var(--amber) 50% 100%);
-}
-.dropzone__head { margin: 0; font-size: clamp(22px, 3.4vw, 30px); font-weight: 700; letter-spacing: -.02em; }
-.dropzone__sub { margin: 8px 0 0; font-size: 16px; color: var(--ink-76); }
+/* The tool's own mark (tools/icons.mjs), plain ink: gold is kept for Pro alone (owner, 13 September 2026). */
+.dropzone__mark { display: block; width: 42px; height: 42px; color: var(--ink); }
+.dropzone__glyph { display: block; width: 42px; height: 42px; }
+.dropzone__glyph .tm-a { fill: currentColor; }
+.dropzone__head { margin: 0; font-size: clamp(20px, 3.2vw, 23px); font-weight: 600; letter-spacing: -.02em; }
+.dropzone__sub { margin: 7px 0 0; font-size: 15px; color: var(--soft); }
 .dropzone__meta { margin: 0; font-family: var(--mono); font-size: 12.5px; color: var(--ink-74); letter-spacing: .02em; }
-
-/* ---------- the verification notes ---------- */
-
-.assurances {
-  margin-top: 22px; display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 28px;
-}
-.assurances h2 { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
-.assurances p { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-76); }
 
 /* ---------- file chip ---------- */
 
@@ -267,7 +441,7 @@ input, button, select, textarea { font-family: inherit; }
   border: 1px solid var(--line); border-radius: 5px; padding: 13px 15px;
   cursor: pointer; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
 }
-.preset:hover { border-color: rgba(30, 42, 56, .4); }
+.preset:hover { border-color: rgba(17, 18, 20, .4); }
 .preset__ring { position: absolute; inset: -1px; border: 2px solid var(--amber); border-radius: 5px; pointer-events: none; }
 .preset__name { font-size: 15.5px; font-weight: 700; color: var(--ink); }
 .preset__note { font-size: 14px; color: var(--ink-76); }
@@ -296,7 +470,7 @@ input, button, select, textarea { font-family: inherit; }
 .proc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .proc-title { margin: 0; font-size: clamp(19px, 2.6vw, 24px); font-weight: 700; letter-spacing: -.015em; }
 .proc-pct { margin: 0; font-family: var(--mono); font-size: clamp(24px, 4vw, 34px); font-weight: 500; letter-spacing: -.02em; }
-.bar { margin-top: 14px; height: 10px; border-radius: 5px; background: rgba(30, 42, 56, .1); overflow: hidden; }
+.bar { margin-top: 14px; height: 10px; border-radius: 5px; background: rgba(17, 18, 20, .1); overflow: hidden; }
 .bar__fill { height: 100%; background: var(--amber); width: 0; transition: width .18s linear; }
 .proc-facts {
   margin-top: 12px; display: flex; gap: 18px; flex-wrap: wrap;
@@ -314,7 +488,7 @@ input, button, select, textarea { font-family: inherit; }
 .sizes { margin-top: 12px; display: flex; align-items: baseline; gap: clamp(12px, 2.5vw, 26px); flex-wrap: wrap; }
 .size-before {
   margin: 0; font-family: var(--mono); font-size: clamp(26px, 5vw, 44px); font-weight: 500;
-  letter-spacing: -.03em; color: rgba(30, 42, 56, .5);
+  letter-spacing: -.03em; color: rgba(17, 18, 20, .5);
   text-decoration: line-through; text-decoration-thickness: 2px;
 }
 .size-after { margin: 0; font-family: var(--mono); font-size: clamp(30px, 6.4vw, 56px); font-weight: 500; letter-spacing: -.03em; }
@@ -323,12 +497,12 @@ input, button, select, textarea { font-family: inherit; }
 .compare { margin-top: 20px; display: grid; gap: 9px; max-width: 620px; }
 .compare__row { display: flex; align-items: center; gap: 12px; }
 .compare__label { font-family: var(--mono); font-size: 12px; width: 46px; color: var(--ink-76); flex: 0 0 auto; }
-.compare__track { flex: 1 1 auto; height: 14px; background: rgba(30, 42, 56, .08); border-radius: 3px; }
-.compare__track--full { background: rgba(30, 42, 56, .16); }
+.compare__track { flex: 1 1 auto; height: 14px; background: rgba(17, 18, 20, .08); border-radius: 3px; }
+.compare__track--full { background: rgba(17, 18, 20, .16); }
 .compare__fill { display: block; height: 100%; border-radius: 3px; background: var(--amber); }
 
 .facts {
-  margin: 26px 0 0; padding-top: 18px; border-top: 1px solid rgba(30, 42, 56, .12);
+  margin: 26px 0 0; padding-top: 18px; border-top: 1px solid rgba(17, 18, 20, .12);
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 16px 24px; font-size: 14px;
 }
@@ -338,9 +512,48 @@ input, button, select, textarea { font-family: inherit; }
 .nextup { margin-top: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .nextup__label { font-size: 14.5px; color: var(--ink-76); }
 .nextup a {
-  padding: 8px 13px; border: 1px solid rgba(30, 42, 56, .2); border-radius: 4px;
+  padding: 8px 13px; border: 1px solid rgba(17, 18, 20, .2); border-radius: 4px;
   font-size: 14.5px; text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
 .nextup a:hover { border-color: var(--amber); color: var(--ink); }
+
+/* ---------- the result screen (redesign stage 3, pdf-iq-final.html 03) ---------- */
+
+/* The number is the design: the new size large, then "from" the old one as a small aside, then the saving. The old size
+   is secondary-coloured honestly, because "from" carries the meaning before the strike-through has to. */
+.result { max-width: 700px; margin: 18px auto 0; }
+.res { border: 1px solid #E8E8E8; border-radius: 16px; overflow: hidden; background: #FFFFFF; text-align: left; }
+.res__top { padding: clamp(20px, 4vw, 26px) clamp(18px, 4vw, 28px); border-bottom: 1px solid #F2F2F2; }
+.res__fname { margin: 0 0 14px; font-size: 14px; font-weight: 400; color: var(--soft); overflow-wrap: anywhere; }
+.res__nums { margin: 0; display: flex; align-items: baseline; gap: 10px 12px; flex-wrap: wrap; }
+.res__now { font-size: clamp(32px, 7vw, 38px); font-weight: 600; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
+.res__was { font-size: 15px; color: var(--soft); }
+.res__was s { text-decoration-thickness: 1.5px; }
+.res__pct { font-size: 13px; font-weight: 600; color: var(--ok); background: var(--ok-bg); border-radius: 20px; padding: 5px 11px; }
+.res__how { padding: 16px clamp(18px, 4vw, 28px); background: var(--panel); border-bottom: 1px solid #F2F2F2; }
+.res__how p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--soft); }
+.res__how p + p { margin-top: 8px; }
+.res__acts { padding: 20px clamp(18px, 4vw, 28px); display: flex; gap: 10px; flex-wrap: wrap; }
+.res .nextup {
+  margin: 0; display: block; padding: 16px clamp(18px, 4vw, 28px); border-top: 1px solid #F2F2F2;
+  background: var(--panel); font-size: 13.5px; line-height: 1.8; color: var(--soft);
+}
+.res .nextup__label { font-size: inherit; color: inherit; }
+.res .nextup a {
+  display: inline; min-height: 0; padding: 0; border: 0; border-radius: 0;
+  font-size: inherit; font-weight: 500; color: var(--ink); text-decoration: underline; text-underline-offset: 3px;
+}
+.result .lock { margin: 18px 0 0; max-width: none; }
+.res__head { margin: 0 0 12px; font-size: 15px; line-height: 1.5; color: var(--ink); }
+.res__text { padding: 16px clamp(18px, 4vw, 28px) 0; }
+.res__text textarea {
+  width: 100%; min-height: 260px; padding: 14px; box-sizing: border-box; border: 1px solid #E8E8E8; border-radius: 10px;
+  background: var(--panel); color: var(--ink); font: 15px/1.6 ui-monospace, Consolas, monospace; resize: vertical;
+}
+.result__pro > .card { margin-top: 18px; }
+.res .pro-tag { margin: 0 0 0 4px; vertical-align: 1px; }
+.res__parts { padding: 4px clamp(18px, 4vw, 28px) 0; }
+.res__parts .tray { margin-top: 12px; }
+.result .atwork { text-align: center; }
 
 /* ---------- outcome blocks (no-gain, error) ---------- */
 
@@ -356,7 +569,7 @@ input, button, select, textarea { font-family: inherit; }
 .pwform label { display: grid; gap: 6px; font-size: 14px; color: var(--ink-78); }
 .pwform input {
   width: 240px; max-width: 70vw; padding: 11px 12px; font-size: 15px;
-  border: 1px solid rgba(30, 42, 56, .3); border-radius: 4px; background: var(--paper); color: var(--ink);
+  border: 1px solid rgba(17, 18, 20, .3); border-radius: 4px; background: var(--paper); color: var(--ink);
 }
 
 /* ---------- page thumbnail grids (reorder, rotate, split) ---------- */
@@ -370,7 +583,7 @@ input, button, select, textarea { font-family: inherit; }
   background: var(--card); padding: 8px; display: flex; flex-direction: column;
   align-items: center; gap: 7px; cursor: pointer; text-align: center;
 }
-.pagecell:hover { border-color: rgba(30, 42, 56, .4); }
+.pagecell:hover { border-color: rgba(17, 18, 20, .4); }
 .pagecell[aria-pressed="true"] { border-color: var(--amber); }
 .pagecell[aria-pressed="true"]::after {
   content: ""; position: absolute; inset: -1px; border: 2px solid var(--amber);
@@ -385,7 +598,7 @@ input, button, select, textarea { font-family: inherit; }
 .pagecell__n { font-family: var(--mono); font-size: 12px; color: var(--ink-76); }
 .pagecell__drop { display: flex; gap: 4px; }
 .pagecell__mini {
-  background: none; border: 1px solid rgba(30, 42, 56, .2); border-radius: 3px;
+  background: none; border: 1px solid rgba(17, 18, 20, .2); border-radius: 3px;
   font-size: 12px; padding: 2px 6px; cursor: pointer; color: var(--ink); line-height: 1.4;
 }
 .pagecell__mini:hover { border-color: var(--ink); }
@@ -418,7 +631,7 @@ input, button, select, textarea { font-family: inherit; }
 
 .field { display: grid; gap: 6px; font-size: 14px; color: var(--ink-78); margin-top: 14px; }
 .field input[type="text"], .field input[type="number"], .field select {
-  padding: 11px 12px; font-size: 15px; border: 1px solid rgba(30, 42, 56, .3);
+  padding: 11px 12px; font-size: 15px; border: 1px solid rgba(17, 18, 20, .3);
   border-radius: 4px; background: var(--paper); color: var(--ink); max-width: 340px;
 }
 .hint { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-76); }
@@ -563,57 +776,76 @@ textarea.askfield__input { resize: vertical; min-height: 104px; }
 .threeup h2 { margin: 0 0 5px; font-size: 16px; font-weight: 700; }
 .threeup p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-78); }
 
-/* ---------- homepage redesign ---------- */
+/* ---------- the homepage (redesign stage 4, pdf-iq-final.html 01) ---------- */
 
-/* The hero fills the first screen so the tool grid sits at the fold rather than below it.
-   Two corrections to the drawn version:
-   - the header is 52px measured, not the 92px the design assumed;
-   - svh rather than vh, because on mobile `100vh` counts browser chrome that later
-     collapses, which would push the grid below the fold on exactly the devices where
-     the fold matters most. vh stays as the fallback for browsers without svh. */
-.home-hero {
-  min-height: calc(100vh - var(--header-h, 52px));
-  min-height: calc(100svh - var(--header-h, 52px));
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: clamp(16px, 2.6vh, 32px);
-  padding: clamp(16px, 3vh, 38px) 0;
+/* The readout: a quiet line under the bar. Its first item is live instrumentation (src/entries/net.ts). */
+.home-readout {
+  list-style: none; margin: 18px auto 0; max-width: 920px; padding: 10px 16px;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px;
+  border: 1px solid #F2F2F2; border-radius: 20px; background: var(--panel);
+  font-size: 12.5px; color: var(--soft);
 }
-.home-eyebrow {
-  margin: 0; font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--amber-text);
-}
-.home-title {
-  margin: 10px 0 0; font-size: clamp(30px, 4.6vw, 50px); line-height: 1.04;
-  font-weight: 800; letter-spacing: -.032em; text-wrap: balance;
-}
-.home-sub {
-  margin: 14px 0 0; font-size: clamp(16px, 1.4vw, 18px); line-height: 1.5;
-  color: var(--ink-78); max-width: 62ch; text-wrap: pretty;
-}
-
-/* The readout has gone non-zero. The live dot stops signalling 'all clear'. */
+.home-readout li { display: flex; align-items: baseline; gap: 8px; }
+.home-proof__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); flex: 0 0 auto; transform: translateY(-1px); }
+.home-proof__dot--live { background: var(--amber); }
 .netreadout--dirty .home-proof__dot--live { animation: none; background: var(--ink); }
 
-.home-grid {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 30px;
+.home-hero { text-align: center; max-width: 760px; margin: 0 auto; padding: clamp(40px, 8vw, 68px) 0 0; }
+.home-title { margin: 0 0 16px; font-size: clamp(32px, 6vw, 46px); line-height: 1.06; font-weight: 600; letter-spacing: -.035em; text-wrap: balance; }
+.home-sub { margin: 0 auto; max-width: 50ch; font-size: clamp(16px, 2.2vw, 18px); line-height: 1.55; color: var(--soft); text-wrap: pretty; }
+
+.home-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-width: 920px; margin: clamp(28px, 5vw, 42px) auto 0; }
+@media (max-width: 860px) { .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* A phone screen is about 700px of usable height once the browser chrome is off. The hero was 223px of it and two tiles
+   reached the fold; the design shows four. Measured at 375x702: header 51, readout 58, hero 223. */
+@media (max-width: 700px) {
+  .home-readout { margin-top: 12px; padding: 8px 14px; gap: 4px 14px; font-size: 12px; }
+  .home-hero { padding-top: 22px; }
+  .home-title { margin-bottom: 10px; font-size: clamp(27px, 7.6vw, 32px); }
+  .home-sub { font-size: 15px; line-height: 1.5; }
+  .home-grid { margin-top: 18px; }
 }
-@media (max-width: 1000px) { .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .home-grid { grid-template-columns: minmax(0, 1fr); } }
-.home-grid .toolcard { padding: 15px 16px 16px; }
+/* Two columns on a phone: one column put the Pro panel about 1,000px down at 375px. */
+@media (max-width: 560px) { .home-grid { gap: 10px; } .home-grid .toolcard { padding: 15px 13px; } .home-grid .toolcard__note { font-size: 13px; } }
+@media (max-width: 339px) { .home-grid { grid-template-columns: minmax(0, 1fr); } }
+.home-grid .toolcard { border: 1px solid #E8E8E8; border-radius: 13px; background: #FFFFFF; padding: 20px 18px; }
+.home-grid .toolcard:hover { border-color: var(--ink-74); background: #FFFFFF; }
 .home-grid .toolcard__mark { width: 24px; height: 24px; }
-.home-grid .toolcard__name { margin-top: 11px; font-size: 17.5px; }
-.home-grid .toolcard__note { margin-top: 4px; font-size: 14px; line-height: 1.45; }
+/* Plain ink: gold is kept for Pro alone (owner, 13 September 2026). */
+.home-grid .toolcard__mark .tm-a { fill: currentColor; }
+.home-grid .toolcard__name { margin-top: 13px; font-size: 15.5px; font-weight: 600; letter-spacing: -.01em; }
+.home-grid .toolcard__note { margin-top: 5px; font-size: 13.5px; line-height: 1.5; color: var(--soft); }
 
-/* The app card is an outline rather than a filled card: it leaves the site. */
-.toolcard--outline { background: none; border-style: dashed; border-color: var(--line-strong); }
-.toolcard--outline:hover { border-color: var(--amber); background: none; }
-.toolcard--outline .toolcard__mark { opacity: .5; }
+/* The Pro panel: one panel, not four gold tiles, because Pro is a tier and not more product. */
+.pro-panel { max-width: 920px; margin: clamp(28px, 5vw, 40px) auto 0; }
+.pro-panel__in {
+  background: var(--gold-bg); border: 1px solid var(--gold-line); border-radius: 16px; padding: clamp(22px, 4vw, 28px) clamp(20px, 4vw, 30px);
+  display: grid; grid-template-columns: 1fr 1.15fr; gap: 34px; align-items: center;
+}
+@media (max-width: 860px) { .pro-panel__in { grid-template-columns: minmax(0, 1fr); gap: 22px; } }
+.pro-panel__who { margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.pro-panel__k { font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--gold-deep); }
+.pro-panel__amt { font-size: 15px; font-weight: 600; color: var(--gold); }
+.pro-panel__line { margin: 0 0 14px; font-size: 16.5px; line-height: 1.5; font-weight: 500; color: var(--gold-text); }
+.pro-panel__sub { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--gold-muted); }
+/* The homepage's route to /pro/ (owner, 17 September 2026: its absence from the mockup was an oversight). */
+.pro-panel__more { margin: 12px 0 0; font-size: 14px; }
+.pro-panel__more a:not(.btn) { color: var(--gold-text); font-weight: 600; }
+.pro-panel__more a:not(.btn):hover { color: var(--gold-deep); }
+/* Selling: the Buy button beside the link. Without :not(.btn) above, the link colour turned its text gold on ink. */
+.pro-panel__more .btn { margin: 0 16px 8px 0; }
+.pro-panel__list { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+.pro-panel__list li { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; line-height: 1.45; color: var(--gold-text); }
+.pro-panel__list svg { flex: 0 0 auto; margin-top: 3px; color: var(--gold); }
+.pro-panel__list b { font-weight: 600; color: var(--gold-deep); }
 
-.home-jump { margin: 0; font-family: var(--mono); font-size: 12.5px; }
-.home-jump a { text-decoration: none; color: var(--ink-76); }
-.home-jump a:hover { color: var(--amber-text); }
+.home-pitch {
+  max-width: 920px; margin: clamp(36px, 6vw, 46px) auto 0; padding-bottom: clamp(24px, 6vw, 60px);
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px;
+}
+@media (max-width: 860px) { .home-pitch { grid-template-columns: minmax(0, 1fr); } }
+.home-pitch h2 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+.home-pitch p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--soft); }
 
 .home-section { padding: clamp(28px, 5vw, 56px) 0 0; }
 .home-section--last { padding-bottom: clamp(36px, 5vw, 60px); }

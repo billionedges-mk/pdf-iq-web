@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRO, TOOLS } from './site.mjs';
-import { PRO_COPY, proState, proStrip } from './pro-copy.mjs';
+import { PRO_COPY, proState, proStrip, proPanel } from './pro-copy.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -38,7 +38,7 @@ ok(missing.length === 0, `every Pro feature has copy${missing.length ? ` — not
 ok(extra.length === 0, `and nothing is described that Pro does not include${extra.length ? ` — ${extra.join('; ')}` : ''}`);
 
 // ---------------------------------------------------------------- every entry is complete
-const REQUIRED = ['key', 'strip', 'title', 'feature', 'route', 'what', 'onDevice', 'instead'];
+const REQUIRED = ['key', 'strip', 'panel', 'title', 'feature', 'route', 'what', 'onDevice', 'instead'];
 for (const entry of PRO_COPY) {
   const absent = REQUIRED.filter((f) => !entry[f] || String(entry[f]).trim().length < 3);
   ok(absent.length === 0, `${entry.key ?? '(no key)'} carries every field${absent.length ? ` — missing ${absent.join(', ')}` : ''}`);
@@ -71,13 +71,45 @@ if (!PRO.onSale) {
   ok(PRO_COPY.every((c) => strip.includes(c.strip)), `the strip names every Pro feature: ${PRO_COPY.map((c) => c.strip).join(', ')}`);
   ok(PRO.onSale ? strip.includes(PRO.price) && !strip.includes('not on sale') : strip.includes('not on sale yet') && !strip.includes(PRO.price),
     PRO.onSale ? 'on sale, the strip names the price' : 'not on sale, the strip says so and names no price');
-  ok(!SELLING.some((w) => strip.toLowerCase().includes(w)), 'the strip offers no purchase of its own: it links to /pro/ only');
+  // Not selling, nothing to buy. Selling, the price comes with a link to the purchase page (owner, 17 September 2026:
+  // naming a price without offering the purchase is a defect); still no checkout on a tool page.
+  const notSelling = proStrip({ selling: false }), sellingStrip = proStrip({ selling: true });
+  ok(!SELLING.some((w) => notSelling.toLowerCase().includes(w)) && !notSelling.includes('/pro/buy/'), 'not on sale, the strip offers no purchase: it links to /pro/ only');
+  ok(sellingStrip.includes('href="/pro/buy/"') && sellingStrip.includes(PRO.price), 'on sale, the strip names the price and links to the purchase page beside it');
   for (const tool of TOOLS) {
     const lines = readFileSync(join(ROOT, `src/pages/${tool.slug}.html`), 'utf8').split(/\r?\n/);
     const at = lines.map((l, i) => (l.trim() === '{{proStrip}}' ? i : -1)).filter((i) => i >= 0);
     ok(at.length === 1 && lines[at[0] - 1]?.trim() === '</div>' && lines[at[0] - 2]?.includes('page-lede'),
       `/${tool.slug}/ carries the strip once, straight under its heading${at.length === 1 ? '' : ` (found ${at.length})`}`);
   }
+}
+
+// ---------------------------------------------------------------- the homepage's Pro panel (redesign stage 4)
+// One panel on the homepage, generated beside the strip: every feature, a price only while Pro is on sale, what a purchase
+// covers today (the web tools), plainly not the Android app, and hidden in a Pro build until src/pro/strip.ts settles it.
+{
+  for (const selling of [false, true]) {
+    const panel = proPanel({ selling });
+    const label = selling ? 'on sale' : 'not on sale';
+    ok(PRO_COPY.every((c) => panel.includes(`<b>${c.panel[0]}</b> &mdash; ${c.panel[1]}`)), `${label}: the panel lists every Pro feature`);
+    ok(selling ? panel.includes(`${PRO.price} ${PRO.qualifier}`) && !panel.includes('not on sale') : panel.includes('not on sale yet') && !panel.includes(PRO.price),
+      selling ? 'on sale: the panel names the price' : 'not on sale: the panel says so and names no price');
+    ok(panel.includes(PRO.coversToday) && /(does|will) not unlock anything in the Android app/.test(panel) && !panel.includes(PRO.covers),
+      `${label}: the panel says a purchase covers the web tools, and plainly not the Android app`);
+    ok(selling ? panel.includes('href="/pro/buy/"') : !SELLING.some((w) => panel.toLowerCase().includes(w)) && !panel.includes('/pro/buy/'),
+      selling ? 'on sale: the panel offers the purchase beside the price' : 'not on sale: the panel offers no purchase');
+    // The line under "Pro" has to fit all of them: "Four things the free tools don't do", counted from PRO_COPY. Not the
+    // mockup's "without doing it one file at a time", which is Batch alone.
+    const words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+    ok(panel.includes(`${words[PRO_COPY.length]} things the free tools don&rsquo;t do.`) && !/one file at a time/.test(panel),
+      `${label}: the panel's line counts the Pro features and fits all of them`);
+    ok(panel.includes('<a href="/pro/">What Pro adds</a>'), `${label}: the panel links to /pro/`);
+  }
+  ok(proPanel({ hidden: true }).includes('data-pro-strip hidden') && !proPanel().includes('data-pro-strip hidden'),
+    'a Pro build writes the panel hidden until settled; production writes it visible');
+  const home = readFileSync(join(ROOT, 'src/pages/index.html'), 'utf8');
+  ok(home.split('{{proPanel}}').length === 2 && !/price-grid|What it costs|Nothing here is for sale today/.test(home),
+    'the homepage carries the panel once, and none of the three old price cards');
 }
 
 console.log(`\n${fails ? `${fails} FAILED` : 'the Pro copy is complete, matches the feature list, and sells nothing that is not for sale'}`);
