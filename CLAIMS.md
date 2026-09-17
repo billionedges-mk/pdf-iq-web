@@ -58,7 +58,9 @@ the work is done.
 42. [A test built from a generator's output covers only what that generator happened to produce](#42-a-test-built-from-a-generators-output-covers-only-what-that-generator-happened-to-produce)  
 43. [A style class that does not exist fails silently, and the page still looks finished](#43-a-style-class-that-does-not-exist-fails-silently-and-the-page-still-looks-finished)  
 44. [A hand-written list of where a claim appears misses the places a placeholder carries it](#44-a-hand-written-list-of-where-a-claim-appears-misses-the-places-a-placeholder-carries-it)  
-45. [Naming a price without offering the purchase is a defect, not a layout choice](#45-naming-a-price-without-offering-the-purchase-is-a-defect-not-a-layout-choice)
+45. [Naming a price without offering the purchase is a defect, not a layout choice](#45-naming-a-price-without-offering-the-purchase-is-a-defect-not-a-layout-choice)  
+46. [A check can pass because of the defect, and then the defect is what keeps it green](#46-a-check-can-pass-because-of-the-defect-and-then-the-defect-is-what-keeps-it-green)  
+47. [Four defects this week were found by looking at the page, and none of them by a check](#47-four-defects-this-week-were-found-by-looking-at-the-page-and-none-of-them-by-a-check)
 
 <!-- /index -->
 
@@ -1497,6 +1499,17 @@ sentence about the person's own document that was false.
    encoders and reads a real ReportLab page; the browser self-test compresses that page and compares the pdf.js render
    before and after.
 
+**The same defect in prose (17 September 2026).** Asked whether /ocr/'s three explanatory columns said anything the page
+did not say elsewhere, I checked /ocr/, found nothing unique, and reported that the same block on all nine tool pages
+repeated facts said elsewhere. The owner decided to cut all nine on that sentence. Checking the other eight before
+committing: five carried facts stated nowhere else on their page — that a password never leaves the tab, that a failed
+file puts nothing in the zip, that dropped pages stay in the original, that the original is never written to, that the
+size ceiling is not a page limit. One observation, reported as a claim about nine. It is the same shape as the rarity
+comment, in copy rather than code, and it reached a decision before it was caught.
+
+4. A sentence about several things, checked on one of them, is an unchecked claim however obvious the pattern looks.
+   Either check each, or say which one was checked and that the rest are assumed.
+
 ### 41. A check whose list predates what it guards passes on everything added since
 
 `tools/contrast.mjs` measures a list of foreground and background pairs read from the stylesheet's tokens. The redesign
@@ -1596,3 +1609,40 @@ said "Not on sale yet." after the visible page had stopped: metadata nobody read
    wording in titles or descriptions. It failed 17 times on the code before the fix. Its exemptions are named in the
    file with reasons, never silent.
 2. State that changes when something goes on sale comes from the flag that decides it, never from typed words.
+
+### 46. A check can pass because of the defect, and then the defect is what keeps it green
+
+`verify-sale-build` asserted that a sandbox sale build's /pro/ "still says not on sale". On 17 September 2026 the page
+stopped saying it — the sale state moved to the flag that decides it — and the check kept passing, because /pro/'s
+`<meta name="description">` still read "…Not on sale yet." The assertion was reading the whole file, so it found the
+claim in metadata nobody sees while looking at the page. The check's success depended on the stale copy it should have
+caught: remove the description's sentence and the check would have failed for the right reason, on a correct page.
+
+It was found by a new check written from a different direction (`verify:price-offers`, CLAIMS 45), not by reading the
+old one.
+
+**The check:**
+
+1. When a check passes on a change you expected it to fail on, find the text it actually matched before believing it.
+   `grep` the built file for the phrase and look at where it is.
+2. A check that searches a whole file must say which part it means: body, title, description. Whole-file matching makes
+   any occurrence anywhere stand in for the one that matters.
+3. When a behaviour moves under a flag, the checks that asserted the old behaviour are part of the change. Flip each one
+   deliberately, in the same commit, rather than leaving it to pass on whatever is left.
+
+### 47. Four defects this week were found by looking at the page, and none of them by a check
+
+The undefined `sr-only` label on /ocr/, the legal pages that had never been styled, the page count printed twice on three
+result screens, the Buy button whose text rendered gold on near-black, and the `.acct` class that restyled the site
+header: each was found by opening the page and looking at it. Every check in this repo passed on all of them, and the
+checks were not wrong to — a class that does not exist is valid HTML, a contrast check measures colour pairs and not
+which rule wins, and a class name in two stylesheets is not a conflict to a scanner.
+
+**The check:**
+
+1. A change to what a page shows is not finished until someone has looked at the built page, at desktop and phone width,
+   as the person who uses it sees it: not at the diff, not at the check's output.
+2. After a visual change, read one computed value for the thing that changed — the colour that won, the width, the
+   clip — because "it looks right" and "the rule I wrote is what applies" are different claims.
+3. Where looking found a defect a check could have caught, write the check (verify:classes came from the first of these).
+   Where it could not, say so plainly rather than inventing one that cannot fail.
