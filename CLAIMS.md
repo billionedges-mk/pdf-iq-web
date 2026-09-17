@@ -55,7 +55,8 @@ the work is done.
 39. [A claim about a second surface is checked on that surface, not planned for it](#39-a-claim-about-a-second-surface-is-checked-on-that-surface-not-planned-for-it)  
 40. [A comment asserting rarity is a claim, and an unchecked one narrows what the code handles](#40-a-comment-asserting-rarity-is-a-claim-and-an-unchecked-one-narrows-what-the-code-handles)  
 41. [A check whose list predates what it guards passes on everything added since](#41-a-check-whose-list-predates-what-it-guards-passes-on-everything-added-since)  
-42. [A test built from a generator's output covers only what that generator happened to produce](#42-a-test-built-from-a-generators-output-covers-only-what-that-generator-happened-to-produce)
+42. [A test built from a generator's output covers only what that generator happened to produce](#42-a-test-built-from-a-generators-output-covers-only-what-that-generator-happened-to-produce)  
+43. [A style class that does not exist fails silently, and the page still looks finished](#43-a-style-class-that-does-not-exist-fails-silently-and-the-page-still-looks-finished)
 
 <!-- /index -->
 
@@ -1537,3 +1538,30 @@ compared lengths on the input shape that shortens it.
    the case is untested, however many cases pass.
 3. Where output size is computed rather than grown, test the input that maximises expansion. A buffer that is too small
    in a typed array is silent truncation, not an error.
+
+### 43. A style class that does not exist fails silently, and the page still looks finished
+
+/ocr/'s text box label carried `class="sr-only"` from 30 August 2026 (305f732). The stylesheet has only
+`visually-hidden`. Nothing errored: the label that was meant for screen readers rendered as visible text above the box,
+on production, and was found while rebuilding the OCR result screen on 17 September, not by any check. HTML accepts
+any class name, CSS matches nothing, and the page looks like a page.
+
+Asked whether the same thing happened anywhere else, a scan of every class used against every class defined found three
+more, all older. `prose` and `prose__updated` on /terms, /privacy, /refunds and /support were written in the first
+commit (5cb92d9, 29 August) and never defined, so those pages ran 1,040px lines at the browser's default leading with
+24px default headings. `page__title` and `page__lede` on the 404, /for-professionals and /memory-probe were typed for
+`page-title` and `page-lede`. Seven pages, up to nineteen days: a page with no
+styles of its own still inherits the site's font and colours, which is enough to pass a glance.
+
+One passed even the scan: `.askgrid__pitch .page__title` gave the misspelled class an 8px margin on one page, so it
+counted as defined. A class being mentioned in CSS is not the same as it being styled where it is used.
+
+**The check:**
+
+1. `verify:classes` runs in `prebuild`: every class a page, script or template sets must appear in a stylesheet. It
+   failed on the code above, naming all four, and passes after the fix. There is no allowlist: script hooks here are
+   data- attributes, so a class with no rule is a mistake until shown otherwise.
+2. It cannot see a class that is defined only in a context the page is not in. When renaming or adding a class, find
+   the rule that styles it and confirm the element is inside that rule's selector.
+3. When a page "looks fine", check one computed style that the intended class sets (line length, a hidden label's
+   clip) before calling it styled.

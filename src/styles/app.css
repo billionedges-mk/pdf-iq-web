@@ -153,6 +153,21 @@ input, button, select, textarea { font-family: inherit; }
 
 .page-title { margin: 0; font-size: clamp(27px, 4.4vw, 38px); font-weight: 800; letter-spacing: -.025em; }
 .page-lede { margin: 0; font-size: clamp(15px, 2vw, 17px); color: var(--ink-76); }
+/* A heading and lede outside a tool-head (the 404, for-professionals): the tool-head sets its own row. */
+:not(.tool-head) > .page-title + .page-lede, .page-lede + .page-lede { margin-top: 10px; }
+
+/* Terms, privacy, refunds, support. These pages used .prose from the first commit and it was never
+   defined (tools/verify-classes.mjs): lines ran the full 1040px at the browser default leading. */
+.prose { max-width: 68ch; font-size: 16px; line-height: 1.65; }
+.prose > :first-child { margin-top: 0; }
+.prose p, .prose ul, .prose ol { margin: 0 0 14px; }
+.prose ul, .prose ol { padding-left: 22px; }
+.prose li + li { margin-top: 6px; }
+.prose h2 { margin: 34px 0 10px; font-size: 21px; line-height: 1.3; font-weight: 800; letter-spacing: -.015em; }
+.prose h3 { margin: 22px 0 8px; font-size: 17px; line-height: 1.35; font-weight: 700; }
+.prose code { font-family: var(--mono); font-size: .9em; }
+.prose__updated { margin: 4px 0 22px; font-size: 13.5px; line-height: 1.5; color: var(--ink-76); }
+.prose .prose__updated { margin: 28px 0 0; }
 .tool-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
 /* The one Pro line under a tool's heading (tools/pro-copy.mjs proStrip): the page's own hint type, nothing louder. */
 .pro-strip { margin: 0 0 10px; font-size: 13.5px; line-height: 1.5; color: var(--ink-76); }
@@ -465,7 +480,7 @@ input, button, select, textarea { font-family: inherit; }
 @media (max-width: 720px) { .home-proof { gap: 7px 0; flex-direction: column; } }
 
 .askgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px 52px; align-items: start; margin-top: 6px; }
-.askgrid__pitch .page__title { margin-top: 8px; }
+.askgrid__pitch .page-title { margin-top: 8px; }
 .askgrid__form { padding: 26px 28px; }
 /* On a phone the pitch stacks above the form, and the price block on its own would put the
    first field roughly 1,500px down — a lot of scrolling before the one page that captures
