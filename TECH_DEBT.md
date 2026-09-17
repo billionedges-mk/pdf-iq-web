@@ -410,3 +410,27 @@ but every control they offer acts on the grid's cells, so nothing is shown befor
 A refunds page is read by someone who is already unhappy; an instruction on it that turns out to be wrong makes that
 worse (owner, 17 September 2026). Both sentences are live on production, so both were softened there rather than only in
 the sale draft.
+
+## The price is tax-inclusive except in the US and Canada (measured 17 September 2026)
+
+Paddle's own price preview, run against the sandbox price `pri_01m2cv2xegy64zmhtxrbk0b1bf` with the checkout's public
+client token, for one unit:
+
+| Buyer | Subtotal | Tax | Total |
+|---|---|---|---|
+| United Arab Emirates (the walk-A invoice) | $14.28 | $0.71 (5%) | **$14.99** |
+| Germany | $12.60 | $2.39 (19%) | **$14.99** |
+| United Kingdom | $12.49 | $2.50 (20%) | **$14.99** |
+| India | $12.70 | $2.29 (18%) | **$14.99** |
+| Australia, Japan | $13.63 | $1.36 (10%) | **$14.99** |
+| United States, New York | $14.99 | $1.33 (8.875%) | **$16.32** |
+| United States, Texas | $14.99 | $1.24 (8.25%) | **$16.23** |
+| United States, California and Florida | $14.99 | $0.00 | **$14.99** |
+| Canada, Ontario | $14.99 | $1.95 (13%) | **$16.94** |
+
+So the price setting is tax-inclusive, and Paddle adds US and Canadian sales tax on top of it regardless. "$14.99" is
+the total everywhere except the US states and Canadian provinces that tax digital goods, where the buyer pays more than
+the figure on the page. /pro/ and /app/ now say so beside the price; /pro/buy/ says it on the purchase page.
+
+**Two things this does not prove.** It is the *sandbox* price, not the production one, which does not exist yet: check
+the same way once it does. And the rates are Paddle's on the day, not a promise about any particular state.
