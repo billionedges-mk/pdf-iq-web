@@ -60,7 +60,8 @@ the work is done.
 44. [A hand-written list of where a claim appears misses the places a placeholder carries it](#44-a-hand-written-list-of-where-a-claim-appears-misses-the-places-a-placeholder-carries-it)  
 45. [Naming a price without offering the purchase is a defect, not a layout choice](#45-naming-a-price-without-offering-the-purchase-is-a-defect-not-a-layout-choice)  
 46. [A check can pass because of the defect, and then the defect is what keeps it green](#46-a-check-can-pass-because-of-the-defect-and-then-the-defect-is-what-keeps-it-green)  
-47. [Four defects this week were found by looking at the page, and none of them by a check](#47-four-defects-this-week-were-found-by-looking-at-the-page-and-none-of-them-by-a-check)
+47. [Four defects this week were found by looking at the page, and none of them by a check](#47-four-defects-this-week-were-found-by-looking-at-the-page-and-none-of-them-by-a-check)  
+48. [A caveat is a guess until it has a number](#48-a-caveat-is-a-guess-until-it-has-a-number)
 
 <!-- /index -->
 
@@ -1646,3 +1647,27 @@ which rule wins, and a class name in two stylesheets is not a conflict to a scan
    clip — because "it looks right" and "the rule I wrote is what applies" are different claims.
 3. Where looking found a defect a check could have caught, write the check (verify:classes came from the first of these).
    Where it could not, say so plainly rather than inventing one that cannot fail.
+
+### 48. A caveat is a guess until it has a number
+
+The phone design arrived with four caveats, one of them "I don't know whether Batch and Password fall below the fold on a
+small screen". Rendering the design's own markup on a real screen answered it: nine rows at 45px make a 502px sheet, and
+with the bar above it that needs 559px. On 375×812 with no browser chrome it fits. On 375×702 it fits. On 375×557 it
+overflows by 6px. On 360×530 — a 360×640 Android once about 110px of browser chrome is off — **Password sits at 493–539,
+below the fold, and the sheet has no scroll region, so nothing reaches it.**
+
+The guess was right. Its value was zero until it had those numbers, because the fix depends on them: shorter rows would
+have fixed the fold (37px rows, 430px sheet, everything visible) and broken the 44px touch target, which is what the
+sheet existed to protect. A sheet that scrolls keeps both, and that is what shipped.
+
+The same pass measured what the design was replacing: at 375px the old nav strip showed **four of seven** tools, and the
+three that needed sideways scrolling were Rotate, Reorder and OCR. That is the argument for the sheet, in a number rather
+than an assertion.
+
+**The check:**
+
+1. When a design or a claim arrives with "I'm not sure whether…", render it and measure it before discussing it. State
+   the viewport with every figure, and say emulated when it is emulated: "375×702, emulated" is a measurement, "on a
+   phone" is not.
+2. Measure the thing being replaced in the same units, so the improvement is a number too.
+3. Check a proposed fix against the constraint it might break (here, the 44px touch target) before recommending it.
