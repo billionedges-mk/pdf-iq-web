@@ -104,6 +104,31 @@ the payload to name the refund "full"). The rule is fixed and the log now carrie
 type, so the first live refund should show a revocation — and the entitlement endpoint should answer `pro:false` on the
 next check. Watch it rather than assume it.
 
+## Walking a refund, in sandbox or live
+
+A merchant refund is **requested, then approved, with a gap** — four minutes on 18 September 2026, and it is Paddle's
+to decide, not ours. Only the approved event revokes, so between the two the purchase is still `granted`, the
+entitlement endpoint still answers `pro:true`, and a device still has Pro. That is correct behaviour and it looks
+exactly like the defect this section exists because of. Do not read a "still granted" in that window as a failure.
+
+1. Refund in Paddle. The transaction reads **Full refund requested**.
+2. Watch Paddle's own notification log rather than ours: it records our response body per delivery. The revoking one is
+   `adjustment.updated` with `{"applied": true, "reason": "revoked"}`. An `adjustment.created` carrying
+   `status: "pending_approval"` answers `{"applied": false, …}` first, and that is the gap, not a fault.
+3. Then the row:
+
+   ```
+   npx wrangler d1 execute pdf-iq-purchases-sandbox --remote --command "SELECT transaction_id, status, changed_at, last_event_id FROM purchases WHERE transaction_id = '<txn>';"
+   ```
+
+   `status` **revoked**, and `last_event_id` the **adjustment's** event id. If it still holds the
+   `transaction.completed` id, the approved event has not arrived yet — wait, rather than debug.
+4. Only then the device: `/api/entitlement` answers `pro:false` on its next check, and Pro clears. The app re-checks
+   about once a day, so a walk forces the check rather than waiting for it.
+
+**Walked end to end on 18 September 2026** (txn_01m2te5r5vs7pyrk5368ewv86j): refunded, approved four minutes later,
+`ntf_01m2tes8b66s3cq5y14qp57k5b` answered `{"applied": true, "reason": "revoked"}` on first delivery.
+
 ## 4. Copy that must change in the same release
 
 - /privacy: the checkout section, from the production measurement.
