@@ -8,17 +8,84 @@ satisfy, in order. The refusal's error message points here.
 `tools/build.mjs` refuses `PDFIQ_PRO` on one ("Pro and sign-in are preview-only until payment is live"). Lifting the
 first alone leaves the build failing on the second. Both go in the same commit, with this file's conditions met first.
 
-**The order is the safety property.** Everything below exists before `PDFIQ_SALE` becomes true, and `PDFIQ_SALE` is the
-last thing switched: with a purchase page live and no database, no schema or no notification destination, someone can pay
-and never receive Pro, and the only record is Paddle's.
+**The order is the safety property.** Everything exists before `PDFIQ_SALE` becomes true, and `PDFIQ_SALE` is the last
+thing switched: with a purchase page live and no database, no schema or no notification destination, someone can pay and
+never receive Pro, and the only record of it is Paddle's.
 
-1. Production D1 exists, with the schema applied (§2).
-2. The live notification destination exists, with its secret set (§2).
-3. The production entitlement key pair exists; the public half is committed (§2).
-4. Sign-in works for pdf-iq.com: OAuth origins, redirect URIs, authorised domain, web key (§2).
-5. Paddle domain approval for both hosts (§2).
-6. The build flags: `PDFIQ_PRO=1` and the Paddle variables (§2).
-7. **Then** `PDFIQ_SALE=true`, and a first real purchase and refund walked the same day (§3, and "Walking a refund").
+## The day, in order
+
+The owner's plan of 18 September 2026, with what the code requires folded into it. **Sandbox is untouched throughout.**
+
+**Already done on the live Paddle account:** verification, payout (ICICI, USD, $100 threshold), payment methods, sales
+tax inclusive, balance currency USD, domain approval for **both** pdf-iq.com and checkout.pdf-iq.com, product
+`pro_01m2bs6r5twekf0y2a722stgmh`, price `pri_01m2bsgrhqggk3rmrzvefhcgb9`.
+
+**0. The code change, first, because the variables alone cannot work.** Both refusals are lifted in one commit (see
+above), and the copy that must change goes in the same one (§4, and the sentences about the Android app once the app
+release that honours a purchase is live on Play — under-promising is the safe side until then). Without this commit,
+setting `PDFIQ_SALE` and `PDFIQ_PRO` on Production makes the **build fail**: the result is a site that does not deploy,
+not a site that sells.
+
+**1. Google Cloud first — it propagates for up to a few hours.** OAuth client
+`340733500005-e6guq4vuc37drr1sor6uvqcop4kplpdo`: add redirect URI `https://pdf-iq.com/pro/buy/`, confirm
+`https://pdf-iq.com/account/` is there. Firebase → Authentication → Authorised domains: confirm `pdf-iq.com`.
+
+**2. Paddle live account.**
+- 2.1 Client-side token: one exists (`live_4de37e2d…`, never used). Reuse or recreate — it belongs **only** in the
+  pdf-iq-checkout project (step 4). The site never uses it (tools/paddle-config.mjs validates a token if one is present
+  and otherwise does not want one), so putting it on pdf-iq-web leaves a live credential where nothing reads it.
+- 2.2 Default payment link. **Open question, decide before the day:** this file has recorded since 13 September that it
+  should be `https://checkout.pdf-iq.com/` — the page that actually runs Paddle.js and can complete a payment on its
+  own. The owner's plan says `/pro/buy/`, which cannot complete a payment without the checkout origin and a signed-in
+  account. Pick one deliberately.
+- 2.3 **Notification destination — does not exist on live.** Webhook, `https://pdf-iq.com/api/paddle/webhook`, usage
+  Both, exactly `transaction.completed`, `adjustment.created`, `adjustment.updated`. Keep the `pdl_ntfset_` secret for
+  step 3. Without it a real purchase never reaches the database.
+
+**3. Cloudflare → pdf-iq-web → Production only.** One variable per save: the dialog hangs on two.
+- Text: `PDFIQ_SALE=true`, `PDFIQ_PRO=1`, `PDFIQ_PADDLE_ENV=production`,
+  `PDFIQ_PADDLE_PRICE_ID=pri_01m2bsgrhqggk3rmrzvefhcgb9` (the webhook reads it at runtime to ignore anything else),
+  `PDFIQ_CHECKOUT_ORIGIN=https://checkout.pdf-iq.com`.
+- Secret: `PADDLE_WEBHOOK_SECRET=pdl_ntfset_…`, and **`PDFIQ_FIREBASE_WEB_KEY`** — missing from the owner's list and a
+  blocker: without it /account/ says signing in is not set up and makes no request, so nobody signs in and nobody buys.
+  Restricted to Identity Toolkit and Token Service.
+- `PDFIQ_ENTITLEMENT_PRIVATE_KEY` is already set. Do not touch it, and never re-run `entitlement:keys` for production:
+  it would invalidate every token already issued.
+- **No client token here.**
+- **Binding `PURCHASES` → a new production D1. It does not exist.** Create `pdf-iq-purchases`, Asia Pacific, read
+  replication **Disabled**, bound to Production only. The sandbox database must never be reused: it holds test rows.
+  Apply the schema and prove it, before any money moves:
+
+  ```
+  npx wrangler d1 execute pdf-iq-purchases --remote --file functions/purchases-schema.sql
+  npx wrangler d1 execute pdf-iq-purchases --remote --command "SELECT name FROM sqlite_master WHERE type='table';"
+  ```
+
+**4. Cloudflare → pdf-iq-checkout → Production.** A production deployment at `checkout.pdf-iq.com` with the custom
+domain added, and its own variables: `PDFIQ_SALE=true`, `PDFIQ_PADDLE_ENV=production`, the `live_`
+`PDFIQ_PADDLE_CLIENT_TOKEN`, `PDFIQ_PADDLE_PRICE_ID`, `PDFIQ_SITE_ORIGIN=https://pdf-iq.com`,
+`PDFIQ_CHECKOUT_ORIGIN=https://checkout.pdf-iq.com`. The two origins must differ; the build refuses them equal.
+
+**5. Deploy, then check.** /pro/ shows the price and a Buy button; /pro/buy/ loads; the webhook answers 401 unsigned;
+/api/entitlement answers 401 unauthenticated; `npm run verify:live` passes. Then §1's measurement, which sandbox cannot
+perform: `npm run measure:paddle -- --url https://pdf-iq.com/pro/buy/`, expecting **ProfitWell / Retain requested: no** —
+stop if it is yes.
+
+**Expect this too:** `PDFIQ_PRO=1` publishes the Pro pages on pdf-iq.com for the first time — /batch/, /password/ and
+/account/ become public, and the phone Tools sheet grows from seven rows to nine. That is the sale, not a mistake, but it
+is the first time those pages face the public and they deserve a look.
+
+**6. One real purchase, by the owner.** The only way to check what sandbox cannot: the production price table (§3), the
+statement descriptor (sandbox said `PADDLE.NET* BILLIONEDG`), what the receipt email actually contains, and the
+production entitlement path end to end with the released app. Then refund it: the whole $14.99 back including tax, Pro
+clearing on web and app. **Remember the gap** — requested → approved is a delay Paddle owns, and the row staying granted
+in between is correct ("Walking a refund", below).
+
+**7. Only then** announce, and apply for Play production access.
+
+**Must not happen:** reusing the sandbox D1 for production; `PDFIQ_SALE` before the live notification destination
+exists; touching sandbox; re-running `entitlement:keys` for production; a `live_` token anywhere but the checkout
+project's Production.
 
 ## 1. The measurement that cannot be run until the day itself
 
@@ -160,10 +227,19 @@ exactly like the defect this section exists because of. Do not read a "still gra
 ## 4. Copy that must change in the same release
 
 - /privacy: the checkout section, from the production measurement.
-- /refunds: when a refund takes effect on a device.
+- /refunds: the device sentence needs **no** change — it was written device-neutral on 18 September and already
+  covers a phone that stays offline. Its other sentence, "a one-time unlock covering … it does not unlock anything in
+  the Android app", does.
 - /terms "Buying Pro", /support "Billing and Pro", /pro/, /app/, the homepage Pro card: "not on sale yet"
   becomes true-to-the-day wording.
-- The app must honour a web purchase first: `BILLING_ENABLED` split in the app (TECH_DEBT).
+- **The Android sentences, all of them, when the app release that honours a purchase is live on Play** — not when it is
+  built and not when it is walked (owner, 18 September 2026: "doesn't unlock" errs toward under-promising, which is the
+  safe side). It is **11 occurrences in 7 files**, found by searching for `proCoversToday` and "unlock anything in the
+  Android app", never from a list: /pro/ ×4, /app/ ×3, /pro/buy/, /terms ×2, /refunds, and the generated panel and sheet
+  in tools/pro-copy.mjs. `PRO.coversToday` retires in favour of `PRO.covers`; each trailing exclusion becomes "Signing in
+  to the Android app with the same account unlocks it there too"; and **"buying happens on this website rather than
+  inside the Android app" stays exactly as it is** — that is the Play constraint, not a temporary state. Four
+  retired-claims entries are deleted in the same commit, or the build refuses the new wording.
 
 ## Sandbox measurement, for comparison (Preview f3c2dbf, 13 September 2026)
 
