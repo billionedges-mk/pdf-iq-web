@@ -4,6 +4,22 @@ The sale is off in production, and a production build with `PDFIQ_SALE` set refu
 (`tools/paddle-config.mjs`). Turning it on is a code change. This file is what that change must
 satisfy, in order. The refusal's error message points here.
 
+**There are two refusals, not one.** `tools/paddle-config.mjs` refuses `PDFIQ_SALE` on a production build, and
+`tools/build.mjs` refuses `PDFIQ_PRO` on one ("Pro and sign-in are preview-only until payment is live"). Lifting the
+first alone leaves the build failing on the second. Both go in the same commit, with this file's conditions met first.
+
+**The order is the safety property.** Everything below exists before `PDFIQ_SALE` becomes true, and `PDFIQ_SALE` is the
+last thing switched: with a purchase page live and no database, no schema or no notification destination, someone can pay
+and never receive Pro, and the only record is Paddle's.
+
+1. Production D1 exists, with the schema applied (§2).
+2. The live notification destination exists, with its secret set (§2).
+3. The production entitlement key pair exists; the public half is committed (§2).
+4. Sign-in works for pdf-iq.com: OAuth origins, redirect URIs, authorised domain, web key (§2).
+5. Paddle domain approval for both hosts (§2).
+6. The build flags: `PDFIQ_PRO=1` and the Paddle variables (§2).
+7. **Then** `PDFIQ_SALE=true`, and a first real purchase and refund walked the same day (§3, and "Walking a refund").
+
 ## 1. The measurement that cannot be run until the day itself
 
 **Sandbox cannot show it.** Paddle.js 2.9.7 ends `Paddle.Initialize()` by injecting Paddle Retain's
@@ -56,7 +72,19 @@ place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
 - `PDFIQ_PADDLE_ENV=production`, the `live_` client token, the live price id.
 - A live notification destination at `https://pdf-iq.com/api/paddle/webhook` for exactly
   `transaction.completed`, `adjustment.created`, `adjustment.updated`; its secret as `PADDLE_WEBHOOK_SECRET`.
-- A production D1 purchases database bound as `PURCHASES`, in the same region as the others.
+- `PDFIQ_PRO=1` on pdf-iq-web Production. Without it the build emits no Pro pages at all, so a "sale" build would
+  deploy with no /pro/buy/ to sell from. The Preview build failed on exactly this omission on 13 September 2026.
+- A production D1 purchases database bound as `PURCHASES`, in the same region as the others,
+  **with the schema applied to it**: a fresh D1 has no `purchases` table, and the webhook's write would throw, answer
+  Paddle 500, and be retried for three days while the buyer has no Pro. The file is in this repo:
+
+  ```
+  npx wrangler d1 execute <production-db-name> --remote --file functions/purchases-schema.sql
+  ```
+
+  Then prove it before any money moves: `SELECT name FROM sqlite_master WHERE type='table';` lists `purchases`.
+- The webhook reads three things at runtime and answers 503 without any of them: `PURCHASES`,
+  `PADDLE_WEBHOOK_SECRET`, `PDFIQ_PADDLE_PRICE_ID` (the live price id, so a purchase of anything else is ignored).
   **Read replication must stay off** on it, and on the sandbox one: /privacy says the database runs where the Asia-Pacific
   location hint places it, and read replication copies it to every region (Cloudflare D1 data-location docs).
 - `npm run entitlement:keys -- production`; private key into Production, public key committed.
