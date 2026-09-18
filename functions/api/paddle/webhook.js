@@ -62,7 +62,12 @@ export async function onRequest(context) {
     // The adjustment's own fields go in the line: when a refund changes nothing, the reason alone does not say which
     // of action, status and type it was read from, and that is the question a silent non-revocation asks (CLAIMS 49).
     const adj = /^adjustment\./.test(String(event.event_type)) && event.data && typeof event.data === 'object'
-      ? { action: event.data.action ?? null, status: event.data.status ?? null, refundType: event.data.type ?? null }
+      ? {
+          action: event.data.action ?? null, status: event.data.status ?? null, refundType: event.data.type ?? null,
+          // The adjustment's "type" and its items' "type" disagree by design; the decision reads the items, so the log
+          // shows both rather than the one that happens to be at the top.
+          itemTypes: Array.isArray(event.data.items) ? event.data.items.map((i) => i?.type ?? null) : null,
+        }
       : null;
     console.info(JSON.stringify({
       event: 'paddle-webhook', type: event.event_type ?? null,

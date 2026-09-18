@@ -115,15 +115,23 @@ export function decide(event, priceId) {
 
     if (action === 'refund') {
       if (status !== 'approved') return ignore(`refund-${status ?? 'unknown'}`);
-      // A partial refund returns some money and leaves the purchase standing. Which is which is read from what the
-      // payload SAYS it is, and only "partial" keeps Pro: requiring the word "full" meant any approved refund that named
-      // its type differently, or not at all, was filed as partial and ignored — money back, Pro kept, nothing logged as
-      // wrong. That is what happened to a sandbox refund on 18 September 2026 (the Android session walked it: two
-      // /api/entitlement calls after the refund still answered pro:true).
+      // "full" and "partial" appear at two levels of this payload and mean different things. `data.type` describes the
+      // ADJUSTMENT against the whole transaction: refunding one item of it is "partial" even when that item is refunded
+      // entirely. `data.items[].type` describes the ITEM. Reading the adjustment's word cost a launch blocker — a real
+      // sandbox refund of the only item we sell arrived as type "partial" with items[0].type "full", was filed as a
+      // partial refund, and left Pro standing (ntf_01m2tbxq29t6aq3dsybpda6e4m, 18 September 2026).
       //
-      // Pro is one item at one price, so a refund of part of it is the unusual case and the safe default is to take Pro
-      // away when money has gone back. The type we acted on is kept in the reason, so the log says which case this was.
-      if (data.type === 'partial') return ignore('partial-refund');
+      // So: the items decide. A refund that returns any item in full takes Pro away, because our transactions carry one
+      // item — Pro itself. Items that are all partial leave it standing. Only when there are no items at all does the
+      // adjustment's own word decide, and then anything but "partial" revokes: money went back and nothing says how much.
+      const items = Array.isArray(data.items) ? data.items : [];
+      if (items.length) {
+        const full = items.some((item) => str(item?.type) === 'full');
+        return full
+          ? { action: 'revoke', transactionId, occurredAt, reason: 'refund-approved-item-full' }
+          : ignore(`partial-refund-items-${items.map((item) => str(item?.type) ?? 'no-type').join('+')}`);
+      }
+      if (data.type === 'partial') return ignore('partial-refund-no-items');
       return { action: 'revoke', transactionId, occurredAt, reason: `refund-approved-${str(data.type) ?? 'no-type'}` };
     }
     if (action === 'chargeback') {

@@ -556,10 +556,12 @@ Sandbox, not a live charge. docs/sale-go-live.md keeps the instruction to read t
 $14.99 — Complete". The Android session then called `GET /api/entitlement` on the sandbox Preview twice afterwards
 (tokens issued 13:35:46Z and 13:38:16Z) and got `pro:true` both times, so the D1 row was still `granted`.
 
-**Why.** `server/paddle.js` revoked only when an approved refund adjustment also carried `type === 'full'`. Any approved
-refund whose payload named its type differently, or not at all, fell into the `partial-refund` branch: ignored, 200, no
-revocation, nothing recorded as wrong. The test suite passed because every fixture was written with `type: 'full'` —
-the shape we assumed, not the shape Paddle sends.
+**Why, from Paddle's notification log** (ntf_01m2tbxq29t6aq3dsybpda6e4m, delivered once, answered 200 with
+`{"applied": false, "reason": "partial-refund"}`): the payload carried `data.type "partial"`, `data.items[0].type "full"`,
+`items[0].amount "1499"`, `totals { fee 125, tax 71, total 1499, earnings 1303 }`. Paddle calls the adjustment partial
+because it adjusts part of the transaction; the item is refunded in full. `server/paddle.js` read `data.type`, so a full
+refund of the only thing we sell was filed as partial: ignored, 200, no revocation, nothing recorded as wrong. Every
+fixture we had set `type: 'full'` on the adjustment — a combination Paddle never sends for this product (CLAIMS 51).
 
 **The fix.** Only an explicitly `partial` refund keeps Pro now; anything else approved takes it away, and the type that
 was seen goes into the decision's reason. The webhook log line also carries the adjustment's `action`, `status` and

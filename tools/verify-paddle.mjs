@@ -135,14 +135,41 @@ console.log('\n— webhook');
   ok(r.body.applied === false && rows(db)[0].status === 'granted', 'a refund pending approval changes nothing');
 
   r = await deliver(db, adjustment('adjustment.updated', { action: 'refund', type: 'partial', status: 'approved' }, '2026-09-14T09:30:00Z'));
-  ok(r.body.reason === 'partial-refund' && rows(db)[0].status === 'granted', 'an approved partial refund leaves Pro in place');
+  // The property — Pro stays, and the reason says partial — rather than the exact string, which now names what was read.
+  ok(/partial-refund/.test(r.body.reason) && rows(db)[0].status === 'granted', 'an approved partial refund with no items leaves Pro in place');
 
   r = await deliver(db, adjustment('adjustment.updated', { action: 'refund', type: 'full', status: 'approved' }, '2026-09-14T10:00:00Z'));
   ok(rows(db)[0].status === 'revoked', 'an approved full refund revokes');
 
-  // A real sandbox refund did not revoke (18 September 2026). Our rule required the word "full"; an approved refund
-  // whose payload names its type differently, or not at all, was filed as partial and ignored. Only "partial" keeps Pro
-  // now, so these three shapes each take it away.
+  // The payload Paddle actually sent for a full refund of our one item (ntf_01m2tbxq29t6aq3dsybpda6e4m, 18 September
+  // 2026, copied field for field from the notification log). The adjustment calls itself "partial" — it adjusts part of
+  // the transaction — while the item it refunds is "full". Reading the adjustment's word left Pro standing after a
+  // refund, which is the shape of this whole case: one word, two levels, two meanings.
+  {
+    const dbReal = d1();
+    await deliver(dbReal, completed('2026-09-17T20:41:05Z'));
+    const real = await deliver(dbReal, adjustment('adjustment.updated', {
+      action: 'refund', status: 'approved', type: 'partial',
+      items: [{ type: 'full', amount: '1499' }],
+      totals: { fee: '125', tax: '71', total: '1499', earnings: '1303' },
+    }, '2026-09-18T13:40:00Z'));
+    ok(rows(dbReal)[0].status === 'revoked', `Paddle's own full-refund payload revokes, though the adjustment calls itself partial (reason: ${real.body.reason})`);
+  }
+  {
+    // And the genuine partial: some money back, one item only partly refunded, Pro stays.
+    const dbPart = d1();
+    await deliver(dbPart, completed('2026-09-17T20:41:05Z'));
+    const part = await deliver(dbPart, adjustment('adjustment.updated', {
+      action: 'refund', status: 'approved', type: 'partial',
+      items: [{ type: 'partial', amount: '500' }],
+      totals: { fee: '40', tax: '24', total: '500', earnings: '436' },
+    }, '2026-09-18T13:45:00Z'));
+    ok(rows(dbPart)[0].status === 'granted' && /partial-refund-items/.test(part.body.reason), 'an item refunded in part leaves Pro standing');
+  }
+
+  // A refund did not revoke (18 September 2026). Before the items were read, the rule required the word "full" on the
+  // adjustment; an approved refund naming its type differently, or not at all, was filed as partial and ignored. With no
+  // items to read, anything but "partial" still takes Pro away.
   for (const [label, fields] of [
     ['no type at all', { action: 'refund', status: 'approved' }],
     ['a type we have not seen', { action: 'refund', type: 'proration', status: 'approved' }],
