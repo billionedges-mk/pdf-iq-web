@@ -50,10 +50,13 @@
         <p>A Pro purchase is a one-time unlock covering {{proCoversToday}}; it does not unlock anything in the Android app. A refund
            removes it from this website. Anything you made while you had it is yours and stays on your device — we
            have no copy of it to take back, and no way to reach the files you saved.</p><!--SALE-->
-        <p>On the website, a refund takes Pro off a browser the next time your account page is opened there
-           with a connection. A browser that stays offline keeps Pro until then. That is on purpose: Pro is
-           checked on your own device, so that someone who paid is never locked out for lack of a signal, and
-           the cost of that is that a refund cannot reach a device that is not online.</p><!--/SALE-->
+        <!-- Written about any device that checks, not about "a browser": the Android app verifies the same signed note
+             the same way, so when it honours a web purchase this sentence is already true of both. It does not say the
+             app has Pro today, because it does not (TECH_DEBT: BILLING_ENABLED). Owner, 18 September 2026. -->
+        <p>A refund takes Pro off a device the next time that device checks with a connection &mdash; on this website,
+           the next time your account page is opened there. A device that stays offline keeps Pro until then. That is on
+           purpose: Pro is checked on your own device, so that someone who paid is never locked out for lack of a signal,
+           and the cost of that is that a refund cannot reach a device that is not online.</p><!--/SALE-->
         <p>The {{webToolCount}} web tools are not affected. They are free, and a refund changes nothing
            about your access to them.</p>
 
