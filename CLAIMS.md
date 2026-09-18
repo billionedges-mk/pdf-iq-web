@@ -62,7 +62,8 @@ the work is done.
 46. [A check can pass because of the defect, and then the defect is what keeps it green](#46-a-check-can-pass-because-of-the-defect-and-then-the-defect-is-what-keeps-it-green)  
 47. [Four defects this week were found by looking at the page, and none of them by a check](#47-four-defects-this-week-were-found-by-looking-at-the-page-and-none-of-them-by-a-check)  
 48. [A caveat is a guess until it has a number](#48-a-caveat-is-a-guess-until-it-has-a-number)  
-49. [An instrument that cannot fail reports confidently about the wrong thing](#49-an-instrument-that-cannot-fail-reports-confidently-about-the-wrong-thing)
+49. [An instrument that cannot fail reports confidently about the wrong thing](#49-an-instrument-that-cannot-fail-reports-confidently-about-the-wrong-thing)  
+50. [A check can fail on correct code, and then it is the check that is wrong](#50-a-check-can-fail-on-correct-code-and-then-it-is-the-check-that-is-wrong)
 
 <!-- /index -->
 
@@ -1694,3 +1695,25 @@ In both cases the instrument answered the question it was asked. Neither could s
    quiet no-op. `python -m http.server` is the counterexample to copy carefully: serve with `--directory`, from outside
    the folder, and stop the old one first (a server whose working directory is inside `dist/` also makes the next build
    fail with EBUSY).
+
+### 50. A check can fail on correct code, and then it is the check that is wrong
+
+Found in the Android app, not here (the app session, 18 September 2026), and worth copying because this repo's checks
+are full of the same move. A dex gate asserted that a specific class holding `verify()` was present in the release
+artefact. R8 inlined that class into its only caller, so the artefact genuinely contained the verification code and the
+gate failed anyway. Asking for the package rather than the class made it true of any build that keeps the code, however
+the optimiser rearranges it.
+
+CLAIMS 46 is the other half of this: a check that passes because of the defect. Both come from a check asserting an
+incidental fact — where the code lives, which words a page happens to use — instead of the property that matters. The
+failing direction is the kinder one, because it is loud; its cost is that the fix looks like "make the check pass",
+which is how an assertion gets weakened until it proves nothing.
+
+**The check:**
+
+1. When a check fails, establish which is wrong — the code or the check — before changing either. The evidence is the
+   property itself: does the artefact do the thing, by some route the check does not look at?
+2. Assert the property, at the coarsest granularity that still means something: the package rather than the class, the
+   rendered text rather than the markup around it, the served page rather than the file it was built from.
+3. A check weakened to make it pass is recorded as weakened, with what it no longer proves — or it is a comment
+   (CLAIMS 19).
