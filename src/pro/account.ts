@@ -225,7 +225,7 @@ function buyLine(): HTMLElement {
 }
 
 /** A purchase just made, or one pending on this browser: confirm it here, saying so as it goes. */
-async function confirmPurchase(reference: string, uid: string): Promise<void> {
+async function confirmPurchase(reference: string, uid: string, fresh = false): Promise<void> {
   const txn = /^txn_[a-z0-9]{26}$/.test(reference) ? reference : '';
   const host = el('[data-account-pro-host]');
   const card = document.createElement('section');
@@ -235,7 +235,7 @@ async function confirmPurchase(reference: string, uid: string): Promise<void> {
   status.setAttribute('role', 'status');
   card.append(status);
   host.replaceChildren(card);
-  const outcome = await waitForConfirmation(txn, (text) => { status.textContent = text; });
+  const outcome = await waitForConfirmation(txn, (text) => { status.textContent = text; }, { justPaid: fresh });
   if (outcome.kind === 'owned') return proState({ state: 'owned' }, uid);
   if (outcome.kind === 'revoked') return proState({ state: 'revoked' }, uid);
   if (outcome.kind === 'signed-out') return show('out');
@@ -273,7 +273,10 @@ async function mount(): Promise<void> {
       const purchased = new URLSearchParams(location.search).get('purchased');
       if (purchased) history.replaceState(null, '', location.pathname);
       const pending = readPendingPurchase(session.uid);
-      if (purchased || pending) return confirmPurchase(pending?.txn ?? purchased ?? '', session.uid);
+      // Straight back from the checkout, or a note written in the last few minutes: a payment is in flight, so a
+      // "revoked" answer is the old purchase talking and the wait continues (src/pro/confirm.ts).
+      const fresh = Boolean(purchased) || Boolean(pending && Date.now() - pending.at < 5 * 60_000);
+      if (purchased || pending) return confirmPurchase(pending?.txn ?? purchased ?? '', session.uid, fresh);
       await proState(await refreshEntitlement(session.idToken, session.uid), session.uid);
     }
   } catch (e) {

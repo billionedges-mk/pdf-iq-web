@@ -27,7 +27,14 @@ export function paidWords(txn: string): string {
   return `Paddle has taken your payment${txn ? ` (reference ${txn})` : ''}.`;
 }
 
-export async function confirmPurchase(txn: string, say: (text: string) => void): Promise<ConfirmOutcome> {
+/**
+ * @param justPaid A payment was made moments ago and we are waiting for our server to hear about it. Then a "revoked"
+ *   answer is about an EARLIER purchase — the new one cannot already be refunded — and stopping on it is how a real
+ *   payment was taken and ignored: an account whose previous purchase had been refunded paid again, the endpoint
+ *   answered revoked from the old row before the webhook wrote the new one, and this returned on the first attempt and
+ *   deleted the note that would have made /account/ check again (owner, 18 September 2026).
+ */
+export async function confirmPurchase(txn: string, say: (text: string) => void, { justPaid = false } = {}): Promise<ConfirmOutcome> {
   const started = Date.now();
   for (;;) {
     const seconds = Math.round((Date.now() - started) / 1000);
@@ -44,7 +51,9 @@ export async function confirmPurchase(txn: string, say: (text: string) => void):
       clearPendingPurchase();
       return { kind: 'owned' };
     }
-    if (result.state === 'revoked') {
+    // Final only when nothing is in flight. While confirming a payment just made, it is the old purchase answering,
+    // so keep waiting for the new one and keep the note that lets another page finish the job.
+    if (result.state === 'revoked' && !justPaid) {
       clearPendingPurchase();
       return { kind: 'revoked' };
     }

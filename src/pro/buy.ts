@@ -241,7 +241,7 @@ window.addEventListener('message', (e: MessageEvent) => {
       removeFrame();
       // A refund confirmed here (a refunded account paying again, whose old record answered first) puts the buyer back
       // on the checkout rather than at a dead end.
-      void confirmHere(txn).then((ending) => { if (ending.mayBuy) readyToBuy(ending.words); });
+      void confirmHere(txn, true).then((ending) => { if (ending.mayBuy) readyToBuy(ending.words); });
       break;
     }
     case 'pdfiq-checkout-closed':
@@ -254,12 +254,12 @@ window.addEventListener('message', (e: MessageEvent) => {
 
 /** Confirm on this page, in words, then say what the buyer can do next. Returns the ending, so the caller knows
  * whether the checkout may still be offered. */
-async function confirmHere(txn: string): Promise<ConfirmEnding> {
+async function confirmHere(txn: string, justPaid = false): Promise<ConfirmEnding> {
   show('confirming');
   const line = $('[data-buy-confirm]')!;
   const next = $('[data-buy-confirm-next]')!;
   next.hidden = true;
-  const outcome = await confirmPurchase(txn, (text) => { line.textContent = text; });
+  const outcome = await confirmPurchase(txn, (text) => { line.textContent = text; }, { justPaid });
   const ending = afterConfirm(outcome, txn);
   line.textContent = ending.words;
   if (outcome.kind === 'owned') {
@@ -362,7 +362,9 @@ async function start(): Promise<void> {
   // unless the answer is that the purchase was refunded, which leaves the account owning nothing and free to buy.
   const pending = readPendingPurchase(session.uid);
   if (pending) {
-    const ending = await confirmHere(pending.txn === 'not given' ? '' : pending.txn);
+    // A note written minutes ago is a payment we are still waiting on; an old one is a purchase whose fate is known.
+    const fresh = Date.now() - pending.at < 5 * 60_000;
+    const ending = await confirmHere(pending.txn === 'not given' ? '' : pending.txn, fresh);
     if (!ending.mayBuy) return;
     readyToBuy(ending.words);
     return;

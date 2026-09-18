@@ -177,5 +177,51 @@ ok((await NoKey.storedEntitlementUid('uid-alice')) === null, 'a production build
   ok(C.confirmEndWords({ kind: 'revoked' }, TXN) === refunded.words, 'both pages read the same words from one place');
 }
 
+// ---------------------------------------------------------------- the wait, when an old purchase answers first
+//
+// What happened on 18 September 2026: an account whose earlier purchase had been refunded paid again. Before the
+// webhook wrote the new row, /api/entitlement answered pro:false, revoked:true — about the OLD purchase — and the
+// confirmation returned "revoked" on its first attempt and deleted the pending note. Money taken, Pro not granted,
+// and the page saying the purchase was refunded. A payment made seconds ago cannot already be refunded, so while one
+// is in flight that answer is stale and the wait continues.
+{
+  const out = join(WORK, 'confirm-poll.mjs');
+  let answers = [];
+  let cleared = 0;
+  await esbuild.build({
+    entryPoints: [join(ROOT, 'src/pro/confirm.ts')],
+    bundle: true, platform: 'neutral', format: 'esm', outfile: out, logLevel: 'silent',
+    define: { __PDFIQ_PADDLE_ENV__: '"sandbox"', __PDFIQ_SALE__: 'true', __PDFIQ_PRO__: 'true', __PDFIQ_LOCAL__: 'false', __PDFIQ_AUTH__: 'null', __PDFIQ_BUILD__: '"test"', __PDFIQ_CHECKOUT_ORIGIN__: '""', __PDFIQ_PRO_PRICE__: '"$14.99"', __PDFIQ_PRO_COPY__: '"{}"' },
+    plugins: [{
+      name: 'stub-neighbours',
+      setup(b) {
+        b.onResolve({ filter: /\.\/(auth|entitlement|pending)\.js$/ }, (a) => ({ path: a.path, namespace: 'stub' }));
+        b.onLoad({ filter: /.*/, namespace: 'stub' }, (a) => ({
+          contents: a.path.includes('auth')
+            ? 'export const freshSession = async () => ({ uid: "uid-alice", idToken: "t", email: "a@b.c" });'
+            : a.path.includes('pending')
+              ? 'export const clearPendingPurchase = () => { globalThis.__cleared = (globalThis.__cleared ?? 0) + 1; };'
+              : 'export const refreshEntitlement = async () => globalThis.__answers.shift() ?? { state: "unavailable", detail: "out of answers" };',
+          loader: 'js',
+        }));
+      },
+    }],
+  });
+  const P = await import(pathToFileURL(out).href);
+  const TXN2 = 'txn_01bbbbbbbbbbbbbbbbbbbbbbbb';
+
+  // The sequence as it happened: the old row answers revoked, then the webhook lands and the new row grants.
+  globalThis.__answers = [{ state: 'revoked' }, { state: 'revoked' }, { state: 'owned' }];
+  globalThis.__cleared = 0;
+  const waited = await P.confirmPurchase(TXN2, () => {}, { justPaid: true });
+  ok(waited.kind === 'owned', `a payment just made outlasts a stale "revoked" and ends owned (got "${waited.kind}")`);
+
+  // And with nothing in flight — an old note for a purchase that really was refunded — revoked is the answer, once.
+  globalThis.__answers = [{ state: 'revoked' }];
+  globalThis.__cleared = 0;
+  const old = await P.confirmPurchase(TXN2, () => {});
+  ok(old.kind === 'revoked' && globalThis.__cleared === 1, 'with no payment in flight, revoked ends it and the stale note is cleared');
+}
+
 console.log(fails ? `\n${fails} FAILED` : '\nthe browser keeps Pro only on a verified token, offline, until a clear answer says otherwise');
 process.exit(fails ? 1 : 0);
