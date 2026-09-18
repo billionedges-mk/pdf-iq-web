@@ -63,7 +63,8 @@ the work is done.
 47. [Four defects this week were found by looking at the page, and none of them by a check](#47-four-defects-this-week-were-found-by-looking-at-the-page-and-none-of-them-by-a-check)  
 48. [A caveat is a guess until it has a number](#48-a-caveat-is-a-guess-until-it-has-a-number)  
 49. [An instrument that cannot fail reports confidently about the wrong thing](#49-an-instrument-that-cannot-fail-reports-confidently-about-the-wrong-thing)  
-50. [A check can fail on correct code, and then it is the check that is wrong](#50-a-check-can-fail-on-correct-code-and-then-it-is-the-check-that-is-wrong)
+50. [A check can fail on correct code, and then it is the check that is wrong](#50-a-check-can-fail-on-correct-code-and-then-it-is-the-check-that-is-wrong)  
+51. [One field name at two levels of a payload describes two different things](#51-one-field-name-at-two-levels-of-a-payload-describes-two-different-things)
 
 <!-- /index -->
 
@@ -1717,3 +1718,30 @@ which is how an assertion gets weakened until it proves nothing.
    rendered text rather than the markup around it, the served page rather than the file it was built from.
 3. A check weakened to make it pass is recorded as weakened, with what it no longer proves — or it is a comment
    (CLAIMS 19).
+
+### 51. One field name at two levels of a payload describes two different things
+
+Paddle's refund notification carries `type` twice. `data.type` describes the ADJUSTMENT against the whole transaction:
+refunding one line item of it is "partial", even when that item is refunded to the last cent. `data.items[].type`
+describes the ITEM, and that one says "full". Our handler read the outer word, so a real full refund of the only thing
+we sell — the buyer's whole $14.99 back — was filed as a partial refund and left Pro standing on the buyer's devices.
+It answered Paddle 200, and nothing anywhere said "wrong" (18 September 2026, found by the Android session walking an
+entitlement check after the refund, and confirmed from Paddle's own notification log: ntf_01m2tbxq29t6aq3dsybpda6e4m,
+`data.type "partial"`, `data.items[0].type "full"`, `totals.total 1499`).
+
+The handler was right about the word and wrong about the object. A fixture invented from the field name cannot catch
+that, because it inherits the same misreading: every test we had set `type: 'full'` on the adjustment, a combination
+Paddle never sends for this product.
+
+**The check:**
+
+1. When a payload repeats a name at more than one level, establish which object each one is about before reading either.
+   The outer one is usually about the envelope, the inner one about the thing you care about.
+2. A fixture for a third party's payload is copied from a real delivery — their notification log, a webhook capture —
+   never written from the field list. Keep the identifier of the delivery it came from in the test, as this suite now
+   does with `ntf_01m2tbxq29t6aq3dsybpda6e4m`.
+3. Decide from the quantity that matters where one exists (the items, the totals), not from a label summarising it.
+
+**And the thing that made it findable in one look:** our own response said `{"applied": false, "reason": "partial-refund"}`.
+It was accurate about what it had decided, so Paddle's notification log showed the decision rather than a bare 200.
+A handler that answers 200 with nothing to say would have left only the silence to investigate (CLAIMS 49).
