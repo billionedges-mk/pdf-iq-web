@@ -296,6 +296,38 @@ console.log('\n— entitlement');
   r = await ask(await idToken({ sub: 'uid-bob', email: 'bob@example.com' }));
   ok(r.status === 200 && r.body.pro === false && r.body.revoked === false && !r.body.token, 'someone who never bought gets pro: false and no token');
 
+  // Several purchases on one account, which is the state nobody wrote a fixture for until it happened: a refunded
+  // purchase and then two more, all on uid fjASdHy… (18 September 2026). Pro is owned while ANY purchase stands, so a
+  // refund of one of two leaves it — correct, because they paid twice — and only refunding every one takes Pro away.
+  {
+    const many = d1();
+    const alice = { uid: 'uid-many', email: 'many@example.com' };
+    const custom = { uid: alice.uid, email: alice.email };
+    const T1 = 'txn_01c1aaaaaaaaaaaaaaaaaaaaaa', T2 = 'txn_01c2aaaaaaaaaaaaaaaaaaaaaa', T3 = 'txn_01c3aaaaaaaaaaaaaaaaaaaaaa';
+    const askMany = async () => {
+      const res = await entitlement({
+        request: new Request('https://preview.example/api/entitlement', { headers: { Authorization: `Bearer ${await idToken({ sub: alice.uid, email: alice.email })}` } }),
+        env: { PDFIQ_SALE: 'true', PURCHASES: many, PDFIQ_ENTITLEMENT_PRIVATE_KEY: privateJwk, PDFIQ_PADDLE_ENV: 'sandbox' },
+      }, { verifyOptions });
+      return res.json();
+    };
+    await deliver(many, completed('2026-09-18T14:00:00Z', custom, PRICE, T1));
+    await deliver(many, adjustment('adjustment.updated', { action: 'refund', status: 'approved', type: 'partial', items: [{ type: 'full', amount: '1499' }] }, '2026-09-18T14:30:00Z', T1));
+    ok((await askMany()).pro === false, 'one purchase, refunded: Pro is not owned');
+
+    await deliver(many, completed('2026-09-18T19:01:00Z', custom, PRICE, T2));
+    let after = await askMany();
+    ok(after.pro === true && after.token, 'buying again after a refund owns Pro, whatever the older row says');
+
+    await deliver(many, completed('2026-09-18T19:25:00Z', custom, PRICE, T3));
+    await deliver(many, adjustment('adjustment.updated', { action: 'refund', status: 'approved', type: 'partial', items: [{ type: 'full', amount: '1499' }] }, '2026-09-18T20:00:00Z', T2));
+    ok((await askMany()).pro === true, 'with two purchases standing, refunding one leaves Pro owned');
+
+    await deliver(many, adjustment('adjustment.updated', { action: 'refund', status: 'approved', type: 'partial', items: [{ type: 'full', amount: '1499' }] }, '2026-09-18T20:05:00Z', T3));
+    const end = await askMany();
+    ok(end.pro === false && end.revoked === true, 'and Pro goes only when every purchase has been refunded');
+  }
+
   r = await ask(await idToken({ sub: 'uid-alice-new' }));
   ok(r.body.pro === true && rows(db)[0].uid === 'uid-alice-new', 'a re-created account with the same verified email keeps Pro, and the purchase moves to the new uid');
   r = await ask(await idToken({ sub: 'uid-eve', email: 'alice@example.com', email_verified: false }));
