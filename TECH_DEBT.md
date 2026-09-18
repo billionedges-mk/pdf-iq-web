@@ -537,3 +537,39 @@ the figure on the page. /pro/ and /app/ now say so beside the price; /pro/buy/ s
 
 **Two things this does not prove.** It is the *sandbox* price, not the production one, which does not exist yet: check
 the same way once it does. And the rates are Paddle's on the day, not a promise about any particular state.
+
+
+## Answered from a sandbox refund (18 September 2026)
+
+The owner refunded a sandbox purchase (txn_01m2rhj8g5xqvfg8hza15b30tv, "Accidental purchase", full $14.99) and the
+refund screen showed: amount paid $14.99, tax withheld -$0.71, Paddle fee -$1.25, net -$13.03 to us. So **the buyer gets
+the whole $14.99 back, VAT included**: the tax comes off our side and Paddle keeps the original transaction fee.
+/refunds now says "A refund returns the full amount you paid, the tax included."
+
+Sandbox, not a live charge. docs/sale-go-live.md keeps the instruction to read the first real refund the same way.
+
+**The same refund exposed a defect: it did not revoke Pro.** See the entry below.
+
+## A sandbox refund did not revoke Pro (found 18 September 2026, fixed the same day)
+
+**What happened.** The owner refunded txn_01m2rhj8g5xqvfg8hza15b30tv in full; Paddle showed "Full refund requested —
+$14.99 — Complete". The Android session then called `GET /api/entitlement` on the sandbox Preview twice afterwards
+(tokens issued 13:35:46Z and 13:38:16Z) and got `pro:true` both times, so the D1 row was still `granted`.
+
+**Why.** `server/paddle.js` revoked only when an approved refund adjustment also carried `type === 'full'`. Any approved
+refund whose payload named its type differently, or not at all, fell into the `partial-refund` branch: ignored, 200, no
+revocation, nothing recorded as wrong. The test suite passed because every fixture was written with `type: 'full'` —
+the shape we assumed, not the shape Paddle sends.
+
+**The fix.** Only an explicitly `partial` refund keeps Pro now; anything else approved takes it away, and the type that
+was seen goes into the decision's reason. The webhook log line also carries the adjustment's `action`, `status` and
+`type`, so a refund that changes nothing says which field decided. Three new cases in `verify:paddle` (no type, an
+unknown type, a differently-cased type) fail on the old rule and pass on the new one.
+
+**Still to confirm with the owner's access**, because this repo cannot read D1 or the deployment's logs:
+1. Was the adjustment event delivered at all? The Preview's logs carry `{"event":"paddle-webhook", ...}` per delivery.
+2. What did that delivery decide? With the fix deployed, the same line now names action, status and type.
+3. The row itself: `SELECT transaction_id, status, changed_at, last_event_id FROM purchases WHERE transaction_id = 'txn_01m2rhj8g5xqvfg8hza15b30tv';`
+
+If the event was never delivered, the code was never the problem: check that the Paddle sandbox notification
+destination subscribes to `adjustment.created` and `adjustment.updated`, not only `transaction.completed`.
