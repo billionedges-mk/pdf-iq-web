@@ -164,7 +164,13 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   ok(buyHtml.includes('data-buy-signin>Sign in with Google</button>') && !buyHtml.includes('sign in on your account page</a>, then come back here'), '/pro/buy/ signs in itself rather than sending the buyer to /account/ and back');
   ok(privacyText.includes('That means deleting the record is the one thing that does take Pro away.') && privacyText.includes('deleting the record is not a refund') && privacyText.includes('The Pro purchase record is the exception, and it is deliberate.'), '/privacy states the purchase record, why it outlives the account, and what deleting it costs');
   const refundsText = readFileSync(join(ROOT, 'dist/refunds/index.html'), 'utf8').replace(/\s+/g, ' ');
-  ok(refundsText.includes('a refund takes Pro off a browser the next time your account page is opened there with a connection'), '/refunds says when a refund reaches a browser');
+  // The property, not the sentence: a refund reaches a device when that device next checks, and one that stays offline
+  // keeps Pro until then. It used to assert the words "a browser", and failed when the wording widened to cover the
+  // Android app, which verifies the same signed note the same way (CLAIMS 50: a check can fail on correct code).
+  ok(/refund takes Pro off a device the next time that device checks with a connection/.test(refundsText)
+    && /device that stays offline keeps Pro until then/.test(refundsText)
+    && /account page is opened there/.test(refundsText),
+    '/refunds says when a refund reaches a device, and that an offline one keeps Pro until then');
 }
 
 {
