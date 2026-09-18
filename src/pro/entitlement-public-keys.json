@@ -4,5 +4,11 @@
     "crv": "P-256",
     "x": "1-9aGhZLuixAIgvMOf9_k2DdaWDpyd3RFFdo4lorrHw",
     "y": "j4nCVW7LYTiqCPyHqJRAXjQYvFZ1zvlS-1ySMkbKwTQ"
+  },
+  "production": {
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "kYvROAKfNUetyGg5POBZogLyp3Q1nTdgg560j6R2cY0",
+    "y": "KtPE0luSCu3HHwdpZgMxgYMLDjOCqa2XL7BanwcAjZM"
   }
 }
