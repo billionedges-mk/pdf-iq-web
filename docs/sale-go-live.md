@@ -34,10 +34,14 @@ not a site that sells.
 - 2.1 Client-side token: one exists (`live_4de37e2d…`, never used). Reuse or recreate — it belongs **only** in the
   pdf-iq-checkout project (step 4). The site never uses it (tools/paddle-config.mjs validates a token if one is present
   and otherwise does not want one), so putting it on pdf-iq-web leaves a live credential where nothing reads it.
-- 2.2 Default payment link. **Open question, decide before the day:** this file has recorded since 13 September that it
-  should be `https://checkout.pdf-iq.com/` — the page that actually runs Paddle.js and can complete a payment on its
-  own. The owner's plan says `/pro/buy/`, which cannot complete a payment without the checkout origin and a signed-in
-  account. Pick one deliberately.
+- 2.2 Default payment link: **`https://checkout.pdf-iq.com/`** (settled, owner 18 September 2026).
+
+  **Why, so nobody corrects it back:** the default payment link is for links **Paddle** generates — a "complete your
+  payment" email, an invoice — and those want a page that can take a payment on its own. `checkout.pdf-iq.com` is that
+  page: it runs Paddle.js and needs nothing from us first. `/pro/buy/` cannot: it needs a signed-in account and the
+  checkout origin, so a buyer arriving from Paddle's own email would start the purchase again, at the moment they had
+  already decided to pay. Our purchase flow and Paddle's generated links want different pages, and this setting is
+  Paddle's, not ours.
 - 2.3 **Notification destination — does not exist on live.** Webhook, `https://pdf-iq.com/api/paddle/webhook`, usage
   Both, exactly `transaction.completed`, `adjustment.created`, `adjustment.updated`. Keep the `pdl_ntfset_` secret for
   step 3. Without it a real purchase never reaches the database.
@@ -71,9 +75,12 @@ domain added, and its own variables: `PDFIQ_SALE=true`, `PDFIQ_PADDLE_ENV=produc
 perform: `npm run measure:paddle -- --url https://pdf-iq.com/pro/buy/`, expecting **ProfitWell / Retain requested: no** —
 stop if it is yes.
 
-**Expect this too:** `PDFIQ_PRO=1` publishes the Pro pages on pdf-iq.com for the first time — /batch/, /password/ and
-/account/ become public, and the phone Tools sheet grows from seven rows to nine. That is the sale, not a mistake, but it
-is the first time those pages face the public and they deserve a look.
+**And look at the Pro pages before any money moves.** `PDFIQ_PRO=1` publishes them on pdf-iq.com for the first time:
+/batch/, /password/ and /account/ become public, and the phone Tools sheet grows from seven rows to nine. They have been
+walked only on the Preview, by us. Open each one at desktop and at 375px wide, signed out, and check: the pages render,
+the Tools sheet lists nine and scrolls to Password, /account/ offers Sign in, and the nav's Pro group is there. That is
+the sale working, not a mistake — but it is the first time a stranger could arrive on them, and it costs five minutes
+here against an unknown number afterwards.
 
 **6. One real purchase, by the owner.** The only way to check what sandbox cannot: the production price table (§3), the
 statement descriptor (sandbox said `PADDLE.NET* BILLIONEDG`), what the receipt email actually contains, and the
