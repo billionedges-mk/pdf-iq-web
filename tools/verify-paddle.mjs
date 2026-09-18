@@ -140,6 +140,20 @@ console.log('\n— webhook');
   r = await deliver(db, adjustment('adjustment.updated', { action: 'refund', type: 'full', status: 'approved' }, '2026-09-14T10:00:00Z'));
   ok(rows(db)[0].status === 'revoked', 'an approved full refund revokes');
 
+  // A real sandbox refund did not revoke (18 September 2026). Our rule required the word "full"; an approved refund
+  // whose payload names its type differently, or not at all, was filed as partial and ignored. Only "partial" keeps Pro
+  // now, so these three shapes each take it away.
+  for (const [label, fields] of [
+    ['no type at all', { action: 'refund', status: 'approved' }],
+    ['a type we have not seen', { action: 'refund', type: 'proration', status: 'approved' }],
+    ['type in a different case', { action: 'refund', type: 'Full', status: 'approved' }],
+  ]) {
+    const dbR = d1();
+    await deliver(dbR, completed('2026-09-13T10:00:00Z'));
+    const res = await deliver(dbR, adjustment('adjustment.updated', fields, '2026-09-14T10:00:00Z'));
+    ok(rows(dbR)[0].status === 'revoked', `an approved refund with ${label} revokes (reason: ${res.body.reason})`);
+  }
+
   r = await deliver(db, completed('2026-09-13T10:00:00Z', undefined, PRICE));
   ok(rows(db)[0].status === 'revoked' && r.body.reason === 'older-than-current-status', 'a retried older purchase event does not undo the refund');
 

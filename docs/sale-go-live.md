@@ -94,9 +94,15 @@ id in a different Paddle account, and the pages' wording depends on the answer:
 4. If the pattern holds, the sentence already on /pro/, /app/, /terms and /pro/buy/ is correct as it stands, and
    `verify:price-offers` keeps it on the purchase page.
 
-**Also unestablished: what Paddle returns as tax on a refund.** /refunds deliberately says only that Paddle issues the
-refund and the amount is theirs. To replace that with something specific, refund one sandbox purchase and read the
-credit note: if the tax is returned in full, /refunds can say so.
+**Answered in sandbox, to confirm on the first live refund.** A sandbox refund on 18 September 2026 returned the whole
+$14.99 including its $0.71 of VAT: the tax came off our side, and Paddle kept the $1.25 transaction fee. /refunds now
+says "A refund returns the full amount you paid, the tax included." Read the first real refund the same way and check
+that sentence still holds.
+
+**And read the webhook line for that refund.** The same sandbox refund did not revoke Pro (TECH_DEBT: our rule required
+the payload to name the refund "full"). The rule is fixed and the log now carries the adjustment's action, status and
+type, so the first live refund should show a revocation — and the entitlement endpoint should answer `pro:false` on the
+next check. Watch it rather than assume it.
 
 ## 4. Copy that must change in the same release
 

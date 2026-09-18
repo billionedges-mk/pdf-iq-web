@@ -115,10 +115,16 @@ export function decide(event, priceId) {
 
     if (action === 'refund') {
       if (status !== 'approved') return ignore(`refund-${status ?? 'unknown'}`);
-      // A partial refund returns some money and leaves the purchase standing; only a full refund
-      // takes Pro away. /refunds offers the whole amount back, so a full refund is the normal case.
-      if (data.type !== 'full') return ignore('partial-refund');
-      return { action: 'revoke', transactionId, occurredAt, reason: 'refund-approved' };
+      // A partial refund returns some money and leaves the purchase standing. Which is which is read from what the
+      // payload SAYS it is, and only "partial" keeps Pro: requiring the word "full" meant any approved refund that named
+      // its type differently, or not at all, was filed as partial and ignored — money back, Pro kept, nothing logged as
+      // wrong. That is what happened to a sandbox refund on 18 September 2026 (the Android session walked it: two
+      // /api/entitlement calls after the refund still answered pro:true).
+      //
+      // Pro is one item at one price, so a refund of part of it is the unusual case and the safe default is to take Pro
+      // away when money has gone back. The type we acted on is kept in the reason, so the log says which case this was.
+      if (data.type === 'partial') return ignore('partial-refund');
+      return { action: 'revoke', transactionId, occurredAt, reason: `refund-approved-${str(data.type) ?? 'no-type'}` };
     }
     if (action === 'chargeback') {
       if (status === 'rejected' || status === 'reversed') return ignore(`chargeback-${status}`);
