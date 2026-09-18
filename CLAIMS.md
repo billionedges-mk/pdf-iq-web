@@ -64,7 +64,8 @@ the work is done.
 48. [A caveat is a guess until it has a number](#48-a-caveat-is-a-guess-until-it-has-a-number)  
 49. [An instrument that cannot fail reports confidently about the wrong thing](#49-an-instrument-that-cannot-fail-reports-confidently-about-the-wrong-thing)  
 50. [A check can fail on correct code, and then it is the check that is wrong](#50-a-check-can-fail-on-correct-code-and-then-it-is-the-check-that-is-wrong)  
-51. [One field name at two levels of a payload describes two different things](#51-one-field-name-at-two-levels-of-a-payload-describes-two-different-things)
+51. [One field name at two levels of a payload describes two different things](#51-one-field-name-at-two-levels-of-a-payload-describes-two-different-things)  
+52. [A configuration that was right before an architectural change is a claim about the old architecture](#52-a-configuration-that-was-right-before-an-architectural-change-is-a-claim-about-the-old-architecture)
 
 <!-- /index -->
 
@@ -1745,3 +1746,26 @@ Paddle never sends for this product.
 **And the thing that made it findable in one look:** our own response said `{"applied": false, "reason": "partial-refund"}`.
 It was accurate about what it had decided, so Paddle's notification log showed the decision rather than a bare 200.
 A handler that answers 200 with nothing to say would have left only the silence to investigate (CLAIMS 49).
+
+### 52. A configuration that was right before an architectural change is a claim about the old architecture
+
+The launch-day checklist put the live Paddle client token on the site project and set Paddle's default payment link to
+/pro/buy/. Both were correct in sandbox — before the checkout origin existed. The two-origin split (CLAIMS 38) moved
+Paddle.js to a separate domain precisely so the site would never hold a payment credential or run a third-party script,
+and it made /pro/buy/ a page that cannot complete a payment on its own: it needs the checkout origin and a signed-in
+account. Carried forward unchanged, the first setting puts a live credential where nothing reads it, and the second
+sends anyone arriving from Paddle's own "complete your payment" email back to the start, with money already intended.
+Three of the checklist's four defects were this, in one sitting (owner, 18 September 2026).
+
+Settings are not code: nothing rebuilds them, no check fails on them, and they carry no comment saying which design they
+belonged to. They are the last place an old architecture survives.
+
+**The check:**
+
+1. After an architectural change, list the settings the old shape justified — hosts, credentials, callback URLs,
+   bindings, webhook destinations — and ask of each: what is this for now? Not "does it still work".
+2. A setting that belongs to somebody else's system (a default payment link, an OAuth redirect, a notification
+   destination) is written down with what it is for and who generates the links that use it, so the next person cannot
+   reasonably "correct" it back. docs/sale-go-live.md carries the reason beside the value, not just the value.
+3. A credential belongs in exactly one place, the one that reads it. Anywhere else it is a liability with no function,
+   and "it was there before" is how it got there.
