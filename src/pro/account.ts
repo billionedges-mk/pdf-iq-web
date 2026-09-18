@@ -150,7 +150,8 @@ async function proState(result: RefreshResult, uid: string): Promise<void> {
 
   const words: Record<Exclude<RefreshResult['state'], 'owned'>, string> = {
     'not-owned': 'This account does not own Pro.',
-    revoked: 'This account’s Pro purchase was refunded, so Pro has been taken off this browser.',
+    revoked: 'That purchase was refunded, so this account does not have Pro, and it has been taken off this browser. '
+      + 'You can buy it again below.',
     offline: 'You are offline, so Pro could not be checked. Nothing on this browser changed.',
     unavailable: 'Pro could not be checked just now. Nothing on this browser changed; opening this page again later will try again.',
   };

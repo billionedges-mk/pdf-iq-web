@@ -150,5 +150,32 @@ store.set(KEY, kept);
 const NoKey = await load('production', { sandbox: publicJwk });
 ok((await NoKey.storedEntitlementUid('uid-alice')) === null, 'a production build with no production key verifies nothing, not even a valid sandbox token');
 
+// ---------------------------------------------------------------- what each confirmation ending lets the page do
+//
+// A refunded account owns nothing and has nothing in flight, which is where a purchase starts: the checkout has to be
+// offered. /pro/buy/ reported the refund and stopped, so someone who refunded by mistake was told Pro was not theirs
+// and given no way to buy it again (owner, 18 September 2026). Every other ending either owns Pro or is waiting on a
+// payment, where a second checkout would invite paying twice.
+{
+  const out = join(WORK, 'confirm.mjs');
+  await esbuild.build({
+    entryPoints: [join(ROOT, 'src/pro/confirm.ts')],
+    bundle: true, platform: 'neutral', format: 'esm', outfile: out, logLevel: 'silent',
+    define: { __PDFIQ_PADDLE_ENV__: '"sandbox"', __PDFIQ_SALE__: 'true', __PDFIQ_PRO__: 'true', __PDFIQ_LOCAL__: 'false', __PDFIQ_AUTH__: 'null', __PDFIQ_BUILD__: '"test"', __PDFIQ_CHECKOUT_ORIGIN__: '""', __PDFIQ_PRO_PRICE__: '"$14.99"', __PDFIQ_PRO_COPY__: '"{}"' },
+  });
+  const C = await import(pathToFileURL(out).href);
+  const TXN = 'txn_01aaaaaaaaaaaaaaaaaaaaaaaa';
+
+  const refunded = C.afterConfirm({ kind: 'revoked' }, TXN);
+  ok(refunded.mayBuy === true, 'a refunded account is offered the checkout again');
+  ok(/buy it again/i.test(refunded.words) && !/not on this browser/i.test(refunded.words),
+    `and is told it can, rather than told about this browser: "${refunded.words}"`);
+
+  for (const kind of ['owned', 'signed-out', 'offline', 'slow']) {
+    ok(C.afterConfirm({ kind }, TXN).mayBuy === false, `a "${kind}" ending offers no second checkout`);
+  }
+  ok(C.confirmEndWords({ kind: 'revoked' }, TXN) === refunded.words, 'both pages read the same words from one place');
+}
+
 console.log(fails ? `\n${fails} FAILED` : '\nthe browser keeps Pro only on a verified token, offline, until a clear answer says otherwise');
 process.exit(fails ? 1 : 0);
