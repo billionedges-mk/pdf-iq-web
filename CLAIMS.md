@@ -66,7 +66,8 @@ the work is done.
 50. [A check can fail on correct code, and then it is the check that is wrong](#50-a-check-can-fail-on-correct-code-and-then-it-is-the-check-that-is-wrong)  
 51. [One field name at two levels of a payload describes two different things](#51-one-field-name-at-two-levels-of-a-payload-describes-two-different-things)  
 52. [A configuration that was right before an architectural change is a claim about the old architecture](#52-a-configuration-that-was-right-before-an-architectural-change-is-a-claim-about-the-old-architecture)  
-53. [A list implies parity; the exception has to be generated, and checked beside the list](#53-a-list-implies-parity-the-exception-has-to-be-generated-and-checked-beside-the-list)
+53. [A list implies parity; the exception has to be generated, and checked beside the list](#53-a-list-implies-parity-the-exception-has-to-be-generated-and-checked-beside-the-list)  
+54. [Two records of one deferral disagree quietly, and only produce different actions on the day](#54-two-records-of-one-deferral-disagree-quietly-and-only-produce-different-actions-on-the-day)
 
 <!-- /index -->
 
@@ -1800,3 +1801,31 @@ where the line follows the last of four feature sections) rather than a chosen o
    the answer is "ok", it is measuring the document rather than the claim (CLAIMS 47).
 5. Derive what counts as "a list" from the same data the lists render from, so a fifth feature changes what is looked
    for as well as what is written.
+
+### 54. Two records of one deferral disagree quietly, and only produce different actions on the day
+
+The launch-day flip was written down twice. TECH_DEBT.md said it unblocks when the app "has been tested on a device"
+and named six places; docs/sale-go-live.md said it unblocks when the release is "live on Play" and counted eleven
+occurrences in seven files. Neither reads as wrong. Nobody would have noticed until the day itself, when "tested on a
+device" says go and "live on Play" says wait, and one list leaves five places behind — and the day itself is the worst
+moment to discover that the record disagrees with the record (owner, 20 September 2026).
+
+This is the same shape as two lists of the Pro features (CLAIMS 53): one fact, written twice, corrected once. A
+deferral is worse than a fact, though, because a stale fact misleads whoever reads it while a stale **condition** keeps
+work from happening invisibly — the entry looks like diligence, and nothing about it says the reason for waiting
+expired.
+
+**The check:**
+
+1. One deferral, one record. The other place points at it and holds only why the entry exists, never a second copy of
+   the trigger or the inventory.
+2. Every deferral carries an **unblocks when** line naming the event, not a feeling: "vc18 is live on Play", not
+   "when the app is ready". If nobody can tell from the line whether today is the day, it is not a condition.
+3. Apply it to what is in front of you and let older entries get it as they are touched. A sweep would invent
+   conditions nobody ever wrote down, which is a worse record than an honest gap.
+4. A record that lives only in a conversation is indistinguishable from one nobody made. Two proposals waiting on the
+   owner had been agreed in chat and written nowhere; both surfaced only because everything deferred was being given a
+   line.
+5. Prefer a check to a record wherever the record is a list of places. The inventory was wrong twice — once for a
+   placeholder, once for a file that is not a page — so what enforces the flip now reads the built output, and the list
+   is a convenience.

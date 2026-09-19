@@ -52,6 +52,14 @@
         <!-- Written about any device that checks, not about "a browser": the Android app verifies the same signed note
              the same way, so when it honours a web purchase this sentence is already true of both. It does not say the
              app has Pro today, because it does not (TECH_DEBT: BILLING_ENABLED). Owner, 18 September 2026. -->
+        <!-- Approved by the owner, 20 September 2026. A uid can hold several granted rows — one did on 18 September,
+             when a buyer whose first purchase had been refunded paid twice more — and the entitlement resolves "any
+             granted", so refunding one of two correctly leaves Pro. Unsaid, that reads as a refund that failed, and
+             the next step someone takes is their bank: a chargeback costs more than a line of copy. -->
+        <p>If more than one purchase stands on your account, refunding one refunds that payment and leaves the others,
+           so Pro stays until every one of them has been refunded. If Pro is still here after a refund you asked for,
+           that is the reason rather than a refund that did not work &mdash; write to us with the reference and we will
+           refund the rest.</p>
         <p>A refund takes Pro off a device the next time that device checks with a connection &mdash; on this website,
            the next time your account page is opened there. A device that stays offline keeps Pro until then. That is on
            purpose: Pro is checked on your own device, so that someone who paid is never locked out for lack of a signal,
