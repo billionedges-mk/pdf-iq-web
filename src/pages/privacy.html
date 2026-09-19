@@ -325,9 +325,12 @@
       <h3 id="diagnostics">Diagnostics and analytics</h3>
       <p>The app contains <strong>Firebase Crashlytics</strong>, which sends us crash reports, and
          <strong>Firebase Analytics</strong>, which tells us which features are used and where
-         people run into problems. These record events such as "a PDF was created" or "an operation
-         failed", along with device model, operating system version, country, and an app-generated
-         identifier.</p>
+         people run into problems. These record events such as "a PDF was created", "an operation failed",
+         "the free allowance ran out", "the Pro screen was opened", and whether a sign-in succeeded or failed
+         &mdash; never which account. They also record how many pages you have read with Read a scan, in bands rather
+         than exact numbers (none, up to three, up to five, and so on), and keep the highest band you reach in a month
+         against that identifier. Alongside these go device model, operating system version, country, and an
+         app-generated identifier.</p>
       <p>Both start when the app starts. Neither is switched on by using a particular
          feature, and there is no setting in PDFiq that turns either off &mdash; opening the
          app is by itself enough to record a session, even if you close it again
