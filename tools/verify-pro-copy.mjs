@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRO, TOOLS } from './site.mjs';
-import { PRO_COPY, proState, proStrip, proPanel } from './pro-copy.mjs';
+import { PRO_COPY, PRO_FEATURES, proState, proStrip, proPanel, proSurfaces } from './pro-copy.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -30,12 +30,23 @@ const ok = (cond, msg) => {
 };
 
 // ---------------------------------------------------------------- the two lists are one list
-const listed = [...PRO.features].sort();
-const described = PRO_COPY.map((c) => c.feature).sort();
-const missing = listed.filter((f) => !described.includes(f));
-const extra = described.filter((f) => !listed.includes(f));
-ok(missing.length === 0, `every Pro feature has copy${missing.length ? ` — nothing describes: ${missing.join('; ')}` : ` (${listed.length})`}`);
-ok(extra.length === 0, `and nothing is described that Pro does not include${extra.length ? ` — ${extra.join('; ')}` : ''}`);
+// They were two arrays — PRO.features and PRO_COPY — and this compared them. PRO_FEATURES is now derived from PRO_COPY,
+// so comparing them again would be a check that cannot fail. What can still drift is the built page: a renderer that
+// prints its own list, or drops the surfaces line. tools/verify-surfaces.mjs reads the built HTML for both.
+ok(PRO_FEATURES.length === PRO_COPY.length && PRO_FEATURES.every((f, i) => f === PRO_COPY[i].feature),
+  `one list of ${PRO_FEATURES.length} features, derived from PRO_COPY`);
+
+// ---------------------------------------------------------------- which surface each one is on
+const shorts = PRO_COPY.map((c) => c.short);
+ok(PRO_COPY.every((c) => typeof c.inApp === 'boolean'),
+  'every feature says whether the Android app has it');
+// Not "must be lower case": Batch is the tool's own name and keeps its capital. What it must be is a FRAGMENT — the
+// line drops these into the middle of a sentence and capitalises the first one itself (up() in proSurfaces).
+ok(shorts.every((s) => typeof s === 'string' && s.trim() === s && s !== '' && !/[.;,]$/.test(s)),
+  'and carries a short name that reads inside a sentence (a fragment, no trailing punctuation)');
+ok(new Set(shorts).size === shorts.length, `the short names are distinct (${shorts.join(', ')})`);
+ok(!/\bonly\b|\bnot yet\b|\bsorry\b|\bunfortunately\b/i.test(proSurfaces()),
+  `the generated line is not an apology: "${proSurfaces()}"`);
 
 // ---------------------------------------------------------------- every entry is complete
 const REQUIRED = ['key', 'strip', 'panel', 'title', 'feature', 'route', 'what', 'onDevice', 'instead'];

@@ -22,6 +22,11 @@
 
     <!--PRO_COPY-->
 
+    <!-- Which surfaces the four are on, generated from the inApp flags in tools/pro-copy.mjs (proSurfaces). Nobody
+         rewrites this the day the app catches up: the flag flips and every page that carries the token re-renders. -->
+    <p class="outcome__body" style="margin-top: 18px; max-width: 760px;">{{proSurfaces}} Buying happens on this website
+      either way.</p>
+
     <!--NOSALE--><div class="card" style="margin-top: 22px; max-width: 760px;">
       <p class="kicker">Price</p>
       <p class="price__amount" style="margin-top: 6px;">{{proPrice}}<span>{{proQualifier}}</span></p>

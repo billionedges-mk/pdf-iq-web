@@ -65,7 +65,8 @@ the work is done.
 49. [An instrument that cannot fail reports confidently about the wrong thing](#49-an-instrument-that-cannot-fail-reports-confidently-about-the-wrong-thing)  
 50. [A check can fail on correct code, and then it is the check that is wrong](#50-a-check-can-fail-on-correct-code-and-then-it-is-the-check-that-is-wrong)  
 51. [One field name at two levels of a payload describes two different things](#51-one-field-name-at-two-levels-of-a-payload-describes-two-different-things)  
-52. [A configuration that was right before an architectural change is a claim about the old architecture](#52-a-configuration-that-was-right-before-an-architectural-change-is-a-claim-about-the-old-architecture)
+52. [A configuration that was right before an architectural change is a claim about the old architecture](#52-a-configuration-that-was-right-before-an-architectural-change-is-a-claim-about-the-old-architecture)  
+53. [A list implies parity; the exception has to be generated, and checked beside the list](#53-a-list-implies-parity-the-exception-has-to-be-generated-and-checked-beside-the-list)
 
 <!-- /index -->
 
@@ -1769,3 +1770,33 @@ belonged to. They are the last place an old architecture survives.
    reasonably "correct" it back. docs/sale-go-live.md carries the reason beside the value, not just the value.
 3. A credential belongs in exactly one place, the one that reads it. Anywhere else it is a liability with no function,
    and "it was there before" is how it got there.
+
+### 53. A list implies parity; the exception has to be generated, and checked beside the list
+
+Pro is four things on the website and three in the Android app — compressing to a size is web-only until the app's 1.3.
+Nine built pages listed the four with nothing said about where they are, and a list with no exception in it is read as a
+complete one. The obvious repair is a sentence written beside each list, which is the shape this repo keeps deleting: it
+has to be found and rewritten the day the app catches up, on every page, and the page that gets missed is the one that
+then lies. So the sentence is generated from a per-feature `inApp` flag (tools/pro-copy.mjs, proSurfaces): today it
+reads "Three of these are in the Android app as well: …", and when the last flag flips it reads "All four are in the
+Android app as well" with no page edited. It leads with what the buyer has rather than what they lack, because a true
+line that reads as an apology gets rewritten by the next person who finds it (owner, 19 September 2026).
+
+**A page-level check would have passed while the list a reader was looking at stayed silent.** /app/ lists the four in
+its price card, and the phone Pro sheet at the far end of the same document carries the line — 8,554 characters away.
+"The page contains the sentence" was true and worthless. tools/verify-surfaces.mjs measures the distance from each list
+to the nearest copy of the line, and the limit is a measured number (the widest real gap is 963 characters, on /pro/,
+where the line follows the last of four feature sections) rather than a chosen one.
+
+**The check:**
+
+1. A fact that differs per surface belongs on the feature, not in the prose: one flag per feature, one generator, and
+   every page that lists them re-renders itself.
+2. State it in the tense that stays true. "Three of these are in the app as well" is a description of today that becomes
+   "All four" on its own; "not yet in the app" is a promise with a maintenance cost.
+3. Check the built page, not the template. `{{proSurfaces}}` in a source file proves nothing about what a reader sees,
+   and a marker like `<!--PRO_FEATURES-->` renders a list with no token in sight.
+4. Check proximity, not presence. Ask what the check would say if the sentence sat 8,000 characters from the list — if
+   the answer is "ok", it is measuring the document rather than the claim (CLAIMS 47).
+5. Derive what counts as "a list" from the same data the lists render from, so a fifth feature changes what is looked
+   for as well as what is written.

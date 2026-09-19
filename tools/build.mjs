@@ -14,11 +14,11 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
 import { applyProBlocks, applySaleBlocks } from './pro-blocks.mjs';
-import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN, PRO as PRO_OFFER } from './site.mjs';
+import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, TOKENS, href, ORIGIN, PRO as PRO_OFFER } from './site.mjs';
 import { AUTH } from './auth-config.mjs';
 import { PADDLE } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
-import { PRO_COPY, proState, proStrip, proPanel, proSheet, lockedPanelStatic } from './pro-copy.mjs';
+import { PRO_COPY, PRO_FEATURES, proState, proStrip, proPanel, proSheet, proSurfaces, proWhere, lockedPanelStatic } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
 import { ogImage } from './og-images.mjs';
 import { LANGUAGES } from './langs.mjs';
@@ -309,7 +309,18 @@ function substituteTokens(body, file) {
   // A sale build names the price. A Pro build writes the strip hidden: src/pro/strip.ts shows it only to someone who
   // does not own Pro, so an owner never sees it, not even for a moment. Production writes it visible, and has no owners.
   const selling = Boolean(PADDLE?.page) || PRO_OFFER.onSale;
-  const tokens = { ...TOKENS, proStrip: proStrip({ selling, hidden: PRO }), proPanel: proPanel({ selling, hidden: PRO }), searchableLocked: lockedPanelStatic('searchable', 'Searchable PDF') };
+  // {{proFeatureCountCap}} and {{proSurfaces}} count and name PRO_COPY's entries, so a fifth feature — or one that
+  // reaches the app — changes every page that mentions them without a page being edited.
+  const COUNTS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+  const tokens = {
+    ...TOKENS,
+    proStrip: proStrip({ selling, hidden: PRO }),
+    proPanel: proPanel({ selling, hidden: PRO }),
+    searchableLocked: lockedPanelStatic('searchable', 'Searchable PDF'),
+    proFeatureCountCap: COUNTS[PRO_COPY.length] ?? String(PRO_COPY.length),
+    proSurfaces: proSurfaces(),
+    proWhere: proWhere(),
+  };
   const out = body.replace(/\{\{(\w+)\}\}/g, (_, name) => {
     if (!(name in tokens)) throw new Error(`unknown token {{${name}}} in ${file}`);
     return tokens[name];
