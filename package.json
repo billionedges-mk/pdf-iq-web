@@ -42,7 +42,8 @@
     "verify:classes": "node tools/verify-classes.mjs",
     "verify:font": "node tools/verify-font.mjs",
     "verify:price-offers": "node tools/verify-price-offers.mjs",
-    "verify:surfaces": "node tools/verify-surfaces.mjs"
+    "verify:surfaces": "node tools/verify-surfaces.mjs",
+    "verify:purchase-scope": "node tools/verify-purchase-scope.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

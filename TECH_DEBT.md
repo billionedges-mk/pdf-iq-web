@@ -471,13 +471,17 @@ buying. The owner pulled it the same day.
   in the Android app. A refund removes it from this website." (production, 8b9273a).
 - The old phrases from /terms and /refunds are in tools/retired-claims.mjs, so verify:retired refuses them.
 
-**The sentence comes back when the app can honour a web purchase and it has been tested on a device** (the flag split),
-in one change, on all six places that made the promise: /pro/buy/, /pro/ (lede and price card), the homepage Pro panel,
-/app/ (price card), /terms and /refunds. Delete the four retired-claims entries in the same commit, and restore a token for
-`PRO.covers` if one is wanted (removed so it cannot be reused unlisted). /app/ was not in this list: the stage 5 sweep
-found it (17 September 2026), because it took the wording through `{{proCovers}}` and nobody searched the token's uses.
-On pro-sale all six now say `coversToday`. Production still carries `covers` on /pro/, the homepage and /app/ until the
-redesign release.
+**Unblocks when:** vc18 is live on Play. **The change itself is recorded once, in `docs/sale-go-live.md` §4** — the
+inventory, the wording each sentence becomes, the retired-claims deletions, and `npm run verify:purchase-scope`, which
+refuses a flip that leaves any of them behind. It is not restated here: this entry held its own trigger ("tested on a
+device") and its own count ("all six places"), both of which had drifted from the go-live doc's, and two records of one
+deferral is how a stale condition survives (owner, 20 September 2026).
+
+What belongs here is why the entry exists: /app/ was in neither list until the stage 5 sweep found it on 17 September
+2026, because it took the wording through `{{proCovers}}` and nobody searched the token's uses; and the account screen
+was in neither until 20 September, because its copy is TypeScript. Both were found by searching, and a list has now
+been wrong about this claim twice. Restore a token for `PRO.covers` if one is wanted — it was removed so it could not
+be reused unlisted. Production still carries `covers` on /pro/, the homepage and /app/ until the redesign release.
 
 ## Split: the "Where to split" choices appear only after every thumbnail has rendered (found 16 September 2026)
 
@@ -513,6 +517,27 @@ but every control they offer acts on the grid's cells, so nothing is shown befor
 A refunds page is read by someone who is already unhappy; an instruction on it that turns out to be wrong makes that
 worse (owner, 17 September 2026). Both sentences are live on production, so both were softened there rather than only in
 the sale draft.
+
+**Unblocks when:** the first live purchase has been made and its receipt email opened — one event answers both, since
+the receipt shows the buyer portal link and the statement descriptor is on the same charge. Until then neither
+sentence can be written from anything but a guess, and the softened wording is correct rather than temporary.
+
+## Two proposals waiting on the owner, not on work (20 September 2026)
+
+Both are drafted and neither is applied. They are here because a proposal that lives only in a conversation is
+indistinguishable from one nobody made, and the session that drafted it is the session that forgets.
+
+1. **/refunds and an account with more than one purchase.** A uid can hold several granted rows — one did, on 18
+   September, when a refunded buyer paid twice more — and `findEntitlement` resolves "any granted", so refunding one
+   of two leaves Pro owned. That is correct (they paid twice), and /refunds says nothing about it. The proposed
+   sentence: if you bought Pro more than once, refunding one purchase leaves the others, and Pro stays until every one
+   is refunded. **Unblocks when:** the owner says whether this belongs on /refunds at all — it describes a state no
+   real buyer has reached yet, and a refunds page carrying a paragraph about an unusual case can read as a page
+   looking for reasons not to refund.
+
+2. **/privacy, from a peer session:** that the size bands cover every tool rather than only the ones named, and that
+   error reports describe the file's shape rather than its content. **Unblocks when:** the owner says apply. /privacy
+   is the Play policy — proposed, never applied unasked — and a peer session's approval is not the owner's.
 
 ## The price is tax-inclusive except in the US and Canada (measured 17 September 2026)
 

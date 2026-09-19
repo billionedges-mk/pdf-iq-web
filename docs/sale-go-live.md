@@ -239,14 +239,36 @@ exactly like the defect this section exists because of. Do not read a "still gra
   the Android app", does.
 - /terms "Buying Pro", /support "Billing and Pro", /pro/, /app/, the homepage Pro card: "not on sale yet"
   becomes true-to-the-day wording.
-- **The Android sentences, all of them, when the app release that honours a purchase is live on Play** — not when it is
-  built and not when it is walked (owner, 18 September 2026: "doesn't unlock" errs toward under-promising, which is the
-  safe side). It is **11 occurrences in 7 files**, found by searching for `proCoversToday` and "unlock anything in the
-  Android app", never from a list: /pro/ ×4, /app/ ×3, /pro/buy/, /terms ×2, /refunds, and the generated panel and sheet
-  in tools/pro-copy.mjs. `PRO.coversToday` retires in favour of `PRO.covers`; each trailing exclusion becomes "Signing in
-  to the Android app with the same account unlocks it there too"; and **"buying happens on this website rather than
-  inside the Android app" stays exactly as it is** — that is the Play constraint, not a temporary state. Four
-  retired-claims entries are deleted in the same commit, or the build refuses the new wording.
+- **The Android sentences and `PRO.coversToday`, in one commit.** These are not two changes: reverting `coversToday`
+  to `covers` is what makes every exclusion sentence false, so they move together or the site contradicts itself for as
+  long as the gap lasts (owner, 20 September 2026).
+
+  **Unblocks when:** vc18 — the app release that honours a web purchase — is **live on Play**. Not when it is built,
+  not when it is walked (owner, 18 September 2026: "doesn't unlock" errs toward under-promising, which is the safe
+  side), and not when the sale merely opens: a buyer whose app has not updated still gets nothing there. Today's pages
+  are true of vc16 and false the moment vc18 ships, which is why this cannot lag the release.
+
+  `PRO.coversToday` retires in favour of `PRO.covers`; each trailing exclusion becomes "Signing in to the Android app
+  with the same account unlocks it there too"; and **"buying happens on this website rather than inside the Android
+  app" stays exactly as it is** — that is the Play constraint, not a temporary state, and deleting it along with the
+  exclusions is the obvious way to get this wrong. Four retired-claims entries are deleted in the same commit, or the
+  build refuses the new wording.
+
+  **The inventory, re-run on 20 September 2026** by searching for the claim in every wording it has, never from a
+  list: **14 places in 7 files** (16 strings — the generated panel and sheet each word it twice, one branch for
+  selling and one for not). /pro/ ×4, /app/ ×3 — **one of which says "in this app", not "the Android app"** —
+  /pro/buy/, /terms ×2, /refunds, the panel and the sheet (tools/pro-copy.mjs), and **the account screen's owned card
+  (src/pro/account.ts)**. The account screen was in no earlier list: its copy is TypeScript and reaches a reader
+  through a JS bundle, so a search of the pages cannot see it. That is the same failure as /app/ the time before, and
+  the reason the count moved from 11 to 14 is that the list was the instrument rather than the search.
+
+  **`npm run verify:purchase-scope` refuses a half-done flip**, so the list above is a convenience and not the
+  safeguard. It builds free, Pro and selling, reads the HTML **and the bundles**, and holds the two sentences to each
+  other: while the site says a purchase covers the web tools, every page naming the scope must also exclude the app;
+  the moment it says "both", no file may still exclude it. Run against the revert with the sentences left alone, it
+  names all fourteen files including `assets/account-*.js`. In both states it asserts the Play constraint is still
+  there, and that every mention of buying inside the app is one of the wordings it knows — a fifth phrasing fails
+  loudly rather than passing unseen.
 
 ## Sandbox measurement, for comparison (Preview f3c2dbf, 13 September 2026)
 
