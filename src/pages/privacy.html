@@ -327,10 +327,16 @@
          <strong>Firebase Analytics</strong>, which tells us which features are used and where
          people run into problems. These record events such as "a PDF was created", "an operation failed",
          "the free allowance ran out", "the Pro screen was opened", and whether a sign-in succeeded or failed
-         &mdash; never which account. They also record how many pages you have read with Read a scan, in bands rather
-         than exact numbers (none, up to three, up to five, and so on), and keep the highest band you reach in a month
-         against that identifier. Alongside these go device model, operating system version, country, and an
-         app-generated identifier.</p>
+         &mdash; never which account. <strong>Every number in them is a band rather than an exact value, and that is
+         true of every tool, not only Read a scan.</strong> When an operation finishes, what goes with the event is
+         which tool ran, how many pages it covered, how long it took and how many operations you have run this month
+         &mdash; each as a range (one, up to five, up to twenty, up to fifty, and so on). Read a scan is measured in
+         finer steps, because whether to ever cap it depends on them (none, up to three, up to five, up to ten, and so
+         on), and the highest band you reach in a month is kept against that identifier. <strong>When something fails,
+         what is recorded is the kind of failure, never the file.</strong> That list is fixed, and every entry on it
+         describes the shape of a document or the state of the service: corrupt, password-protected, an unsupported
+         type, no text layer, too large, too complex; storage full, a network failure, a rate limit. Alongside these go
+         device model, operating system version, country, and an app-generated identifier.</p>
       <p>Both start when the app starts. Neither is switched on by using a particular
          feature, and there is no setting in PDFiq that turns either off &mdash; opening the
          app is by itself enough to record a session, even if you close it again
