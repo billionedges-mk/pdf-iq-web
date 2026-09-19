@@ -67,7 +67,8 @@ the work is done.
 51. [One field name at two levels of a payload describes two different things](#51-one-field-name-at-two-levels-of-a-payload-describes-two-different-things)  
 52. [A configuration that was right before an architectural change is a claim about the old architecture](#52-a-configuration-that-was-right-before-an-architectural-change-is-a-claim-about-the-old-architecture)  
 53. [A list implies parity; the exception has to be generated, and checked beside the list](#53-a-list-implies-parity-the-exception-has-to-be-generated-and-checked-beside-the-list)  
-54. [Two records of one deferral disagree quietly, and only produce different actions on the day](#54-two-records-of-one-deferral-disagree-quietly-and-only-produce-different-actions-on-the-day)
+54. [Two records of one deferral disagree quietly, and only produce different actions on the day](#54-two-records-of-one-deferral-disagree-quietly-and-only-produce-different-actions-on-the-day)  
+55. ["Done" is a claim about the reporter, not about the world](#55-done-is-a-claim-about-the-reporter-not-about-the-world)
 
 <!-- /index -->
 
@@ -1829,3 +1830,28 @@ expired.
 5. Prefer a check to a record wherever the record is a list of places. The inventory was wrong twice — once for a
    placeholder, once for a file that is not a page — so what enforces the flip now reads the built output, and the list
    is a convenience.
+
+### 55. "Done" is a claim about the reporter, not about the world
+
+Twice in one week a report from another session did not survive being checked. One said /terms carried a sentence
+about the purchase covering both surfaces: it had been retired three days earlier and a check was guarding it. One
+said a /privacy correction was already live on production: production was still serving the old paragraph. Neither
+report was dishonest, and in both cases the session that had to act on it was the session that checked — which is
+lucky, because nobody else would have (owner, 20 September 2026).
+
+A session reporting "done" is telling you its own state: what it decided, wrote, or intended. Whether that reached
+production is a different fact, with its own failure modes — an unpushed commit, a failed build leaving the old
+output (CLAIMS 35), a change made on the wrong branch, a deploy that has not finished. None of them make the reporter
+wrong about themselves.
+
+**The check:**
+
+1. Read the live page, the live row, the live artefact. The same instrument that settles any other claim about the
+   world settles this one, and it costs one request.
+2. Check before acting on it, not after. The cost of checking is a fetch; the cost of not checking is a change to a
+   page that was already correct, or a gap left open because someone said it was closed.
+3. When a report and the world disagree, the disagreement IS the finding, and it belongs in the reply — not quietly
+   corrected. Both times, what the other session had actually seen was true of something: its own branch, its own
+   intent. Saying which turns a contradiction into information.
+4. This applies to your own earlier reports too. "I applied it" from four hours ago is a claim about a past intention,
+   and the page is right there.
