@@ -75,7 +75,7 @@ function unknownPhrasings(text) {
   return out;
 }
 
-const SELLING = { PDFIQ_PRO: '1', PDFIQ_SALE: '1', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_PADDLE_CLIENT_TOKEN: `test_${'a1'.repeat(13)}`,
+const SELLING = { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_PADDLE_CLIENT_TOKEN: `test_${'a1'.repeat(13)}`,
   PDFIQ_PADDLE_PRICE_ID: 'pri_01m2cv2xegy64zmhtxrbk0b1bf', PDFIQ_CHECKOUT_ORIGIN: 'https://pro-sale.pdf-iq-checkout.pages.dev' };
 
 // Which of the two scope sentences this build renders, read from site.mjs rather than assumed, so the check flips with

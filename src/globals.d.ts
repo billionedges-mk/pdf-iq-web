@@ -1,10 +1,12 @@
 /**
  * Build-time constants, replaced by esbuild's `define` in tools/build.mjs.
  *
- * __PDFIQ_PRO__ is true only in a build made with PDFIQ_PRO set, which a production build
- * refuses. Branch on it only to reach code under src/pro/ through a dynamic import, so that a
- * flag-off build drops the branch and the chunk with it. Branching on it to hide or grey out
- * something that is still shipped defeats the point: absent, not hidden.
+ * __PDFIQ_PRO__ is true only in a build made with PDFIQ_PRO set. Until 20 September 2026 a production build
+ * refused that flag outright, so the constant also meant "this is a preview"; it does not any more (step 0), and
+ * anything that needs to know it is a preview must ask that question instead — tools/build.mjs, PREVIEW_DEPLOY.
+ * Branch on it only to reach code under src/pro/ through a dynamic import, so that a flag-off build drops the
+ * branch and the chunk with it. Branching on it to hide or grey out something that is still shipped defeats the
+ * point: absent, not hidden.
  */
 declare const __PDFIQ_PRO__: boolean;
 
