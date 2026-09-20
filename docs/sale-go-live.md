@@ -75,7 +75,19 @@ change rather than writing one. What it turned up:
    working sale until someone tried to pay. Nothing else on the site would have said so.
 
 **What the commit does not do: it does not turn the sale on.** The flags do that. Merged with no variables set, the
-site builds byte-for-byte what it builds today — checked by hashing the whole of `dist/` before and after.
+site builds byte-for-byte what it builds today — checked by building the tree with the change and without it **at the
+same commit** (`git stash`) and hashing the whole of `dist/`: identical.
+
+**Do not compare across commits and expect the same number.** `__PDFIQ_BUILD__` is the commit id, it is bundled into
+`net-*.js`, and that bundle's filename is a content hash — so every page's `<script src>` changes with every commit
+and nothing else does. With the id scrubbed, that one filename is the only difference between this branch's build and
+its branch point. A reviewer hashing `dist/` on two commits would otherwise read a real difference where there is
+none.
+
+The four production variables that are not flags — `PURCHASES`, `PADDLE_WEBHOOK_SECRET`, `PDFIQ_PADDLE_PRICE_ID`,
+`PDFIQ_PADDLE_ENV` — were measured the same way with `CF_PAGES_BRANCH=main` and no `PDFIQ_SALE`: identical output.
+They are inert at build time, and at runtime both Functions answer 404 before reading any of them
+(`if (env.PDFIQ_SALE !== 'true')`). Setting them early is therefore a walked state, not an unknown one.
 
 **1. Google Cloud first — it propagates for up to a few hours.** OAuth client
 `340733500005-e6guq4vuc37drr1sor6uvqcop4kplpdo`: add redirect URI `https://pdf-iq.com/pro/buy/`, confirm
