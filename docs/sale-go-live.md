@@ -1,12 +1,12 @@
 # Switching the Pro sale on — the checklist
 
-The sale is off in production, and a production build with `PDFIQ_SALE` set refuses by name
-(`tools/paddle-config.mjs`). Turning it on is a code change. This file is what that change must
-satisfy, in order. The refusal's error message points here.
+Turning the sale on is a code change plus two variables. This file is what that change must satisfy, in order, and
+the build's refusals point here by name.
 
-**There are two refusals, not one.** `tools/paddle-config.mjs` refuses `PDFIQ_SALE` on a production build, and
-`tools/build.mjs` refuses `PDFIQ_PRO` on one ("Pro and sign-in are preview-only until payment is live"). Lifting the
-first alone leaves the build failing on the second. Both go in the same commit, with this file's conditions met first.
+**Two rules, three call sites, and this file named both rules correctly before the change** — `tools/paddle-config.mjs`
+refused `PDFIQ_SALE` on a production build (from `resolveSite` and from `resolveCheckout`, hence three), and
+`tools/build.mjs` refused `PDFIQ_PRO` on one. Step 0 narrows each rather than removing it; what each becomes is under
+step 0 below.
 
 **The order is the safety property.** Everything exists before `PDFIQ_SALE` becomes true, and `PDFIQ_SALE` is the last
 thing switched: with a purchase page live and no database, no schema or no notification destination, someone can pay and
@@ -32,19 +32,23 @@ approved; **checkout.pdf-iq.com is PENDING**, and the sale cannot open while it 
 `PDFIQ_PRO` on Production makes the **build fail**: the result is a site that does not deploy, not a site that sells.
 
 **Written ahead of the day and waiting on branch `sale-step-0`** (20 September 2026), so the day is spent reviewing a
-change rather than writing one. Two things it turned up that this section had wrong:
+change rather than writing one. What it turned up:
 
-- **There are three refusals, not two.** The third lives in tools/build.mjs, not paddle-config.mjs, and refuses
-  `PDFIQ_PRO` on a production build. It was missing from this list for the ordinary reason: the list was written from
-  the file somebody was looking at. Setting the variables against the old text would have failed the deploy after the
-  variables were already set.
+- **Correction to an earlier version of this section, 20 September 2026.** It said the checklist had listed two
+  refusals and missed a third in `tools/build.mjs`. That was wrong. This file's header named both rules, and the
+  `PDFIQ_PRO` one by file and by its message. What actually happened: the change was written from
+  `paddle-config.mjs` without re-reading the header above it, and the build then refused for a reason this document
+  had already stated. The lesson survives but belongs to the person and not the checklist — **an inventory written
+  from what is in view is not an inventory** — and the fix is the one this repo keeps reaching for: read the record,
+  or search, rather than enumerate what is open. The wrong claim is left visible rather than quietly deleted, because
+  a document that silently drops a wrong sentence teaches nobody why it was wrong.
 - **None of §4's copy belongs in step 0.** Every "not on sale yet" sentence is already inside a `<!--NOSALE-->` /
   `<!--SALE-->` block and changes with the flag, on /pro/, /app/, /terms, /support, /privacy and the homepage panel —
   that was built on 17 September and this section was not updated. What is left is /privacy's checkout section, whose
   italic line says the live checkout has not been measured yet: that is **step 1's** output, not step 0's, and cannot
   be written before the measurement. The Android sentences wait for vc18 (§4).
 
-**Each refusal is narrowed, not deleted.** Deleting a guard leaves nothing where a reason used to be:
+**Each rule is narrowed, not deleted.** Deleting a guard leaves nothing where a reason used to be:
 
 1. `PDFIQ_SALE` on a production build → **a production sale build that is INCOMPLETE**. Off production, a missing
    checkout origin, entitlement key, token, price id or site origin still warns and leaves /pro/buy/ out, which is
@@ -57,7 +61,14 @@ change rather than writing one. Two things it turned up that this section had wr
    away to any Google account. **So the two flags go on in one deploy — see step 5.**
 3. The `live_` token guard is **not touched**. A live token in any build that is not production still refuses, and
    must keep refusing.
-4. **New, found by the refusal table rather than by thinking:** a production build must use
+4. **`PDFIQ_SALE` must be the exact string `true`.** The Functions that grant Pro compare it that way and
+   nothing else — `functions/api/entitlement.js` and `functions/api/paddle/webhook.js` both open with
+   `if (env.PDFIQ_SALE !== 'true') return 404` — while the build accepted `1` and `on` as well. That pairing
+   publishes a site that sells, with a purchase page, over an entitlement endpoint and a webhook that both answer
+   "not found": money taken, Pro never granted, and the only record of it at Paddle. This file already said
+   `PDFIQ_SALE=true`, which is why it was never hit; the build now refuses any other spelling by name rather than
+   depending on the variable being typed the way the document spells it.
+5. **Found by the refusal table rather than by thinking:** a production build must use
    `PDFIQ_PADDLE_ENV=production`. The old table had a row setting sandbox on branch `main` and expecting the blanket
    refusal; with that gone, the combination BUILT — a production site selling through Paddle's sandbox, taking no real
    money and signing entitlements with the sandbox key, which the released app rejects. It would have looked like a

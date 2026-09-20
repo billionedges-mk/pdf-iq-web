@@ -34,7 +34,27 @@ import { readFileSync } from 'node:fs';
 const on = (v) => /^(1|true|on)$/i.test(v ?? '');
 const env = process.env;
 
-export const SALE = on(env.PDFIQ_SALE);
+/**
+ * The sale flag, and it is the exact string `true` — not `1`, not `on`.
+ *
+ * The Functions compare it that way and nothing else: `functions/api/entitlement.js` and
+ * `functions/api/paddle/webhook.js` both open with `if (env.PDFIQ_SALE !== 'true') return 404`. A build that
+ * accepted `1` where they did not would publish a site that sells, with a purchase page, over a webhook and an
+ * entitlement endpoint that both answer "not found": money taken, Pro never granted, and the only record of it at
+ * Paddle. The two run in different runtimes and cannot share a parser, so this refuses every other spelling loudly
+ * rather than accepting a value the deployed endpoints will reject (20 September 2026).
+ *
+ * docs/sale-go-live.md has always said `PDFIQ_SALE=true`, so this was latent rather than live. A document is not a
+ * mechanism.
+ */
+const SALE_RAW = env.PDFIQ_SALE ?? '';
+if (SALE_RAW !== '' && SALE_RAW !== 'true') {
+  throw new Error(
+    `PDFIQ_SALE is "${SALE_RAW}". It must be exactly "true", or unset: the Functions that grant Pro compare it to ` +
+    'that string and answer 404 for anything else, so any other spelling builds a site that sells and cannot deliver.'
+  );
+}
+export const SALE = SALE_RAW === 'true';
 const PRO = on(env.PDFIQ_PRO);
 const ON_CLOUDFLARE = Boolean(env.CF_PAGES);
 const PRODUCTION = ON_CLOUDFLARE && (env.CF_PAGES_BRANCH ?? 'main') === 'main';
