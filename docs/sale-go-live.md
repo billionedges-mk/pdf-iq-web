@@ -219,7 +219,8 @@ production hosts, so it is corrected from this run before the sale is announced.
 **Two Cloudflare Pages projects.** pdf-iq-web is the site; pdf-iq-checkout is the checkout origin, the only
 place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
 
-- pdf-iq-checkout: the custom domain `checkout.pdf-iq.com`; `PDFIQ_SALE`, `PDFIQ_PADDLE_ENV=production`,
+- pdf-iq-checkout: the custom domain `checkout.pdf-iq.com`; `PDFIQ_SALE=true` (the exact string — the build
+  refuses any other spelling, and the site's Functions answer 404 to one), `PDFIQ_PADDLE_ENV=production`,
   the `live_` token, the live price id, `PDFIQ_SITE_ORIGIN=https://pdf-iq.com`,
   `PDFIQ_CHECKOUT_ORIGIN=https://checkout.pdf-iq.com`.
 - pdf-iq-web: `PDFIQ_CHECKOUT_ORIGIN=https://checkout.pdf-iq.com` (and no client token: the site never uses it).
