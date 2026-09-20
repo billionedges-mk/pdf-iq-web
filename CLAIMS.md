@@ -1887,6 +1887,16 @@ The sentence was never true of the system it described. It is not a stale claim,
 drifted one, which lost its subject. It was written from a faithful measurement of the wrong world, and nothing but
 measuring the real one could have caught it (owner, 20 September 2026).
 
+**It happened twice in one day.** The live Paddle account's domain approval for checkout.pdf-iq.com came back
+**pending**; the sandbox account had approved both domains instantly, which taught us approval was a formality and
+kept it off the launch checklist entirely — not as a step that might be slow, but as a step nobody had written down.
+A sandbox that says yes immediately is not a faster version of a reviewer. It is the absence of one.
+
+The asymmetry to remember: **sandbox is permissive where production is strict, so sandbox cannot show you a gate.**
+Every "this was instant / this just worked / nothing objected" from a test account is evidence about the test
+account's leniency and about nothing else. What it produces is not a wrong answer that a check would catch, but a
+missing step that no check can look for, because nothing in the repo knows the step exists.
+
 **Sandbox is a different world, not a smaller one.** The same week: the app's release build refuses a non-production
 entitlement environment outright, because a release built that way rejects every real token silently — the two
 environments are not degrees of the same thing. A sandbox result answers "what would this system do", and the system

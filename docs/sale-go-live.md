@@ -17,8 +17,16 @@ never receive Pro, and the only record of it is Paddle's.
 The owner's plan of 18 September 2026, with what the code requires folded into it. **Sandbox is untouched throughout.**
 
 **Already done on the live Paddle account:** verification, payout (ICICI, USD, $100 threshold), payment methods, sales
-tax inclusive, balance currency USD, domain approval for **both** pdf-iq.com and checkout.pdf-iq.com, product
-`pro_01m2bs6r5twekf0y2a722stgmh`, price `pri_01m2bsgrhqggk3rmrzvefhcgb9`.
+tax inclusive, balance currency USD, product `pro_01m2bs6r5twekf0y2a722stgmh`, price
+`pri_01m2bsgrhqggk3rmrzvefhcgb9`, and — 20 September 2026 — the **notification destination**
+`https://pdf-iq.com/api/paddle/webhook`, Active, carrying exactly `transaction.completed`, `adjustment.created`
+and `adjustment.updated`. It did not exist before that: a real purchase would have reached nothing, and the row the
+entitlement reads is written by that delivery and by nothing else. The **default payment link** is
+`https://checkout.pdf-iq.com/` (changed from `https://pdf-iq.com/pro/` the same day — Paddle's generated links need
+a page that can take a payment on its own; /pro/ cannot).
+
+**Domain approval is NOT done, and is a gate rather than a step — see "The approval gate" below.** pdf-iq.com is
+approved; **checkout.pdf-iq.com is PENDING**, and the sale cannot open while it is.
 
 **0. The code change, first, because the variables alone cannot work.** Both refusals are lifted in one commit (see
 above), and the copy that must change goes in the same one (§4, and the sentences about the Android app once the app
@@ -116,8 +124,9 @@ Signing certificate is registered against the OAuth client. Use the internal tes
 build in minutes without waiting for full review, and that artefact is the one people will have. If the sideloaded
 build signs in, it is fine too — but check sign-in FIRST, before concluding anything from a failed entitlement walk.
 
-**Must not happen:** reusing the sandbox D1 for production; `PDFIQ_SALE` before the live notification destination
-exists; touching sandbox; re-running `entitlement:keys` for production; a `live_` token anywhere but the checkout
+**Must not happen:** reusing the sandbox D1 for production; `PDFIQ_SALE` before **checkout.pdf-iq.com is approved
+on the live account** (pending as of 20 September 2026 — "The approval gate" below) or before the live notification
+destination exists (created 20 September 2026); touching sandbox; re-running `entitlement:keys` for production; a `live_` token anywhere but the checkout
 project's Production.
 
 ## 1. The measurement that cannot be run until the day itself
@@ -201,6 +210,52 @@ place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
 - Firebase Authentication, Authorized domains: `pdf-iq.com`.
 - The web API key (restricted to Identity Toolkit and Token Service) as `PDFIQ_FIREBASE_WEB_KEY` in pdf-iq-web Production.
 - And `npm run entitlement:keys -- production`: a production sale build leaves /pro/buy/ out without its public key.
+
+## The approval gate: checkout.pdf-iq.com (opened 20 September 2026)
+
+**Nothing below step 5 may set `PDFIQ_SALE` until Paddle has approved checkout.pdf-iq.com on the LIVE account.** If
+it is still pending when the sale opens, Paddle.js refuses to open its checkout on an unapproved domain: the site
+names a price, the button is there, and pressing it does nothing. That is the dead-control defect with a price tag
+(CLAIMS 14), on the one page where someone has decided to pay.
+
+**Why this was not on the checklist until now:** the sandbox account approved both domains instantly, which taught us
+that approval was a formality. The live account reviews for real. Same shape as the price table (CLAIMS 56) — sandbox
+is a different world, not a smaller one — and the second time in one week that a sandbox behaviour was read as the
+system's behaviour.
+
+### Before the approval can succeed at all: the domain has to exist
+
+Measured 20 September 2026, before anything else was checked:
+
+| Address | Answers |
+|---|---|
+| `checkout.pdf-iq.com` | **NXDOMAIN — no DNS record at all** |
+| `pdf-iq-checkout.pages.dev` (the project's production deployment) | 200, the standalone statement, all three links |
+| `pro-sale.pdf-iq-checkout.pages.dev` (Preview) | 200, the same statement |
+
+So the reviewer visiting checkout.pdf-iq.com today reaches nothing — not a blank page, no page. **Attach
+checkout.pdf-iq.com as a custom domain on the pdf-iq-checkout Pages project** (which creates the CNAME), confirm it
+answers 200, and only then expect the review to pass; a review that ran against a name that does not resolve has to
+be resubmitted rather than waited on.
+
+### What the reviewer will see once it resolves
+
+The statement is **already on the production deployment**, not only on Preview — checked by fetching
+`pdf-iq-checkout.pages.dev` directly:
+
+> pdf-iq checkout — This address runs Paddle's checkout for Pro, bought on **pdf-iq**. It keeps nothing and does
+> nothing on its own. **Terms · Privacy · Refunds**
+
+with the links resolving to `https://pdf-iq.com/terms/`, `https://pdf-iq.com/privacy/#checkout` and
+`https://pdf-iq.com/refunds/`, and with **no Paddle script and no token in the page** — the standalone view is
+static, and the checkout only loads when the site opens it with a transaction. That is what the approval needs, and
+it is live.
+
+**One thing the reviewer will not find yet:** `/privacy/#checkout` has no `#checkout` section on production,
+because that section only exists in a sale build (verify-sale-build asserts its absence in every other build). The
+link still lands on /privacy — an unknown fragment is ignored, not an error — but the payment-data section it points
+at arrives with step 0. If the reviewer asks where payment data is described, that is why, and the answer is the
+Paddle section of /privacy once the sale build ships.
 
 ## Why Preview never runs against live Paddle (asked and decided, 20 September 2026)
 
