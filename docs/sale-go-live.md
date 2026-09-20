@@ -141,7 +141,21 @@ domain added, and its own variables: `PDFIQ_SALE=true`, `PDFIQ_PADDLE_ENV=produc
 `PDFIQ_CHECKOUT_ORIGIN=https://checkout.pdf-iq.com`. The two origins must differ; the build refuses them equal.
 
 **5. Deploy, then check.** /pro/ shows the price and a Buy button; /pro/buy/ loads; the webhook answers 401 unsigned;
-/api/entitlement answers 401 unauthenticated; `npm run verify:live` passes. Then §1's measurement, which sandbox cannot
+/api/entitlement answers 401 unauthenticated; `npm run verify:live` passes.
+
+**`verify:live` follows the site's state since 20 September 2026** (branch `live-state-aware`). It asked /pro/buy/ and
+/api/entitlement which state production is in, and asserts the matching set: before the sale, no Pro code anywhere, as
+before; after it, Pro code expected and the things that would mean the wrong build reached production forbidden — the
+preview banner, the local Pro stub, Paddle's sandbox hosts, a `test_` token, Paddle.js on this origin. It also checks
+what it never read before: robots.txt and the sitemap.
+
+**Dry-run the selling half before the flip**, against the Preview, so its first run is not on the day:
+
+```
+node tools/verify-live.mjs --site https://pro-sale.pdf-iq-web.pages.dev --no-wait
+```
+
+48 assertions pass there today. Run it again after any change to the check itself. Then §1's measurement, which sandbox cannot
 perform: `npm run measure:paddle -- --url https://pdf-iq.com/pro/buy/`, expecting **ProfitWell / Retain requested: no** —
 stop if it is yes.
 
