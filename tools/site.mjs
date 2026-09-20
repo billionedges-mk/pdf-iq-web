@@ -241,6 +241,15 @@ export const PRO = {
   cadence: 'one-time',
   /** Rendered next to the amount. Not "/mo" — there is no recurring charge to describe. */
   qualifier: 'once',
+  /**
+   * What the PURCHASE covers, when the app can honour one. Not rendered today: there is no {{proCovers}} token, and
+   * tools/retired-claims.mjs fails the build if this sentence reappears on a built page.
+   *
+   * It is a claim about the payment, not about the features, and the two are not the same sentence: a purchase can
+   * cover both surfaces while a feature exists on only one. Whichever page carries this must also carry proSurfaces()
+   * (pro-copy.mjs), which says which features the app has — and tools/verify-surfaces.mjs enforces exactly that on the
+   * built page, so the pairing cannot be forgotten when this returns.
+   */
   covers: 'both the web tools and the Android app',
   /**
    * What a purchase covers TODAY. The Android app cannot honour a web purchase until its BILLING_ENABLED flag is split
@@ -249,12 +258,8 @@ export const PRO = {
    * has been tested on a device, all five places go back to `covers` together: TECH_DEBT.md lists them.
    */
   coversToday: 'Pro in the web tools on this site',
-  features: [
-    'Batch: compress, read or rotate many files at once',
-    'Searchable-PDF output from OCR',
-    'Advanced compression — target a file size or a dpi',
-    'Password protect and password remove',
-  ],
+  // The features live in tools/pro-copy.mjs (PRO_COPY), beside everything else said about each one, and PRO_FEATURES
+  // is derived from it there. This held a second copy of the same four strings until 19 September 2026.
   /**
    * The team tier, priced per user per year rather than once.
    *
@@ -288,8 +293,6 @@ export const PRO = {
    */
   onSale: Boolean(PADDLE?.page && PADDLE.env === 'production'),
 };
-
-export const PRO_FEATURES = PRO.features;
 
 const OFFLINE_NOW = WEB_TOOLS.filter((t) => !t.needsFirstRunDownload);
 
@@ -366,8 +369,9 @@ export const TOKENS = {
   webToolCountCap: cap(word(WEB_TOOLS.length)),
   appToolCount: word(APP_TOOLS.length),
   appToolCountCap: cap(word(APP_TOOLS.length)),
-  // /app/ and /pro/ both said "Four things" by hand; a fifth feature would have left both saying four.
-  proFeatureCountCap: cap(word(PRO.features.length)),
+  // {{proFeatureCountCap}} and {{proSurfaces}} are added in tools/build.mjs: both count PRO_COPY, which lives in
+  // pro-copy.mjs, and pro-copy imports this file. ("Four things" was typed by hand on /app/ and /pro/ until a fifth
+  // feature would have left both saying four.)
   // "all seven" when the app has every tool. Flipping ocr.inApp would otherwise have put
   // "Seven of the seven tools" on the /app lede, the homepage card and the meta description.
   appOfWeb: APP_TOOLS.length === WEB_TOOLS.length

@@ -33,6 +33,9 @@ const NL = '\n';
 export const PRO_COPY = [
   {
     key: 'batch',
+    // In the app as Batch, on the same entitlement (Feature.BATCH).
+    inApp: true,
+    short: 'Batch',
     strip: 'batch',
     panel: ['Batch', 'one operation across many files, a single zip back'],
     title: 'Batch',
@@ -48,6 +51,9 @@ export const PRO_COPY = [
   },
   {
     key: 'searchable',
+    // In the app as its searchable-PDF output (MakeSearchableViewModel).
+    inApp: true,
+    short: 'searchable PDFs',
     strip: 'searchable PDFs',
     panel: ['Searchable PDFs', 'OCR written back into the file, not just to text'],
     title: 'Searchable PDF',
@@ -63,6 +69,11 @@ export const PRO_COPY = [
   },
   {
     key: 'target',
+    // Web only today: the app's advanced compression is its three presets, and target mode is a planned port
+    // (docs/compress-to-target.md, "Nothing here exists on Android today"). Flip this when it ships and every page
+    // that lists the features re-renders itself.
+    inApp: false,
+    short: 'compressing to a size',
     strip: 'compress-to-a-size',
     panel: ['Compress to a size', 'ask for 5 MB; it tries settings and measures'],
     title: 'Compress to a target',
@@ -77,6 +88,9 @@ export const PRO_COPY = [
   },
   {
     key: 'password',
+    // In the app as Protect and Remove password (Feature.PROTECT, Feature.REMOVE_PASSWORD).
+    inApp: true,
+    short: 'passwords',
     strip: 'passwords',
     panel: ['Passwords', 'add one to a copy, or take one off'],
     title: 'Password',
@@ -89,6 +103,44 @@ export const PRO_COPY = [
       + 'says plainly when it cannot — an author’s limits are never stripped without the owner password.',
   },
 ];
+
+/**
+ * The features, long form, for a page that lists them (/app/'s price card). This was a second copy in site.mjs, word
+ * for word the same four strings; two lists of one fact is how a corrected list comes back (owner, 19 September 2026).
+ */
+export const PRO_FEATURES = PRO_COPY.map((c) => c.feature);
+
+/**
+ * Which of them the Android app has, generated from `inApp` rather than written into each page.
+ *
+ * A sentence naming today's gap would have to be found and rewritten the day the app catches up, on every page that
+ * lists the features — the shape this repo keeps removing. This says what each surface does now, leads with what the
+ * buyer gets, and stops being a caveat the moment the last flag flips: with all four in the app it reads "All four are
+ * in the Android app as well", and nothing else changes. A feature that ships web-first is covered without anyone
+ * writing a new sentence, because the count and the names come from the list.
+ *
+ * Buying still happens on the website whatever this says: that is the Play constraint, and /terms carries it.
+ */
+export function proSurfaces() {
+  const WORDS = ['none', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+  const inApp = PRO_COPY.filter((c) => c.inApp);
+  const webOnly = PRO_COPY.filter((c) => !c.inApp);
+  const list = (names) => (names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0] ?? '');
+  const up = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  if (!inApp.length) return `These are on the website. The Android app has ${PRO_COPY.length === 1 ? 'it' : 'none of them'}.`;
+  if (!webOnly.length) return `All ${(WORDS[PRO_COPY.length] ?? PRO_COPY.length).toString().toLowerCase()} are in the Android app as well.`;
+  return `${WORDS[inApp.length]} of these are in the Android app as well: ${list(inApp.map((c) => c.short))}. `
+    + `${up(list(webOnly.map((c) => c.short)))} ${webOnly.length > 1 ? 'are' : 'is'} on the website.`;
+}
+
+/**
+ * Where an owner finds what they bought: every feature, linked to the tool it is part of, from PRO_COPY's own routes.
+ * /pro/buy/ typed this list by hand — four names and four hrefs — which is the shape a fifth feature breaks silently.
+ */
+export function proWhere() {
+  const links = PRO_COPY.map((c) => `<a href="${c.route}">${c.short}</a>`);
+  return links.length > 1 ? `${links.slice(0, -1).join(', ')} and ${links.at(-1)}` : links[0] ?? '';
+}
 
 /** The state sentence, from the one flag that decides it. The wording matches the Android app's. */
 export function proState(selling = PRO.onSale) {
@@ -143,7 +195,7 @@ export function proPanel({ selling = PRO.onSale, hidden = false } = {}) {
         <div>
           <p class="pro-panel__who"><span class="pro-panel__k">Pro</span> <span class="pro-panel__amt">${amount}</span></p>
           <p class="pro-panel__line">${line}</p>
-          <p class="pro-panel__sub">${terms} Everything above stays free and unlimited.</p>
+          <p class="pro-panel__sub">${proSurfaces()} ${terms} Everything above stays free and unlimited.</p>
           <p class="pro-panel__more">${selling ? `<a class="btn btn--sm" href="/pro/buy/">Buy Pro &mdash; ${PRO.price} ${PRO.qualifier}</a> ` : ''}<a href="/pro/">What Pro adds</a></p>
         </div>
         <ul class="pro-panel__list">
@@ -162,6 +214,11 @@ ${items}
  *
  * The mockup's line here was "The same tools, without doing it one file at a time", which describes Batch alone. The
  * owner replaced it on the desktop panel; the panel's line ships in both.
+ *
+ * proSurfaces() comes before the terms sentence here and on the panel: what exists where, then what the payment buys.
+ * The other order read as a contradiction — "does not unlock anything in the Android app" followed by "three of these
+ * are in the Android app as well" — though both are true: the app's three are free in the app, and a web purchase buys
+ * none of them.
  */
 export function proSheet({ selling = PRO.onSale, hidden = false } = {}) {
   const tick = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
@@ -182,7 +239,7 @@ export function proSheet({ selling = PRO.onSale, hidden = false } = {}) {
     '        <ul class="prosheet__list">',
     items,
     '        </ul>',
-    `        <p class="prosheet__sub">${terms} Everything free stays free and unlimited.</p>`,
+    `        <p class="prosheet__sub">${proSurfaces()} ${terms} Everything free stays free and unlimited.</p>`,
     action + `        <p class="prosheet__more"><a href="/pro/">What Pro adds, and what stays free</a></p>`,
     '      </div>',
   ].join(NL);

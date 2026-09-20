@@ -164,7 +164,13 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   ok(buyHtml.includes('data-buy-signin>Sign in with Google</button>') && !buyHtml.includes('sign in on your account page</a>, then come back here'), '/pro/buy/ signs in itself rather than sending the buyer to /account/ and back');
   ok(privacyText.includes('That means deleting the record is the one thing that does take Pro away.') && privacyText.includes('deleting the record is not a refund') && privacyText.includes('The Pro purchase record is the exception, and it is deliberate.'), '/privacy states the purchase record, why it outlives the account, and what deleting it costs');
   const refundsText = readFileSync(join(ROOT, 'dist/refunds/index.html'), 'utf8').replace(/\s+/g, ' ');
-  ok(refundsText.includes('a refund takes Pro off a browser the next time your account page is opened there with a connection'), '/refunds says when a refund reaches a browser');
+  // The property, not the sentence: a refund reaches a device when that device next checks, and one that stays offline
+  // keeps Pro until then. It used to assert the words "a browser", and failed when the wording widened to cover the
+  // Android app, which verifies the same signed note the same way (CLAIMS 50: a check can fail on correct code).
+  ok(/refund takes Pro off a device the next time that device checks with a connection/.test(refundsText)
+    && /device that stays offline keeps Pro until then/.test(refundsText)
+    && /account page is opened there/.test(refundsText),
+    '/refunds says when a refund reaches a device, and that an offline one keeps Pro until then');
 }
 
 {
@@ -214,10 +220,17 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
 
 const refusals = [
   ['site', 'sale without Pro', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_CHECKOUT_ORIGIN: CHECKOUT }, /without PDFIQ_PRO/],
-  ['site', 'sale on the production branch', { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /production build of the site/],
+  // Until 20 September 2026 a production sale build was refused outright and these two rows said so. The sale is
+  // switched on in code now (docs/sale-go-live.md step 0), so what must refuse is narrower: a production build that
+  // is incomplete, one that points at sandbox, and Pro without the sale flag — the state in which Pro belongs to
+  // anyone who signs in.
+  ['site', 'a production sale build with no checkout origin', { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /incomplete: no PDFIQ_CHECKOUT_ORIGIN/],
+  ['site', 'a production build selling through sandbox', { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /must sell through the production Paddle account/],
+  ['site', 'Pro on production without the sale flag', { PDFIQ_PRO: '1', CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /without PDFIQ_SALE/],
   ['site', 'a live_ token in its Preview variables', { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, ...PREVIEW }, /real money/],
   ['site', 'a checkout origin that is not a bare https origin', { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_CHECKOUT_ORIGIN: `${CHECKOUT}/pay`, ...PREVIEW }, /bare https origin/],
-  ['checkout', 'sale on the production branch', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_PADDLE_CLIENT_TOKEN: TOKEN, PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /production build of the checkout/],
+  ['checkout', 'a production build selling through sandbox', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_PADDLE_CLIENT_TOKEN: TOKEN, PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /must sell through the production Paddle account/],
+  ['checkout', 'a production checkout build with no token', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /incomplete: no PDFIQ_PADDLE_CLIENT_TOKEN/],
   ['checkout', 'a live_ token on a preview branch', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE, ...PREVIEW }, /real money/],
   ['checkout', 'a live_ token locally', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE }, /real money/],
   ['checkout', 'a test_ token with environment production', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: TOKEN, PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE, ...PREVIEW }, /does not match/],
@@ -226,6 +239,43 @@ const refusals = [
 for (const [which, label, env, reason] of refusals) {
   const b = which === 'site' ? site(env) : checkout(env);
   ok(b.status !== 0 && reason.test(b.out), `${which} refuses ${label}${b.status === 0 ? ' — IT BUILT' : reason.test(b.out) ? '' : ` — failed for another reason: ${b.out.split('\n').find((l) => /Error/.test(l))}`}`);
+}
+
+// A table of refusals can pass while nothing works: every row would still be red-green if the sale could never be
+// built at all. So the configuration launch day will actually use is asserted to succeed, on the production branch
+// with the production environment and everything present.
+{
+  // Every variable a selling production build needs, which is the point: this fixture failed the moment the Firebase
+  // key joined the list, which is how a success case earns its place. "Complete" is a claim that goes stale.
+  const b = site({ PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, PDFIQ_FIREBASE_WEB_KEY: 'AIzaSyTestKeyForBuildOnly', CF_PAGES: '1', CF_PAGES_BRANCH: 'main' });
+  ok(b.status === 0 && existsSync(join(ROOT, 'dist/pro/buy/index.html')),
+    `the complete production configuration builds, with a purchase page${b.status === 0 ? '' : `: ${b.out.split('\n').find((l) => /Error/.test(l))}`}`);
+
+  // And it is still a site search engines may read. Until 20 September 2026 the noindex rule and robots.txt keyed off
+  // PRO, which was preview-only when it was written — so the launch-day deploy would have published "Disallow: /" and
+  // noindex on all 21 pages, the seven free tools included, and deindexed pdf-iq.com on the day it started selling.
+  // The Pro pages stay out of search on their own noindex flags, which is where that decision belongs.
+  const robots = readFileSync(join(ROOT, 'dist/robots.txt'), 'utf8');
+  const home = readFileSync(join(ROOT, 'dist/index.html'), 'utf8');
+  const tool = readFileSync(join(ROOT, 'dist/merge/index.html'), 'utf8');
+  const sitemap = readFileSync(join(ROOT, 'dist/sitemap.xml'), 'utf8');
+  ok(!/Disallow: \//.test(robots) && /Sitemap:/.test(robots), 'selling on production: robots.txt still allows the crawl and names the sitemap');
+  ok(!/content="noindex/.test(home) && !/content="noindex/.test(tool), 'selling on production: the homepage and the free tools are still indexable');
+  ok((sitemap.match(/<loc>/g) ?? []).length > 10, `selling on production: the sitemap still lists the free pages (${(sitemap.match(/<loc>/g) ?? []).length})`);
+  for (const proPage of ['account', 'batch', 'password', 'pro/buy']) {
+    const html = readFileSync(join(ROOT, `dist/${proPage}/index.html`), 'utf8');
+    ok(/content="noindex/.test(html) && !sitemap.includes(`/${proPage}/</loc>`), `selling on production: /${proPage}/ is noindex and absent from the sitemap`);
+  }
+}
+
+// The same build on a preview branch is the opposite, and must stay that way: a preview deployment is not for search
+// engines, and it is the deployment PRO used to be a synonym for.
+{
+  const b = site({ PDFIQ_PRO: '1', ...PREVIEW });
+  const robots = readFileSync(join(ROOT, 'dist/robots.txt'), 'utf8');
+  const home = readFileSync(join(ROOT, 'dist/index.html'), 'utf8');
+  ok(b.status === 0 && /Disallow: \//.test(robots) && /content="noindex/.test(home),
+    'a Pro preview is still hidden from search: robots.txt disallows and every page is noindex');
 }
 
 // Leave both as ordinary builds.

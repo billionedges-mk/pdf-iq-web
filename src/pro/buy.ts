@@ -21,7 +21,7 @@
  */
 import { signedIn, proAccount } from './gate.js';
 import { writePendingPurchase, readPendingPurchase } from './pending.js';
-import { confirmPurchase, confirmEndWords } from './confirm.js';
+import { confirmPurchase, confirmEndWords, afterConfirm, type ConfirmEnding } from './confirm.js';
 import { peekUnlock, latestUnlockKey, type UnlockIntent } from '../lib/handoff.js';
 import { startSignIn, completeSignIn, AuthError, type AuthErrorKind } from './auth.js';
 import { WORDS } from './auth-words.js';
@@ -239,7 +239,9 @@ window.addEventListener('message', (e: MessageEvent) => {
       const who = signedIn();
       if (who) writePendingPurchase({ txn: txn || 'not given', uid: who.uid, at: Date.now() });
       removeFrame();
-      void confirmHere(txn);
+      // A refund confirmed here (a refunded account paying again, whose old record answered first) puts the buyer back
+      // on the checkout rather than at a dead end.
+      void confirmHere(txn, true).then((ending) => { if (ending.mayBuy) readyToBuy(ending.words); });
       break;
     }
     case 'pdfiq-checkout-closed':
@@ -250,23 +252,42 @@ window.addEventListener('message', (e: MessageEvent) => {
   }
 });
 
-/** Confirm on this page, in words, then say what the buyer can do next. */
-async function confirmHere(txn: string): Promise<void> {
+/** Confirm on this page, in words, then say what the buyer can do next. Returns the ending, so the caller knows
+ * whether the checkout may still be offered. */
+async function confirmHere(txn: string, justPaid = false): Promise<ConfirmEnding> {
   show('confirming');
   const line = $('[data-buy-confirm]')!;
   const next = $('[data-buy-confirm-next]')!;
   next.hidden = true;
-  const outcome = await confirmPurchase(txn, (text) => { line.textContent = text; });
-  line.textContent = confirmEndWords(outcome, txn);
+  const outcome = await confirmPurchase(txn, (text) => { line.textContent = text; }, { justPaid });
+  const ending = afterConfirm(outcome, txn);
+  line.textContent = ending.words;
   if (outcome.kind === 'owned') {
     show('owned');
     await returnFromUnlock();
-    return;
+    return ending;
   }
-  if (outcome.kind === 'signed-out' || outcome.kind === 'slow') {
+  if (ending.accountNote) {
     next.replaceChildren('Your ', Object.assign(document.createElement('a'), { href: '/account/', textContent: 'account page' }), ' checks again whenever it is opened.');
     next.hidden = false;
   }
+  return ending;
+}
+
+/** The checkout, offered. `note` is shown above it when there is a reason the buyer is here (a refund, say). */
+function readyToBuy(note: string): void {
+  const session = signedIn();
+  if (session) $('[data-buy-email]')!.textContent = session.email;
+  const pay$ = $<HTMLButtonElement>('[data-buy-pay]')!;
+  if (!pay$.dataset.wired) {
+    pay$.dataset.wired = 'yes';
+    pay$.addEventListener('click', () => pay());
+    $<HTMLButtonElement>('[data-buy-retry]')?.addEventListener('click', () => pay());
+  }
+  const noteEl = $('[data-buy-note]')!;
+  noteEl.textContent = note;
+  noteEl.hidden = !note;
+  show('ready');
 }
 
 async function start(): Promise<void> {
@@ -323,7 +344,7 @@ async function start(): Promise<void> {
     owned = checked.state === 'owned';
     if (checked.state === 'offline' || checked.state === 'unavailable') {
       mayOpen = false;
-      const note = $('[data-buy-unchecked]')!;
+      const note = $('[data-buy-note]')!;
       note.textContent = checked.state === 'offline'
         ? 'You are offline, so whether this account already owns Pro could not be checked. If you bought it before, open your account page with a connection instead of paying again.'
         : 'Whether this account already owns Pro could not be checked just now. If you bought it before, open your account page later instead of paying again.';
@@ -337,16 +358,18 @@ async function start(): Promise<void> {
     await returnFromUnlock();
     return;
   }
-  // Paid on this browser but not confirmed yet (the tab was closed, say): confirm, never offer a second checkout.
+  // Paid on this browser but not confirmed yet (the tab was closed, say): confirm, never offer a second checkout —
+  // unless the answer is that the purchase was refunded, which leaves the account owning nothing and free to buy.
   const pending = readPendingPurchase(session.uid);
   if (pending) {
-    void confirmHere(pending.txn === 'not given' ? '' : pending.txn);
+    // A note written minutes ago is a payment we are still waiting on; an old one is a purchase whose fate is known.
+    const fresh = Date.now() - pending.at < 5 * 60_000;
+    const ending = await confirmHere(pending.txn === 'not given' ? '' : pending.txn, fresh);
+    if (!ending.mayBuy) return;
+    readyToBuy(ending.words);
     return;
   }
-  $('[data-buy-email]')!.textContent = session.email;
-  $<HTMLButtonElement>('[data-buy-pay]')!.addEventListener('click', () => pay());
-  $<HTMLButtonElement>('[data-buy-retry]')?.addEventListener('click', () => pay());
-  show('ready');
+  readyToBuy('');
   if (unlock) {
     // Unlock was the decision to buy: open the checkout now rather than asking for a second press. Not on a
     // reload, so closing the checkout and reloading does not throw it open again. Arriving back from Google counts

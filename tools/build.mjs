@@ -14,11 +14,11 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:http';
 import * as esbuild from 'esbuild';
 import { applyProBlocks, applySaleBlocks } from './pro-blocks.mjs';
-import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, PRO_FEATURES, TOKENS, href, ORIGIN, PRO as PRO_OFFER } from './site.mjs';
+import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, TOKENS, href, ORIGIN, PRO as PRO_OFFER } from './site.mjs';
 import { AUTH } from './auth-config.mjs';
 import { PADDLE } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
-import { PRO_COPY, proState, proStrip, proPanel, proSheet, lockedPanelStatic } from './pro-copy.mjs';
+import { PRO_COPY, PRO_FEATURES, proState, proStrip, proPanel, proSheet, proSurfaces, proWhere, lockedPanelStatic } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
 import { ogImage } from './og-images.mjs';
 import { LANGUAGES } from './langs.mjs';
@@ -67,19 +67,50 @@ const SERVE = process.argv.includes('--serve');
  * it on. The same problem the Android app solved with a source-set split. See CLAUDE.md,
  * "The Pro flag", and src/pro/core.ts.
  *
- * Mirrors the Android release rule: nothing can turn it on in production. A Cloudflare build of
- * the production branch with the flag set throws, and so does a Cloudflare build that does not
- * say which branch it is — unknown counts as production. It turns Pro on for everyone; there is
- * no entitlement check yet, which is acceptable only because nothing is for sale.
+ * On production it is allowed only alongside PDFIQ_SALE, and that pairing is the whole rule.
+ *
+ * Until 20 September 2026 the flag was refused on production outright, for a reason that is still true of the flag
+ * on its own: **without PDFIQ_SALE, Pro belongs to whoever signs in.** src/pro/gate.ts, proAccount():
+ * `if (!__PDFIQ_SALE__) return session;` — no entitlement is consulted, because in a preview build there is nothing
+ * to have bought. The locked panel even says "Sign in to use it in this preview build". On pdf-iq.com that is Pro
+ * given away to any Google account, over copy calling the live site a preview.
+ *
+ * So the refusal is not lifted here, it is narrowed to the state that was actually forbidden. The two flags go on in
+ * ONE deploy. Setting PDFIQ_PRO first and PDFIQ_SALE afterwards — the order the launch checklist used to imply —
+ * opens a window, however short, in which signing in is free Pro on the production site; a build in that state now
+ * refuses rather than publishing.
+ *
+ * A Cloudflare build that does not say which branch it is still counts as production.
  */
 const PRO = /^(1|true|on)$/i.test(process.env.PDFIQ_PRO ?? '');
 const ON_CLOUDFLARE = Boolean(process.env.CF_PAGES);
 const PRODUCTION = ON_CLOUDFLARE && (process.env.CF_PAGES_BRANCH ?? 'main') === 'main';
-if (PRO && PRODUCTION) {
+const SELLING = /^(1|true|on)$/i.test(process.env.PDFIQ_SALE ?? '');
+
+/**
+ * Is this build a preview deployment — the thing that must stay out of search?
+ *
+ * It used to be spelled `PRO`, and that was correct for as long as the Pro flag was preview-only: every build that
+ * had it was a preview, so `PRO` and "not for search engines" named the same set. Step 0 breaks that. `PDFIQ_PRO`
+ * goes on in production, and with the old spelling the launch-day deploy would have published **robots.txt saying
+ * `Disallow: /` and `noindex, nofollow` on all 21 pages** — the seven free tool pages and the homepage included.
+ * pdf-iq.com deindexed on the day it started selling, on a site whose commercial argument is search. Measured by
+ * building the exact production configuration before the flip (20 September 2026); nothing in the deploy would have
+ * said so, and the effect arrives whenever Google next crawls rather than at once.
+ *
+ * The Pro pages stay out of search on their own merit: /account/, /batch/, /password/ and /pro/buy/ each carry
+ * `noindex: true` in site.mjs, and the sitemap already excludes anything noindex. So this predicate now says only
+ * what it means — a deployment that is not production — and the per-page flags do the rest.
+ *
+ * CLAIMS 52: a configuration that was correct before an architectural change is a claim about the old architecture.
+ */
+const PREVIEW_DEPLOY = PRO && !PRODUCTION;
+if (PRO && PRODUCTION && !SELLING) {
   throw new Error(
     'PDFIQ_PRO is set on a production build (Cloudflare Pages, branch ' +
-    `${process.env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}). Pro and sign-in are preview-only until ` +
-    'payment is live. Remove PDFIQ_PRO from the Production environment variables.'
+    `${process.env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}) without PDFIQ_SALE. Without the sale flag, Pro ` +
+    'belongs to anyone who signs in (src/pro/gate.ts, proAccount) and the locked panels call this a preview build. ' +
+    'Set both flags in the same deploy, or neither: docs/sale-go-live.md step 5.'
   );
 }
 /** Every module under src/pro/ carries a string with this prefix; see src/pro/core.ts. */
@@ -90,7 +121,26 @@ const PRO_SENTINEL_PREFIX = 'pdfiq-pro:';
  */
 // A `sale` page (/pro/buy/) joins only a build that can actually sell: tools/paddle-config.mjs.
 const ROUTES = PRO ? [...ALL, ...PRO_PAGES.filter((p) => !p.sale || PADDLE?.page)] : ALL;
+/**
+ * Signing in needs a Firebase web key, and Pro needs signing in: without it /account/ says so and makes no request.
+ *
+ * On a preview that is a warning worth having — testers cannot sign in, the rest of the build is still useful, and
+ * every preview branch shares one set of variables. On a production build that is SELLING it is the same defect as
+ * a price with no purchase behind it, one step further along: someone pays, comes back, and has no way to own what
+ * they bought. So the production sale build refuses instead, alongside the other five things a sale needs
+ * (tools/paddle-config.mjs, incomplete()). Warning where it should refuse is how a gate becomes an annotation
+ * (CLAIMS 58); this one was left as a warning because when it was written nothing could sell.
+ */
 if (PRO && !AUTH.apiKey) {
+  const sellingOnProduction = PRODUCTION && /^(1|true|on)$/i.test(process.env.PDFIQ_SALE ?? '');
+  if (sellingOnProduction) {
+    throw new Error(
+      'PDFIQ_FIREBASE_WEB_KEY is not set on a production build that sells (Cloudflare Pages, branch ' +
+      `${process.env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}). Pro is owned by an account, and signing in ` +
+      'needs this key: /account/ would say signing in is not set up and make no request, so a buyer could pay and ' +
+      'have no way to own what they bought. docs/sale-go-live.md § "Credentials and configuration".'
+    );
+  }
   console.warn('  (pro) no PDFIQ_FIREBASE_WEB_KEY: /account/ will say signing in is not set up, and make no request');
 }
 /**
@@ -117,6 +167,12 @@ const LOCAL = PRO && !ON_CLOUDFLARE && (LOCAL_ASKED || SERVE);
 if (LOCAL) {
   console.warn('  (pro) local stub: /account/ can switch Pro on in this browser without Google');
 }
+/**
+ * Shown on a preview deployment, and only there. It was keyed to PRO, which meant the same thing until step 0:
+ * on the production build it announced "selling through the Paddle SANDBOX — test payments only; no real card is
+ * charged" on every page, over a checkout charging real cards. A false statement about the charge, at the top of
+ * the page where the charge happens.
+ */
 const PREVIEW_BANNER =
   '<div data-pdfiq-pro="pdfiq-pro:preview" role="note" style="background:#1E2A38;color:#FAF8F4;' +
   'font:600 14px/1.45 system-ui,sans-serif;padding:9px 16px;text-align:center">' +
@@ -309,7 +365,18 @@ function substituteTokens(body, file) {
   // A sale build names the price. A Pro build writes the strip hidden: src/pro/strip.ts shows it only to someone who
   // does not own Pro, so an owner never sees it, not even for a moment. Production writes it visible, and has no owners.
   const selling = Boolean(PADDLE?.page) || PRO_OFFER.onSale;
-  const tokens = { ...TOKENS, proStrip: proStrip({ selling, hidden: PRO }), proPanel: proPanel({ selling, hidden: PRO }), searchableLocked: lockedPanelStatic('searchable', 'Searchable PDF') };
+  // {{proFeatureCountCap}} and {{proSurfaces}} count and name PRO_COPY's entries, so a fifth feature — or one that
+  // reaches the app — changes every page that mentions them without a page being edited.
+  const COUNTS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+  const tokens = {
+    ...TOKENS,
+    proStrip: proStrip({ selling, hidden: PRO }),
+    proPanel: proPanel({ selling, hidden: PRO }),
+    searchableLocked: lockedPanelStatic('searchable', 'Searchable PDF'),
+    proFeatureCountCap: COUNTS[PRO_COPY.length] ?? String(PRO_COPY.length),
+    proSurfaces: proSurfaces(),
+    proWhere: proWhere(),
+  };
   const out = body.replace(/\{\{(\w+)\}\}/g, (_, name) => {
     if (!(name in tokens)) throw new Error(`unknown token {{${name}}} in ${file}`);
     return tokens[name];
@@ -346,7 +413,7 @@ function document_({ page, body, css, assets }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<meta name="description" content="${esc(description)}">${page.noindex || PRO ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
+<meta name="description" content="${esc(description)}">${page.noindex || PREVIEW_DEPLOY ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
 <link rel="canonical" href="${url}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${url}">
@@ -367,7 +434,7 @@ ${FONT_PRELOADS}
 <style>${css}</style>
 </head>
 <body${shell}>
-${PRO ? PREVIEW_BANNER + '\n' : ''}<a class="skip-link" href="#main">${TOOLS.some((t) => t.slug === page.slug) ? 'Skip to the tool' : 'Skip to content'}</a>
+${PREVIEW_DEPLOY ? PREVIEW_BANNER + '\n' : ''}<a class="skip-link" href="#main">${TOOLS.some((t) => t.slug === page.slug) ? 'Skip to the tool' : 'Skip to content'}</a>
 ${header(page.slug, sells)}
   <main class="site-main${page.slug === '' ? ' site-main--home' : ''}" id="main">
 ${body}
@@ -705,8 +772,8 @@ async function bundle() {
 const SEARCH_CRAWLERS = ['Googlebot', 'Bingbot', 'OAI-SearchBot', 'Claude-SearchBot', 'PerplexityBot'];
 
 function robots() {
-  // A preview build is not for search engines. Its pages are noindex as well; this stops the crawl.
-  if (PRO) return 'User-agent: *' + NL + 'Disallow: /' + NL;
+  // A preview deployment is not for search engines. Its pages are noindex as well; this stops the crawl.
+  if (PREVIEW_DEPLOY) return 'User-agent: *' + NL + 'Disallow: /' + NL;
   const groups = [...SEARCH_CRAWLERS, '*']
     .map((agent) => `User-agent: ${agent}` + NL + 'Allow: /')
     .join(NL + NL);
@@ -923,7 +990,7 @@ async function build() {
     if (selling.length) throw new Error(`a purchase path reached a build that is not selling: ${selling.slice(0, 8).join(', ')}`);
   }
 
-  console.log(`built ${ROUTES.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images${PRO ? '  — PRO PREVIEW' : ''}`);
+  console.log(`built ${ROUTES.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images${PRO ? (PRODUCTION ? '  — PRO, PRODUCTION' : '  — PRO PREVIEW') : ''}`);
 }
 
 // ---------------------------------------------------------------- dev loop

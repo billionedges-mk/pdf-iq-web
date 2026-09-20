@@ -65,7 +65,13 @@ the work is done.
 49. [An instrument that cannot fail reports confidently about the wrong thing](#49-an-instrument-that-cannot-fail-reports-confidently-about-the-wrong-thing)  
 50. [A check can fail on correct code, and then it is the check that is wrong](#50-a-check-can-fail-on-correct-code-and-then-it-is-the-check-that-is-wrong)  
 51. [One field name at two levels of a payload describes two different things](#51-one-field-name-at-two-levels-of-a-payload-describes-two-different-things)  
-52. [A configuration that was right before an architectural change is a claim about the old architecture](#52-a-configuration-that-was-right-before-an-architectural-change-is-a-claim-about-the-old-architecture)
+52. [A configuration that was right before an architectural change is a claim about the old architecture](#52-a-configuration-that-was-right-before-an-architectural-change-is-a-claim-about-the-old-architecture)  
+53. [A list implies parity; the exception has to be generated, and checked beside the list](#53-a-list-implies-parity-the-exception-has-to-be-generated-and-checked-beside-the-list)  
+54. [Two records of one deferral disagree quietly, and only produce different actions on the day](#54-two-records-of-one-deferral-disagree-quietly-and-only-produce-different-actions-on-the-day)  
+55. ["Done" is a claim about the reporter, not about the world](#55-done-is-a-claim-about-the-reporter-not-about-the-world)  
+56. [A sandbox measurement is a measurement of sandbox](#56-a-sandbox-measurement-is-a-measurement-of-sandbox)  
+57. [A cached NO and a real NO are the same sentence](#57-a-cached-no-and-a-real-no-are-the-same-sentence)  
+58. [A chain that proceeds past a failure is a chain with no gate in it](#58-a-chain-that-proceeds-past-a-failure-is-a-chain-with-no-gate-in-it)
 
 <!-- /index -->
 
@@ -1720,6 +1726,19 @@ which is how an assertion gets weakened until it proves nothing.
 3. A check weakened to make it pass is recorded as weakened, with what it no longer proves — or it is a comment
    (CLAIMS 19).
 
+**It recurred on 20 September 2026, inside a check written to guard a claim that had just been corrected.**
+`verify-price-offers` asserted the tax sentence's literal words. When the production price measurement proved that
+sentence false (CLAIMS 56), the check could not tell a true sentence from a false one — only this sentence from
+another — and, having been written to protect the claim, it then **required the claim to stay wrong**: the build
+refused the corrected copy until the check was corrected too. The instinct that writes the exact words into a check is
+the same one that makes it brittle. Precision about the wrong thing (owner).
+
+Two smaller versions of it turned up in the same hour, both in the replacement. The property test `/added at the
+checkout/` failed on the new sentence, which ends "**not** added at the checkout" — a substring cannot see a
+negation, so the test now reads sentence by sentence and refuses only a sentence that CLAIMS something is added. And
+the retired phrase went in twice, for the price cards' wording and /terms', because they differed by one word and a
+semicolon — which is exactly how one of them survives a search for the other.
+
 ### 51. One field name at two levels of a payload describes two different things
 
 Paddle's refund notification carries `type` twice. `data.type` describes the ADJUSTMENT against the whole transaction:
@@ -1769,3 +1788,214 @@ belonged to. They are the last place an old architecture survives.
    reasonably "correct" it back. docs/sale-go-live.md carries the reason beside the value, not just the value.
 3. A credential belongs in exactly one place, the one that reads it. Anywhere else it is a liability with no function,
    and "it was there before" is how it got there.
+
+### 53. A list implies parity; the exception has to be generated, and checked beside the list
+
+Pro is four things on the website and three in the Android app — compressing to a size is web-only until the app's 1.3.
+Nine built pages listed the four with nothing said about where they are, and a list with no exception in it is read as a
+complete one. The obvious repair is a sentence written beside each list, which is the shape this repo keeps deleting: it
+has to be found and rewritten the day the app catches up, on every page, and the page that gets missed is the one that
+then lies. So the sentence is generated from a per-feature `inApp` flag (tools/pro-copy.mjs, proSurfaces): today it
+reads "Three of these are in the Android app as well: …", and when the last flag flips it reads "All four are in the
+Android app as well" with no page edited. It leads with what the buyer has rather than what they lack, because a true
+line that reads as an apology gets rewritten by the next person who finds it (owner, 19 September 2026).
+
+**A page-level check would have passed while the list a reader was looking at stayed silent.** /app/ lists the four in
+its price card, and the phone Pro sheet at the far end of the same document carries the line — 8,554 characters away.
+"The page contains the sentence" was true and worthless. tools/verify-surfaces.mjs measures the distance from each list
+to the nearest copy of the line, and the limit is a measured number (the widest real gap is 963 characters, on /pro/,
+where the line follows the last of four feature sections) rather than a chosen one.
+
+**The check:**
+
+1. A fact that differs per surface belongs on the feature, not in the prose: one flag per feature, one generator, and
+   every page that lists them re-renders itself.
+2. State it in the tense that stays true. "Three of these are in the app as well" is a description of today that becomes
+   "All four" on its own; "not yet in the app" is a promise with a maintenance cost.
+3. Check the built page, not the template. `{{proSurfaces}}` in a source file proves nothing about what a reader sees,
+   and a marker like `<!--PRO_FEATURES-->` renders a list with no token in sight.
+4. Check proximity, not presence. Ask what the check would say if the sentence sat 8,000 characters from the list — if
+   the answer is "ok", it is measuring the document rather than the claim (CLAIMS 47).
+5. Derive what counts as "a list" from the same data the lists render from, so a fifth feature changes what is looked
+   for as well as what is written.
+
+### 54. Two records of one deferral disagree quietly, and only produce different actions on the day
+
+The launch-day flip was written down twice. TECH_DEBT.md said it unblocks when the app "has been tested on a device"
+and named six places; docs/sale-go-live.md said it unblocks when the release is "live on Play" and counted eleven
+occurrences in seven files. Neither reads as wrong. Nobody would have noticed until the day itself, when "tested on a
+device" says go and "live on Play" says wait, and one list leaves five places behind — and the day itself is the worst
+moment to discover that the record disagrees with the record (owner, 20 September 2026).
+
+This is the same shape as two lists of the Pro features (CLAIMS 53): one fact, written twice, corrected once. A
+deferral is worse than a fact, though, because a stale fact misleads whoever reads it while a stale **condition** keeps
+work from happening invisibly — the entry looks like diligence, and nothing about it says the reason for waiting
+expired.
+
+**The check:**
+
+1. One deferral, one record. The other place points at it and holds only why the entry exists, never a second copy of
+   the trigger or the inventory.
+2. Every deferral carries an **unblocks when** line naming the event, not a feeling: "vc18 is live on Play", not
+   "when the app is ready". If nobody can tell from the line whether today is the day, it is not a condition.
+3. Apply it to what is in front of you and let older entries get it as they are touched. A sweep would invent
+   conditions nobody ever wrote down, which is a worse record than an honest gap.
+4. A record that lives only in a conversation is indistinguishable from one nobody made. Two proposals waiting on the
+   owner had been agreed in chat and written nowhere; both surfaced only because everything deferred was being given a
+   line.
+5. Break an inventory out by build state before trusting it. **The same page in two states is two pages, and a list
+   that does not say which state is describing neither** (owner, 20 September 2026). Splitting the tax sentence's
+   five places by sale state is what exposed the real gap: /terms' SALE block — the text that governs a purchase
+   someone can actually make — said nothing about tax at all, and neither did /app/'s selling price card. Both were
+   invisible in a list that said only "/terms" and "/app/".
+6. Prefer a check to a record wherever the record is a list of places. The inventory was wrong twice — once for a
+   placeholder, once for a file that is not a page — so what enforces the flip now reads the built output, and the list
+   is a convenience.
+
+### 55. "Done" is a claim about the reporter, not about the world
+
+Twice in one week a report from another session did not survive being checked. One said /terms carried a sentence
+about the purchase covering both surfaces: it had been retired three days earlier and a check was guarding it. One
+said a /privacy correction was already live on production: production was still serving the old paragraph. Neither
+report was dishonest, and in both cases the session that had to act on it was the session that checked — which is
+lucky, because nobody else would have (owner, 20 September 2026).
+
+A session reporting "done" is telling you its own state: what it decided, wrote, or intended. Whether that reached
+production is a different fact, with its own failure modes — an unpushed commit, a failed build leaving the old
+output (CLAIMS 35), a change made on the wrong branch, a deploy that has not finished. None of them make the reporter
+wrong about themselves.
+
+**The check:**
+
+1. Read the live page, the live row, the live artefact. The same instrument that settles any other claim about the
+   world settles this one, and it costs one request.
+2. Check before acting on it, not after. The cost of checking is a fetch; the cost of not checking is a change to a
+   page that was already correct, or a gap left open because someone said it was closed.
+3. When a report and the world disagree, the disagreement IS the finding, and it belongs in the reply — not quietly
+   corrected. Both times, what the other session had actually seen was true of something: its own branch, its own
+   intent. Saying which turns a contradiction into information.
+4. This applies to your own earlier reports too. "I applied it" from four hours ago is a claim about a past intention,
+   and the page is right there.
+
+### 56. A sandbox measurement is a measurement of sandbox
+
+Paddle's sandbox, on 17 September 2026, charged $16.32 in New York, $16.23 in Texas and $16.94 in Ontario against a
+$14.99 tax-inclusive price: sales tax added on top. Four pages and one check were written from that table — "In the
+United States and Canada, sales tax is added at the checkout, which shows the total before you pay." On 20 September
+the same measurement against the **live** price answered $14.99 in every one of ten places, New York, Texas,
+California and Ontario included. The production account takes the tax out of the price where sandbox added it on.
+
+The sentence was never true of the system it described. It is not a stale claim, which was right once, and not a
+drifted one, which lost its subject. It was written from a faithful measurement of the wrong world, and nothing but
+measuring the real one could have caught it (owner, 20 September 2026).
+
+**It happened twice in one day.** The live Paddle account's domain approval for checkout.pdf-iq.com came back
+**pending**; the sandbox account had approved both domains instantly, which taught us approval was a formality and
+kept it off the launch checklist entirely — not as a step that might be slow, but as a step nobody had written down.
+A sandbox that says yes immediately is not a faster version of a reviewer. It is the absence of one.
+
+The asymmetry to remember: **sandbox is permissive where production is strict, so sandbox cannot show you a gate.**
+Every "this was instant / this just worked / nothing objected" from a test account is evidence about the test
+account's leniency and about nothing else. What it produces is not a wrong answer that a check would catch, but a
+missing step that no check can look for, because nothing in the repo knows the step exists.
+
+**Sandbox is a different world, not a smaller one.** The same week: the app's release build refuses a non-production
+entitlement environment outright, because a release built that way rejects every real token silently — the two
+environments are not degrees of the same thing. A sandbox result answers "what would this system do", and the system
+is not the one customers meet.
+
+**The check:**
+
+1. Label every measured fact with what it was measured against, in the record and in the comment beside the copy it
+   produced. "Measured on the sandbox price" is the sentence that makes this findable later; "measured" alone is not.
+2. Before copy that states a number goes to people, ask which environment produced the number, and whether that
+   environment is the one they will buy from.
+3. Where the real measurement cannot be taken yet, say the weaker true thing rather than the stronger sandbox one —
+   and record what to re-check and when (CLAIMS 54's "unblocks when").
+4. A checkout, a price, a tax, a webhook payload and a refund are all account configuration as much as code. Two
+   accounts configured differently will disagree faithfully, and neither is lying.
+5. Watch for the check that enforces the wrong sentence. verify-price-offers asserted this one's literal wording, so
+   the build would have refused the true sentence and required the false one (CLAIMS 50: test the property, not the
+   phrasing).
+
+### 57. A cached NO and a real NO are the same sentence
+
+`checkout.pdf-iq.com` did not exist: `nslookup` said **Non-existent domain**, and that finding was right — the
+custom domain had never been attached, Paddle's form had accepted a payment link pointing at nothing, and no check on
+this site could have known. Then the domain was attached, and the same lookup on the same machine said **Non-existent
+domain** again. That finding was wrong. This machine's resolver was holding a negative cache for the **A** record —
+while answering **AAAA** normally, which is why nothing about the failure looked like caching — and `ipconfig
+/flushdns` did not clear it. Every public resolver answered correctly throughout (20 September 2026).
+
+Believed, it would have cost real time in the worst direction: the report would have been "the attachment failed",
+and the owner would have gone back into Cloudflare to fix something that was already right.
+
+**This is the identity problem (CLAIMS 12, 49) with the axis changed.** Those are instruments answering truthfully
+about a different *object* — a different error class, a different server, a different build. This one answers
+truthfully about a different **time**: the resolver reported the world as it was when the negative was cached, and a
+stale answer and a current one are the same four words. Nothing in "Non-existent domain" carries a timestamp or a
+source, so the sentence cannot tell you which question it answered.
+
+**The check:**
+
+1. **Name which resolver answered.** `nslookup <name> 1.1.1.1`, a DNS-over-HTTPS query, or `curl --resolve
+   host:443:<ip>` to bypass resolution entirely. The cure is the same shape as every other identity fix: make the
+   answer say what produced it.
+2. **Treat a negative as the weaker result.** A YES from any resolver proves the record exists; a NO from one proves
+   only that one resolver says so today. Disagreement between two resolvers is not ambiguity — the YES wins.
+3. **A flush is not a guarantee.** It clears what it holds; upstream caches, routers and split A/AAAA state survive
+   it. An unchanged answer after a flush is not confirmation, it is the absence of one — the same shape as an idle
+   reading that cannot tell finished from never started.
+4. **Suspect the instrument when a negative follows a change that should have fixed it.** The prior probability moved;
+   the instrument did not. That asymmetry is the tell, and re-running the same query from the same place cannot
+   resolve it.
+5. Caching is everywhere this argument applies: DNS, CDN edges, browser HTTP caches, package registries, a CI
+   artefact store. Every one of them can answer about a moment that has passed, in a sentence with no tense.
+
+### 58. A chain that proceeds past a failure is a chain with no gate in it
+
+Step 0's commit was written as `run the checks; commit; push`. `verify:sale-build` failed — correctly, on two rows
+that asserted the refusal the commit removes — and the commit and push ran anyway, because the failure was reported
+into a log file and read by a human afterwards rather than by the shell (20 September 2026). The next commit fixed it,
+and the branch is right, but for a few minutes a failing check sat behind a pushed commit.
+
+**This is not CLAIMS 32.** There the command succeeded and had done nothing — the exit code was honest about an
+invocation that changed nothing. Here the exit code was honest about a real failure and **nothing consumed it**. The
+defect is in the composition, not the instrument: a gate that nothing reads is a comment, exactly as a check that
+cannot fail the build is (CLAIMS 27).
+
+Every form of it seen on this project:
+
+- `check > log 2>&1; echo $?` followed by an unrelated `&& commit` — the `&&` binds to the `echo`, which always
+  succeeds. The status was printed, not obeyed.
+- `npm run build | head` — the pipeline's status is the last command's, and `head` closing the pipe turns a killed
+  build into a success, or a SIGPIPE into a failure that never happened (both directions, same week).
+- A check whose output is long enough that only its tail is read, with the failures above the fold.
+- A prebuild step that warns instead of failing, so a thing meant to stop a release becomes a thing that annotates it.
+
+**A third instance, hours after this entry was written, and the sharpest of the three.** Proving the new indexing
+assertions failed on the unfixed code was run as `cp … && git checkout HEAD -- tools/build.mjs && grep -c
+PREVIEW_DEPLOY tools/build.mjs && npm run verify:sale-build > old.log; echo exit=$?`. The `grep -c` was there to
+show the fix was absent — it printed `0` and **exited 1**, which stopped the chain, so the verification never ran.
+`echo exit=$?` then reported grep's 1, and the log still held the previous run. Read quickly, that is "exit=1, it
+failed on the unfixed code" — the answer expected, assembled from a run that did not happen.
+
+The instrument that was supposed to demonstrate a failure produced a failure of its own and the two were
+indistinguishable in the output. Running it again directly, with nothing in front of it, showed the two real
+assertion failures. **A gate in the middle of a chain is also a gate on the evidence.**
+
+**The check:**
+
+1. **Let the shell hold the gate.** `a && b && c`, or `set -e`. If a human has to read a number and decide, the
+   gate is advisory and will be skipped on the day it matters — which is the day someone is in a hurry.
+2. **Never put a check behind a pipe** whose exit status you then test. Redirect to a file, test the status of the
+   command itself, then read the file.
+3. **Assert, do not print.** A step that ends `echo exit=$?` has converted a gate into a fact about the past.
+4. **Ask what the chain does when the middle link fails.** If the answer is "the rest still runs", there is no chain,
+   only a list — and if the answer is "the rest is skipped and the old output is still there", the list is worse than
+   no list, because it answers.
+5. **A diagnostic is not a gate.** `grep -c`, `test`, `diff` and `[ … ]` all exit non-zero as their ordinary way
+   of saying "no". Putting one in front of `&&` turns an observation into a precondition, silently.
+6. **When a run is meant to FAIL, say which failure you got.** "Exit 1" from a chain is not evidence: the line that
+   failed has to be the one under test, and its message has to name the assertion. Otherwise the expected answer and
+   a broken harness look the same (CLAIMS 33's shape, from the other end).

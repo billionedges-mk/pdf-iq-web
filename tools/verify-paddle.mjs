@@ -135,10 +135,51 @@ console.log('\n— webhook');
   ok(r.body.applied === false && rows(db)[0].status === 'granted', 'a refund pending approval changes nothing');
 
   r = await deliver(db, adjustment('adjustment.updated', { action: 'refund', type: 'partial', status: 'approved' }, '2026-09-14T09:30:00Z'));
-  ok(r.body.reason === 'partial-refund' && rows(db)[0].status === 'granted', 'an approved partial refund leaves Pro in place');
+  // The property — Pro stays, and the reason says partial — rather than the exact string, which now names what was read.
+  ok(/partial-refund/.test(r.body.reason) && rows(db)[0].status === 'granted', 'an approved partial refund with no items leaves Pro in place');
 
   r = await deliver(db, adjustment('adjustment.updated', { action: 'refund', type: 'full', status: 'approved' }, '2026-09-14T10:00:00Z'));
   ok(rows(db)[0].status === 'revoked', 'an approved full refund revokes');
+
+  // The payload Paddle actually sent for a full refund of our one item (ntf_01m2tbxq29t6aq3dsybpda6e4m, 18 September
+  // 2026, copied field for field from the notification log). The adjustment calls itself "partial" — it adjusts part of
+  // the transaction — while the item it refunds is "full". Reading the adjustment's word left Pro standing after a
+  // refund, which is the shape of this whole case: one word, two levels, two meanings.
+  {
+    const dbReal = d1();
+    await deliver(dbReal, completed('2026-09-17T20:41:05Z'));
+    const real = await deliver(dbReal, adjustment('adjustment.updated', {
+      action: 'refund', status: 'approved', type: 'partial',
+      items: [{ type: 'full', amount: '1499' }],
+      totals: { fee: '125', tax: '71', total: '1499', earnings: '1303' },
+    }, '2026-09-18T13:40:00Z'));
+    ok(rows(dbReal)[0].status === 'revoked', `Paddle's own full-refund payload revokes, though the adjustment calls itself partial (reason: ${real.body.reason})`);
+  }
+  {
+    // And the genuine partial: some money back, one item only partly refunded, Pro stays.
+    const dbPart = d1();
+    await deliver(dbPart, completed('2026-09-17T20:41:05Z'));
+    const part = await deliver(dbPart, adjustment('adjustment.updated', {
+      action: 'refund', status: 'approved', type: 'partial',
+      items: [{ type: 'partial', amount: '500' }],
+      totals: { fee: '40', tax: '24', total: '500', earnings: '436' },
+    }, '2026-09-18T13:45:00Z'));
+    ok(rows(dbPart)[0].status === 'granted' && /partial-refund-items/.test(part.body.reason), 'an item refunded in part leaves Pro standing');
+  }
+
+  // A refund did not revoke (18 September 2026). Before the items were read, the rule required the word "full" on the
+  // adjustment; an approved refund naming its type differently, or not at all, was filed as partial and ignored. With no
+  // items to read, anything but "partial" still takes Pro away.
+  for (const [label, fields] of [
+    ['no type at all', { action: 'refund', status: 'approved' }],
+    ['a type we have not seen', { action: 'refund', type: 'proration', status: 'approved' }],
+    ['type in a different case', { action: 'refund', type: 'Full', status: 'approved' }],
+  ]) {
+    const dbR = d1();
+    await deliver(dbR, completed('2026-09-13T10:00:00Z'));
+    const res = await deliver(dbR, adjustment('adjustment.updated', fields, '2026-09-14T10:00:00Z'));
+    ok(rows(dbR)[0].status === 'revoked', `an approved refund with ${label} revokes (reason: ${res.body.reason})`);
+  }
 
   r = await deliver(db, completed('2026-09-13T10:00:00Z', undefined, PRICE));
   ok(rows(db)[0].status === 'revoked' && r.body.reason === 'older-than-current-status', 'a retried older purchase event does not undo the refund');
@@ -254,6 +295,38 @@ console.log('\n— entitlement');
 
   r = await ask(await idToken({ sub: 'uid-bob', email: 'bob@example.com' }));
   ok(r.status === 200 && r.body.pro === false && r.body.revoked === false && !r.body.token, 'someone who never bought gets pro: false and no token');
+
+  // Several purchases on one account, which is the state nobody wrote a fixture for until it happened: a refunded
+  // purchase and then two more, all on uid fjASdHy… (18 September 2026). Pro is owned while ANY purchase stands, so a
+  // refund of one of two leaves it — correct, because they paid twice — and only refunding every one takes Pro away.
+  {
+    const many = d1();
+    const alice = { uid: 'uid-many', email: 'many@example.com' };
+    const custom = { uid: alice.uid, email: alice.email };
+    const T1 = 'txn_01c1aaaaaaaaaaaaaaaaaaaaaa', T2 = 'txn_01c2aaaaaaaaaaaaaaaaaaaaaa', T3 = 'txn_01c3aaaaaaaaaaaaaaaaaaaaaa';
+    const askMany = async () => {
+      const res = await entitlement({
+        request: new Request('https://preview.example/api/entitlement', { headers: { Authorization: `Bearer ${await idToken({ sub: alice.uid, email: alice.email })}` } }),
+        env: { PDFIQ_SALE: 'true', PURCHASES: many, PDFIQ_ENTITLEMENT_PRIVATE_KEY: privateJwk, PDFIQ_PADDLE_ENV: 'sandbox' },
+      }, { verifyOptions });
+      return res.json();
+    };
+    await deliver(many, completed('2026-09-18T14:00:00Z', custom, PRICE, T1));
+    await deliver(many, adjustment('adjustment.updated', { action: 'refund', status: 'approved', type: 'partial', items: [{ type: 'full', amount: '1499' }] }, '2026-09-18T14:30:00Z', T1));
+    ok((await askMany()).pro === false, 'one purchase, refunded: Pro is not owned');
+
+    await deliver(many, completed('2026-09-18T19:01:00Z', custom, PRICE, T2));
+    let after = await askMany();
+    ok(after.pro === true && after.token, 'buying again after a refund owns Pro, whatever the older row says');
+
+    await deliver(many, completed('2026-09-18T19:25:00Z', custom, PRICE, T3));
+    await deliver(many, adjustment('adjustment.updated', { action: 'refund', status: 'approved', type: 'partial', items: [{ type: 'full', amount: '1499' }] }, '2026-09-18T20:00:00Z', T2));
+    ok((await askMany()).pro === true, 'with two purchases standing, refunding one leaves Pro owned');
+
+    await deliver(many, adjustment('adjustment.updated', { action: 'refund', status: 'approved', type: 'partial', items: [{ type: 'full', amount: '1499' }] }, '2026-09-18T20:05:00Z', T3));
+    const end = await askMany();
+    ok(end.pro === false && end.revoked === true, 'and Pro goes only when every purchase has been refunded');
+  }
 
   r = await ask(await idToken({ sub: 'uid-alice-new' }));
   ok(r.body.pro === true && rows(db)[0].uid === 'uid-alice-new', 'a re-created account with the same verified email keeps Pro, and the purchase moves to the new uid');

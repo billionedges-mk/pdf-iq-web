@@ -471,13 +471,17 @@ buying. The owner pulled it the same day.
   in the Android app. A refund removes it from this website." (production, 8b9273a).
 - The old phrases from /terms and /refunds are in tools/retired-claims.mjs, so verify:retired refuses them.
 
-**The sentence comes back when the app can honour a web purchase and it has been tested on a device** (the flag split),
-in one change, on all six places that made the promise: /pro/buy/, /pro/ (lede and price card), the homepage Pro panel,
-/app/ (price card), /terms and /refunds. Delete the four retired-claims entries in the same commit, and restore a token for
-`PRO.covers` if one is wanted (removed so it cannot be reused unlisted). /app/ was not in this list: the stage 5 sweep
-found it (17 September 2026), because it took the wording through `{{proCovers}}` and nobody searched the token's uses.
-On pro-sale all six now say `coversToday`. Production still carries `covers` on /pro/, the homepage and /app/ until the
-redesign release.
+**Unblocks when:** vc18 is live on Play. **The change itself is recorded once, in `docs/sale-go-live.md` §4** — the
+inventory, the wording each sentence becomes, the retired-claims deletions, and `npm run verify:purchase-scope`, which
+refuses a flip that leaves any of them behind. It is not restated here: this entry held its own trigger ("tested on a
+device") and its own count ("all six places"), both of which had drifted from the go-live doc's, and two records of one
+deferral is how a stale condition survives (owner, 20 September 2026).
+
+What belongs here is why the entry exists: /app/ was in neither list until the stage 5 sweep found it on 17 September
+2026, because it took the wording through `{{proCovers}}` and nobody searched the token's uses; and the account screen
+was in neither until 20 September, because its copy is TypeScript. Both were found by searching, and a list has now
+been wrong about this claim twice. Restore a token for `PRO.covers` if one is wanted — it was removed so it could not
+be reused unlisted. Production still carries `covers` on /pro/, the homepage and /app/ until the redesign release.
 
 ## Split: the "Where to split" choices appear only after every thumbnail has rendered (found 16 September 2026)
 
@@ -514,7 +518,61 @@ A refunds page is read by someone who is already unhappy; an instruction on it t
 worse (owner, 17 September 2026). Both sentences are live on production, so both were softened there rather than only in
 the sale draft.
 
-## The price is tax-inclusive except in the US and Canada (measured 17 September 2026)
+**Unblocks when:** the first live purchase has been made and its receipt email opened — one event answers both, since
+the receipt shows the buyer portal link and the statement descriptor is on the same charge. Until then neither
+sentence can be written from anything but a guess, and the softened wording is correct rather than temporary.
+
+## Two proposals waiting on the owner, not on work (20 September 2026)
+
+Both are drafted and neither is applied. They are here because a proposal that lives only in a conversation is
+indistinguishable from one nobody made, and the session that drafted it is the session that forgets.
+
+1. **/refunds and an account with more than one purchase.** A uid can hold several granted rows — one did, on 18
+   September, when a refunded buyer paid twice more — and `findEntitlement` resolves "any granted", so refunding one
+   of two leaves Pro owned. That is correct (they paid twice), and /refunds says nothing about it. The proposed
+   sentence: if you bought Pro more than once, refunding one purchase leaves the others, and Pro stays until every one
+   is refunded. **Unblocks when:** the owner says whether this belongs on /refunds at all — it describes a state no
+   real buyer has reached yet, and a refunds page carrying a paragraph about an unusual case can read as a page
+   looking for reasons not to refund.
+
+2. **/privacy, from a peer session:** that the size bands cover every tool rather than only the ones named, and that
+   error reports describe the file's shape rather than its content. **Unblocks when:** the owner says apply. /privacy
+   is the Play policy — proposed, never applied unasked — and a peer session's approval is not the owner's.
+
+## ~~The price is tax-inclusive except in the US and Canada~~ — true of sandbox only, corrected 20 September 2026
+
+**The production price behaves differently, and the sandbox table below describes a system nobody will buy from.**
+Measured against the live price `pri_01m2bsgrhqggk3rmrzvefhcgb9` on 20 September 2026, one unit, through Paddle's own
+price preview with the live client token:
+
+| Place | Total | Subtotal | Tax | Rate |
+|---|---|---|---|---|
+| United Arab Emirates | $14.99 | $14.28 | $0.71 | 5% |
+| Germany | $14.99 | $12.60 | $2.39 | 19% |
+| United Kingdom | $14.99 | $12.49 | $2.50 | 20% |
+| India | $14.99 | $12.70 | $2.29 | 18% |
+| Australia | $14.99 | $13.63 | $1.36 | 10% |
+| Japan | $14.99 | $13.63 | $1.36 | 10% |
+| United States, New York | $14.99 | $13.77 | $1.22 | 8.875% |
+| United States, Texas | $14.99 | $13.85 | $1.14 | 8.25% |
+| United States, California | $14.99 | $14.99 | $0.00 | 0% |
+| Canada, Ontario | $14.99 | $13.27 | $1.72 | 13% |
+
+**$14.99 is the total everywhere, including the US and Canada.** Sandbox put New York at $16.32, Texas at $16.23 and
+Ontario at $16.94 — tax added on top. Production absorbs it: the same tax rates, taken out of the price rather than
+added to it.
+
+The difference is a Paddle account setting ("sales tax inclusive", set on the live account and recorded in
+docs/sale-go-live.md), not something about those jurisdictions. That cuts both ways: the claim "$14.99 is the total" is
+about a configuration rather than about ten samples, which is what makes it safe to state generally — and it stops
+being true the moment somebody changes that setting, with no build able to notice (CLAIMS 52).
+
+**What this costs us:** the sentence written from the sandbox table — "In the United States and Canada, sales tax is
+added at the checkout, which shows the total before you pay" — is false on production. It is on /pro/ (both states),
+/app/ (not selling), /pro/buy/ and /terms (not selling), and `tools/verify-price-offers.mjs` asserts its literal
+wording, so the check enforces the false sentence. CLAIMS 56 is the general form.
+
+## The sandbox table this replaced (measured 17 September 2026)
 
 Paddle's own price preview, run against the sandbox price `pri_01m2cv2xegy64zmhtxrbk0b1bf` with the checkout's public
 client token, for one unit:
@@ -556,10 +614,12 @@ Sandbox, not a live charge. docs/sale-go-live.md keeps the instruction to read t
 $14.99 — Complete". The Android session then called `GET /api/entitlement` on the sandbox Preview twice afterwards
 (tokens issued 13:35:46Z and 13:38:16Z) and got `pro:true` both times, so the D1 row was still `granted`.
 
-**Why.** `server/paddle.js` revoked only when an approved refund adjustment also carried `type === 'full'`. Any approved
-refund whose payload named its type differently, or not at all, fell into the `partial-refund` branch: ignored, 200, no
-revocation, nothing recorded as wrong. The test suite passed because every fixture was written with `type: 'full'` —
-the shape we assumed, not the shape Paddle sends.
+**Why, from Paddle's notification log** (ntf_01m2tbxq29t6aq3dsybpda6e4m, delivered once, answered 200 with
+`{"applied": false, "reason": "partial-refund"}`): the payload carried `data.type "partial"`, `data.items[0].type "full"`,
+`items[0].amount "1499"`, `totals { fee 125, tax 71, total 1499, earnings 1303 }`. Paddle calls the adjustment partial
+because it adjusts part of the transaction; the item is refunded in full. `server/paddle.js` read `data.type`, so a full
+refund of the only thing we sell was filed as partial: ignored, 200, no revocation, nothing recorded as wrong. Every
+fixture we had set `type: 'full'` on the adjustment — a combination Paddle never sends for this product (CLAIMS 51).
 
 **The fix.** Only an explicitly `partial` refund keeps Pro now; anything else approved takes it away, and the type that
 was seen goes into the decision's reason. The webhook log line also carries the adjustment's `action`, `status` and

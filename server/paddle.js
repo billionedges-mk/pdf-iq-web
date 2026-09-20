@@ -115,10 +115,24 @@ export function decide(event, priceId) {
 
     if (action === 'refund') {
       if (status !== 'approved') return ignore(`refund-${status ?? 'unknown'}`);
-      // A partial refund returns some money and leaves the purchase standing; only a full refund
-      // takes Pro away. /refunds offers the whole amount back, so a full refund is the normal case.
-      if (data.type !== 'full') return ignore('partial-refund');
-      return { action: 'revoke', transactionId, occurredAt, reason: 'refund-approved' };
+      // "full" and "partial" appear at two levels of this payload and mean different things. `data.type` describes the
+      // ADJUSTMENT against the whole transaction: refunding one item of it is "partial" even when that item is refunded
+      // entirely. `data.items[].type` describes the ITEM. Reading the adjustment's word cost a launch blocker — a real
+      // sandbox refund of the only item we sell arrived as type "partial" with items[0].type "full", was filed as a
+      // partial refund, and left Pro standing (ntf_01m2tbxq29t6aq3dsybpda6e4m, 18 September 2026).
+      //
+      // So: the items decide. A refund that returns any item in full takes Pro away, because our transactions carry one
+      // item — Pro itself. Items that are all partial leave it standing. Only when there are no items at all does the
+      // adjustment's own word decide, and then anything but "partial" revokes: money went back and nothing says how much.
+      const items = Array.isArray(data.items) ? data.items : [];
+      if (items.length) {
+        const full = items.some((item) => str(item?.type) === 'full');
+        return full
+          ? { action: 'revoke', transactionId, occurredAt, reason: 'refund-approved-item-full' }
+          : ignore(`partial-refund-items-${items.map((item) => str(item?.type) ?? 'no-type').join('+')}`);
+      }
+      if (data.type === 'partial') return ignore('partial-refund-no-items');
+      return { action: 'revoke', transactionId, occurredAt, reason: `refund-approved-${str(data.type) ?? 'no-type'}` };
     }
     if (action === 'chargeback') {
       if (status === 'rejected' || status === 'reversed') return ignore(`chargeback-${status}`);
