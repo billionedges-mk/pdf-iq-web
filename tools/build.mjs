@@ -67,19 +67,31 @@ const SERVE = process.argv.includes('--serve');
  * it on. The same problem the Android app solved with a source-set split. See CLAUDE.md,
  * "The Pro flag", and src/pro/core.ts.
  *
- * Mirrors the Android release rule: nothing can turn it on in production. A Cloudflare build of
- * the production branch with the flag set throws, and so does a Cloudflare build that does not
- * say which branch it is — unknown counts as production. It turns Pro on for everyone; there is
- * no entitlement check yet, which is acceptable only because nothing is for sale.
+ * On production it is allowed only alongside PDFIQ_SALE, and that pairing is the whole rule.
+ *
+ * Until 20 September 2026 the flag was refused on production outright, for a reason that is still true of the flag
+ * on its own: **without PDFIQ_SALE, Pro belongs to whoever signs in.** src/pro/gate.ts, proAccount():
+ * `if (!__PDFIQ_SALE__) return session;` — no entitlement is consulted, because in a preview build there is nothing
+ * to have bought. The locked panel even says "Sign in to use it in this preview build". On pdf-iq.com that is Pro
+ * given away to any Google account, over copy calling the live site a preview.
+ *
+ * So the refusal is not lifted here, it is narrowed to the state that was actually forbidden. The two flags go on in
+ * ONE deploy. Setting PDFIQ_PRO first and PDFIQ_SALE afterwards — the order the launch checklist used to imply —
+ * opens a window, however short, in which signing in is free Pro on the production site; a build in that state now
+ * refuses rather than publishing.
+ *
+ * A Cloudflare build that does not say which branch it is still counts as production.
  */
 const PRO = /^(1|true|on)$/i.test(process.env.PDFIQ_PRO ?? '');
 const ON_CLOUDFLARE = Boolean(process.env.CF_PAGES);
 const PRODUCTION = ON_CLOUDFLARE && (process.env.CF_PAGES_BRANCH ?? 'main') === 'main';
-if (PRO && PRODUCTION) {
+const SELLING = /^(1|true|on)$/i.test(process.env.PDFIQ_SALE ?? '');
+if (PRO && PRODUCTION && !SELLING) {
   throw new Error(
     'PDFIQ_PRO is set on a production build (Cloudflare Pages, branch ' +
-    `${process.env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}). Pro and sign-in are preview-only until ` +
-    'payment is live. Remove PDFIQ_PRO from the Production environment variables.'
+    `${process.env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}) without PDFIQ_SALE. Without the sale flag, Pro ` +
+    'belongs to anyone who signs in (src/pro/gate.ts, proAccount) and the locked panels call this a preview build. ' +
+    'Set both flags in the same deploy, or neither: docs/sale-go-live.md step 5.'
   );
 }
 /** Every module under src/pro/ carries a string with this prefix; see src/pro/core.ts. */

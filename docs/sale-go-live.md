@@ -28,11 +28,38 @@ a page that can take a payment on its own; /pro/ cannot).
 **Domain approval is NOT done, and is a gate rather than a step — see "The approval gate" below.** pdf-iq.com is
 approved; **checkout.pdf-iq.com is PENDING**, and the sale cannot open while it is.
 
-**0. The code change, first, because the variables alone cannot work.** Both refusals are lifted in one commit (see
-above), and the copy that must change goes in the same one (§4, and the sentences about the Android app once the app
-release that honours a purchase is live on Play — under-promising is the safe side until then). Without this commit,
-setting `PDFIQ_SALE` and `PDFIQ_PRO` on Production makes the **build fail**: the result is a site that does not deploy,
-not a site that sells.
+**0. The code change, first, because the variables alone cannot work.** Without it, setting `PDFIQ_SALE` and
+`PDFIQ_PRO` on Production makes the **build fail**: the result is a site that does not deploy, not a site that sells.
+
+**Written ahead of the day and waiting on branch `sale-step-0`** (20 September 2026), so the day is spent reviewing a
+change rather than writing one. Two things it turned up that this section had wrong:
+
+- **There are three refusals, not two.** The third lives in tools/build.mjs, not paddle-config.mjs, and refuses
+  `PDFIQ_PRO` on a production build. It was missing from this list for the ordinary reason: the list was written from
+  the file somebody was looking at. Setting the variables against the old text would have failed the deploy after the
+  variables were already set.
+- **None of §4's copy belongs in step 0.** Every "not on sale yet" sentence is already inside a `<!--NOSALE-->` /
+  `<!--SALE-->` block and changes with the flag, on /pro/, /app/, /terms, /support, /privacy and the homepage panel —
+  that was built on 17 September and this section was not updated. What is left is /privacy's checkout section, whose
+  italic line says the live checkout has not been measured yet: that is **step 1's** output, not step 0's, and cannot
+  be written before the measurement. The Android sentences wait for vc18 (§4).
+
+**Each refusal is narrowed, not deleted.** Deleting a guard leaves nothing where a reason used to be:
+
+1. `PDFIQ_SALE` on a production build → **a production sale build that is INCOMPLETE**. Off production, a missing
+   checkout origin, entitlement key, token, price id or site origin still warns and leaves /pro/buy/ out, which is
+   right where every preview branch shares one set of variables. On production that silence would publish a site
+   naming $14.99 with nothing behind the button, so it refuses to build.
+2. `PDFIQ_PRO` on a production build → **`PDFIQ_PRO` on production WITHOUT `PDFIQ_SALE`**. This one matters more
+   than it looks: without the sale flag, Pro belongs to whoever signs in (`src/pro/gate.ts`, `proAccount()`:
+   `if (!__PDFIQ_SALE__) return session;` — no entitlement is consulted, because in a preview there is nothing to
+   have bought), and the locked panels say "Sign in to use it in this preview build". On pdf-iq.com that is Pro given
+   away to any Google account. **So the two flags go on in one deploy — see step 5.**
+3. The `live_` token guard is **not touched**. A live token in any build that is not production still refuses, and
+   must keep refusing.
+
+**What the commit does not do: it does not turn the sale on.** The flags do that. Merged with no variables set, the
+site builds byte-for-byte what it builds today — checked by hashing the whole of `dist/` before and after.
 
 **1. Google Cloud first — it propagates for up to a few hours.** OAuth client
 `340733500005-e6guq4vuc37drr1sor6uvqcop4kplpdo`: add redirect URI `https://pdf-iq.com/pro/buy/`, confirm
@@ -82,6 +109,11 @@ domain added, and its own variables: `PDFIQ_SALE=true`, `PDFIQ_PADDLE_ENV=produc
 /api/entitlement answers 401 unauthenticated; `npm run verify:live` passes. Then §1's measurement, which sandbox cannot
 perform: `npm run measure:paddle -- --url https://pdf-iq.com/pro/buy/`, expecting **ProfitWell / Retain requested: no** —
 stop if it is yes.
+
+**Set `PDFIQ_PRO` and `PDFIQ_SALE` in the SAME deploy.** Not PRO first and SALE afterwards: in between, Pro
+belongs to anyone who signs in on pdf-iq.com (step 0, refusal 2). Since `sale-step-0` a build in that state refuses
+rather than publishing, so the mistake costs a failed deploy instead of an unknown number of free accounts — but the
+order is the point, and the refusal is only the backstop.
 
 **And look at the Pro pages before any money moves.** `PDFIQ_PRO=1` publishes them on pdf-iq.com for the first time:
 /batch/, /password/ and /account/ become public, and the phone Tools sheet grows from seven rows to nine. They have been
@@ -395,8 +427,11 @@ exactly like the defect this section exists because of. Do not read a "still gra
 - /refunds: the device sentence needs **no** change — it was written device-neutral on 18 September and already
   covers a phone that stays offline. Its other sentence, "a one-time unlock covering … it does not unlock anything in
   the Android app", does.
-- /terms "Buying Pro", /support "Billing and Pro", /pro/, /app/, the homepage Pro card: "not on sale yet"
-  becomes true-to-the-day wording.
+- ~~/terms "Buying Pro", /support "Billing and Pro", /pro/, /app/, the homepage Pro card: "not on sale yet" becomes
+  true-to-the-day wording.~~ **Already done, 17 September 2026**: every one of those sentences sits in a
+  `<!--NOSALE-->` / `<!--SALE-->` block and changes with the flag, with no commit on the day. Verified by building
+  both states. The entry is struck rather than removed because a checklist that quietly loses a line reads as a line
+  nobody thought of.
 - **The Android sentences and `PRO.coversToday`, in one commit.** These are not two changes: reverting `coversToday`
   to `covers` is what makes every exclusion sentence false, so they move together or the site contradicts itself for as
   long as the gap lasts (owner, 20 September 2026).

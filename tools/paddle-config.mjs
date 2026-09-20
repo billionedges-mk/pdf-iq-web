@@ -18,7 +18,10 @@
  *
  * Refusals, each by name, because each is a way to take money by accident or put the boundary back:
  *   - a sale build without the Pro flag (site);
- *   - a sale build of the production branch, until the sale is switched on in code (docs/sale-go-live.md);
+ *   - a production sale build that is INCOMPLETE — missing the checkout origin, the entitlement key, the client
+ *     token, the price id or the site origin. Off production the same state is a warning and the purchase page is
+ *     left out, because every preview branch shares Cloudflare's Preview variables and an incomplete preview is
+ *     ordinary. On production it would be a site naming a price with no way to pay (CLAIMS 14);
  *   - a live_ client token in any build that is not production;
  *   - a token whose prefix disagrees with PDFIQ_PADDLE_ENV;
  *   - a checkout origin that is the site's own origin, which would undo the whole point.
@@ -56,13 +59,28 @@ function httpsOrigin(value, name) {
   return u.origin;
 }
 
-function refuseProduction(what) {
-  if (!PRODUCTION) return;
+/**
+ * Until 20 September 2026 this refused a production sale build outright: the sale was not switched on, and the
+ * refusal existed so that setting a variable could never be the thing that started selling. The switch-on is a
+ * reviewed change, and this commit is it (docs/sale-go-live.md, step 0).
+ *
+ * What replaces it is narrower and does more. A sale build that is missing something ships WITHOUT the purchase
+ * page — correct off production, where every preview branch shares one set of Cloudflare variables and half-configured
+ * previews are ordinary. On production that same silence is the defect this repo keeps naming: pages that quote
+ * $14.99 with nothing behind the button (CLAIMS 14, and verify-price-offers exists for its milder form). So off
+ * production it warns and drops the page; on production it refuses to build at all.
+ *
+ * A site that does not deploy is a bad afternoon. A site that deploys and cannot take money is a bad afternoon
+ * nobody notices.
+ */
+function incomplete(what, missing) {
+  const line = `(sale) ${missing}`;
+  if (!PRODUCTION) { console.warn(`  ${line}: /pro/buy/ is left out of this build`); return; }
   throw new Error(
-    `PDFIQ_SALE is set on a production build of ${what} (Cloudflare Pages, branch ` +
-    `${env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}). The sale is not switched on. Remove PDFIQ_SALE from the ` +
-    'Production environment variables; turning it on is a code change, not a setting, and docs/sale-go-live.md is what ' +
-    'that change must satisfy, starting with the production measurement of Paddle.js, which sandbox cannot perform.'
+    `A production sale build of ${what} is incomplete: ${missing}. On Cloudflare Pages branch ` +
+    `${env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}, with PDFIQ_SALE set, this would publish a site that names ` +
+    'a price and cannot take the payment. Set the variable, or remove PDFIQ_SALE until you can — ' +
+    'docs/sale-go-live.md § "Credentials and configuration" lists every one of them.'
   );
 }
 
@@ -91,18 +109,17 @@ function checkToken(e) {
 function resolveSite() {
   if (!SALE) return null;
   if (!PRO) throw new Error('PDFIQ_SALE is set without PDFIQ_PRO. There is nothing to sell in a build without Pro.');
-  refuseProduction('the site');
   const e = paddleEnv();
   checkToken(e);
   const checkoutOrigin = httpsOrigin(env.PDFIQ_CHECKOUT_ORIGIN ?? '', 'PDFIQ_CHECKOUT_ORIGIN');
   if (!checkoutOrigin) {
-    console.warn('  (sale) no PDFIQ_CHECKOUT_ORIGIN: /pro/buy/ is left out of this build');
+    incomplete('the site', 'no PDFIQ_CHECKOUT_ORIGIN');
     return { env: e, checkoutOrigin: '', page: false };
   }
   // A build that sells but cannot verify an entitlement would take payment and then never grant Pro.
   const keys = JSON.parse(readFileSync(new URL('../src/pro/entitlement-public-keys.json', import.meta.url), 'utf8'));
   if (!keys[e]) {
-    console.warn(`  (sale) no ${e} key in src/pro/entitlement-public-keys.json (npm run entitlement:keys -- ${e}): /pro/buy/ is left out of this build`);
+    incomplete('the site', `no ${e} key in src/pro/entitlement-public-keys.json (npm run entitlement:keys -- ${e})`);
     return { env: e, checkoutOrigin, page: false };
   }
   return { env: e, checkoutOrigin, page: true };
@@ -111,7 +128,6 @@ function resolveSite() {
 /** For the checkout origin: null when not selling; otherwise the Paddle configuration, `page` false if incomplete. */
 export function resolveCheckout() {
   if (!SALE) return null;
-  refuseProduction('the checkout');
   const e = paddleEnv();
   const token = checkToken(e);
   const priceId = env.PDFIQ_PADDLE_PRICE_ID ?? '';
@@ -122,7 +138,7 @@ export function resolveCheckout() {
   }
   if (!token || !/^pri_[a-z0-9]{26}$/.test(priceId) || !siteOrigin) {
     const missing = !token ? 'PDFIQ_PADDLE_CLIENT_TOKEN' : !siteOrigin ? 'PDFIQ_SITE_ORIGIN' : 'a valid PDFIQ_PADDLE_PRICE_ID';
-    console.warn(`  (sale) no ${missing}: the checkout page is built without Paddle`);
+    incomplete('the checkout', `no ${missing}`);
     return { env: e, token: '', priceId: '', siteOrigin, page: false, hosts: PADDLE_HOSTS[e] };
   }
   return { env: e, token, priceId, siteOrigin, page: true, hosts: PADDLE_HOSTS[e] };
