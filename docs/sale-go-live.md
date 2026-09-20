@@ -277,8 +277,17 @@ id in a different Paddle account, and the pages' wording depends on the answer:
    initialisation answering. Reload between environments.
 3. If any total outside the US and Canada is not $14.99, the price is **not** tax-inclusive there and every page that
    names $14.99 is wrong: stop and change the copy before announcing.
-4. If the pattern holds, the sentence already on /pro/, /app/, /terms and /pro/buy/ is correct as it stands, and
-   `verify:price-offers` keeps it on the purchase page.
+
+**Run on 20 September 2026, and the answer was not the one this section expected.** Every row came back $14.99,
+**including New York, Texas, California and Ontario** — production takes the sales tax out of the price where sandbox
+added it on top (the full table is in TECH_DEBT.md). So the branch this section used to end on, "if the pattern holds
+the sentence is correct as it stands", was the wrong branch: the pattern did not hold, in the safe direction, and the
+sentence written from the sandbox table is false on production. The copy change is the owner's call; what is settled
+is that the sandbox table must not be used to write it.
+
+**Re-run this after the first real purchase** against the invoice rather than the preview. A price preview is Paddle
+answering about its own configuration; the invoice is what was actually charged, and it is the only evidence that
+outranks it.
 
 **Answered in sandbox, to confirm on the first live refund.** A sandbox refund on 18 September 2026 returned the whole
 $14.99 including its $0.71 of VAT: the tax came off our side, and Paddle kept the $1.25 transaction fee. /refunds now

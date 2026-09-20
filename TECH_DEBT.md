@@ -539,7 +539,40 @@ indistinguishable from one nobody made, and the session that drafted it is the s
    error reports describe the file's shape rather than its content. **Unblocks when:** the owner says apply. /privacy
    is the Play policy — proposed, never applied unasked — and a peer session's approval is not the owner's.
 
-## The price is tax-inclusive except in the US and Canada (measured 17 September 2026)
+## ~~The price is tax-inclusive except in the US and Canada~~ — true of sandbox only, corrected 20 September 2026
+
+**The production price behaves differently, and the sandbox table below describes a system nobody will buy from.**
+Measured against the live price `pri_01m2bsgrhqggk3rmrzvefhcgb9` on 20 September 2026, one unit, through Paddle's own
+price preview with the live client token:
+
+| Place | Total | Subtotal | Tax | Rate |
+|---|---|---|---|---|
+| United Arab Emirates | $14.99 | $14.28 | $0.71 | 5% |
+| Germany | $14.99 | $12.60 | $2.39 | 19% |
+| United Kingdom | $14.99 | $12.49 | $2.50 | 20% |
+| India | $14.99 | $12.70 | $2.29 | 18% |
+| Australia | $14.99 | $13.63 | $1.36 | 10% |
+| Japan | $14.99 | $13.63 | $1.36 | 10% |
+| United States, New York | $14.99 | $13.77 | $1.22 | 8.875% |
+| United States, Texas | $14.99 | $13.85 | $1.14 | 8.25% |
+| United States, California | $14.99 | $14.99 | $0.00 | 0% |
+| Canada, Ontario | $14.99 | $13.27 | $1.72 | 13% |
+
+**$14.99 is the total everywhere, including the US and Canada.** Sandbox put New York at $16.32, Texas at $16.23 and
+Ontario at $16.94 — tax added on top. Production absorbs it: the same tax rates, taken out of the price rather than
+added to it.
+
+The difference is a Paddle account setting ("sales tax inclusive", set on the live account and recorded in
+docs/sale-go-live.md), not something about those jurisdictions. That cuts both ways: the claim "$14.99 is the total" is
+about a configuration rather than about ten samples, which is what makes it safe to state generally — and it stops
+being true the moment somebody changes that setting, with no build able to notice (CLAIMS 52).
+
+**What this costs us:** the sentence written from the sandbox table — "In the United States and Canada, sales tax is
+added at the checkout, which shows the total before you pay" — is false on production. It is on /pro/ (both states),
+/app/ (not selling), /pro/buy/ and /terms (not selling), and `tools/verify-price-offers.mjs` asserts its literal
+wording, so the check enforces the false sentence. CLAIMS 56 is the general form.
+
+## The sandbox table this replaced (measured 17 September 2026)
 
 Paddle's own price preview, run against the sandbox price `pri_01m2cv2xegy64zmhtxrbk0b1bf` with the checkout's public
 client token, for one unit:

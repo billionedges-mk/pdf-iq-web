@@ -68,7 +68,8 @@ the work is done.
 52. [A configuration that was right before an architectural change is a claim about the old architecture](#52-a-configuration-that-was-right-before-an-architectural-change-is-a-claim-about-the-old-architecture)  
 53. [A list implies parity; the exception has to be generated, and checked beside the list](#53-a-list-implies-parity-the-exception-has-to-be-generated-and-checked-beside-the-list)  
 54. [Two records of one deferral disagree quietly, and only produce different actions on the day](#54-two-records-of-one-deferral-disagree-quietly-and-only-produce-different-actions-on-the-day)  
-55. ["Done" is a claim about the reporter, not about the world](#55-done-is-a-claim-about-the-reporter-not-about-the-world)
+55. ["Done" is a claim about the reporter, not about the world](#55-done-is-a-claim-about-the-reporter-not-about-the-world)  
+56. [A sandbox measurement is a measurement of sandbox](#56-a-sandbox-measurement-is-a-measurement-of-sandbox)
 
 <!-- /index -->
 
@@ -1855,3 +1856,34 @@ wrong about themselves.
    intent. Saying which turns a contradiction into information.
 4. This applies to your own earlier reports too. "I applied it" from four hours ago is a claim about a past intention,
    and the page is right there.
+
+### 56. A sandbox measurement is a measurement of sandbox
+
+Paddle's sandbox, on 17 September 2026, charged $16.32 in New York, $16.23 in Texas and $16.94 in Ontario against a
+$14.99 tax-inclusive price: sales tax added on top. Four pages and one check were written from that table — "In the
+United States and Canada, sales tax is added at the checkout, which shows the total before you pay." On 20 September
+the same measurement against the **live** price answered $14.99 in every one of ten places, New York, Texas,
+California and Ontario included. The production account takes the tax out of the price where sandbox added it on.
+
+The sentence was never true of the system it described. It is not a stale claim, which was right once, and not a
+drifted one, which lost its subject. It was written from a faithful measurement of the wrong world, and nothing but
+measuring the real one could have caught it (owner, 20 September 2026).
+
+**Sandbox is a different world, not a smaller one.** The same week: the app's release build refuses a non-production
+entitlement environment outright, because a release built that way rejects every real token silently — the two
+environments are not degrees of the same thing. A sandbox result answers "what would this system do", and the system
+is not the one customers meet.
+
+**The check:**
+
+1. Label every measured fact with what it was measured against, in the record and in the comment beside the copy it
+   produced. "Measured on the sandbox price" is the sentence that makes this findable later; "measured" alone is not.
+2. Before copy that states a number goes to people, ask which environment produced the number, and whether that
+   environment is the one they will buy from.
+3. Where the real measurement cannot be taken yet, say the weaker true thing rather than the stronger sandbox one —
+   and record what to re-check and when (CLAIMS 54's "unblocks when").
+4. A checkout, a price, a tax, a webhook payload and a refund are all account configuration as much as code. Two
+   accounts configured differently will disagree faithfully, and neither is lying.
+5. Watch for the check that enforces the wrong sentence. verify-price-offers asserted this one's literal wording, so
+   the build would have refused the true sentence and required the false one (CLAIMS 50: test the property, not the
+   phrasing).
