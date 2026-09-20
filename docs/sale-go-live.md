@@ -89,6 +89,22 @@ The four production variables that are not flags — `PURCHASES`, `PADDLE_WEBHOO
 They are inert at build time, and at runtime both Functions answer 404 before reading any of them
 (`if (env.PDFIQ_SALE !== 'true')`). Setting them early is therefore a walked state, not an unknown one.
 
+**0b. Merge the release to `main` and deploy it, before any variable is touched.** Step 0's commit lives on
+`pro-sale` with the rest of the sale — the purchase page, the entitlement client, the account screen. The flags are
+set on the pdf-iq-web **Production** environment, which builds `main`, so until that merge lands, `main` still
+contains the old refusals and setting the flags **fails the build**.
+
+**This step was missing from the sequence until 20 September 2026**, and the way it would have failed is worth keeping:
+the old refusal would have fired on launch day, correctly, saying "PDFIQ_SALE is set on a production build… the sale is
+not switched on". Read at speed, with the variables already entered, that is "something is broken" rather than "you
+skipped a step". **A refusal that does not say what was skipped is a gate that produces a guess** (owner).
+
+So: merge, deploy, and run `npm run verify:live` **before** setting anything. Production is still not selling at that
+point, and the check's not-selling branch asserts that no Pro code reaches any bundle — `pdfiq-pro:`, the Pro wording,
+the sign-in hosts, none of them. **If that passes, the release is provably invisible**, which is the whole argument for
+landing it separately rather than together with the flags: two changes, each with its own evidence, instead of one
+change with a compound failure mode.
+
 **1. Google Cloud first — it propagates for up to a few hours.** OAuth client
 `340733500005-e6guq4vuc37drr1sor6uvqcop4kplpdo`: add redirect URI `https://pdf-iq.com/pro/buy/`, confirm
 `https://pdf-iq.com/account/` is there. Firebase → Authentication → Authorised domains: confirm `pdf-iq.com`.
