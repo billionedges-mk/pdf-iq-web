@@ -1973,6 +1973,17 @@ Every form of it seen on this project:
 - A check whose output is long enough that only its tail is read, with the failures above the fold.
 - A prebuild step that warns instead of failing, so a thing meant to stop a release becomes a thing that annotates it.
 
+**A third instance, hours after this entry was written, and the sharpest of the three.** Proving the new indexing
+assertions failed on the unfixed code was run as `cp … && git checkout HEAD -- tools/build.mjs && grep -c
+PREVIEW_DEPLOY tools/build.mjs && npm run verify:sale-build > old.log; echo exit=$?`. The `grep -c` was there to
+show the fix was absent — it printed `0` and **exited 1**, which stopped the chain, so the verification never ran.
+`echo exit=$?` then reported grep's 1, and the log still held the previous run. Read quickly, that is "exit=1, it
+failed on the unfixed code" — the answer expected, assembled from a run that did not happen.
+
+The instrument that was supposed to demonstrate a failure produced a failure of its own and the two were
+indistinguishable in the output. Running it again directly, with nothing in front of it, showed the two real
+assertion failures. **A gate in the middle of a chain is also a gate on the evidence.**
+
 **The check:**
 
 1. **Let the shell hold the gate.** `a && b && c`, or `set -e`. If a human has to read a number and decide, the
@@ -1981,4 +1992,10 @@ Every form of it seen on this project:
    command itself, then read the file.
 3. **Assert, do not print.** A step that ends `echo exit=$?` has converted a gate into a fact about the past.
 4. **Ask what the chain does when the middle link fails.** If the answer is "the rest still runs", there is no chain,
-   only a list.
+   only a list — and if the answer is "the rest is skipped and the old output is still there", the list is worse than
+   no list, because it answers.
+5. **A diagnostic is not a gate.** `grep -c`, `test`, `diff` and `[ … ]` all exit non-zero as their ordinary way
+   of saying "no". Putting one in front of `&&` turns an observation into a precondition, silently.
+6. **When a run is meant to FAIL, say which failure you got.** "Exit 1" from a chain is not evidence: the line that
+   failed has to be the one under test, and its message has to name the assertion. Otherwise the expected answer and
+   a broken harness look the same (CLAIMS 33's shape, from the other end).
