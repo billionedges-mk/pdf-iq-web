@@ -245,7 +245,9 @@ for (const [which, label, env, reason] of refusals) {
 // built at all. So the configuration launch day will actually use is asserted to succeed, on the production branch
 // with the production environment and everything present.
 {
-  const b = site({ PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' });
+  // Every variable a selling production build needs, which is the point: this fixture failed the moment the Firebase
+  // key joined the list, which is how a success case earns its place. "Complete" is a claim that goes stale.
+  const b = site({ PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, PDFIQ_FIREBASE_WEB_KEY: 'AIzaSyTestKeyForBuildOnly', CF_PAGES: '1', CF_PAGES_BRANCH: 'main' });
   ok(b.status === 0 && existsSync(join(ROOT, 'dist/pro/buy/index.html')),
     `the complete production configuration builds, with a purchase page${b.status === 0 ? '' : `: ${b.out.split('\n').find((l) => /Error/.test(l))}`}`);
 }

@@ -102,7 +102,26 @@ const PRO_SENTINEL_PREFIX = 'pdfiq-pro:';
  */
 // A `sale` page (/pro/buy/) joins only a build that can actually sell: tools/paddle-config.mjs.
 const ROUTES = PRO ? [...ALL, ...PRO_PAGES.filter((p) => !p.sale || PADDLE?.page)] : ALL;
+/**
+ * Signing in needs a Firebase web key, and Pro needs signing in: without it /account/ says so and makes no request.
+ *
+ * On a preview that is a warning worth having — testers cannot sign in, the rest of the build is still useful, and
+ * every preview branch shares one set of variables. On a production build that is SELLING it is the same defect as
+ * a price with no purchase behind it, one step further along: someone pays, comes back, and has no way to own what
+ * they bought. So the production sale build refuses instead, alongside the other five things a sale needs
+ * (tools/paddle-config.mjs, incomplete()). Warning where it should refuse is how a gate becomes an annotation
+ * (CLAIMS 58); this one was left as a warning because when it was written nothing could sell.
+ */
 if (PRO && !AUTH.apiKey) {
+  const sellingOnProduction = PRODUCTION && /^(1|true|on)$/i.test(process.env.PDFIQ_SALE ?? '');
+  if (sellingOnProduction) {
+    throw new Error(
+      'PDFIQ_FIREBASE_WEB_KEY is not set on a production build that sells (Cloudflare Pages, branch ' +
+      `${process.env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}). Pro is owned by an account, and signing in ` +
+      'needs this key: /account/ would say signing in is not set up and make no request, so a buyer could pay and ' +
+      'have no way to own what they bought. docs/sale-go-live.md § "Credentials and configuration".'
+    );
+  }
   console.warn('  (pro) no PDFIQ_FIREBASE_WEB_KEY: /account/ will say signing in is not set up, and make no request');
 }
 /**

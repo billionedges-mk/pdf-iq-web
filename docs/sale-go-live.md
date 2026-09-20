@@ -113,9 +113,16 @@ They are inert at build time, and at runtime both Functions answer 404 before re
 - Text: `PDFIQ_SALE=true`, `PDFIQ_PRO=1`, `PDFIQ_PADDLE_ENV=production`,
   `PDFIQ_PADDLE_PRICE_ID=pri_01m2bsgrhqggk3rmrzvefhcgb9` (the webhook reads it at runtime to ignore anything else),
   `PDFIQ_CHECKOUT_ORIGIN=https://checkout.pdf-iq.com`.
-- Secret: `PADDLE_WEBHOOK_SECRET=pdl_ntfset_…`, and **`PDFIQ_FIREBASE_WEB_KEY`** — missing from the owner's list and a
-  blocker: without it /account/ says signing in is not set up and makes no request, so nobody signs in and nobody buys.
-  Restricted to Identity Toolkit and Token Service.
+- Secret: `PADDLE_WEBHOOK_SECRET=pdl_ntfset_…`, and **`PDFIQ_FIREBASE_WEB_KEY`** — a blocker: without it /account/
+  says signing in is not set up and makes no request, so nobody signs in and nobody buys. Restricted to Identity
+  Toolkit and Token Service. **Since `sale-step-0` a production build that sells refuses without it** rather than
+  warning, so this can no longer be the thing discovered by a buyer.
+
+**Two of these are inert until the flags go on, and both were missing from the batch set on 20 September 2026**:
+`PDFIQ_CHECKOUT_ORIGIN` on pdf-iq-web (without it a production sale build refuses — `resolveSite`) and
+`PDFIQ_FIREBASE_WEB_KEY` (same, now). Neither does anything while `PDFIQ_SALE` is unset, so both can go in early with
+the rest; what they must not do is wait until the flip, when their absence is a failed deploy in the middle of the
+sequence.
 - `PDFIQ_ENTITLEMENT_PRIVATE_KEY` is already set. Do not touch it, and never re-run `entitlement:keys` for production:
   it would invalidate every token already issued.
 - **No client token here.**
