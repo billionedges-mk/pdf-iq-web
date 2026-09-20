@@ -167,6 +167,12 @@ const LOCAL = PRO && !ON_CLOUDFLARE && (LOCAL_ASKED || SERVE);
 if (LOCAL) {
   console.warn('  (pro) local stub: /account/ can switch Pro on in this browser without Google');
 }
+/**
+ * Shown on a preview deployment, and only there. It was keyed to PRO, which meant the same thing until step 0:
+ * on the production build it announced "selling through the Paddle SANDBOX — test payments only; no real card is
+ * charged" on every page, over a checkout charging real cards. A false statement about the charge, at the top of
+ * the page where the charge happens.
+ */
 const PREVIEW_BANNER =
   '<div data-pdfiq-pro="pdfiq-pro:preview" role="note" style="background:#1E2A38;color:#FAF8F4;' +
   'font:600 14px/1.45 system-ui,sans-serif;padding:9px 16px;text-align:center">' +
@@ -428,7 +434,7 @@ ${FONT_PRELOADS}
 <style>${css}</style>
 </head>
 <body${shell}>
-${PRO ? PREVIEW_BANNER + '\n' : ''}<a class="skip-link" href="#main">${TOOLS.some((t) => t.slug === page.slug) ? 'Skip to the tool' : 'Skip to content'}</a>
+${PREVIEW_DEPLOY ? PREVIEW_BANNER + '\n' : ''}<a class="skip-link" href="#main">${TOOLS.some((t) => t.slug === page.slug) ? 'Skip to the tool' : 'Skip to content'}</a>
 ${header(page.slug, sells)}
   <main class="site-main${page.slug === '' ? ' site-main--home' : ''}" id="main">
 ${body}
