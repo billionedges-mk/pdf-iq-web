@@ -70,7 +70,8 @@ the work is done.
 54. [Two records of one deferral disagree quietly, and only produce different actions on the day](#54-two-records-of-one-deferral-disagree-quietly-and-only-produce-different-actions-on-the-day)  
 55. ["Done" is a claim about the reporter, not about the world](#55-done-is-a-claim-about-the-reporter-not-about-the-world)  
 56. [A sandbox measurement is a measurement of sandbox](#56-a-sandbox-measurement-is-a-measurement-of-sandbox)  
-57. [A cached NO and a real NO are the same sentence](#57-a-cached-no-and-a-real-no-are-the-same-sentence)
+57. [A cached NO and a real NO are the same sentence](#57-a-cached-no-and-a-real-no-are-the-same-sentence)  
+58. [A chain that proceeds past a failure is a chain with no gate in it](#58-a-chain-that-proceeds-past-a-failure-is-a-chain-with-no-gate-in-it)
 
 <!-- /index -->
 
@@ -1950,3 +1951,34 @@ source, so the sentence cannot tell you which question it answered.
    resolve it.
 5. Caching is everywhere this argument applies: DNS, CDN edges, browser HTTP caches, package registries, a CI
    artefact store. Every one of them can answer about a moment that has passed, in a sentence with no tense.
+
+### 58. A chain that proceeds past a failure is a chain with no gate in it
+
+Step 0's commit was written as `run the checks; commit; push`. `verify:sale-build` failed — correctly, on two rows
+that asserted the refusal the commit removes — and the commit and push ran anyway, because the failure was reported
+into a log file and read by a human afterwards rather than by the shell (20 September 2026). The next commit fixed it,
+and the branch is right, but for a few minutes a failing check sat behind a pushed commit.
+
+**This is not CLAIMS 32.** There the command succeeded and had done nothing — the exit code was honest about an
+invocation that changed nothing. Here the exit code was honest about a real failure and **nothing consumed it**. The
+defect is in the composition, not the instrument: a gate that nothing reads is a comment, exactly as a check that
+cannot fail the build is (CLAIMS 27).
+
+Every form of it seen on this project:
+
+- `check > log 2>&1; echo $?` followed by an unrelated `&& commit` — the `&&` binds to the `echo`, which always
+  succeeds. The status was printed, not obeyed.
+- `npm run build | head` — the pipeline's status is the last command's, and `head` closing the pipe turns a killed
+  build into a success, or a SIGPIPE into a failure that never happened (both directions, same week).
+- A check whose output is long enough that only its tail is read, with the failures above the fold.
+- A prebuild step that warns instead of failing, so a thing meant to stop a release becomes a thing that annotates it.
+
+**The check:**
+
+1. **Let the shell hold the gate.** `a && b && c`, or `set -e`. If a human has to read a number and decide, the
+   gate is advisory and will be skipped on the day it matters — which is the day someone is in a hurry.
+2. **Never put a check behind a pipe** whose exit status you then test. Redirect to a file, test the status of the
+   command itself, then read the file.
+3. **Assert, do not print.** A step that ends `echo exit=$?` has converted a gate into a fact about the past.
+4. **Ask what the chain does when the middle link fails.** If the answer is "the rest still runs", there is no chain,
+   only a list.
