@@ -90,6 +90,32 @@ in between is correct ("Walking a refund", below).
 
 **7. Only then** announce, and apply for Play production access.
 
+**Switching the sale on and announcing it are not the same day.** Steps 0–6 put Pro on sale on pdf-iq.com; step 7 tells
+people. Nothing forces them together, and separating them is what closes the four measurements that need a real charge
+(§1) in the configuration that will actually serve customers, without inventing a test environment to do it in (owner,
+20 September 2026: "the calendar gap is the only change, and it costs nothing"). Sell quietly, measure, then announce.
+
+**What that window looks like to a buyer**, because it is a real consequence and not a detail. Pro is live on the
+website while the app release that honours a purchase is still in Play review:
+
+- The website gives them Pro immediately. The app they have does not, and **the pages say so** — "it covers Pro in the
+  web tools on this site. It does not unlock anything in the Android app" is exactly true for the length of this
+  window. That wording was chosen to under-promise (§4), and this is the situation it under-promises for.
+- When the app release goes live and they update, their next entitlement check turns Pro on there too, and the pages
+  flip in the same commit (§4). Nobody who bought in the window is worse off than someone who buys after it: they get
+  more than they were told, later.
+- If Play **rejects** the release, the window simply continues. There is no wrong sentence on the site while it does,
+  which is the property that makes selling first safe.
+- The one thing to watch is a support question in the shape "I paid and the app still says free". The answer is on
+  /refunds and /terms already; it stops being the answer the day the flip lands, so do not paste it into a canned reply.
+
+**The device walk during the window needs a Play-delivered build, not a sideloaded one.** The entitlement check itself
+does not care how the APK arrived — it verifies a signed token against an embedded public key — but **Google Sign-In
+does**, and Pro cannot be owned without signing in. A locally-signed release may fail sign-in if only the Play App
+Signing certificate is registered against the OAuth client. Use the internal testing track: it delivers a Play-signed
+build in minutes without waiting for full review, and that artefact is the one people will have. If the sideloaded
+build signs in, it is fine too — but check sign-in FIRST, before concluding anything from a failed entitlement walk.
+
 **Must not happen:** reusing the sandbox D1 for production; `PDFIQ_SALE` before the live notification destination
 exists; touching sandbox; re-running `entitlement:keys` for production; a `live_` token anywhere but the checkout
 project's Production.
@@ -176,6 +202,53 @@ place Paddle.js runs (CLAIMS 38). Each has its own Production variables.
 - The web API key (restricted to Identity Toolkit and Token Service) as `PDFIQ_FIREBASE_WEB_KEY` in pdf-iq-web Production.
 - And `npm run entitlement:keys -- production`: a production sale build leaves /pro/buy/ out without its public key.
 
+## Why Preview never runs against live Paddle (asked and decided, 20 September 2026)
+
+The question was a fair one: point Preview at the live client token, the live price id and a live notification
+destination, do the real purchase and refund now, and let launch day be a merge plus the flags. The answer is no, and
+the reasons are structural rather than cautious, so they are written down here to stop the idea being re-litigated by
+someone in a hurry on the day.
+
+**The build refuses it, three times, each by name** (tools/paddle-config.mjs):
+
+1. A `live_` client token in any build that is not the production branch — *"A checkout here would take real money
+   from whoever tests it."*
+2. A token whose prefix disagrees with `PDFIQ_PADDLE_ENV`: sandbox takes `test_`, production takes `live_`.
+3. `PDFIQ_SALE` on a production build before the sale is switched on in code (step 0).
+
+Running Preview live means deleting the first guard and remembering to restore it — a setting that was correct before
+an architectural change is a claim about the old architecture (CLAIMS 52), and this would be one deliberately.
+
+**Cloudflare Preview variables are shared by every preview branch.** This is the point that looks like a small
+exception and is not: there is no per-branch scope. A live token placed in Preview is live on every branch anyone
+pushes, including one created later by someone who never read this document. The repo already says so, in
+paddle-config.mjs's own header — *"every preview branch shares Cloudflare's Preview variables"* — and that sentence is
+why builds that lack what they need leave the purchase out rather than failing.
+
+**The D1 split is a binding, not a column, and that was the whole idea.** functions/purchases-schema.sql:
+*"Preview binds a sandbox database and Production a live one, so a sandbox test purchase cannot exist in the table
+production reads. Keeping them apart by binding makes that structural rather than a column someone has to remember to
+filter on."* There is no environment column, so a live test purchase written to Preview's sandbox database is granted
+where production never looks, and one written to the production database is a test row indistinguishable from a
+customer's — reachable from a preview deployment of any branch. The design removed this choice on purpose.
+
+**And the decisive one: the app cannot reach Preview.** The release build fixes `WEB_BASE_URL` to
+`https://pdf-iq.com` at build time and *fails to build* unless `ENTITLEMENT_ENV` is `production` (app repo,
+app/build.gradle.kts), and it rejects any token whose claims say otherwise as `wrong-environment`
+(EntitlementToken.kt). So the production entitlement walk on a device — the item with the most to prove — cannot be
+done against Preview with the artefact anyone will install. It would need a separate build pointed elsewhere, and
+proving it on a build nobody has is not proving it.
+
+**What Preview would not have improved anyway:** the statement descriptor and what a refund returns as tax are facts
+about a real charge and a real Paddle account. They come out identical whichever origin hosted the checkout.
+
+**The webhook destination**, for completeness: Paddle allows several, so it would work — but `pro-sale.pdf-iq-web.pages.dev`
+is a branch alias that stops resolving when the branch is renamed or deleted, Paddle retries for three days and then
+drops the event, and the destination must be repointed before the first real buyer or their grant lands in the wrong
+database. That is a manual step on a busy day with nothing in the build able to check it.
+
+**Instead:** steps 0–6 against production, earlier, and announce later (see "The day, in order", step 7).
+
 ## 3. The price, against the production price id
 
 The pages say $14.99. That is the total in most of the world and **not** in the United States or Canada, where Paddle
@@ -190,7 +263,18 @@ id in a different Paddle account, and the pages' wording depends on the answer:
 2. For each of UAE, Germany, the UK, India, Australia, Japan, US-NY, US-TX, US-CA and Canada-ON, call
    `Paddle.PricePreview({ items: [{ priceId: <live price id>, quantity: 1 }], address: { countryCode, postalCode } })`
    and read `data.details.lineItems[0].formattedTotals`.
-   `scratchpad/pricecheck/index.html` is the sandbox version of exactly this.
+   `scratchpad/pricecheck/index.html` is the sandbox version of exactly this, and
+   `scratchpad/pricecheck-prod/index.html` is the production one — same ten places, token typed into the page rather
+   than written into the file.
+
+   **A local page is not blocked from asking** (measured 20 September 2026). Paddle's production PricePreview answered
+   `forbidden` from `http://127.0.0.1:8811` with a deliberately fake `live_` token — but the known-good SANDBOX
+   token answered normally from the same origin on a fresh page (Germany: total $14.99, subtotal $12.60, tax $2.39,
+   matching the 17 September table). So the origin is not the gate; the token is, and the measurement is one paste
+   away rather than something that has to wait for the day. **One confound worth knowing**: `Paddle.Initialize` does
+   not take a second time in the same page. The first attempt at this control ran sandbox after production in one
+   load, got `forbidden`, and looked like proof that local origins are refused. It was not — it was the same stale
+   initialisation answering. Reload between environments.
 3. If any total outside the US and Canada is not $14.99, the price is **not** tax-inclusive there and every page that
    names $14.99 is wrong: stop and change the copy before announcing.
 4. If the pattern holds, the sentence already on /pro/, /app/, /terms and /pro/buy/ is correct as it stands, and
