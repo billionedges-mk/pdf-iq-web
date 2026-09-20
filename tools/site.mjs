@@ -346,6 +346,22 @@ export const TOKENS = {
   // No proCovers token: PRO.covers (the app honouring a web purchase) is not true yet, and a token for it is how it got
   // onto /app/ unlisted. It comes back with the places TECH_DEBT.md names, not before.
   proCoversToday: PRO.coversToday,
+  /**
+   * What the buyer pays, in one place because it was written into four pages and a check, and all five were wrong
+   * together (20 September 2026).
+   *
+   * **This sentence depends on a Paddle account setting, not on the law of any country.** The live account is
+   * configured "sales tax inclusive", so Paddle takes VAT, GST and US or Canadian sales tax OUT of $14.99 rather than
+   * adding it on top: measured against the live price in ten countries and US states on 20 September 2026, every one
+   * returned a $14.99 total (TECH_DEBT.md has the table; docs/sale-go-live.md records the setting).
+   *
+   * Change that setting and this sentence becomes false with nothing in the build able to notice — which is why the
+   * dependency is written here, beside the words, rather than only in a document. The sandbox account is configured
+   * the other way, which is exactly how the sentence this replaces came to be written (CLAIMS 56).
+   */
+  priceIsTotal: `${PRO.price} is the total. Any VAT, GST or sales tax is already included in it, not added at the checkout.`,
+  /** The same fact in /terms' register, on the page that defines the purchase. */
+  priceIsTotalTerms: 'That is the total: any VAT, GST or sales tax due is included in it rather than added at the checkout.',
   webToolCount: word(WEB_TOOLS.length),
   webToolCountCap: cap(word(WEB_TOOLS.length)),
   appToolCount: word(APP_TOOLS.length),

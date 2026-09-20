@@ -130,13 +130,29 @@ for (const rel of pages) {
     ok(/<a\s[^>]*href="\/pro\/buy\/[^"]*"/.test(block), `${where} offers the purchase beside it (a link to /pro/buy/ in the same <${strip.name} data-pro-strip>)`);
   }
 }
-// The purchase page turns the figure into a charge, and the figure is not the total everywhere: Paddle adds US and
-// Canadian sales tax on top of a tax-inclusive price (measured 17 September 2026, TECH_DEBT.md). Whoever is about to pay
-// is told before they press the button.
+// The purchase page turns the figure into a charge, so whoever is about to pay is told what the figure means.
+//
+// This asserted the old sentence's LITERAL words — "includes VAT or GST where it applies" and "sales tax is added" —
+// which had two consequences when the production measurement came in. It could not tell a true sentence from a false
+// one, only this sentence from another; and having been written to guard a claim, it then required the claim to stay
+// wrong: the build refused the corrected copy until the check was corrected too. CLAIMS 50 recurring, inside the very
+// check meant to protect the claim (owner, 20 September 2026: precision about the wrong thing).
+//
+// So the property, in both directions. The page must say the named price is what you pay, and must not carry the
+// retired "added at the checkout" shape in any wording — which tools/retired-claims.mjs also refuses across every
+// built page, so this is the purchase page's own copy of a site-wide rule rather than the only thing holding it.
 {
   const buy = readFileSync(join(DIST, 'pro/buy/index.html'), 'utf8').replace(/\s+/g, ' ');
-  ok(/includes VAT or GST where it applies/.test(buy) && /United States and Canada, sales tax is added/.test(buy),
-    'the purchase page says what the price includes, and where tax is added on top');
+  const total = buy.includes(`${PRO.price} is the total`) || buy.includes('that is the total');
+  const included = /(already )?included in it|is included in it/.test(buy);
+  // Sentence by sentence, not by substring: the corrected copy itself ends "not added at the checkout", and a
+  // substring test failed on the very sentence it was written to protect. What is refused is a sentence that CLAIMS
+  // something is added — one carrying the shape with no negation in it.
+  const claimsAdded = buy.split(/(?<=[.!?])\s+/).filter((line) =>
+    /added (at|on) the checkout|added on top|tax is added/.test(line) && !/\b(not|never|nothing|no)\b/.test(line));
+  const addedOnTop = claimsAdded.length > 0;
+  ok(total && included, 'the purchase page says the price named on it is the whole charge');
+  ok(!addedOnTop, `and does not say anything is added at the checkout, which production does not do${addedOnTop ? ` — "${claimsAdded[0].trim().slice(0, 90)}"` : ''}`);
 }
 // The phone bar's Pro button belongs on exactly the pages that already sell — the strip, the panel or a price card —
 // and nowhere else (owner, 18 September 2026: a legal page is not a place to sell). Both sides are read from the built
@@ -161,6 +177,12 @@ for (const rel of pages) {
   ok(wrong === 0, 'the phone Pro button is on the pages that sell, and on no others');
 }
 ok(named > 0, `${named} places name the price in this build`);
+
+// Leave dist/ as a plain build. The last configuration built here is the selling one, and a dist/ left in it still
+// reads as the current site — today it made a free build of /terms look as though it said "Pro is sold on this
+// website", which is a sentence that must never be true off a sale build (CLAIMS 35, and the build-failed-so-dist-is-
+// stale trap it belongs to).
+spawnSync(process.execPath, ['tools/build.mjs'], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, ...CLEAN } });
 
 console.log(`\n${fails ? `${fails} FAILED` : 'every price in a sale build comes with a way to pay, and nothing says Pro is not for sale'}`);
 process.exitCode = fails ? 1 : 0;

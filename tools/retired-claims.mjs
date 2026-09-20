@@ -52,6 +52,25 @@ export const RETIRED = [
     why: 'Same claim in /terms: "once per device" implied the app was included in the one purchase.',
     instead: 'It covers Pro in the web tools on this site. It does not unlock anything in the Android app.',
   },
+  // The tax sentence written from the SANDBOX price table, which added US and Canadian sales tax on top of a
+  // tax-inclusive price. The live account is configured the other way: measured against the production price on
+  // 20 September 2026, all ten places returned a $14.99 total (CLAIMS 56, "faithful to the wrong world"). Both
+  // wordings are here — the price cards' and /terms' — because they differed by a word and a semicolon, which is
+  // exactly how one of them survives a search for the other.
+  {
+    phrase: 'sales tax is added at the checkout',
+    why: 'Measured in sandbox, false on production: the live account is tax-inclusive and takes US and Canadian sales '
+      + 'tax out of $14.99 rather than adding it. It was on /pro/ (both states), /app/, /pro/buy/ and /terms, and '
+      + 'tools/verify-price-offers.mjs asserted its literal words, so the check required the false sentence.',
+    instead: '$14.99 is the total. Any VAT, GST or sales tax is already included in it, not added at the checkout.',
+  },
+  {
+    phrase: 'includes VAT or GST where',
+    why: 'The first half of the same sentence, on the same five places. Kept as its own entry because "where it '
+      + 'applies" and "where those apply" are different strings and a phrase that hedges is the half most likely to '
+      + 'be pasted back in from an old card.',
+    instead: 'the price includes it rather than adding it: "$14.99 is the total".',
+  },
   {
     phrase: 'camera scanning',
     why: 'The Android scanner is not built. Returns when it merges, after the closed test and '
