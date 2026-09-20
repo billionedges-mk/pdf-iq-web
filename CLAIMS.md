@@ -69,7 +69,8 @@ the work is done.
 53. [A list implies parity; the exception has to be generated, and checked beside the list](#53-a-list-implies-parity-the-exception-has-to-be-generated-and-checked-beside-the-list)  
 54. [Two records of one deferral disagree quietly, and only produce different actions on the day](#54-two-records-of-one-deferral-disagree-quietly-and-only-produce-different-actions-on-the-day)  
 55. ["Done" is a claim about the reporter, not about the world](#55-done-is-a-claim-about-the-reporter-not-about-the-world)  
-56. [A sandbox measurement is a measurement of sandbox](#56-a-sandbox-measurement-is-a-measurement-of-sandbox)
+56. [A sandbox measurement is a measurement of sandbox](#56-a-sandbox-measurement-is-a-measurement-of-sandbox)  
+57. [A cached NO and a real NO are the same sentence](#57-a-cached-no-and-a-real-no-are-the-same-sentence)
 
 <!-- /index -->
 
@@ -1915,3 +1916,37 @@ is not the one customers meet.
 5. Watch for the check that enforces the wrong sentence. verify-price-offers asserted this one's literal wording, so
    the build would have refused the true sentence and required the false one (CLAIMS 50: test the property, not the
    phrasing).
+
+### 57. A cached NO and a real NO are the same sentence
+
+`checkout.pdf-iq.com` did not exist: `nslookup` said **Non-existent domain**, and that finding was right — the
+custom domain had never been attached, Paddle's form had accepted a payment link pointing at nothing, and no check on
+this site could have known. Then the domain was attached, and the same lookup on the same machine said **Non-existent
+domain** again. That finding was wrong. This machine's resolver was holding a negative cache for the **A** record —
+while answering **AAAA** normally, which is why nothing about the failure looked like caching — and `ipconfig
+/flushdns` did not clear it. Every public resolver answered correctly throughout (20 September 2026).
+
+Believed, it would have cost real time in the worst direction: the report would have been "the attachment failed",
+and the owner would have gone back into Cloudflare to fix something that was already right.
+
+**This is the identity problem (CLAIMS 12, 49) with the axis changed.** Those are instruments answering truthfully
+about a different *object* — a different error class, a different server, a different build. This one answers
+truthfully about a different **time**: the resolver reported the world as it was when the negative was cached, and a
+stale answer and a current one are the same four words. Nothing in "Non-existent domain" carries a timestamp or a
+source, so the sentence cannot tell you which question it answered.
+
+**The check:**
+
+1. **Name which resolver answered.** `nslookup <name> 1.1.1.1`, a DNS-over-HTTPS query, or `curl --resolve
+   host:443:<ip>` to bypass resolution entirely. The cure is the same shape as every other identity fix: make the
+   answer say what produced it.
+2. **Treat a negative as the weaker result.** A YES from any resolver proves the record exists; a NO from one proves
+   only that one resolver says so today. Disagreement between two resolvers is not ambiguity — the YES wins.
+3. **A flush is not a guarantee.** It clears what it holds; upstream caches, routers and split A/AAAA state survive
+   it. An unchanged answer after a flush is not confirmation, it is the absence of one — the same shape as an idle
+   reading that cannot tell finished from never started.
+4. **Suspect the instrument when a negative follows a change that should have fixed it.** The prior probability moved;
+   the instrument did not. That asymmetry is the tell, and re-running the same query from the same place cannot
+   resolve it.
+5. Caching is everywhere this argument applies: DNS, CDN edges, browser HTTP caches, package registries, a CI
+   artefact store. Every one of them can answer about a moment that has passed, in a sentence with no tense.
