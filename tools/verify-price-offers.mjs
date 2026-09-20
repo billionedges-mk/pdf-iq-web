@@ -178,5 +178,11 @@ for (const rel of pages) {
 }
 ok(named > 0, `${named} places name the price in this build`);
 
+// Leave dist/ as a plain build. The last configuration built here is the selling one, and a dist/ left in it still
+// reads as the current site — today it made a free build of /terms look as though it said "Pro is sold on this
+// website", which is a sentence that must never be true off a sale build (CLAIMS 35, and the build-failed-so-dist-is-
+// stale trap it belongs to).
+spawnSync(process.execPath, ['tools/build.mjs'], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, ...CLEAN } });
+
 console.log(`\n${fails ? `${fails} FAILED` : 'every price in a sale build comes with a way to pay, and nothing says Pro is not for sale'}`);
 process.exitCode = fails ? 1 : 0;
