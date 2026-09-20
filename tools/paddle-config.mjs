@@ -87,6 +87,16 @@ function incomplete(what, missing) {
 function paddleEnv() {
   const e = env.PDFIQ_PADDLE_ENV ?? '';
   if (!['sandbox', 'production'].includes(e)) throw new Error(`PDFIQ_SALE is set but PDFIQ_PADDLE_ENV is "${e}". It must be sandbox or production.`);
+  // A production deployment selling through the sandbox takes no money and signs entitlements with the sandbox key,
+  // so every purchase is imaginary and every entitlement is rejected by the app, which expects production claims.
+  // It would look like a working sale from the outside for as long as nobody tried to pay.
+  if (PRODUCTION && e !== 'production') {
+    throw new Error(
+      `PDFIQ_PADDLE_ENV is "${e}" on a production build (Cloudflare Pages, branch ${env.CF_PAGES_BRANCH ?? 'unknown, treated as main'}). ` +
+      'A production deployment must sell through the production Paddle account: sandbox takes no real money and its ' +
+      'entitlement key is rejected by the released app.'
+    );
+  }
   return e;
 }
 

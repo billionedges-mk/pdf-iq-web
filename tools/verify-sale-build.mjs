@@ -220,10 +220,17 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
 
 const refusals = [
   ['site', 'sale without Pro', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_CHECKOUT_ORIGIN: CHECKOUT }, /without PDFIQ_PRO/],
-  ['site', 'sale on the production branch', { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /production build of the site/],
+  // Until 20 September 2026 a production sale build was refused outright and these two rows said so. The sale is
+  // switched on in code now (docs/sale-go-live.md step 0), so what must refuse is narrower: a production build that
+  // is incomplete, one that points at sandbox, and Pro without the sale flag — the state in which Pro belongs to
+  // anyone who signs in.
+  ['site', 'a production sale build with no checkout origin', { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /incomplete: no PDFIQ_CHECKOUT_ORIGIN/],
+  ['site', 'a production build selling through sandbox', { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /must sell through the production Paddle account/],
+  ['site', 'Pro on production without the sale flag', { PDFIQ_PRO: '1', CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /without PDFIQ_SALE/],
   ['site', 'a live_ token in its Preview variables', { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, ...PREVIEW }, /real money/],
   ['site', 'a checkout origin that is not a bare https origin', { PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_CHECKOUT_ORIGIN: `${CHECKOUT}/pay`, ...PREVIEW }, /bare https origin/],
-  ['checkout', 'sale on the production branch', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_PADDLE_CLIENT_TOKEN: TOKEN, PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /production build of the checkout/],
+  ['checkout', 'a production build selling through sandbox', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_PADDLE_CLIENT_TOKEN: TOKEN, PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /must sell through the production Paddle account/],
+  ['checkout', 'a production checkout build with no token', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' }, /incomplete: no PDFIQ_PADDLE_CLIENT_TOKEN/],
   ['checkout', 'a live_ token on a preview branch', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE, ...PREVIEW }, /real money/],
   ['checkout', 'a live_ token locally', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE }, /real money/],
   ['checkout', 'a test_ token with environment production', { PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: TOKEN, PDFIQ_PADDLE_PRICE_ID: PRICE, PDFIQ_SITE_ORIGIN: SITE, ...PREVIEW }, /does not match/],
@@ -232,6 +239,15 @@ const refusals = [
 for (const [which, label, env, reason] of refusals) {
   const b = which === 'site' ? site(env) : checkout(env);
   ok(b.status !== 0 && reason.test(b.out), `${which} refuses ${label}${b.status === 0 ? ' — IT BUILT' : reason.test(b.out) ? '' : ` — failed for another reason: ${b.out.split('\n').find((l) => /Error/.test(l))}`}`);
+}
+
+// A table of refusals can pass while nothing works: every row would still be red-green if the sale could never be
+// built at all. So the configuration launch day will actually use is asserted to succeed, on the production branch
+// with the production environment and everything present.
+{
+  const b = site({ PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, CF_PAGES: '1', CF_PAGES_BRANCH: 'main' });
+  ok(b.status === 0 && existsSync(join(ROOT, 'dist/pro/buy/index.html')),
+    `the complete production configuration builds, with a purchase page${b.status === 0 ? '' : `: ${b.out.split('\n').find((l) => /Error/.test(l))}`}`);
 }
 
 // Leave both as ordinary builds.

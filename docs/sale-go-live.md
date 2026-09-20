@@ -57,6 +57,11 @@ change rather than writing one. Two things it turned up that this section had wr
    away to any Google account. **So the two flags go on in one deploy — see step 5.**
 3. The `live_` token guard is **not touched**. A live token in any build that is not production still refuses, and
    must keep refusing.
+4. **New, found by the refusal table rather than by thinking:** a production build must use
+   `PDFIQ_PADDLE_ENV=production`. The old table had a row setting sandbox on branch `main` and expecting the blanket
+   refusal; with that gone, the combination BUILT — a production site selling through Paddle's sandbox, taking no real
+   money and signing entitlements with the sandbox key, which the released app rejects. It would have looked like a
+   working sale until someone tried to pay. Nothing else on the site would have said so.
 
 **What the commit does not do: it does not turn the sale on.** The flags do that. Merged with no variables set, the
 site builds byte-for-byte what it builds today — checked by hashing the whole of `dist/` before and after.
