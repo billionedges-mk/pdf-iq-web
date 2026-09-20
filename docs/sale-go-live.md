@@ -223,20 +223,31 @@ that approval was a formality. The live account reviews for real. Same shape as 
 is a different world, not a smaller one — and the second time in one week that a sandbox behaviour was read as the
 system's behaviour.
 
-### Before the approval can succeed at all: the domain has to exist
+### Before the approval can succeed at all: the domain has to exist — **done, 20 September 2026**
 
-Measured 20 September 2026, before anything else was checked:
+When the approval was first submitted, `checkout.pdf-iq.com` was **NXDOMAIN**: no DNS record at all, so the
+reviewer reached nothing — not a blank page, no page. Paddle's own form accepted the address, the build had no
+opinion, and no check on this site could have one: a payment link pointing at a domain that does not exist is invisible
+to everything except a lookup. It would have surfaced on launch day as "the checkout doesn't open".
+
+The domain was then attached to the pdf-iq-checkout Pages project and now answers:
 
 | Address | Answers |
 |---|---|
-| `checkout.pdf-iq.com` | **NXDOMAIN — no DNS record at all** |
+| `checkout.pdf-iq.com` | **200**, HTTPS with a valid certificate, **byte-identical** to the production deployment below |
+| DNS (1.1.1.1, 8.8.8.8, Google DoH) | `A 104.21.61.184`, `A 172.67.212.199`, plus AAAA — Cloudflare flattens the CNAME at the edge, so no CNAME is published |
 | `pdf-iq-checkout.pages.dev` (the project's production deployment) | 200, the standalone statement, all three links |
 | `pro-sale.pdf-iq-checkout.pages.dev` (Preview) | 200, the same statement |
 
-So the reviewer visiting checkout.pdf-iq.com today reaches nothing — not a blank page, no page. **Attach
-checkout.pdf-iq.com as a custom domain on the pdf-iq-checkout Pages project** (which creates the CNAME), confirm it
-answers 200, and only then expect the review to pass; a review that ran against a name that does not resolve has to
-be resubmitted rather than waited on.
+**Resubmit the approval rather than waiting on it.** A reviewer who reached nothing has nothing to approve, so the
+pending request is most likely already decided against; resubmitting is the same action either way.
+
+**A note on the instrument, because it lied in both directions.** The lookup that found the missing domain is the
+same one that then reported it still missing after it existed: this machine's resolver held a negative cache for the
+**A** record while returning AAAA normally, so `nslookup` said "Non-existent domain" and `fetch` said ENOTFOUND
+while every public resolver answered. Query a public resolver (`nslookup name 1.1.1.1`) or pin the address
+(`curl --resolve host:443:<ip>`) before believing a negative, and flush before believing it twice. A cached NO and a
+real NO are the same sentence.
 
 ### What the reviewer will see once it resolves
 
@@ -251,11 +262,10 @@ with the links resolving to `https://pdf-iq.com/terms/`, `https://pdf-iq.com/pri
 static, and the checkout only loads when the site opens it with a transaction. That is what the approval needs, and
 it is live.
 
-**One thing the reviewer will not find yet:** `/privacy/#checkout` has no `#checkout` section on production,
-because that section only exists in a sale build (verify-sale-build asserts its absence in every other build). The
-link still lands on /privacy — an unknown fragment is ignored, not an error — but the payment-data section it points
-at arrives with step 0. If the reviewer asks where payment data is described, that is why, and the answer is the
-Paddle section of /privacy once the sale build ships.
+**`/privacy/#checkout` is left as it is** (owner, 20 September 2026). The section only exists in a sale build —
+verify-sale-build asserts its absence in every other — so today the link lands on /privacy and the unknown fragment is
+ignored rather than broken. It is not a gap to close now: **confirm it after the sale build ships**, as part of step 5's
+look at the Pro pages, that the link lands on the payment-data section rather than the top of the page.
 
 ## Why Preview never runs against live Paddle (asked and decided, 20 September 2026)
 
