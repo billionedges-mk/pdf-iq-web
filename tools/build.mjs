@@ -86,6 +86,25 @@ const PRO = /^(1|true|on)$/i.test(process.env.PDFIQ_PRO ?? '');
 const ON_CLOUDFLARE = Boolean(process.env.CF_PAGES);
 const PRODUCTION = ON_CLOUDFLARE && (process.env.CF_PAGES_BRANCH ?? 'main') === 'main';
 const SELLING = /^(1|true|on)$/i.test(process.env.PDFIQ_SALE ?? '');
+
+/**
+ * Is this build a preview deployment — the thing that must stay out of search?
+ *
+ * It used to be spelled `PRO`, and that was correct for as long as the Pro flag was preview-only: every build that
+ * had it was a preview, so `PRO` and "not for search engines" named the same set. Step 0 breaks that. `PDFIQ_PRO`
+ * goes on in production, and with the old spelling the launch-day deploy would have published **robots.txt saying
+ * `Disallow: /` and `noindex, nofollow` on all 21 pages** — the seven free tool pages and the homepage included.
+ * pdf-iq.com deindexed on the day it started selling, on a site whose commercial argument is search. Measured by
+ * building the exact production configuration before the flip (20 September 2026); nothing in the deploy would have
+ * said so, and the effect arrives whenever Google next crawls rather than at once.
+ *
+ * The Pro pages stay out of search on their own merit: /account/, /batch/, /password/ and /pro/buy/ each carry
+ * `noindex: true` in site.mjs, and the sitemap already excludes anything noindex. So this predicate now says only
+ * what it means — a deployment that is not production — and the per-page flags do the rest.
+ *
+ * CLAIMS 52: a configuration that was correct before an architectural change is a claim about the old architecture.
+ */
+const PREVIEW_DEPLOY = PRO && !PRODUCTION;
 if (PRO && PRODUCTION && !SELLING) {
   throw new Error(
     'PDFIQ_PRO is set on a production build (Cloudflare Pages, branch ' +
@@ -388,7 +407,7 @@ function document_({ page, body, css, assets }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<meta name="description" content="${esc(description)}">${page.noindex || PRO ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
+<meta name="description" content="${esc(description)}">${page.noindex || PREVIEW_DEPLOY ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
 <link rel="canonical" href="${url}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${url}">
@@ -747,8 +766,8 @@ async function bundle() {
 const SEARCH_CRAWLERS = ['Googlebot', 'Bingbot', 'OAI-SearchBot', 'Claude-SearchBot', 'PerplexityBot'];
 
 function robots() {
-  // A preview build is not for search engines. Its pages are noindex as well; this stops the crawl.
-  if (PRO) return 'User-agent: *' + NL + 'Disallow: /' + NL;
+  // A preview deployment is not for search engines. Its pages are noindex as well; this stops the crawl.
+  if (PREVIEW_DEPLOY) return 'User-agent: *' + NL + 'Disallow: /' + NL;
   const groups = [...SEARCH_CRAWLERS, '*']
     .map((agent) => `User-agent: ${agent}` + NL + 'Allow: /')
     .join(NL + NL);
@@ -965,7 +984,7 @@ async function build() {
     if (selling.length) throw new Error(`a purchase path reached a build that is not selling: ${selling.slice(0, 8).join(', ')}`);
   }
 
-  console.log(`built ${ROUTES.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images${PRO ? '  — PRO PREVIEW' : ''}`);
+  console.log(`built ${ROUTES.length} routes -> dist/  (build ${BUILD_ID}), ${written} share images${PRO ? (PRODUCTION ? '  — PRO, PRODUCTION' : '  — PRO PREVIEW') : ''}`);
 }
 
 // ---------------------------------------------------------------- dev loop

@@ -250,6 +250,32 @@ for (const [which, label, env, reason] of refusals) {
   const b = site({ PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'production', PDFIQ_PADDLE_CLIENT_TOKEN: LIVE, PDFIQ_CHECKOUT_ORIGIN: CHECKOUT, PDFIQ_FIREBASE_WEB_KEY: 'AIzaSyTestKeyForBuildOnly', CF_PAGES: '1', CF_PAGES_BRANCH: 'main' });
   ok(b.status === 0 && existsSync(join(ROOT, 'dist/pro/buy/index.html')),
     `the complete production configuration builds, with a purchase page${b.status === 0 ? '' : `: ${b.out.split('\n').find((l) => /Error/.test(l))}`}`);
+
+  // And it is still a site search engines may read. Until 20 September 2026 the noindex rule and robots.txt keyed off
+  // PRO, which was preview-only when it was written — so the launch-day deploy would have published "Disallow: /" and
+  // noindex on all 21 pages, the seven free tools included, and deindexed pdf-iq.com on the day it started selling.
+  // The Pro pages stay out of search on their own noindex flags, which is where that decision belongs.
+  const robots = readFileSync(join(ROOT, 'dist/robots.txt'), 'utf8');
+  const home = readFileSync(join(ROOT, 'dist/index.html'), 'utf8');
+  const tool = readFileSync(join(ROOT, 'dist/merge/index.html'), 'utf8');
+  const sitemap = readFileSync(join(ROOT, 'dist/sitemap.xml'), 'utf8');
+  ok(!/Disallow: \//.test(robots) && /Sitemap:/.test(robots), 'selling on production: robots.txt still allows the crawl and names the sitemap');
+  ok(!/content="noindex/.test(home) && !/content="noindex/.test(tool), 'selling on production: the homepage and the free tools are still indexable');
+  ok((sitemap.match(/<loc>/g) ?? []).length > 10, `selling on production: the sitemap still lists the free pages (${(sitemap.match(/<loc>/g) ?? []).length})`);
+  for (const proPage of ['account', 'batch', 'password', 'pro/buy']) {
+    const html = readFileSync(join(ROOT, `dist/${proPage}/index.html`), 'utf8');
+    ok(/content="noindex/.test(html) && !sitemap.includes(`/${proPage}/</loc>`), `selling on production: /${proPage}/ is noindex and absent from the sitemap`);
+  }
+}
+
+// The same build on a preview branch is the opposite, and must stay that way: a preview deployment is not for search
+// engines, and it is the deployment PRO used to be a synonym for.
+{
+  const b = site({ PDFIQ_PRO: '1', ...PREVIEW });
+  const robots = readFileSync(join(ROOT, 'dist/robots.txt'), 'utf8');
+  const home = readFileSync(join(ROOT, 'dist/index.html'), 'utf8');
+  ok(b.status === 0 && /Disallow: \//.test(robots) && /content="noindex/.test(home),
+    'a Pro preview is still hidden from search: robots.txt disallows and every page is noindex');
 }
 
 // Leave both as ordinary builds.
