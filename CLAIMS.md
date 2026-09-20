@@ -1724,6 +1724,19 @@ which is how an assertion gets weakened until it proves nothing.
 3. A check weakened to make it pass is recorded as weakened, with what it no longer proves — or it is a comment
    (CLAIMS 19).
 
+**It recurred on 20 September 2026, inside a check written to guard a claim that had just been corrected.**
+`verify-price-offers` asserted the tax sentence's literal words. When the production price measurement proved that
+sentence false (CLAIMS 56), the check could not tell a true sentence from a false one — only this sentence from
+another — and, having been written to protect the claim, it then **required the claim to stay wrong**: the build
+refused the corrected copy until the check was corrected too. The instinct that writes the exact words into a check is
+the same one that makes it brittle. Precision about the wrong thing (owner).
+
+Two smaller versions of it turned up in the same hour, both in the replacement. The property test `/added at the
+checkout/` failed on the new sentence, which ends "**not** added at the checkout" — a substring cannot see a
+negation, so the test now reads sentence by sentence and refuses only a sentence that CLAIMS something is added. And
+the retired phrase went in twice, for the price cards' wording and /terms', because they differed by one word and a
+semicolon — which is exactly how one of them survives a search for the other.
+
 ### 51. One field name at two levels of a payload describes two different things
 
 Paddle's refund notification carries `type` twice. `data.type` describes the ADJUSTMENT against the whole transaction:
@@ -1828,7 +1841,12 @@ expired.
 4. A record that lives only in a conversation is indistinguishable from one nobody made. Two proposals waiting on the
    owner had been agreed in chat and written nowhere; both surfaced only because everything deferred was being given a
    line.
-5. Prefer a check to a record wherever the record is a list of places. The inventory was wrong twice — once for a
+5. Break an inventory out by build state before trusting it. **The same page in two states is two pages, and a list
+   that does not say which state is describing neither** (owner, 20 September 2026). Splitting the tax sentence's
+   five places by sale state is what exposed the real gap: /terms' SALE block — the text that governs a purchase
+   someone can actually make — said nothing about tax at all, and neither did /app/'s selling price card. Both were
+   invisible in a list that said only "/terms" and "/app/".
+6. Prefer a check to a record wherever the record is a list of places. The inventory was wrong twice — once for a
    placeholder, once for a file that is not a page — so what enforces the flip now reads the built output, and the list
    is a convenience.
 
