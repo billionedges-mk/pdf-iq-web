@@ -14,6 +14,7 @@
  */
 import { verifyFirebaseIdToken } from '../../server/firebase-token.js';
 import { findEntitlement, importPrivateKey, signEntitlement } from '../../server/entitlement.js';
+import { notThisOrigin } from '../../server/origin.js';
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -28,6 +29,9 @@ const json = (body, status = 200) =>
 export async function onRequest(context, deps = {}) {
   const { request, env } = context;
 
+  // Not the site's deployment (server/origin.js): Pages serves this file from the checkout project as well, where it
+  // has no database and no signing key, and answered 503 "not-configured" rather than saying it does not belong there.
+  if (notThisOrigin(request, env)) return json({ error: 'not-found' }, 404);
   if (env.PDFIQ_SALE !== 'true') return json({ error: 'not-found' }, 404);
   if (request.method !== 'GET') return json({ error: 'method-not-allowed' }, 405);
   if (!env.PURCHASES || !env.PDFIQ_ENTITLEMENT_PRIVATE_KEY || !['sandbox', 'production'].includes(env.PDFIQ_PADDLE_ENV)) {

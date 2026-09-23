@@ -352,5 +352,57 @@ console.log('\n— entitlement');
   ok(authConfig.includes(`project ${FIREBASE_PROJECT_ID}`), `server/firebase-token.js checks tokens for ${FIREBASE_PROJECT_ID}, the project tools/auth-config.mjs names`);
 }
 
+// ---------------------------------------------------------------- whose endpoints these are
+//
+// Both Cloudflare Pages projects build from this repo and Pages deploys functions/ with each, so the checkout project
+// serves these two routes as well — measured on 23 September 2026, before the sale: the checkout Preview answered 503
+// on /api/entitlement and 405 on /api/paddle/webhook, both already past the PDFIQ_SALE gate. With PDFIQ_SALE set on
+// the checkout project's Production, checkout.pdf-iq.com/api/paddle/webhook would accept a POST with no database
+// behind it. PDFIQ_SITE_ORIGIN names the site to a deployment that is not the site, so it is the signal (server/origin.js).
+
+console.log('\n— whose endpoints these are');
+{
+  const db = d1();
+  const CHECKOUT = 'https://checkout.pdf-iq.com';
+  const SITE = 'https://pdf-iq.com';
+
+  // The checkout deployment: PDFIQ_SITE_ORIGIN points at the site, the request arrives on the checkout's own host.
+  const onCheckout = await webhook({
+    request: new Request(`${CHECKOUT}/api/paddle/webhook`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'Paddle-Signature': await signedHeader('{}') }, body: '{}',
+    }),
+    env: envFor(db, { PDFIQ_SITE_ORIGIN: SITE }),
+  });
+  ok(onCheckout.status === 404, `the webhook is 404 on a deployment that is not the site (status ${onCheckout.status})`);
+  ok(JSON.stringify(await onCheckout.json()) === JSON.stringify({ error: 'not-found' }),
+    'and says exactly what the not-selling refusal says, so the two are one answer from outside');
+
+  // No key and no verifyOptions on purpose: the refusal comes before either is touched, and a test that needed them
+  // would be asserting something further in than the rule it is about.
+  const entOnCheckout = await entitlement({
+    request: new Request(`${CHECKOUT}/api/entitlement`, { headers: { Authorization: 'Bearer nonsense' } }),
+    env: { PDFIQ_SALE: 'true', PURCHASES: db, PDFIQ_ENTITLEMENT_PRIVATE_KEY: '{}', PDFIQ_PADDLE_ENV: 'sandbox', PDFIQ_SITE_ORIGIN: SITE },
+  });
+  ok(entOnCheckout.status === 404, `/api/entitlement is 404 there too, not 503 "not-configured" (status ${entOnCheckout.status})`);
+
+  // The site's own deployment, which is the half that must not break. Two cases: no PDFIQ_SITE_ORIGIN at all, which is
+  // how pdf-iq-web is configured; and the variable set to this very origin, which is the misconfiguration the rule is
+  // written as a comparison to survive — presence alone would have 404'd the real webhook.
+  const onSite = await deliver(db, completed('2026-09-23T10:00:00Z'));
+  ok(onSite.status === 200, `the webhook still answers on the site with no PDFIQ_SITE_ORIGIN (status ${onSite.status})`);
+
+  // One body, signed and sent. Building it twice signs a different string than it sends: completed() mints a fresh
+  // event id, so the first attempt failed on signature-mismatch — the test lying about the rule it was testing.
+  const selfBody = JSON.stringify(completed('2026-09-23T11:00:00Z'));
+  const selfDeclared = await webhook({
+    request: new Request(`${SITE}/api/paddle/webhook`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'Paddle-Signature': await signedHeader(selfBody) }, body: selfBody,
+    }),
+    env: envFor(db, { PDFIQ_SITE_ORIGIN: SITE }),
+  });
+  ok(selfDeclared.status === 200,
+    `and still answers when PDFIQ_SITE_ORIGIN names this very origin, so a variable in the wrong place cannot silently disable it (status ${selfDeclared.status})`);
+}
+
 console.log(fails ? `\n${fails} FAILED` : '\nthe purchase path verifies what it is sent and records only what it should');
 process.exit(fails ? 1 : 0);

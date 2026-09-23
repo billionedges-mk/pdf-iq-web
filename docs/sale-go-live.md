@@ -251,6 +251,57 @@ change without a commit here (CLAIMS 37).
 Then compare the production host list with the sandbox measurement below. The /privacy wording names
 production hosts, so it is corrected from this run before the sale is announced.
 
+## Which project reads which variable
+
+Derived from the code on 23 September 2026, not remembered — two people had the same variable in different places and
+both were partly right. `tools/paddle-config.mjs` is shared, but the two builds call different halves of it:
+`tools/build.mjs` (pdf-iq-web) calls `resolveSite()`; `tools/build-checkout.mjs` (pdf-iq-checkout) sets
+`PDFIQ_CHECKOUT_BUILD` and calls `resolveCheckout()`.
+
+| Variable | pdf-iq-web | pdf-iq-checkout |
+|---|---|---|
+| `PDFIQ_SALE` | build **and** all three Functions | build |
+| `PDFIQ_PADDLE_ENV` | build, and `/api/entitlement` at runtime | build |
+| `PDFIQ_CHECKOUT_ORIGIN` | build — the origin /pro/buy/ frames | build — only for the same-origin refusal |
+| `PDFIQ_PADDLE_CLIENT_TOKEN` | **validated and then discarded — nothing uses it** | **build — this is what opens a checkout** |
+| `PDFIQ_PADDLE_PRICE_ID` | **`/api/paddle/webhook` at runtime** — not the build | build |
+| `PDFIQ_SITE_ORIGIN` | nothing reads it — and setting it is now meaningful, see below | build — who may frame the checkout |
+| `PURCHASES`, `PADDLE_WEBHOOK_SECRET`, `PDFIQ_ENTITLEMENT_PRIVATE_KEY` | Functions only | nothing |
+| `PDFIQ_FIREBASE_WEB_KEY` | build | nothing |
+
+**A variable can be dead to the build and live to the deployment, and those are different questions** (owner,
+23 September 2026). Both of the day's confusions were this:
+
+- `PDFIQ_PADDLE_CLIENT_TOKEN` on pdf-iq-web is read by `checkToken()`, validated, and the return thrown away — the
+  site never holds a payment credential, which is the point of the two-origin split. Building the Preview shape with
+  and without it gives a **byte-identical `dist/`**, and /pro/buy/ builds either way. It came off pdf-iq-web Preview
+  on 23 September. It was not inert while it sat there: a `live_` value, or a prefix disagreeing with
+  `PDFIQ_PADDLE_ENV`, makes the site build throw — a tripwire on a value nothing reads.
+- `PDFIQ_PADDLE_PRICE_ID` on pdf-iq-web **stays**. The build ignores it — same experiment, identical `dist/` — but
+  `functions/api/paddle/webhook.js` reads it at runtime to ignore transactions for any other price. Remove it and
+  Preview's sandbox webhook answers 503.
+
+"The build doesn't use it" and "nothing reads it" are not the same sentence. Ask which runtime.
+
+## Both projects serve `functions/`, and only one of them should
+
+Pages deploys the repo's `functions/` directory with **each** project, so pdf-iq-checkout serves `/api/entitlement`
+and `/api/paddle/webhook` as well — which nobody reading that project would expect, because nothing in it mentions
+them. Measured before the sale: the checkout Preview answered **503** on the first and **405** on the second, both
+already past the `PDFIQ_SALE` gate.
+
+With `PDFIQ_SALE=true` on the checkout project's Production, `checkout.pdf-iq.com/api/paddle/webhook` would have
+become a second live webhook: it accepts a POST and writes nowhere, because that project has no `PURCHASES` binding
+and no signing secret. Nothing points at it — the risk is the obvious future mistake, someone repointing Paddle at
+"checkout.pdf-iq.com" because that is what the checkout is called.
+
+**Closed on 23 September 2026** (`server/origin.js`): both Functions answer 404 — the same 404 as the not-selling
+refusal, so the two are one answer from outside — when `PDFIQ_SITE_ORIGIN` names an origin that is not the one
+answering. That variable is set on the checkout project and nowhere else, so the signal already existed. It is written
+as a **comparison** rather than "the variable is present" deliberately: presence alone would silently 404 the real
+webhook if the variable were ever set on pdf-iq-web by mistake, which is a worse failure than the one being fixed.
+Measured without the guard, the checkout origin's webhook answered **200**.
+
 ## 2. Credentials and configuration, Production environment only
 
 **Two Cloudflare Pages projects.** pdf-iq-web is the site; pdf-iq-checkout is the checkout origin, the only

@@ -15,9 +15,11 @@
  * dropped purchases) and a storage failure.
  *
  * Refuses with 404 unless PDFIQ_SALE is "true" in this deployment's environment. Production keeps
- * it false until the sale is deliberately switched on.
+ * it false until the sale is deliberately switched on — and with the same 404 on any deployment that is not the site,
+ * because Pages serves this file from the checkout project too (server/origin.js).
  */
 import { verifyPaddleSignature, decide, applyDecision } from '../../../server/paddle.js';
+import { notThisOrigin } from '../../../server/origin.js';
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -31,6 +33,10 @@ const json = (body, status = 200) =>
 
 export async function onRequest(context) {
   const { request, env } = context;
+
+  // Not the site's deployment: this endpoint is not ours to answer. First, so that a checkout deployment with the sale
+  // flag set never looks like a working webhook — it would take a POST and write nowhere (server/origin.js).
+  if (notThisOrigin(request, env)) return json({ error: 'not-found' }, 404);
 
   if (env.PDFIQ_SALE !== 'true') return json({ error: 'not-found' }, 404);
   if (request.method !== 'POST') return json({ error: 'method-not-allowed' }, 405);
