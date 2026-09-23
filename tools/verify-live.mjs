@@ -313,6 +313,15 @@ if (SELLING) {
       `the checkout origin answers and links back to ${SITE}'s terms and refunds (status ${co.status})`);
     ok(!/sandbox/.test(coText) && !/\btest_[0-9a-z]{20}/.test(coText),
       'the checkout origin carries no sandbox host and no test token');
+
+    // Pages deploys functions/ with BOTH projects, so the checkout origin serves these routes too — with no database
+    // and no signing secret behind them. server/origin.js answers 404 there. While the checkout was not selling its
+    // 404 could equally have been the PDFIQ_SALE gate; once it sells, a 404 here is the guard and nothing else
+    // (23 September 2026).
+    for (const route of ['/api/entitlement', '/api/paddle/webhook']) {
+      const rr = await fetch(`${checkoutOrigin}${route}?n=${Date.now()}`, { cache: 'no-store' });
+      ok(rr.status === 404, `the checkout origin does not serve ${route} (status ${rr.status}) — nothing is behind it there`);
+    }
   } catch (e) {
     ok(false, `the checkout origin could not be read: ${e.message}`);
   }
