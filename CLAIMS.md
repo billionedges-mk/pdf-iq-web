@@ -71,7 +71,8 @@ the work is done.
 55. ["Done" is a claim about the reporter, not about the world](#55-done-is-a-claim-about-the-reporter-not-about-the-world)  
 56. [A sandbox measurement is a measurement of sandbox](#56-a-sandbox-measurement-is-a-measurement-of-sandbox)  
 57. [A cached NO and a real NO are the same sentence](#57-a-cached-no-and-a-real-no-are-the-same-sentence)  
-58. [A chain that proceeds past a failure is a chain with no gate in it](#58-a-chain-that-proceeds-past-a-failure-is-a-chain-with-no-gate-in-it)
+58. [A chain that proceeds past a failure is a chain with no gate in it](#58-a-chain-that-proceeds-past-a-failure-is-a-chain-with-no-gate-in-it)  
+59. [A stale check does not merely fail to help — it destroys the signal from the checks that would have](#59-a-stale-check-does-not-merely-fail-to-help--it-destroys-the-signal-from-the-checks-that-would-have)
 
 <!-- /index -->
 
@@ -1999,3 +2000,35 @@ assertion failures. **A gate in the middle of a chain is also a gate on the evid
 6. **When a run is meant to FAIL, say which failure you got.** "Exit 1" from a chain is not evidence: the line that
    failed has to be the one under test, and its message has to name the assertion. Otherwise the expected answer and
    a broken harness look the same (CLAIMS 33's shape, from the other end).
+
+### 59. A stale check does not merely fail to help — it destroys the signal from the checks that would have
+
+`verify:live` asserted that production carries no Pro code at all: the sentinel, the Pro wording, the sign-in hosts,
+forbidden in every bundle. True while `PDFIQ_PRO` was refused on production, and false on every page the moment the
+sale is switched on. The check that confirms a deploy would have failed **because the deploy worked**, at the moment
+someone runs it for reassurance, with step 5 of the launch checklist telling them to. A wall of red there invites
+rolling back a correct deploy (owner, 20 September 2026).
+
+**The mechanism is worse than a check that has stopped working.** The same run carries a per-page assertion that
+production serves each page's own `noindex` and no other — and that assertion was **right**, and would have caught
+the day's most expensive defect on its own: with the noindex rule still keyed to the Pro flag, a production build with
+Pro on served `noindex, nofollow` on all 21 pages. It would have appeared as one line among sixteen false failures
+from the same file, on a day with a lot going on. A stale check is not a missing check; it is a missing check plus
+noise loud enough to bury the working ones beside it.
+
+The half that had no net at all was `robots.txt`, which nothing read — so the defect was partly guarded, partly
+silent, and the guarded part was the part about to be drowned.
+
+**The check:**
+
+1. When a system changes state, ask of every check: **what does this assert that is true only of the old state?** Not
+   "does it still pass" — it passes right up to the change, which is what makes it invisible.
+2. A check that asserts an absence is the most likely to go stale, because absences are what a new feature fills.
+   "No Pro code on production" was an absence with an expiry date nobody wrote down.
+3. Make the check read the state rather than assume it, from a signal the system itself publishes — and where two
+   signals exist, read both and treat disagreement as the finding (a page written at build time and a Function reading
+   its environment can disagree: variables set without a rebuild is a real, silent state).
+4. Count the failures before reading them. Sixteen failures from one file is a claim about the file, not about
+   sixteen defects, and the one real line will be inside it.
+5. Exercise the new state before it exists. `--site` pointed at a deployment already in that state found four more
+   state assumptions inside the rewrite that removes state assumptions — none of which reasoning had found.
