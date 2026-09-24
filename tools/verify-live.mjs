@@ -311,6 +311,33 @@ if (SELLING) {
     // production while reading a preview. Paddle's reviewer follows these links, so they have to reach a real page.
     ok(co.status === 200 && coText.includes(`${SITE}/terms/`) && coText.includes(`${SITE}/refunds/`),
       `the checkout origin answers and links back to ${SITE}'s terms and refunds (status ${co.status})`);
+    // CAN IT TAKE A PAYMENT? Everything above proves the checkout origin ANSWERS — 200, the right links, no sandbox
+    // host. None of that proves it can charge a card, and the difference is invisible in the HTML: the statement page
+    // is ~1 KB in BOTH builds, and Paddle.js is never in it, because nothing loads from Paddle until the button is
+    // pressed. What differs is the bundle. Reading the page instead of the bundle is how this check first reported a
+    // correctly-selling checkout as "not rebuilt" for eleven hours (24 September 2026) — and the same wrong reading,
+    // built into a watcher, produced eleven hours of confident wrong output.
+    const coScripts = [...coText.matchAll(/<script[^>]*src="([^"]+)"/g)].map((m) => m[1]);
+    let coBundle = '';
+    for (const src of coScripts) {
+      const u = src.startsWith('http') ? src : `${checkoutOrigin}${src}`;
+      try { coBundle += await (await fetch(`${u}?n=${Date.now()}`, { cache: 'no-store' })).text(); } catch { /* reported below */ }
+    }
+    const canPay = /paddle/i.test(coBundle);
+    const token = (coBundle.match(/\b(live|test)_[0-9a-z]{20,}/) ?? [])[0] ?? '';
+    ok(coScripts.length > 0 && canPay && Boolean(token),
+      `the checkout origin can actually take a payment — ${coScripts.length} script(s), Paddle ${canPay ? 'referenced' : 'ABSENT'}, client token ${token ? 'present' : 'ABSENT'}`
+      + (canPay && token ? '' : '\n        it answers and links correctly and cannot charge a card: the Pay button on /pro/buy/ would do nothing'));
+
+    // And the token belongs to the environment the same bundle names. A live_ token beside sandbox hosts, or the
+    // reverse, is a half-configured checkout that looks complete from every other angle.
+    if (token) {
+      const live = token.startsWith('live_');
+      const sandboxHosts = /sandbox/.test(coBundle);
+      ok(live !== sandboxHosts,
+        `its token matches its Paddle environment (${live ? 'live_' : 'test_'} token, ${sandboxHosts ? 'sandbox' : 'production'} hosts)`);
+    }
+
     ok(!/sandbox/.test(coText) && !/\btest_[0-9a-z]{20}/.test(coText),
       'the checkout origin carries no sandbox host and no test token');
 
@@ -330,6 +357,85 @@ if (SELLING) {
   const home = normalise((await get('/')).text);
   ok(has(home, PRO_PRICE) , `the homepage names the price (${PRO_PRICE})`);
   ok(has(normalise(buyPage.text), PRO_PRICE), 'and so does the purchase page');
+}
+
+// ---------------------------------------------------------------- sign-in, which is somebody else's configuration
+//
+// On 24 September 2026 this check passed 50 assertions on a site nobody could buy from. Sign-in was broken: the OAuth
+// client had three redirect URIs, all Preview, and Firebase's authorised domains had four, none of them pdf-iq.com.
+// Pressing "Sign in with Google" on /pro/buy/ returned redirect_uri_mismatch. Everything above was ours — pages,
+// endpoints, bundles — and all of it was right. Sign-in is the one step that depends on a third party's configuration,
+// and nothing inside the deployment can see it (docs/sale-go-live.md step 1, the step marked "do this FIRST because it
+// propagates slowly", which was run last).
+//
+// Both halves are readable from outside with no credentials, so neither stays a human step:
+//   - Google: request the authorize endpoint with our public client id and a redirect URI. A registered one lands on
+//     the sign-in page; an unregistered one lands on /signin/oauth/error with redirect_uri_mismatch.
+//   - Firebase: identitytoolkit's projects endpoint answers authorizedDomains for the public web key, which this
+//     reads out of the live bundle rather than from a variable — the check should see what the deployment shipped.
+//
+// THE CONTROLS ARE NOT OPTIONAL. The first version of this probe did not follow the 302 and reported every URI as
+// accepted, including a deliberately unregistered one. A probe written to confirm a fix is the most dangerous kind,
+// because its author already believes the answer (owner, CLAIMS 27 arriving inside the fix for it). Two URIs that must
+// be refused run on every pass; if they stop being refused, this check is measuring nothing and says so.
+
+if (SELLING) {
+  const AUTHORIZE = 'https://accounts.google.com/o/oauth2/v2/auth';
+  const askGoogle = async (redirect) => {
+    const u = new URL(AUTHORIZE);
+    u.searchParams.set('client_id', AUTH.clientId);
+    u.searchParams.set('redirect_uri', redirect);
+    u.searchParams.set('response_type', 'code');
+    u.searchParams.set('scope', 'openid email');
+    try {
+      const res = await fetch(u, { redirect: 'follow' });
+      const body = await res.text();
+      return { accepted: !/redirect_uri_mismatch/i.test(body), where: new URL(res.url).pathname };
+    } catch (e) {
+      return { accepted: null, where: e.message };
+    }
+  };
+
+  // The controls first: if these are accepted, the probe cannot fail and nothing below it means anything.
+  const controls = await Promise.all([
+    askGoogle(`${SITE}/not-a-registered-path-${Date.now()}/`),
+    askGoogle('https://example.com/callback'),
+  ]);
+  const controlsRefused = controls.every((c) => c.accepted === false);
+  ok(controlsRefused,
+    `the sign-in probe can fail: two unregistered redirect URIs are refused${controlsRefused ? '' : ' — IT ACCEPTED THEM, so the results below mean nothing'}`);
+
+  if (controlsRefused) {
+    for (const path of ['/pro/buy/', '/account/']) {
+      const r = await askGoogle(`${SITE}${path}`);
+      ok(r.accepted === true, `Google accepts ${SITE}${path} as a redirect URI${r.accepted ? '' : ` — ${r.where}; nobody can sign in, so nobody can buy`}`);
+    }
+  }
+
+  // Firebase's authorised domains, from the key the deployment actually shipped.
+  const home = await get('/');
+  const bundles = [...home.text.matchAll(/src="(\/assets\/[^"]+\.js)"/g)].map((m) => m[1]);
+  let webKey = '';
+  const seenJs = new Set();
+  const queue = [...bundles];
+  while (queue.length && !webKey) {
+    const f = queue.shift();
+    if (seenJs.has(f)) continue;
+    seenJs.add(f);
+    const { text } = await get(f);
+    for (const m of text.matchAll(/["'`]\.\/([\w.-]+\.js)["'`]/g)) queue.push('/assets/' + m[1]);
+    const k = text.match(/AIza[0-9A-Za-z_-]{30,}/);
+    if (k) webKey = k[0];
+  }
+  ok(Boolean(webKey), `the Firebase web key is in the shipped bundle${webKey ? '' : ' — /account/ would say signing in is not set up'}`);
+  if (webKey) {
+    const cfg = await fetch(`https://identitytoolkit.googleapis.com/v1/projects?key=${webKey}`);
+    const json = await cfg.json().catch(() => ({}));
+    const domains = json.authorizedDomains ?? [];
+    const host = new URL(SITE).host;
+    ok(cfg.status === 200 && domains.includes(host),
+      `${host} is one of Firebase's authorised domains${domains.includes(host) ? '' : ` — it lists ${JSON.stringify(domains)}, and sign-in fails with auth/unauthorized-domain`}`);
+  }
 }
 
 // ---------------------------------------------------------------- phrases named for this deploy

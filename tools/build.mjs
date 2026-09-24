@@ -18,7 +18,7 @@ import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, 
 import { AUTH } from './auth-config.mjs';
 import { PADDLE } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
-import { PRO_COPY, PRO_FEATURES, proState, proStrip, proPanel, proSheet, proSurfaces, proWhere, lockedPanelStatic } from './pro-copy.mjs';
+import { PRO_COPY, PRO_FEATURES, SELLING_SURFACE, proState, proStrip, proPanel, proSheet, proSurfaces, proWhere, proLede, lockedPanelStatic } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
 import { ogImage } from './og-images.mjs';
 import { LANGUAGES } from './langs.mjs';
@@ -227,7 +227,9 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
  * panel, or a price card. Read from the built body rather than from a list of pages, so a page that starts or stops
  * selling takes its phone Pro button with it (tools/verify-price-offers.mjs checks the two agree).
  */
-const SELLS = /data-pro-strip|class="price__amount"/;
+// One definition, in tools/pro-copy.mjs, shared with verify-price-offers: two detectors of one fact disagreed as
+// soon as a third surface carrying data-pro-strip appeared (the Pro lede, which is a sentence and not a sale).
+const SELLS = SELLING_SURFACE;
 
 function header(activeSlug, sells) {
   const link = (t) => `<a href="${href(t.slug)}"${t.slug === activeSlug ? ' aria-current="page"' : ''}>${t.nav}</a>`;
@@ -868,6 +870,14 @@ async function build() {
       if (body.includes('<!--PRO_COPY-->')) {
         throw new Error(`PRO_COPY marker survived substitution in ${file}`);
       }
+    }
+    // A page whose whole tool is Pro says so under its heading, from the PRO_COPY entry whose route is this page.
+    // The marker sits in the page, so where the sentence goes is the page's decision; what it says is not.
+    if (body.includes('<!--PRO_LEDE-->')) {
+      const entry = PRO_COPY.find((c) => c.route === href(page.slug));
+      if (!entry) throw new Error(`PRO_LEDE marker on /${page.slug}/, which no PRO_COPY entry names as its route`);
+      body = body.replace(/[ \t]*<!--PRO_LEDE-->/, `    ${proLede(entry.key, { selling: Boolean(PADDLE?.page) || PRO_OFFER.onSale, hidden: PRO })}`);
+      if (body.includes('<!--PRO_LEDE-->')) throw new Error(`PRO_LEDE marker survived substitution in ${file}`);
     }
     if (body.includes('<!--PRO_FEATURES-->')) {
       const items = PRO_FEATURES.map((f) => `            <li>${esc(f)}</li>`).join('\n');

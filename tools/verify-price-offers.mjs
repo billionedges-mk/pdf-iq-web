@@ -33,6 +33,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRO } from './site.mjs';
+import { SELLING_SURFACE } from './pro-copy.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 let fails = 0;
@@ -167,7 +168,7 @@ for (const rel of pages) {
     // The three things that sell, and not the bar button itself, whose own marker would make this test agree with
     // whatever the build did.
     const content = html.replace(/<style[\s\S]*?<\/style>/g, ' ');
-    const sells = /class="pro-strip"|class="pro-panel"|class="price__amount"/.test(content);
+    const sells = SELLING_SURFACE.test(content);
     const button = html.includes('data-sheet-open="pro"');
     if (sells !== button) {
       wrong++;

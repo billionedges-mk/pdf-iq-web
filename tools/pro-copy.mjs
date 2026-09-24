@@ -33,6 +33,9 @@ const NL = '\n';
 export const PRO_COPY = [
   {
     key: 'batch',
+    // The free half of the page lede (proLede). Shorter than `instead`, because it answers the question someone
+    // arrived with rather than describing the free path in full.
+    lede: 'The free tools do one file at a time, unlimited, with no account.',
     // In the app as Batch, on the same entitlement (Feature.BATCH).
     inApp: true,
     short: 'Batch',
@@ -88,6 +91,7 @@ export const PRO_COPY = [
   },
   {
     key: 'password',
+    lede: 'Every free tool here already opens a password-protected file if you have its password.',
     // In the app as Protect and Remove password (Feature.PROTECT, Feature.REMOVE_PASSWORD).
     inApp: true,
     short: 'passwords',
@@ -141,6 +145,48 @@ export function proWhere() {
   const links = PRO_COPY.map((c) => `<a href="${c.route}">${c.short}</a>`);
   return links.length > 1 ? `${links.slice(0, -1).join(', ')} and ${links.at(-1)}` : links[0] ?? '';
 }
+
+/**
+ * One sentence under the heading of a page whose whole tool is Pro — /batch/ and /password/ — before the drop zone.
+ *
+ * The rule everywhere else is that nothing sells before a file is chosen: on a free tool someone gets a result first
+ * and the offer follows the value. On a page where the entire tool is Pro there is no free value first, so the rule
+ * only delays an unavoidable fact until after someone has loaded twenty files. This site's argument is that it tells
+ * you things early — the real before-and-after, what it cannot do, what a purchase does not cover — and one page
+ * withholding the price until you have committed is the only thing doing the opposite (owner, 24 September 2026, over
+ * the counter-argument that discovering it later creates more urge to buy: overruled on consistency).
+ *
+ * What it is, what it costs, and what the free tools do instead. Not a strip and not a panel: the locked state after
+ * files are chosen is unchanged.
+ *
+ * Two rules it is not exempt from, both already ours. It names a price, so the price carries a route to pay
+ * (verify-price-offers, CLAIMS 14) — "Pro" is the link. And it carries `data-pro-strip`, so src/pro/strip.ts removes
+ * it for someone who already bought: nobody reads a sales pitch on a tool they own.
+ */
+export function proLede(key, { selling = PRO.onSale, hidden = false } = {}) {
+  const c = PRO_COPY.find((x) => x.key === key);
+  if (!c) throw new Error(`proLede: no PRO_COPY entry for "${key}"`);
+  if (!c.lede) throw new Error(`proLede: PRO_COPY entry "${key}" has no lede, and it is rendered on a Pro page`);
+  const pro = selling ? `<a href="/pro/buy/">Pro</a>` : 'Pro';
+  const price = selling ? `${PRO.price} ${PRO.qualifier}, not a subscription` : 'not on sale yet, on either surface';
+  return `<p class="pro-lede" data-pro-strip${hidden ? ' hidden' : ''}><strong>${c.title} is part of ${pro} &mdash; ${price}.</strong> ${c.lede}</p>`;
+}
+
+/**
+ * What makes a page a SELLING page — one definition, because there were two and they disagreed the moment a third
+ * surface appeared.
+ *
+ * tools/build.mjs matched `data-pro-strip|class="price__amount"` to decide whether the phone bar gets its Pro button;
+ * tools/verify-price-offers.mjs matched `pro-strip|pro-panel|price__amount` to check that button is on exactly the
+ * selling pages. Both were right about the surfaces that existed. Adding the one-sentence Pro lede to /batch/ and
+ * /password/ — which carries `data-pro-strip` so an owner never sees it — made the first say "sells" and the second
+ * say "sells nothing", and the check failed (24 September 2026).
+ *
+ * The lede is deliberately NOT a selling surface: it is one sentence under a heading, with its own link to the
+ * purchase, and the owner's instruction was "not a strip, not a panel". So the definition is the three real selling
+ * surfaces, named once and imported by both.
+ */
+export const SELLING_SURFACE = /class="pro-strip"|class="pro-panel"|class="price__amount"/;
 
 /** The state sentence, from the one flag that decides it. The wording matches the Android app's. */
 export function proState(selling = PRO.onSale) {

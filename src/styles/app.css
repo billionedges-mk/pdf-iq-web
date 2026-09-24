@@ -314,6 +314,13 @@ input, button, select, textarea { font-family: inherit; }
 /* The one Pro line under a tool's heading (tools/pro-copy.mjs proStrip): the page's own hint type, nothing louder. */
 .pro-strip { margin: 0 0 10px; font-size: 13.5px; line-height: 1.5; color: var(--ink-76); }
 .pro-strip strong { color: var(--ink-78); font-weight: 700; }
+/* The one sentence under the heading of a page whose whole tool is Pro (tools/pro-copy.mjs proLede). Slightly
+   stronger than the strip because it is the page's own subject rather than an aside about another tool, and it sits
+   above the drop zone where the lede would otherwise be the last thing read. Still type, not a card: this is a
+   sentence, not an offer panel. */
+.pro-lede { margin: 12px 0 0; max-width: 700px; font-size: 14.5px; line-height: 1.55; color: var(--ink-78); }
+.pro-lede strong { color: var(--ink); font-weight: 700; }
+
 /* The small "Pro" label, and a real control shown locked: still itself, visibly unavailable. Pro builds only. */
 .pro-label { margin-left: 8px; vertical-align: 2px; }
 .pro-locked { opacity: .5; }

@@ -1694,6 +1694,28 @@ correct.
 
 In both cases the instrument answered the question it was asked. Neither could say "I am not measuring what you think".
 
+**A third, on the day the sale was switched on: several states of the system share one output, and a probe outside it
+sees the output.** The deploy that would open the sale was pushed and production kept serving the previous build. From
+outside, three different states produce exactly that reading — the build is **queued**, the build is **running**, or
+the build **failed** (a failed build leaves the old deployment serving, by design). The poll printed what it saw on
+every attempt, which is CLAIMS 33's fix and still right, and it could not have distinguished them however long it ran.
+
+Two things did. Reproducing the exact production configuration locally settled half of it: `npm run build` with the
+real flags exited 0, twenty routes, no refusal — so whatever was happening, it was not the repo. The other half was
+visible only on Cloudflare's dashboard, which said **Queued**. That is a state with no external symptom at all
+(23 September 2026).
+
+**The check:** when a probe cannot separate the states that matter, say so and name the instrument that can, rather
+than inferring from the one you have. "Still serving the old build" is evidence about the deployment, not about the
+build — and waiting longer adds no information, which is the tell that the question needs a different instrument.
+
+**And reproduce the work locally, because it answers the half that is yours.** A local run cannot tell you what the
+host is doing. It can tell you whether the host has anything to object to — which is the difference between *"is it
+broken"* and *"is it our fault"*, and only the second is answerable from here (owner, 23 September 2026). Half an
+answer arrived at cheaply, and named as half, beats a whole one inferred. It also cuts the waiting honestly: with the
+build proved locally, the remaining possibilities are all the host's, so watching is the right thing to do rather than
+a way of avoiding a decision.
+
 **The check:**
 
 1. An instrument reports its subject, not just its reading: the build id it fetched, the port it bound, the file it
