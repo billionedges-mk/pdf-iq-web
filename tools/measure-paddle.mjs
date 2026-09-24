@@ -40,6 +40,38 @@ const OUT = opt('--out', join(tmpdir(), `paddle-measure-${Date.now()}.json`));
 const PORT = 9335;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const origin = new URL(URL_).origin;
+
+/**
+ * This tool must never touch production, and on 24 September 2026 it did.
+ *
+ * It was run against https://pdf-iq.com/pro/buy/ to make the live-checkout measurement /privacy promises. It plants a
+ * fake session so the page offers the Pay button — written for Preview, which has no sign-in configured. The planting
+ * is a Page.addScriptToEvaluateOnNewDocument, so it re-runs on EVERY document load: the real Google sign-in completed,
+ * the page navigated, and the fake session overwrote it. The checkout carried the fake uid and email in custom_data,
+ * a real card was charged, and production's purchases table recorded Pro as granted to
+ * pdfiq-sandbox-measure@example.com. The person who paid did not own what he paid for.
+ *
+ * Two independent refusals, because one would have been enough and there wasn't one:
+ *   - this origin check, which stops the tool reaching a site where money is real;
+ *   - the planting itself, which now refuses to overwrite a session that already exists (below).
+ *
+ * There is deliberately no override flag. A flag is a thing someone passes at 2am to make an error message go away,
+ * and the measurement this tool exists for is worth less than one wrong charge. The production measurement comes from
+ * the real purchase instead: DevTools on the checkout, recorded by the person making it.
+ */
+const PRODUCTION_ORIGINS = ['https://pdf-iq.com', 'https://www.pdf-iq.com', 'https://checkout.pdf-iq.com'];
+if (PRODUCTION_ORIGINS.includes(origin)) {
+  console.error(
+    `measure:paddle refuses ${origin}.\n\n` +
+    'This tool plants a fake sign-in so the page offers its Pay button, and the planting re-runs on every document\n' +
+    'load, so it overwrites a real session after a real sign-in. Against production that means a real card charged\n' +
+    'and Pro granted to an address that does not exist — which is what happened on 24 September 2026.\n\n' +
+    'Measure production from the real purchase: open DevTools on /pro/buy/ before pressing Pay, and record the\n' +
+    'third-party hosts, the cookies with their domains and expiries, and whether public.profitwell.com is requested.\n' +
+    'docs/sale-go-live.md § 1 lists what the measurement has to answer.'
+  );
+  process.exit(1);
+}
 const FAKE_UID = `measure-${Date.now()}`;
 
 const chrome = spawn(CHROME, [`--remote-debugging-port=${PORT}`, `--user-data-dir=${mkdtempSync(join(tmpdir(), 'pdfiq-measure-'))}`,
@@ -159,9 +191,15 @@ await setUp(page);
 await send('Page.enable', {}, page);
 
 // A fake session for the page's origin only, so the page offers the button. Never in Paddle's frames.
+//
+// Only when there is nothing there. This ran unconditionally, on every document load, so a real sign-in completed in
+// the window was overwritten by the next navigation and the checkout carried the fake identity (24 September 2026).
+// A tool that writes over a person's sign-in is not measuring the page any more, it is changing who is using it.
 const fakeSession = { uid: FAKE_UID, email: 'pdfiq-sandbox-measure@example.com', idToken: 'measurement', idTokenExpiresAt: 0, refreshToken: 'measurement' };
 await send('Page.addScriptToEvaluateOnNewDocument', {
-  source: `if (location.origin === ${JSON.stringify(origin)}) { try { localStorage.setItem('pdfiq.session', ${JSON.stringify(JSON.stringify(fakeSession))}); } catch {} }`,
+  source: `if (location.origin === ${JSON.stringify(origin)}) { try {
+    if (localStorage.getItem('pdfiq.session') === null) localStorage.setItem('pdfiq.session', ${JSON.stringify(JSON.stringify(fakeSession))});
+  } catch {} }`,
 }, page);
 
 const evalIn = async (sessionId, expression) =>
