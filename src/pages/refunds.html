@@ -32,12 +32,20 @@
         <!-- Read from the sandbox tax invoice for txn_01m2dynw6ehyt9amw066vhvqp8 and from paddle.net itself, rather than
               from what a receipt was assumed to contain (owner, 17 September 2026). The invoice carries both an invoice
               reference and the transaction id; paddle.net asks for the email the purchase was made with. -->
-        <p>Write to <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> from the address you
-           bought with. If you have Paddle's invoice for the purchase, quote the reference on it &mdash; either the
-           invoice number or the transaction id &mdash; and we can find the payment straight away.</p>
+        <!-- "the address you bought with" assumed the buyer typed one. They do not: the purchase page hands Paddle
+             the Google sign-in address (src/checkout/checkout.ts, customer: { email }), and the field is fixed at the
+             checkout — asked directly during a real purchase on 24 September 2026, and corroborated by invoice
+             48239-10002 going to the sign-in address. So someone writing from a different address was told their
+             purchase could not be found, on both routes, by an instruction nobody could follow (CLAIMS 63). -->
+        <p>Write to <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> from the Google account you signed in
+           with &mdash; that is the address the purchase is recorded against, because the page hands it to Paddle
+           rather than asking you to type one. If you have Paddle's invoice for the purchase, quote the reference on
+           it &mdash; either the invoice number or the transaction id &mdash; and we can find the payment straight
+           away.</p>
         <p>Paddle handle purchases of their own at <a href="https://paddle.net" rel="external nofollow">paddle.net</a>,
-           which their invoice names for a problem with a charge. It asks for the email address you bought with and finds
-           the purchase from that; requesting a refund is one of the things it offers. Either route reaches the same
+           which their invoice names for a problem with a charge. It asks for the email address the purchase was made
+           with &mdash; again, the account you signed in with &mdash; and finds the purchase from that; requesting a
+           refund is one of the things it offers. Either route reaches the same
            purchase, and you do not need both.</p>
         <p>We will reply within two working days. If we are slower than that, write again; it means
            the first one did not arrive.</p>

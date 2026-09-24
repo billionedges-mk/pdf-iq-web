@@ -76,7 +76,8 @@ the work is done.
 60. [A probe written to confirm a fix can only confirm it](#60-a-probe-written-to-confirm-a-fix-can-only-confirm-it)  
 61. [Two detectors of one fact are two facts, and both are right until a third case](#61-two-detectors-of-one-fact-are-two-facts-and-both-are-right-until-a-third-case)  
 62. ["Everything we own is green" is not "it works"](#62-everything-we-own-is-green-is-not-it-works)  
-63. [A page can describe a mechanism the system does not have, and every word of it be true](#63-a-page-can-describe-a-mechanism-the-system-does-not-have-and-every-word-of-it-be-true)
+63. [A page can describe a mechanism the system does not have, and every word of it be true](#63-a-page-can-describe-a-mechanism-the-system-does-not-have-and-every-word-of-it-be-true)  
+64. [The happy path is the one nobody writes copy for, and the only one everybody sees](#64-the-happy-path-is-the-one-nobody-writes-copy-for-and-the-only-one-everybody-sees)
 
 <!-- /index -->
 
@@ -2154,6 +2155,12 @@ email on the transaction was the address the site sent, and not one the buyer ha
 2026). Someone who signs in with one Google account and writes from their work address is told their purchase cannot
 be found, on both routes, and the page told them to do exactly that.
 
+**Settled by observation, not inference (24 September 2026).** Asked directly during the second purchase — "can you
+edit the email on Paddle's checkout, or is it fixed?" — the answer was fixed. Invoice 48239-10002 went to the sign-in
+address and the receipt arrived there. So the instruction can be written without a hedge: the address is always the
+Google account they signed in with, and a sentence saying "unless you changed it at the checkout" would have been a
+caveat for a case that cannot happen.
+
 **This is not a false claim. It is an untestable instruction**, which is why nothing here would have caught it. Every
 check this repo has asks whether a sentence is TRUE: verify-retired looks for phrasings that came back,
 verify-price-offers for sale-state claims that outlived the flag, verify-purchase-scope holds two sentences to each
@@ -2175,3 +2182,35 @@ collected to where it is used.
    invoice was the first artefact outside our own systems to show what Paddle had been given.
 4. True is not the same as usable, and checks test truth. The gap between them is where copy about a MECHANISM lives,
    and it needs a person who follows the instruction rather than a check that reads it.
+
+### 64. The happy path is the one nobody writes copy for, and the only one everybody sees
+
+`paidWords()` in src/pro/confirm.ts says "Paddle has taken your payment (reference txn_…)". It is used on the **slow**
+ending, the **offline** ending and the **signed-out** ending. It is not used when the purchase succeeds. That path says
+"Pro is yours, and this browser now knows it" and then shows the card written for someone who already owned Pro:
+"there is nothing to buy."
+
+So a buyer who pays $14.99 and succeeds is told, three seconds later, that there is nothing to buy — no acknowledgement
+that money moved, no receipt coming, no reference. **Uncertainty got the reassurance; success got silence** (owner,
+24 September 2026).
+
+**Why it happens is worth more than the fix.** The failure endings were written while thinking about failure: each one
+was imagined as a scene with a person in trouble, and a person in trouble obviously needs telling what happened to
+their money. Success was written as a state transition — *then they own it* — and a state does not feel like it needs
+narrating. But the buyer did not enter a state, they did a thing, seconds ago, with their card.
+
+**And it is the only path every single buyer takes.** The others are conditional on a slow webhook, a lost connection,
+an expired session. The one with all the traffic had the least copy, because it was the one that never needed
+debugging.
+
+**The check:**
+
+1. For every terminal state, ask **what the person just did**, not what they now are. If the copy only answers the
+   second question, it was written from the system's point of view.
+2. **A state shared by two journeys needs two messages.** "Owns Pro" is true of someone who paid ten seconds ago and
+   someone who paid last month; that they share a database row is a coincidence of data, not of situation. Reusing one
+   screen for both is how the newer one gets the older one's words.
+3. Count who reaches each path. The heaviest one is usually the thinnest, and thinness there is invisible in testing
+   because everything worked.
+4. Write the success copy in the same sitting as the failure copy, while the frame of mind is still "what does this
+   person need to hear".
