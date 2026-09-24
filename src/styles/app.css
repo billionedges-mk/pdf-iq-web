@@ -318,6 +318,11 @@ input, button, select, textarea { font-family: inherit; }
    stronger than the strip because it is the page's own subject rather than an aside about another tool, and it sits
    above the drop zone where the lede would otherwise be the last thing read. Still type, not a card: this is a
    sentence, not an offer panel. */
+/* The target run's attempts, written between the controls and the answer (src/pro/compress-target-ui.ts).
+   Tabular figures so the running clock does not shuffle the line as it ticks. */
+.targetlog { margin: 10px 0 0; display: grid; gap: 4px; }
+.targetlog__line { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-78); font-variant-numeric: tabular-nums; }
+
 .pro-lede { margin: 12px 0 0; max-width: 700px; font-size: 14.5px; line-height: 1.55; color: var(--ink-78); }
 .pro-lede strong { color: var(--ink); font-weight: 700; }
 

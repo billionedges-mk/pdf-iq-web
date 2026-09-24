@@ -38,6 +38,9 @@ export const FLOOR_INDEX = LADDER.length - 1;
 export const UNIT = { KB: 1024, MB: 1024 * 1024 } as const;
 
 const q = (s: Step) => Math.round(s.quality * 100);
+
+/** One step, in words. The ladder owns this phrasing: the answer and the running attempts must call a step the same. */
+export const stepWords = (s: Step) => `${s.dpi} dpi, quality ${q(s)}`;
 const exact = (n: number) => `${n.toLocaleString('en-GB')} bytes`;
 
 // ---------------------------------------------------------------- mode 1: target resolution
@@ -168,10 +171,10 @@ export function describeSize<T>(o: SizeOutcome<T>, target: number): string {
   if (o.kind === 'cannot') {
     const floor = LADDER[FLOOR_INDEX];
     return `This file can't be brought under ${formatBytes(target)} here. At our harshest setting — ` +
-      `${floor.dpi} dpi, quality ${q(floor)} — it comes to ${formatBytes(o.floorSize)} (${exact(o.floorSize)}).`;
+      `${stepWords(floor)} — it comes to ${formatBytes(o.floorSize)} (${exact(o.floorSize)}).`;
   }
   const step = LADDER[o.stepIndex];
-  return `Under ${formatBytes(target)}: ${formatBytes(o.size)} (${exact(o.size)}) at ${step.dpi} dpi, quality ${q(step)} — ` +
+  return `Under ${formatBytes(target)}: ${formatBytes(o.size)} (${exact(o.size)}) at ${stepWords(step)} — ` +
     `the mildest setting that got there, found in ${plural(o.passes, 'pass', 'passes')}.`;
 }
 

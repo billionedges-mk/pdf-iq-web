@@ -129,6 +129,7 @@ function renderSelected(): void {
           }
           return controller.signal;
         },
+        announce: (text) => shell.announce(text),
         end: () => {
           progress.stop();
           busy = false;

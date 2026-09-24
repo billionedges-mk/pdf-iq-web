@@ -10,11 +10,11 @@
 import { proAccount, lockedPanel, lockControls } from './gate.js';
 import {
   MAX_PASSES, searchSize, describeSize, resolutionPlan, resolutionNothingToDo, describeResolution,
-  parseTarget, targetMark, type Step,
+  parseTarget, targetMark, stepWords, type Step,
 } from './compress-target.js';
 import { PRESETS, type Analysis, type CompressResult, type ImagePlan, type Preset } from '../lib/compress.js';
 import type { PdfImage } from '../lib/pdf-inspect.js';
-import { seconds } from '../lib/format.js';
+import { formatBytes, seconds } from '../lib/format.js';
 
 export interface TargetContext {
   state(): { fileName: string; fileSize: number; analysis: Analysis } | null;
@@ -32,6 +32,8 @@ export interface TargetContext {
    * looking: the button they pressed becomes the Stop button, and the answer lands beside it.
    */
   begin(opts?: { inPlace?: boolean }): AbortSignal;
+  /** Say it once, for a screen reader. An in-place run never shows the progress card, which used to do this. */
+  announce(text: string): void;
   end(): void;
   /** The page's own result screen, with one line of ours beneath it. */
   showResult(r: CompressResult, note: string): void;
@@ -66,7 +68,48 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   const note = document.createElement('p');
   note.className = 'hint';
   note.setAttribute('role', 'status');
+  // scrollIntoView({ block: 'nearest' }) scrolls the least it can, which lands the answer flush against the bottom
+  // edge — visible, and reading as cut off. Measured at 375: bottom 700 of a 700px viewport.
+  note.style.scrollMarginBlockEnd = '16px';
   const say = (text: string) => { note.textContent = text; };
+
+  /**
+   * The attempts, as they happen, written where the answer will appear.
+   *
+   * Taking the screen away took the progress with it: the processing view was the only thing on the page saying work
+   * was happening, and a buyer who used both versions said the in-place run "feels like nothing is happening" (24
+   * September 2026, CLAIMS 65). A spinner would answer that. This answers it better, because the feature's own pitch
+   * is that it tries settings and measures what they produced — so the attempts ARE the progress, and a
+   * can't-be-done answer with four measured attempts above it is a different sentence from the same answer alone.
+   *
+   * Silent to a screen reader: five announcements in ten seconds is noise. One announcement opens the run and the
+   * answer below is the role=status sentence.
+   */
+  const log = document.createElement('div');
+  log.className = 'targetlog';
+  log.setAttribute('aria-live', 'off');
+  log.hidden = true;
+
+  const clearLog = () => { log.textContent = ''; log.hidden = true; };
+
+  /**
+   * One attempt: the line appears when it starts, its own clock runs while it does, and it freezes with what the
+   * attempt produced. Returns the freeze.
+   */
+  function attempt(opening: string): (ending: string) => void {
+    log.hidden = false;
+    const line = document.createElement('p');
+    line.className = 'targetlog__line';
+    const started = performance.now();
+    const tick = () => { line.textContent = `${opening} · ${seconds(performance.now() - started)}`; };
+    tick();
+    const timer = setInterval(tick, 100);
+    log.append(line);
+    return (ending: string) => {
+      clearInterval(timer);
+      line.textContent = `${ending} · ${seconds(performance.now() - started)}`;
+    };
+  }
 
   /**
    * True from the moment a run starts until it ends, whichever way it ends.
@@ -81,25 +124,22 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   let running = false;
 
   /**
-   * The pressed button, while its run is going: it says how long it has been working and it stops the run.
+   * The pressed button, while its run is going: it stops the run, and says so.
    *
-   * Four seconds with no change anywhere near the control is what made a real user think the button had not worked
-   * (24 September 2026). The page's own Stop lives on the progress card, which an in-place run never shows, so the
-   * button has to be both — it is the only control the reader is looking at.
+   * The page's own Stop lives on the progress card, which an in-place run never shows, so the button has to be both —
+   * it is the control the reader is looking at. It carried a running clock for half a day; the clock moved to the
+   * attempt lines, where it is attached to the thing being timed. Two ticking numbers is one too many, and the
+   * button's job is to be pressable (owner, 24 September 2026).
    */
   function working(button: HTMLButtonElement, abort: () => void): () => void {
     running = true;
     const label = button.textContent ?? '';
-    const started = performance.now();
-    const tick = () => { button.textContent = `Stop — ${seconds(performance.now() - started)}`; };
-    tick();
-    const timer = setInterval(tick, 100);
+    button.textContent = 'Stop';
     button.setAttribute('aria-busy', 'true');
     const onStop = (e: Event) => { e.preventDefault(); abort(); };
     button.addEventListener('click', onStop);
     return () => {
       running = false;
-      clearInterval(timer);
       button.removeEventListener('click', onStop);
       button.removeAttribute('aria-busy');
       button.textContent = label;
@@ -149,7 +189,7 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
     row('No image above ', dpi, ' dpi', dpiGo),
     row('No larger than ', amount, unit, sizeGo),
   );
-  host.append(controls, note);
+  host.append(controls, log, note);
 
   // Not owned: the same controls, locked, and the words under them (approved copy, 13 September 2026). Not a
   // description of the controls in their place: the reader sees what they would get. No handler is attached.
@@ -175,21 +215,29 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
     const nothing = resolutionNothingToDo(s.analysis, n);
     if (nothing) return say(nothing);
     say('');
+    clearLog();
     const controller = new AbortController();
     const signal = ctx.begin({ inPlace: true });
     signal.addEventListener('abort', () => controller.abort(), { once: true });
     const done = working(dpiGo, () => controller.abort());
+    ctx.announce(`Compressing so that no image is above ${n} dpi. Each attempt is reported under the controls.`);
+    const step = { dpi: n, quality: PRESETS[0].quality };
+    const finish = attempt(`Trying ${stepWords(step)}`);
     try {
       const { result, analysis } = await ctx.pass({
-        preset: asPreset({ dpi: n, quality: PRESETS[0].quality }),
+        preset: asPreset(step),
         plan: resolutionPlan(n),
         label: `no image above ${n} dpi`,
         signal: controller.signal,
       });
+      finish(`${stepWords(step)} → ${formatBytes(result.afterBytes)}`);
       done();
       ctx.end();
+      // A file to hand over: the page's result screen is the answer, and the working is noise beside it.
+      clearLog();
       ctx.showResult(result, describeResolution(analysis, n, result.outcomes));
     } catch (e) {
+      finish(`${stepWords(step)} — stopped`);
       done();
       ctx.end();
       if (isAbort(e)) showAnswer('Stopped. Nothing was handed over.');
@@ -206,23 +254,36 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
     if (target == null) return say('Enter a size, such as 5 MB or 800 KB.');
     if (s.fileSize <= target) return say(describeSize({ kind: 'already', size: s.fileSize }, target));
     say('');
+    clearLog();
     const controller = new AbortController();
     const signal = ctx.begin({ inPlace: true });
     signal.addEventListener('abort', () => controller.abort(), { once: true });
     const done = working(sizeGo, () => controller.abort());
+    ctx.announce(`Compressing to a target under ${formatBytes(target)}. Each attempt is reported under the controls.`);
     const started = performance.now();
     try {
       const outcome = await searchSize(s.fileSize, target, async (step, passNumber) => {
-        const { result } = await ctx.pass({ preset: asPreset(step), label: `pass ${passNumber} of up to ${MAX_PASSES}`, signal: controller.signal });
-        return { size: result.afterBytes, result };
+        const finish = attempt(`Trying ${stepWords(step)} — pass ${passNumber} of up to ${MAX_PASSES}`);
+        try {
+          const { result } = await ctx.pass({ preset: asPreset(step), label: `pass ${passNumber} of up to ${MAX_PASSES}`, signal: controller.signal });
+          // What it produced, not whether it "worked": the search reads a size, and so does the reader.
+          finish(`${stepWords(step)} → ${formatBytes(result.afterBytes)}, ${result.afterBytes <= target ? 'under' : 'still over'} ${formatBytes(target)}`);
+          return { size: result.afterBytes, result };
+        } catch (e) {
+          finish(`${stepWords(step)} — stopped`);
+          throw e;
+        }
       }, controller.signal);
       done();
       ctx.end();
       const took = ` It took ${seconds(performance.now() - started)} on this device.`;
-      // Reached: there is a file, so the page's result screen is the right place. Cannot: there is nothing to save,
-      // so nothing moves and the answer appears under the button that asked for it.
-      if (outcome.kind === 'reached') ctx.showResult(outcome.result, describeSize(outcome, target) + took);
-      else showAnswer(describeSize(outcome, target) + (outcome.kind === 'cannot' ? took : ''));
+      // Reached: there is a file, so the page's result screen is the right place, and the attempts that found it are
+      // noise beside it. Cannot: nothing moves, and the attempts stay above the answer — "it can't be done" is a
+      // different sentence with four measured settings above it (owner, 24 September 2026).
+      if (outcome.kind === 'reached') {
+        clearLog();
+        ctx.showResult(outcome.result, describeSize(outcome, target) + took);
+      } else showAnswer(describeSize(outcome, target) + (outcome.kind === 'cannot' ? took : ''));
     } catch (e) {
       done();
       ctx.end();
