@@ -72,7 +72,10 @@ the work is done.
 56. [A sandbox measurement is a measurement of sandbox](#56-a-sandbox-measurement-is-a-measurement-of-sandbox)  
 57. [A cached NO and a real NO are the same sentence](#57-a-cached-no-and-a-real-no-are-the-same-sentence)  
 58. [A chain that proceeds past a failure is a chain with no gate in it](#58-a-chain-that-proceeds-past-a-failure-is-a-chain-with-no-gate-in-it)  
-59. [A stale check does not merely fail to help — it destroys the signal from the checks that would have](#59-a-stale-check-does-not-merely-fail-to-help--it-destroys-the-signal-from-the-checks-that-would-have)
+59. [A stale check does not merely fail to help — it destroys the signal from the checks that would have](#59-a-stale-check-does-not-merely-fail-to-help--it-destroys-the-signal-from-the-checks-that-would-have)  
+60. [A probe written to confirm a fix can only confirm it](#60-a-probe-written-to-confirm-a-fix-can-only-confirm-it)  
+61. [Two detectors of one fact are two facts, and both are right until a third case](#61-two-detectors-of-one-fact-are-two-facts-and-both-are-right-until-a-third-case)  
+62. ["Everything we own is green" is not "it works"](#62-everything-we-own-is-green-is-not-it-works)
 
 <!-- /index -->
 
@@ -2054,3 +2057,87 @@ silent, and the guarded part was the part about to be drowned.
    sixteen defects, and the one real line will be inside it.
 5. Exercise the new state before it exists. `--site` pointed at a deployment already in that state found four more
    state assumptions inside the rewrite that removes state assumptions — none of which reasoning had found.
+
+### 60. A probe written to confirm a fix can only confirm it
+
+Sign-in was broken on production — the OAuth client had three redirect URIs, all Preview, and Firebase's authorised
+domains did not include pdf-iq.com. Both were added, and a probe was written to watch them propagate: ask Google's
+authorize endpoint whether each redirect URI is accepted.
+
+The first version did not follow the 302. Google answers the authorize request with a redirect in every case, and the
+`redirect_uri_mismatch` error is on the page at the end of it. So every URI came back **accepted** — including
+`https://pdf-iq.com/not-registered/`, which exists nowhere. The probe could not have said anything else, about the
+exact defect that had just left the sale open over a sign-in nobody could complete (24 September 2026).
+
+**This is the most dangerous kind of check to write, because its author already believes the answer.** A passing result
+matches the expectation, so nothing prompts a second look; the same author, writing a check they expected to fail,
+would have investigated the first green. The asymmetry is the whole problem: when you expect "yes", a "yes" carries
+almost no information, and it arrives exactly when you most want to stop.
+
+**The check:**
+
+1. **Write the negative case first**, before the one you care about, and make it a deliberately impossible input — a
+   path that cannot be registered, a domain that is not yours.
+2. **Run the controls on every pass, not once while developing.** The probe's validity depends on the world too: an
+   API that changes its error shape turns a working check into a rubber stamp, silently.
+3. **Let a failed control SKIP the real assertions rather than merely report.** A broken probe must not be able to emit
+   reassurance next to a warning nobody reads (CLAIMS 27, arriving inside the fix for CLAIMS 27).
+4. When a check is written because something just broke, assume it is wrong until its control fails. That is the one
+   moment where the cost of a false green is highest and the appetite for doubt is lowest.
+
+### 61. Two detectors of one fact are two facts, and both are right until a third case
+
+`tools/build.mjs` decided whether a page gets the phone bar's Pro button by matching
+`data-pro-strip|class="price__amount"`. `tools/verify-price-offers.mjs` checked that button against
+`class="pro-strip"|class="pro-panel"|class="price__amount"`. Both were correct for every surface that existed, and
+neither knew the other was there.
+
+Then a third surface arrived — one sentence on /batch/ and /password/ naming the price, carrying `data-pro-strip` so
+an owner never sees it. The first detector said the page sells; the second said it sells nothing; the check failed with
+"has a phone Pro button and sells nothing" (24 September 2026). Nothing was wrong with either pattern. What was wrong
+was that one question had two answers.
+
+This is CLAIMS 53 in predicate form. A list of patterns is a list, and the same rule applies: **a check that verifies a
+decision must import the decision, not restate it** — otherwise it tests its own copy, and agrees with the code only
+for as long as nobody adds a case that falls between them.
+
+**The check:**
+
+1. One exported predicate, imported by the code that acts and the check that verifies. `SELLING_SURFACE` now lives in
+   tools/pro-copy.mjs and both read it.
+2. When two detectors disagree, the disagreement is the finding. Do not pick the one that turns the suite green:
+   decide what the answer should be, then make there be one detector.
+3. The tell that two exist: they were written at different times, for different needs, and nothing forces them to
+   agree. Grep for the second copy whenever you write a rule about "which pages are X".
+
+### 62. "Everything we own is green" is not "it works"
+
+`verify:live` passed fifty assertions on a production site where nobody could buy. Every page matched its source,
+every Pro route was served, the entitlement endpoint answered 401 and the webhook 405, the checkout origin framed only
+itself, robots.txt allowed the crawl, no bundle carried a forbidden string. All fifty were true. All fifty were about
+**our own deployment** — pages, endpoints, bundles, headers, all of it inside the boundary of what this repo builds.
+
+Sign-in is the one step that depends on somebody else's configuration, and it was broken: three redirect URIs, none of
+them production, and an authorised-domain list without pdf-iq.com. Pressing "Sign in with Google" returned
+`redirect_uri_mismatch`, so no account could be created, so no purchase could be made (24 September 2026).
+
+**A suite's coverage follows the boundary of what the team owns**, because that is what is easy to read, easy to
+assert, and what feels like the system. The defects that survive are on the far side of it — and they are not rare
+there, because that side is configured by hand, in a console, with no review and no diff.
+
+**The fix was not a better check of our own side. It was a check that reaches past the boundary** (owner). Both halves
+turned out to be readable from outside with no credentials at all: Google's authorize endpoint accepts or refuses a
+redirect URI, and Identity Toolkit answers `authorizedDomains` for a public web key — read from the shipped bundle,
+so the check sees what the deployment carries rather than what a variable claims.
+
+**The check:**
+
+1. **List the third parties a feature depends on**, and ask of each: if this were misconfigured, would anything we run
+   fail? If the answer is "everything we own still passes", that is the gap, and it is already there.
+2. **Read the third party's own answer** rather than asserting our copy of its configuration. The redirect URIs were
+   written correctly in docs/sale-go-live.md the whole time. The document was right and the console was wrong, and
+   only one of those charges a card.
+3. **Check whether it is really uncheckable before making it a human step.** Both of these looked like they needed a
+   browser and a person. Neither did.
+4. **Count assertions by what they are about, not how many there are.** Fifty green about one side of a boundary is
+   one fact stated fifty times, and its confidence is the confidence of that one fact.
