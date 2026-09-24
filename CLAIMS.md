@@ -77,7 +77,8 @@ the work is done.
 61. [Two detectors of one fact are two facts, and both are right until a third case](#61-two-detectors-of-one-fact-are-two-facts-and-both-are-right-until-a-third-case)  
 62. ["Everything we own is green" is not "it works"](#62-everything-we-own-is-green-is-not-it-works)  
 63. [A page can describe a mechanism the system does not have, and every word of it be true](#63-a-page-can-describe-a-mechanism-the-system-does-not-have-and-every-word-of-it-be-true)  
-64. [The happy path is the one nobody writes copy for, and the only one everybody sees](#64-the-happy-path-is-the-one-nobody-writes-copy-for-and-the-only-one-everybody-sees)
+64. [The happy path is the one nobody writes copy for, and the only one everybody sees](#64-the-happy-path-is-the-one-nobody-writes-copy-for-and-the-only-one-everybody-sees)  
+65. [A mechanism you remove was doing more jobs than the one you removed it for](#65-a-mechanism-you-remove-was-doing-more-jobs-than-the-one-you-removed-it-for)
 
 <!-- /index -->
 
@@ -2214,3 +2215,45 @@ debugging.
    because everything worked.
 4. Write the success copy in the same sitting as the failure copy, while the frame of mind is still "what does this
    person need to hear".
+
+### 65. A mechanism you remove was doing more jobs than the one you removed it for
+
+The compress target used to swap the whole page to the processing view for a run. It was there to show progress. It
+was also, without anyone deciding so, doing two other jobs: it took both target buttons off the screen for the
+duration of a run, and it was the only thing on the page that said work was happening at all.
+
+Removing it — for good reasons, measured: focus was being stranded on a heading the swap then hid, and the answer
+landed wherever the reader happened to be scrolled — removed all three. Two defects followed, and they arrived by
+different routes:
+
+1. **The accidental guard.** With both buttons back on screen during a run, pressing Stop re-entered this module's own
+   `onclick` first (it was registered before the stop listener, and listeners on one element run in the order they
+   were added), starting a second run whose `working()` read the live countdown as the label to restore. Walked
+   before the fix: the button was left reading **"Stop — 0.4s" for good, with nothing running**. Found because the
+   defect was reproduced deliberately before the guard was written; predicted from the code, but the permanence of it
+   was not predicted, only seen.
+2. **The job nobody credited it with.** The same buyer who reported the original symptom used both versions and said
+   the new one "feels like nothing is happening" (24 September 2026). The swap had been the progress indicator. The
+   fix moved feedback onto the pressed button and judged that sufficient, without asking what the removed thing had
+   been communicating. The button says *that* work is happening; the page had been the only thing that could say
+   *what*.
+
+**The tell is that none of this is in the mechanism's name.** "Show the processing view" describes one job. The other
+two are consequences of it — what it hid, and what it was the only instance of — and consequences do not appear in a
+diff. A workaround, a view swap, a lock, a sleep: each is removed against its stated purpose, and the unstated ones
+leave with it.
+
+**The check, before removing anything that was on the screen or in the way:**
+
+1. **Name what it made impossible**, not only what it made visible. A view that covers controls is a lock on those
+   controls. A step that serialises is a lock on ordering. Write the list, then walk each line deliberately — the
+   re-entry defect was invisible to every check in this repo and to a normal walk, because a normal walk does not
+   press the button twice.
+2. **Ask what it was the only instance of.** If the answer is "the only thing that said X", the replacement has to
+   say X, and a proxy for X ("the button is busy") is not X ("it is trying 96 dpi, quality 60").
+3. **The person who reported the symptom is the one to check the fix with**, not the checks. Both the original
+   diagnosis and the fix passed every suite; the buyer using both versions is what found the regression.
+4. This is [check 47] from the other end. There, looking at the page found defects no check could. Here, looking
+   found that the diagnosis itself — mine and the owner's, from a screenshot — named the wrong faults: the processing
+   view **did** show; the real faults were stranded focus and a silent control. Fourth time in a week that measuring
+   changed the answer rather than confirming it.
