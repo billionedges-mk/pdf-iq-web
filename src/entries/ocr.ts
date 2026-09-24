@@ -383,6 +383,11 @@ function renderResult(took: number): void {
         pages,
         scaleFor: (index) => pageScale.get(index) ?? OCR_DPI / 72,
         counts,
+        slots: {
+          actions: $('[data-res-acts]') as HTMLElement | null,
+          hint: $('[data-pro-searchable-hint]') as HTMLElement | null,
+          said: $('[data-pro-searchable-said]') as HTMLElement | null,
+        },
         onWritten: (next, copy) => {
           $('[data-result-head]')!.textContent = next.head;
           shell.announce(next.announce);

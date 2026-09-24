@@ -30,6 +30,12 @@ export interface SearchableOffer {
    * itself — the page has a PDF of its own making to offer onward only from this moment.
    */
   onWritten: (said: { head: string; announce: string }, copy: { bytes: Uint8Array; name: string }) => void;
+  /**
+   * Where the working action goes for someone who owns Pro: among the result's own actions, with its explanation and
+   * its acknowledgement under them. Absent, or incomplete, and everything stays in the card below as before — which
+   * is what every other answer here uses, because those are explanations rather than actions.
+   */
+  slots?: { actions: HTMLElement | null; hint: HTMLElement | null; said: HTMLElement | null };
 }
 
 /**
@@ -116,11 +122,15 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
     host.append(lockedPanel('searchable', 'A searchable PDF', o.source, { title: 'Searchable PDF', controls: lockedButton() }));
     return;
   }
+  const hintWords =
+    'Adds the recognised words to the PDF as an invisible layer, so the file itself can be searched '
+    + 'and copied from. The scan is not changed, and it is written here, on this device.';
   const hint = document.createElement('p');
   hint.className = 'hint';
-  hint.textContent =
-    'Adds the recognised words to the PDF as an invisible layer, so the file itself can be searched ' +
-    'and copied from. The scan is not changed, and it is written here, on this device.';
+  hint.textContent = hintWords;
+
+  // Among the result actions, or in the card: decided before the handler, so one handler serves both.
+  const slots = o.slots?.actions && o.slots.hint && o.slots.said ? o.slots : null;
 
   button.onclick = async () => {
     if (!proAccount()) return;
@@ -134,6 +144,14 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
       const name = suffixName(o.fileName, '-searchable');
       saveFile(bytes, name);
       o.onWritten(said, { bytes, name });
+      // Said where the button is. onWritten rewrites the result's head sentence, which is the right place for it and
+      // also, on a scan of any length, far off the top of the screen from here.
+      if (slots?.said) {
+        slots.said.textContent = `Saved ${name} — ${said.head}`;
+        slots.said.hidden = false;
+        // And in view: a button pressed at the bottom of the screen would otherwise answer below it.
+        slots.said.scrollIntoView({ block: 'nearest' });
+      }
       button.textContent = 'Save the searchable PDF again';
     } catch (err) {
       button.textContent = 'Save as a searchable PDF';
@@ -143,6 +161,20 @@ export function offerSearchable(host: HTMLElement, o: SearchableOffer): void {
       button.disabled = false;
     }
   };
+
+  if (slots) {
+    // The paid capability is the main action for someone who paid, and Copy is one press away in the same row
+    // (owner, 24 September 2026). Free builds and everyone not signed in see this row exactly as before.
+    button.className = 'btn';
+    slots.actions!.prepend(button);
+    const copy = slots.actions!.querySelector<HTMLElement>('[data-copy]');
+    if (copy) copy.className = 'btn-quiet';
+    slots.hint!.textContent = hintWords;
+    slots.hint!.hidden = false;
+    host.textContent = '';
+    host.hidden = true;
+    return;
+  }
 
   const row = document.createElement('p');
   row.style.margin = '10px 0 0';

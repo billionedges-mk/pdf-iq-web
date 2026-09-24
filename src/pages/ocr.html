@@ -129,11 +129,19 @@
           <label class="visually-hidden" for="ocr-text">The text read out of this document</label>
           <textarea id="ocr-text" data-text-out readonly spellcheck="false"></textarea>
         </div>
-        <div class="res__acts">
+        <!-- The searchable PDF joins this row for someone who owns Pro, as the primary action, and Copy becomes
+             quiet (src/pro/searchable-offer.ts). On a scan the searchable copy is the artefact someone came to make;
+             it was a quiet outline button in a card 264px below this row, under a dark "Copy all the text" (Maneesh,
+             24 September 2026). Nothing moves for anyone else: not-owned still gets the locked panel in the card. -->
+        <div class="res__acts" data-res-acts>
           <button type="button" class="btn" data-copy>Copy all the text</button>
           <button type="button" class="btn-quiet" data-save-text>Download it as a .txt file</button>
           <button type="button" class="btn-quiet" data-again>Read another</button>
         </div>
+        <!--PRO--><p class="hint" style="margin-top: 10px;" data-pro-searchable-hint hidden>&nbsp;</p>
+        <!-- What the press achieved, beside the control that did it. The result's own head sentence says it too, and
+             on a long scan that sentence is a screenful or more above here: measured at 2,670px away. -->
+        <p style="margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; font-weight: 600; scroll-margin-block-end: 16px;" role="status" data-pro-searchable-said hidden>&nbsp;</p><!--/PRO-->
         <!--PRO--><div class="nextup" data-pro-next hidden>
           <span class="nextup__label">Next, with the searchable copy:</span>
           <a href="/compress/">compress it</a>,
