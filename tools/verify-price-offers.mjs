@@ -44,13 +44,39 @@ const CLEAN = { PDFIQ_PRO: '', PDFIQ_SALE: '', PDFIQ_PADDLE_ENV: '', PDFIQ_PADDL
 const SALE = { CF_PAGES: '1', CF_PAGES_BRANCH: 'pro-sale', PDFIQ_PRO: '1', PDFIQ_SALE: 'true', PDFIQ_PADDLE_ENV: 'sandbox',
   PDFIQ_PADDLE_CLIENT_TOKEN: `test_${'a1'.repeat(13)}`, PDFIQ_CHECKOUT_ORIGIN: 'https://pro-sale.pdf-iq-checkout.pages.dev' };
 
-const EXEMPT = new Map([
-  ['pro/buy/index.html', 'the purchase page itself'],
-  ['terms/index.html', 'legal text, redrafted separately'],
-  ['refunds/index.html', 'legal text, redrafted separately'],
+/**
+ * Pages where a PRICE may appear without a purchase control beside it. Only one qualifies: the purchase page is the
+ * control.
+ *
+ * It used to exempt /terms and /refunds too, "legal text, redrafted separately" — true while they were being
+ * redrafted, and stale the moment that finished. On 24 September 2026 the owner read production and found /refunds
+ * opening with "Nothing on this site is for sale yet", on the page /pro/buy/ links to as the refund policy, while Pro
+ * was on sale: a buyer reading the terms before paying was told there was nothing to buy. The check had been skipping
+ * that page entirely — `continue`, not "skip this one rule" — so neither the not-for-sale sweep nor the price rule
+ * ever read it. An exemption outlives its reason silently, because nothing about a skipped page is printed as a
+ * failure (CLAIMS 52, and the reason each skip now carries what would end it).
+ */
+const PRICE_EXEMPT = new Map([
+  ['pro/buy/index.html', 'the purchase page is itself the way to pay; ends if a second page ever takes payment'],
+  // /terms states the price as a term of the contract, next to the currency and what it covers. That is not an offer,
+  // and a Buy button in the terms would be one. Ends if /terms ever becomes a place someone is asked to pay.
+  ['terms/index.html', 'the price is a term of the contract here, not an offer; ends if /terms ever asks for payment'],
 ]);
 // "For firms · not on sale yet" on /for-professionals is about the firm tier, which is not for sale; it is not about Pro.
-const NOT_ON_SALE = [/not on sale/i, /for sale yet/i, /not yet on sale/i, /when it opens/i, /nothing to buy/i, /not purchasable/i, /when it goes on sale/i];
+//
+// The sweep runs on EVERY page including the legal ones, because that is where the stale sentences were. The later
+// additions are the future tense: three of the four sentences found on 24 September promised the sale rather than
+// denying it — "when Pro arrives", "once Pro is on sale", "before Pro goes on sale" — and the original list only
+// looked for denials.
+const NOT_ON_SALE = [
+  /not on sale/i, /for sale yet/i, /not yet on sale/i, /when it opens/i, /not purchasable/i,
+  /when it goes on sale/i, /when Pro arrives/i, /once Pro is on sale/i, /before Pro goes on sale/i,
+  /will apply to a Pro purchase/i, /when Pro is on sale/i,
+  // "nothing to buy ON THIS PAGE" is /app/'s claim about the sale. Bare "nothing to buy" is also what /pro/buy/ tells
+  // someone who already owns Pro, which is a fact about their account and not about the sale — the pattern is
+  // narrowed to the claim rather than the page, so the real sentence stays caught wherever it appears.
+  /nothing to buy on this page/i,
+];
 
 const b = spawnSync(process.execPath, ['tools/build.mjs'], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, ...CLEAN, ...SALE } });
 ok(b.status === 0, `a sandbox sale build${b.status === 0 ? '' : `: ${(b.stdout + b.stderr).trim().split('\n').slice(-3).join(' | ')}`}`);
@@ -105,10 +131,6 @@ for (const rel of pages) {
   // The firm tier's own label, and only on its own page.
   const read = rel === 'for-professionals/index.html' ? visible.replace(/For firms (&middot;|·) not on sale yet/, '') : visible;
 
-  if (EXEMPT.has(rel)) {
-    console.log(`skip  ${rel}: ${EXEMPT.get(rel)}`);
-    continue;
-  }
   for (const re of NOT_ON_SALE) {
     const m = re.exec(read);
     ok(!m, `${rel}: says nothing about Pro not being for sale${m ? ` — "…${read.slice(Math.max(0, m.index - 60), m.index + 40)}…"` : ''}`);
@@ -122,6 +144,10 @@ for (const rel of pages) {
     ok(!m, `${rel}: its title and descriptions say nothing about Pro not being for sale${m ? ` — "${meta.slice(Math.max(0, m.index - 60), m.index + 40)}"` : ''}`);
   }
   ok(!meta.includes(PRO.price), `${rel}: its title and descriptions name no price`);
+  if (PRICE_EXEMPT.has(rel)) {
+    console.log(`      (${rel} names the price without a control beside it: ${PRICE_EXEMPT.get(rel)})`);
+    continue;
+  }
   for (const t of texts.filter((x) => x.text.includes(PRO.price))) {
     named++;
     const strip = [...t.ancestors].reverse().find((e) => /\sdata-pro-strip\b/.test(e.attrs));

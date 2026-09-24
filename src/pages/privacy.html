@@ -212,9 +212,14 @@
          what it loads is governed by Paddle. We measured it and set out what we found, but we do not control it,
          and it can change without any change here. The counter at the foot of the purchase page counts the
          checkout address and the report described below; it cannot see anything inside Paddle's frame.</p>
+      <!-- This said the live checkout "is checked against it before Pro goes on sale". Pro went on sale and the
+           measurement had not been made: a promise this page made about the checkout that takes the card, on a page
+           whose whole argument is that it says exactly what leaves your browser (owner, 24 September 2026). The
+           sentence now states what is true in both states and bounds itself to an event rather than a deadline —
+           docs/sale-go-live.md §1 is the measurement, and it can only be made on a real purchase. -->
       <p><em>Measured on Paddle's test checkout on 13 September 2026, both opening the checkout and completing a
-         test payment. The live checkout has not been measured yet; this section is checked against it before Pro
-         goes on sale.</em></p>
+         test payment. That is what this section describes. The live checkout is measured on the first real purchase,
+         and this section is corrected to match what that measurement shows.</em></p>
       <p><strong>When the checkout opens</strong>, Paddle's frame:</p>
       <ul>
         <li><strong>loads Stripe</strong>, from js.stripe.com, m.stripe.network and m.stripe.com. Stripe sets a
@@ -415,7 +420,7 @@
             recogniser used by Read a scan. Receives: the usage reports described under
             <a href="#diagnostics">Diagnostics and analytics</a>. Never receives your document.</li>
         <li><strong>Paddle</strong> — payment processing for the one-time Pro purchase, which is
-            made on pdf-iq.com rather than in the app. Will receive, once Pro is on sale: your payment
+            made on pdf-iq.com rather than in the app. <!--NOSALE-->Will receive, once Pro is on sale: your payment<!--/NOSALE--><!--SALE-->Receives, when you buy Pro: your payment<!--/SALE-->
             details, handled entirely by Paddle as merchant of record.<!--SALE--> Paddle's checkout also loads
             services of its own choosing, listed under <a href="#checkout">the checkout</a>.<!--/SALE--></li>
       </ul>

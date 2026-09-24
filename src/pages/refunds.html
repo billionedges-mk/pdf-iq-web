@@ -4,10 +4,20 @@
       <p class="prose__updated">Last updated 13 September 2026</p>
 
       <div class="prose">
-        <p><strong>Nothing on this site is for sale yet.</strong> The {{webToolCount}} web tools are free,
+        <!-- The purchase page is named in words, not as a path: comments survive into the built HTML, and a flag-off
+             build must contain no purchase path anywhere — verify:sale-build caught this comment doing it.
+             Sale state from the flag, never typed. This paragraph was written outside any block and survived the
+             sale going live: the purchase page links here as the refund policy, so a buyer reading the terms before
+             paying was
+             told nothing was for sale (found by the owner reading production, 24 September 2026). CLAIMS 45, which is
+             about exactly this sentence, on exactly this page. -->
+        <!--NOSALE--><p><strong>Nothing on this site is for sale yet.</strong> The {{webToolCount}} web tools are free,
            and Pro is not purchasable on either the web or the Android app. This page sets out the
            policy that will apply to a Pro purchase when it opens, so that anyone buying knows the
-           terms before they do rather than afterwards.</p>
+           terms before they do rather than afterwards.</p><!--/NOSALE-->
+        <!--SALE--><p><strong>Pro is on sale on this website.</strong> The {{webToolCount}} web tools are free and stay
+           that way; this page is the refund policy for a Pro purchase, so that anyone buying knows the terms before
+           they pay rather than afterwards.</p><!--/SALE-->
 
         <h2>The window</h2>
         <p>Thirty days from the date of purchase, for any reason or none. You do not have to explain
