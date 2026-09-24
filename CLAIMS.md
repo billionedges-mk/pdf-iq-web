@@ -75,7 +75,8 @@ the work is done.
 59. [A stale check does not merely fail to help — it destroys the signal from the checks that would have](#59-a-stale-check-does-not-merely-fail-to-help--it-destroys-the-signal-from-the-checks-that-would-have)  
 60. [A probe written to confirm a fix can only confirm it](#60-a-probe-written-to-confirm-a-fix-can-only-confirm-it)  
 61. [Two detectors of one fact are two facts, and both are right until a third case](#61-two-detectors-of-one-fact-are-two-facts-and-both-are-right-until-a-third-case)  
-62. ["Everything we own is green" is not "it works"](#62-everything-we-own-is-green-is-not-it-works)
+62. ["Everything we own is green" is not "it works"](#62-everything-we-own-is-green-is-not-it-works)  
+63. [A page can describe a mechanism the system does not have, and every word of it be true](#63-a-page-can-describe-a-mechanism-the-system-does-not-have-and-every-word-of-it-be-true)
 
 <!-- /index -->
 
@@ -2141,3 +2142,36 @@ so the check sees what the deployment carries rather than what a variable claims
    browser and a person. Neither did.
 4. **Count assertions by what they are about, not how many there are.** Fifty green about one side of a boundary is
    one fact stated fifty times, and its confidence is the confidence of that one fact.
+
+### 63. A page can describe a mechanism the system does not have, and every word of it be true
+
+/refunds tells a buyer: "Write to support@pdf-iq.com from the address you bought with." Paddle's own lookup at
+paddle.net is described the same way — it "asks for the email address you bought with".
+
+Nobody types an address. `src/checkout/checkout.ts` opens the checkout with `customer: { email }`, where the email is
+the one the purchase page hands over from the Google sign-in. The first real invoice proved it: Paddle's customer
+email on the transaction was the address the site sent, and not one the buyer had entered anywhere (24 September
+2026). Someone who signs in with one Google account and writes from their work address is told their purchase cannot
+be found, on both routes, and the page told them to do exactly that.
+
+**This is not a false claim. It is an untestable instruction**, which is why nothing here would have caught it. Every
+check this repo has asks whether a sentence is TRUE: verify-retired looks for phrasings that came back,
+verify-price-offers for sale-state claims that outlived the flag, verify-purchase-scope holds two sentences to each
+other. "The address you bought with" passes all of them, because the address does exist and the purchase was made
+with it. What fails is the reader's ability to act on it, and no check reads a sentence as an instruction.
+
+**One line of code produced two symptoms and neither was visible until a real charge.** The same
+`customer: { email }` sent the receipt to an address that did not exist, so receipt delivery was still untested
+after a completed purchase. A value handed from one system to another had never been traced from where it is
+collected to where it is used.
+
+**The check:**
+
+1. For every instruction the copy gives a reader, **name the step the reader takes and find that step in the system**.
+   If there is no moment where they do the thing the sentence assumes, the sentence is unusable however true it is.
+2. The tell is the second person describing a past action — "the address you bought with", "the reference you were
+   given", "the password you chose". Ask when they did it, and go and look.
+3. **Trace each value that crosses a boundary end to end, once.** Not what the code says it sends: what arrived. The
+   invoice was the first artefact outside our own systems to show what Paddle had been given.
+4. True is not the same as usable, and checks test truth. The gap between them is where copy about a MECHANISM lives,
+   and it needs a person who follows the instruction rather than a check that reads it.

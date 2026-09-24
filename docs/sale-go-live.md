@@ -195,6 +195,22 @@ in between is correct ("Walking a refund", below).
 
 **7. Only then** announce, and apply for Play production access.
 
+**What is still open after 24 September 2026, and all four ride on one clean repurchase** — signed in BEFORE pressing
+Pay, so the sign-in cannot be confused with the checkout:
+
+1. **Is Paddle's one-page email field editable?** The page sends `customer: { email }` from the Google sign-in and
+   the buyer types nothing. This decides /refunds' wording, which currently says "write from the address you bought
+   with" — an instruction nobody can follow if they signed in with one account and write from another (CLAIMS 63).
+2. **The receipt's contents and where its buyer-portal link goes.** The first purchase's receipt went to the
+   measurement address, which does not exist, so this is still untested after a completed purchase.
+3. **The page state after Pay**, `ready → confirming → owned`, and how long from payment to "Pro is yours". The
+   confirm loop says "not reached us yet" after **90 seconds**; production's webhook latency against that threshold
+   has never been measured. The first run ended at `undefined`, which by the code only a document replacement can
+   produce — the mid-payment sign-in redirect explains it, and this run falsifies or confirms that.
+4. **Where the refunded tax comes from.** The buyer should receive the whole $14.99 including the $2.29. Whether our
+   balance moves by $12.70 or by $14.99 is the difference between "Paddle returns the tax" and "we do", and /refunds
+   promises the amount without saying which.
+
 **Switching the sale on and announcing it are not the same day.** Steps 0–6 put Pro on sale on pdf-iq.com; step 7 tells
 people. Nothing forces them together, and separating them is what closes the four measurements that need a real charge
 (§1) in the configuration that will actually serve customers, without inventing a test environment to do it in (owner,
@@ -226,7 +242,30 @@ on the live account** (pending as of 20 September 2026 — "The approval gate" b
 destination exists (created 20 September 2026); touching sandbox; re-running `entitlement:keys` for production; a `live_` token anywhere but the checkout
 project's Production.
 
-## 1. The measurement that cannot be run until the day itself
+## 1. The measurement that cannot be run until the day itself — **ANSWERED 24 September 2026: no**
+
+**ProfitWell / Retain was not requested.** Measured on the live checkout, on production, with the live token, during a
+real payment: `profitwellSeen: false`. Both defences held. This is the one question sandbox structurally could not
+answer, and it is now closed.
+
+**How it was measured is its own warning, recorded in full under "The measurement that charged a real card" below.**
+The run was `measure:paddle` pointed at production, and the tool plants a fake sign-in so the page offers its Pay
+button. It re-plants on every document load, so it overwrote the real sign-in mid-payment: a real card was charged and
+Pro was granted to an address that does not exist. The tool now refuses production outright and never writes over an
+existing session (`tools/measure-paddle.mjs`). **The measurement is valid; the method is forbidden.**
+
+**What that run could NOT attribute, and /privacy still waits on.** The sign-in happened during the payment, so the
+hosts and cookies it saw cannot be split between Google sign-in and Google Pay inside Paddle's frame —
+`pay.google.com`, `play.google.com`, and the `NID`, `__Host-GAPS` and `OTZ` cookies on Google's domains. Writing
+those into /privacy from this run would repeat the sandbox table's error: a faithful measurement of the wrong thing.
+The clean repurchase, signed in before Pay, separates them.
+
+Clean from the same run, and safe to use: `__cf_bm` on .paddle.com ~30 minutes, `m` on m.stripe.com to October 2027,
+`vault.paddle.com`, `api.stripe.com`, `merchant-ui-api.stripe.com`, `checkout-analytics.paddle.com`, the footer
+counter reading 0 / 2 / 1 by phase, and one report-only CSP report from buy.paddle.com naming Paddle's own frame, as
+sandbox showed.
+
+## 1a. The original plan, kept for the reasoning
 
 **Sandbox cannot show it.** Paddle.js 2.9.7 ends `Paddle.Initialize()` by injecting Paddle Retain's
 analytics script, `public.profitwell.com/js/profitwell.js?auth=paddletoken_<token>`, whenever the
@@ -250,6 +289,34 @@ change without a commit here (CLAIMS 37).
 
 Then compare the production host list with the sandbox measurement below. The /privacy wording names
 production hosts, so it is corrected from this run before the sale is announced.
+
+## The measurement that charged a real card (24 September 2026)
+
+The live-checkout measurement in §1 was made by running `npm run measure:paddle -- --url https://pdf-iq.com/pro/buy/`.
+It produced the right answer and should never have been possible.
+
+That tool plants a fake session in the page's storage so /pro/buy/ offers its Pay button, because Preview has no
+sign-in configured. The planting is a `Page.addScriptToEvaluateOnNewDocument`, so it re-runs on **every document
+load**. On production the buyer signed in with Google during the payment, the page navigated, and the fake session
+overwrote the real one. The checkout carried the fake uid and email in `custom_data`; a real card was charged; and
+production's purchases table recorded Pro as granted to `pdfiq-sandbox-measure@example.com`. **The person who paid
+did not own what he paid for.**
+
+The trace shows the sequence rather than inferring it: at *arrival*, `local=[pdfiq.session]` on pdf-iq.com before any
+sign-in; at *pay*, `accounts.google.com`, `securetoken.googleapis.com` and `pdfiq.signin` in session storage.
+
+**Fixed the same day, with two independent refusals** (`tools/measure-paddle.mjs`): the tool refuses any production
+origin outright — pdf-iq.com, www, and checkout.pdf-iq.com — and the planting refuses to overwrite a session that
+already exists, so even off production it cannot change who is using the page. Deliberately no override flag: a flag
+is what someone passes to make an error message go away, and this measurement is worth less than one wrong charge.
+
+**It cost, and it also paid.** The charge was refunded the same hour and the row revoked correctly, which proved the
+whole revocation path on production. The invoice closed §3. But receipt delivery is still untested, because the
+receipt went to an address that does not exist — see the open items under step 7.
+
+**The shape, for the next tool.** This is the checkout-origin guard again: a tool behaving correctly for the
+environment it was written for, in an environment nobody had pointed it at. Before running any tool against
+production, the question is not "will it work here" but "what does it write, and to whom".
 
 ## Which project reads which variable
 
@@ -463,7 +530,17 @@ database. That is a manual step on a busy day with nothing in the build able to 
 
 **Instead:** steps 0–6 against production, earlier, and announce later (see "The day, in order", step 7).
 
-## 3. The price, against the production price id
+## 3. The price, against the production price id — **CLOSED 24 September 2026, on the invoice**
+
+The production price table was measured on 20 September with Paddle's price preview, and **confirmed on 24 September
+by a real invoice**: India, 18% — subtotal **$12.70**, tax **$2.29**, total **$14.99**. Exactly what the preview said.
+Paddle's fee was $1.25 and the tax withheld $2.29, so the net was $11.45; invoice 48239-10001.
+
+A preview is Paddle answering about its own configuration. The invoice is what was charged, and it outranks it. So
+every page that says **"$14.99 is the total. Any VAT, GST or sales tax is already included in it, not added at the
+checkout"** is correct, measured against the thing a buyer receives.
+
+## 3a. How the table was produced, kept for the method
 
 The pages say $14.99. That is the total in most of the world and **not** in the United States or Canada, where Paddle
 adds sales tax on top of a tax-inclusive price. Measured on the sandbox price on 17 September 2026 (TECH_DEBT.md has the
@@ -512,6 +589,25 @@ that sentence still holds.
 the payload to name the refund "full"). The rule is fixed and the log now carries the adjustment's action, status and
 type, so the first live refund should show a revocation — and the entitlement endpoint should answer `pro:false` on the
 next check. Watch it rather than assume it.
+
+## The revocation path, proven on production with a real charge (24 September 2026)
+
+`txn_01m3a5ws3rp5v75nk9qey9zjgj`, a real card:
+
+| | |
+|---|---|
+| 17:04:30 | `transaction.completed` → row written, `granted` |
+| 17:22 | full refund requested at Paddle |
+| 17:22 – 17:25 | row still `granted`, `changed_at` unchanged — **the approval gap, exactly as documented** |
+| 17:25:17 | `adjustment.updated` applied → `revoked`, `last_event_id evt_01m3a76fzeenwe901506grsw4t` |
+
+About three minutes, against roughly four in sandbox. Two things this proves that nothing else could:
+
+- **The webhook applied the adjustment event, not the transaction.completed one** — the items-level rule
+  (`server/paddle.js`, written from a real sandbox payload after a partial/full mismatch cost a launch blocker)
+  worked first time on a real charge.
+- **The gap reads as a failure and is not.** Between request and approval the row is correctly still granted. Anyone
+  watching D1 in that window sees a refund that "did nothing".
 
 ## Walking a refund, in sandbox or live
 
