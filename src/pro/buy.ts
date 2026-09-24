@@ -21,7 +21,7 @@
  */
 import { signedIn, proAccount } from './gate.js';
 import { writePendingPurchase, readPendingPurchase } from './pending.js';
-import { confirmPurchase, confirmEndWords, afterConfirm, type ConfirmEnding } from './confirm.js';
+import { confirmPurchase, confirmEndWords, afterConfirm, paidWords, type ConfirmEnding } from './confirm.js';
 import { peekUnlock, latestUnlockKey, type UnlockIntent } from '../lib/handoff.js';
 import { startSignIn, completeSignIn, AuthError, type AuthErrorKind } from './auth.js';
 import { WORDS } from './auth-words.js';
@@ -99,16 +99,36 @@ function backHref(withFile: boolean): string {
   return withFile ? `${unlock!.intent.path}?from=${encodeURIComponent(unlock!.key)}` : unlock!.intent.path;
 }
 
-/** Owned now, and this page was opened by Unlock: take the buyer back, with the file if it is still kept. */
-async function returnFromUnlock(): Promise<void> {
+type UnlockNow = Awaited<ReturnType<typeof peekUnlock>>;
+
+/**
+ * What Unlock still holds, asked again: confirming the payment may have taken long enough for the ten minutes to pass.
+ *
+ * The caller asks, not `returnFromUnlock`, because the answer decides which card is shown — and the card has to be
+ * on screen before the line is written into it.
+ */
+const peekReturn = async (): Promise<UnlockNow> => (unlock ? peekUnlock(unlock.key) : null);
+
+/** The line belongs to whichever ending is on screen; both cards carry one. */
+function returnLine(): HTMLElement {
+  const lines = [...document.querySelectorAll<HTMLElement>('[data-buy-return]')];
+  return lines.find((el) => !el.closest<HTMLElement>('[data-buy]')?.hidden) ?? lines[0];
+}
+
+/**
+ * Owned now, and this page was opened by Unlock: take the buyer back, with the file if it is still kept.
+ *
+ * `lead` opens the sentence. It is empty on the paid card, which has already said the payment landed, and carries
+ * the payment clause on the one path where there is no card to read: the file is still there, so this page is a
+ * corridor the buyer passes through in a second and a half.
+ */
+function returnFromUnlock(now: UnlockNow, lead: string): void {
   if (!unlock) return;
-  const line = $('[data-buy-return]')!;
+  const line = returnLine();
   line.hidden = false;
-  // Asked again: the confirmation may have taken long enough for the ten minutes to pass.
-  const now = await peekUnlock(unlock.key);
-  const withFile = Boolean(now?.file);
-  if (withFile) {
-    line.textContent = `Pro is yours. Taking you back to ${unlock.page} with ${unlock.name}…`;
+  const open = lead ? `${lead} ` : '';
+  if (now?.file) {
+    line.textContent = `${open}Taking you back to ${unlock.page} with ${unlock.name}…`;
     setTimeout(() => { location.href = backHref(true); }, 1500);
     return;
   }
@@ -119,12 +139,12 @@ async function returnFromUnlock(): Promise<void> {
     : unlock.expired || now?.expired || (!now && unlock.file)
       ? ` — ${unlock.name} was kept on this device for ten minutes only, so choose it again there.`
       : ` — ${unlock.name} could not be brought along, so choose it again there.`;
-  line.replaceChildren('Pro is yours. ', a, why);
+  line.replaceChildren(...(open ? [open] : []), a, why);
 }
 
 export const BUY_SENTINEL = 'pdfiq-pro:buy';
 
-type View = 'working' | 'out' | 'signin-failed' | 'owned' | 'ready' | 'loading' | 'confirming' | 'done' | 'failed';
+type View = 'working' | 'out' | 'signin-failed' | 'owned' | 'paid' | 'ready' | 'loading' | 'confirming' | 'done' | 'failed';
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel);
 
@@ -134,8 +154,8 @@ function show(view: View): void {
   // Read by the closed handler: closing the checkout after paying must not put the page back to
   // "ready", as if nothing had happened.
   document.body.dataset.pdfiqBuyState = view;
-  // Owned: the nav's Pro labels go at once, not on the next page (src/pro/strip.ts).
-  if (view === 'owned') settleSellingMarks(true);
+  // Owning Pro, however it was reached: the nav's Pro labels go at once, not on the next page (src/pro/strip.ts).
+  if (view === 'owned' || view === 'paid') settleSellingMarks(true);
 }
 
 /**
@@ -263,8 +283,20 @@ async function confirmHere(txn: string, justPaid = false): Promise<ConfirmEnding
   const ending = afterConfirm(outcome, txn);
   line.textContent = ending.words;
   if (outcome.kind === 'owned') {
-    show('owned');
-    await returnFromUnlock();
+    // A payment was being confirmed, so this is not "you already own it": it is "that worked, here is what happened
+    // to your money". The exception is the one path that leaves: with the file still kept, the buyer is sent back to
+    // their tool in a second and a half, and a card shown for that long is a flash. There the line they are already
+    // reading carries the payment instead (owner, 24 September 2026).
+    const now = await peekReturn();
+    const leaving = Boolean(now?.file);
+    show(leaving ? 'owned' : 'paid');
+    if (leaving) {
+      // Leaving in a second and a half: the line does the talking, and the words written for a later visit —
+      // "already knows", "nothing to buy" — are taken off the screen rather than left to contradict it.
+      $('[data-buy-owned-kicker]')!.textContent = 'Paid — Pro is yours';
+      $('[data-buy-owned-already]')!.hidden = true;
+    } else fillPaid(txn);
+    returnFromUnlock(now, leaving ? `${paidWords(txn)} Pro is yours.` : '');
     return ending;
   }
   if (ending.accountNote) {
@@ -272,6 +304,20 @@ async function confirmHere(txn: string, justPaid = false): Promise<ConfirmEnding
     next.hidden = false;
   }
   return ending;
+}
+
+/**
+ * The just-paid card, filled in: what happened to the money, and where the receipt goes.
+ *
+ * The address is named rather than described. Nobody types it — the checkout is opened with the address from the
+ * Google sign-in and the field is locked — so "the address you bought with" is something a buyer cannot look up
+ * anywhere, and asking them to use it in a support email is an instruction nobody can follow (CLAIMS 63).
+ */
+function fillPaid(txn: string): void {
+  $('[data-buy-paid-words]')!.textContent = `${paidWords(txn)} Pro is recorded against this account, and this browser knows it.`;
+  const email = signedIn()?.email ?? '';
+  $('[data-buy-paid-email]')!.textContent = email;
+  $('[data-buy-paid-receipt]')!.hidden = !email;
 }
 
 /** The checkout, offered. `note` is shown above it when there is a reason the buyer is here (a refund, say). */
@@ -355,7 +401,7 @@ async function start(): Promise<void> {
   // Already owned on this browser: nothing to buy, and nothing should suggest otherwise.
   if (owned) {
     show('owned');
-    await returnFromUnlock();
+    returnFromUnlock(await peekReturn(), 'Pro is yours.');
     return;
   }
   // Paid on this browser but not confirmed yet (the tab was closed, say): confirm, never offer a second checkout —

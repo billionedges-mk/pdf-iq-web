@@ -36,12 +36,34 @@
       <p class="hint" style="margin-top: 12px;" data-buy-back hidden>&nbsp;</p>
     </section>
 
-    <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="owned" hidden>
-      <p class="kicker">Pro is already yours</p>
-      <p style="margin: 10px 0 0; font-size: 16px; line-height: 1.6; font-weight: 600;" role="status" data-buy-return hidden>&nbsp;</p>
-      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">This browser already knows this account owns Pro,
-        so there is nothing to buy. What it unlocked is {{proWhere}}, each on the tool it belongs to.</p>
+    <!-- Paid, moments ago. Its own card because "owns Pro" is one database row covering two different situations:
+         someone who did something with their card thirty seconds ago, and someone who did it last month. Sharing the
+         card gave the buyer "Pro is already yours &mdash; there is nothing to buy" three seconds after paying $14.99,
+         with no mention that money had moved (Maneesh, 24 September 2026; CLAIMS 64). The failure endings all say what
+         happened to the payment; the one ending every buyer reaches said the least. -->
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="paid" hidden>
+      <p class="kicker">Paid &mdash; Pro is yours</p>
+      <p style="margin: 10px 0 0; font-size: 16px; line-height: 1.6; font-weight: 600;" role="status" data-buy-paid-words>&nbsp;</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;" data-buy-paid-receipt hidden>Paddle emails the
+        receipt to <strong data-buy-paid-email></strong> &mdash; the Google account you signed in with, which is the
+        address the checkout was opened with. If it does not arrive, support@pdf-iq.com can match the reference above.</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6; font-weight: 600;" role="status" data-buy-return hidden>&nbsp;</p>
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">What you have now is {{proWhere}}, each on the
+        tool it belongs to.</p>
       <p class="hint" style="margin-top: 10px;">{{proSurfaces}}</p>
+    </section>
+
+    <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="owned" hidden>
+      <p class="kicker" data-buy-owned-kicker>Pro is already yours</p>
+      <p style="margin: 10px 0 0; font-size: 16px; line-height: 1.6; font-weight: 600;" role="status" data-buy-return hidden>&nbsp;</p>
+      <!-- Written for someone arriving later, not for someone who paid a moment ago. On the one path where this card
+           carries a just-paid line (Unlock with the file still kept, redirecting in a second and a half), these two
+           sentences are hidden: "already knows" and "nothing to buy" contradict the line above them. -->
+      <div data-buy-owned-already>
+        <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">This browser already knows this account owns Pro,
+          so there is nothing to buy. What it unlocked is {{proWhere}}, each on the tool it belongs to.</p>
+        <p class="hint" style="margin-top: 10px;">{{proSurfaces}}</p>
+      </div>
     </section>
 
     <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="ready" hidden>
