@@ -412,6 +412,44 @@ if (SELLING) {
     }
   }
 
+  // WHAT CROSSES THE BOUNDARY, read from the bundle production actually ships.
+  //
+  // /privacy says the purchase page hands the checkout "two things only, your account identifier and email address",
+  // and that nothing there can read the sign-in this site stores. The live measurement on 24 September 2026 could not
+  // confirm it — its report said "no message from the site was recorded, so what crossed the boundary is unknown",
+  // because the recorder never saw the frames exchange one. A trace can miss a message; the bundle is what runs.
+  //
+  // So this reads the shipped JavaScript instead: every postMessage it makes, what each carries, and whether a token
+  // appears anywhere near one. The claim on /privacy is about code, and code is the right thing to read it from.
+  {
+    const buy = await get('/pro/buy/');
+    const files = [...buy.text.matchAll(/src="(\/assets\/[^"]+\.js)"/g)].map((m) => m[1]);
+    const seenBuy = new Set();
+    const queueBuy = [...files];
+    let bundle = '';
+    while (queueBuy.length) {
+      const f = queueBuy.shift();
+      if (seenBuy.has(f)) continue;
+      seenBuy.add(f);
+      const { text } = await get(f);
+      bundle += text;
+      for (const m of text.matchAll(/["'`]\.\/([\w.-]+\.js)["'`]/g)) queueBuy.push('/assets/' + m[1]);
+    }
+    const posts = [...bundle.matchAll(/postMessage\((\{[^}]*\})\s*,\s*([^)]*)\)/g)].map((m) => ({ payload: m[1], target: m[2] }));
+    const toCheckout = posts.filter((x) => /checkout/i.test(x.target) || /pdfiq-checkout-open/.test(x.payload));
+    ok(toCheckout.length === 1, `the purchase page posts exactly one message to the checkout (${toCheckout.length})`);
+    if (toCheckout.length === 1) {
+      const { payload, target } = toCheckout[0];
+      const fields = [...payload.matchAll(/([A-Za-z_$][\w$]*)\s*:/g)].map((m) => m[1]).filter((f) => f !== 'type');
+      ok(fields.length === 2 && fields.includes('uid') && fields.includes('email'),
+        `and it carries the account identifier and email and nothing else (${fields.join(', ') || 'none'})`);
+      ok(/https:\/\/[a-z0-9.-]+/.test(target) && !target.includes('*'),
+        `addressed to one exact origin, never "*" (${target.trim().slice(0, 60)})`);
+    }
+    ok(!/postMessage\([^)]*(idToken|refreshToken|sessionKey)/.test(bundle),
+      'no token is passed to any postMessage anywhere in the purchase page bundle');
+  }
+
   // Firebase's authorised domains, from the key the deployment actually shipped.
   const home = await get('/');
   const bundles = [...home.text.matchAll(/src="(\/assets\/[^"]+\.js)"/g)].map((m) => m[1]);
