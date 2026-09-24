@@ -112,7 +112,7 @@ export function stripJpegMetadata(jpeg: Uint8Array): { bytes: Uint8Array; remove
     //
     // APP2 and APP14 deliberately stay. APP2 carries the ICC profile and APP14 the
     // Adobe colour transform, and both change how the image is *decoded* — dropping
-    // them shifts the colours of the picture. "Strip metadata" means remove the facts
+    // them shifts the colours of the picture. "Remove metadata" means remove the facts
     // about where and when the photo was taken, not quietly alter the photo.
     const drop = marker === 0xe1 || marker === 0xed || marker === 0xfe;
     if (drop) removed = true;

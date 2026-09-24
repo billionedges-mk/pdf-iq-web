@@ -24,13 +24,17 @@ export interface TargetContext {
   offerHost(): HTMLElement | null;
   /** One complete pass from the original file. `plan` absent means the preset applies to every image. */
   pass(opts: { preset: Preset; plan?: (img: PdfImage) => ImagePlan; label: string; signal: AbortSignal }): Promise<{ result: CompressResult; analysis: Analysis }>;
-  /** Show progress and return the signal the page's Stop button aborts. */
-  begin(): AbortSignal;
+  /**
+   * Start a run and return the signal that aborts it.
+   *
+   * Without `inPlace`, the page shows its progress card and moves focus to it — right when a result screen is
+   * coming. With `inPlace`, nothing on the page changes and the caller shows the work where the reader is already
+   * looking: the button they pressed becomes the Stop button, and the answer lands beside it.
+   */
+  begin(opts?: { inPlace?: boolean }): AbortSignal;
   end(): void;
   /** The page's own result screen, with one line of ours beneath it. */
   showResult(r: CompressResult, note: string): void;
-  /** Back to the options, where our message is shown. */
-  back(): void;
   fail(err: unknown): void;
 }
 
@@ -63,6 +67,47 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   note.className = 'hint';
   note.setAttribute('role', 'status');
   const say = (text: string) => { note.textContent = text; };
+
+  /**
+   * True from the moment a run starts until it ends, whichever way it ends.
+   *
+   * Both buttons stay on screen and stay clickable during an in-place run — the view swap used to take them away, and
+   * taking the screen was the thing we just stopped doing. Two clicks then do damage the old shape could not: the
+   * Stop click reaches this module's own `onclick` FIRST (it was registered before the stop listener, and listeners
+   * on one element run in the order they were added), so pressing Stop STARTS a second run, whose `working()` reads
+   * the button's current text — "Stop — 0.4s" — as the label to restore. Measured 24 September 2026: the button was
+   * left reading "Stop — 0.4s" for good, with nothing running.
+   */
+  let running = false;
+
+  /**
+   * The pressed button, while its run is going: it says how long it has been working and it stops the run.
+   *
+   * Four seconds with no change anywhere near the control is what made a real user think the button had not worked
+   * (24 September 2026). The page's own Stop lives on the progress card, which an in-place run never shows, so the
+   * button has to be both — it is the only control the reader is looking at.
+   */
+  function working(button: HTMLButtonElement, abort: () => void): () => void {
+    running = true;
+    const label = button.textContent ?? '';
+    const started = performance.now();
+    const tick = () => { button.textContent = `Stop — ${seconds(performance.now() - started)}`; };
+    tick();
+    const timer = setInterval(tick, 100);
+    button.setAttribute('aria-busy', 'true');
+    const onStop = (e: Event) => { e.preventDefault(); abort(); };
+    button.addEventListener('click', onStop);
+    return () => {
+      running = false;
+      clearInterval(timer);
+      button.removeEventListener('click', onStop);
+      button.removeAttribute('aria-busy');
+      button.textContent = label;
+    };
+  }
+
+  /** The answer goes where the reader is, not where the page happens to be scrolled. */
+  const showAnswer = (text: string) => { say(text); note.scrollIntoView({ block: 'nearest' }); };
 
   // ---- target resolution
   const dpi = document.createElement('input');
@@ -121,6 +166,7 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
   ctx.offerHost()?.replaceChildren();
 
   dpiGo.onclick = async () => {
+    if (running) return; // a click during a run is either Stop (handled below) or the other target; neither starts work
     if (!proAccount()) return;
     const s = ctx.state();
     if (!s) return;
@@ -129,24 +175,30 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
     const nothing = resolutionNothingToDo(s.analysis, n);
     if (nothing) return say(nothing);
     say('');
-    const signal = ctx.begin();
+    const controller = new AbortController();
+    const signal = ctx.begin({ inPlace: true });
+    signal.addEventListener('abort', () => controller.abort(), { once: true });
+    const done = working(dpiGo, () => controller.abort());
     try {
       const { result, analysis } = await ctx.pass({
         preset: asPreset({ dpi: n, quality: PRESETS[0].quality }),
         plan: resolutionPlan(n),
         label: `no image above ${n} dpi`,
-        signal,
+        signal: controller.signal,
       });
+      done();
       ctx.end();
       ctx.showResult(result, describeResolution(analysis, n, result.outcomes));
     } catch (e) {
+      done();
       ctx.end();
-      if (isAbort(e)) { ctx.back(); say('Stopped. Nothing was handed over.'); }
+      if (isAbort(e)) showAnswer('Stopped. Nothing was handed over.');
       else ctx.fail(e);
     }
   };
 
   sizeGo.onclick = async () => {
+    if (running) return; // see dpiGo
     if (!proAccount()) return;
     const s = ctx.state();
     if (!s) return;
@@ -154,20 +206,27 @@ export function mountTarget(host: HTMLElement, ctx: TargetContext): void {
     if (target == null) return say('Enter a size, such as 5 MB or 800 KB.');
     if (s.fileSize <= target) return say(describeSize({ kind: 'already', size: s.fileSize }, target));
     say('');
-    const signal = ctx.begin();
+    const controller = new AbortController();
+    const signal = ctx.begin({ inPlace: true });
+    signal.addEventListener('abort', () => controller.abort(), { once: true });
+    const done = working(sizeGo, () => controller.abort());
     const started = performance.now();
     try {
       const outcome = await searchSize(s.fileSize, target, async (step, passNumber) => {
-        const { result } = await ctx.pass({ preset: asPreset(step), label: `pass ${passNumber} of up to ${MAX_PASSES}`, signal });
+        const { result } = await ctx.pass({ preset: asPreset(step), label: `pass ${passNumber} of up to ${MAX_PASSES}`, signal: controller.signal });
         return { size: result.afterBytes, result };
-      }, signal);
+      }, controller.signal);
+      done();
       ctx.end();
       const took = ` It took ${seconds(performance.now() - started)} on this device.`;
+      // Reached: there is a file, so the page's result screen is the right place. Cannot: there is nothing to save,
+      // so nothing moves and the answer appears under the button that asked for it.
       if (outcome.kind === 'reached') ctx.showResult(outcome.result, describeSize(outcome, target) + took);
-      else { ctx.back(); say(describeSize(outcome, target) + (outcome.kind === 'cannot' ? took : '')); }
+      else showAnswer(describeSize(outcome, target) + (outcome.kind === 'cannot' ? took : ''));
     } catch (e) {
+      done();
       ctx.end();
-      if (isAbort(e)) { ctx.back(); say('Stopped. Nothing was handed over.'); }
+      if (isAbort(e)) showAnswer('Stopped. Nothing was handed over.');
       else ctx.fail(e);
     }
   };

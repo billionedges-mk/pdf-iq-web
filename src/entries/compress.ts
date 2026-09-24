@@ -113,12 +113,20 @@ function renderSelected(): void {
           });
           return { result: r, analysis: freshAnalysis };
         },
-        begin: () => {
+        // `inPlace` runs without taking the screen: no view swap, no progress card, no focus move. A target run
+        // that ends in "this cannot be done" has nothing to show on a result screen, and swapping the whole view out
+        // and back for it cost the answer its place — measured 24 September 2026: the processing view takes focus
+        // (its heading carries data-focus) and, when the view flips back, focus is left on a heading that is now
+        // hidden, while the answer renders in the options block wherever the reader happens to be scrolled. The
+        // caller drives its own button instead; see src/pro/compress-target-ui.ts.
+        begin: (opts) => {
           controller = new AbortController();
           busy = true;
-          shell.show('processing');
-          progress.start();
-          shell.announce('Compressing to a target.');
+          if (!opts?.inPlace) {
+            shell.show('processing');
+            progress.start();
+            shell.announce('Compressing to a target.');
+          }
           return controller.signal;
         },
         end: () => {
@@ -131,7 +139,6 @@ function renderSelected(): void {
           const line = $('[data-pro-target-note]');
           if (line) { line.textContent = note; line.hidden = false; }
         },
-        back: () => shell.show('selected'),
         fail: (err) => shell.fail(E.classify(err, { name: file!.name, size: file!.size, type: file!.type })),
       }));
     }
