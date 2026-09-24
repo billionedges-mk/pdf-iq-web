@@ -152,9 +152,20 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   ok(siteJs.includes('"lock__what"') && siteJs.includes('Free instead: ') && siteJs.includes('"cta"'), 'the locked panel is the gold card: what, the action, "Free instead:"');
   // Owner, 13 September 2026: the purchase page says what a purchase covers today. Until the app honours web purchases
   // (BILLING_ENABLED split), not "and the Android app" (TECH_DEBT.md).
+  //
+  // This asserted the sentence word for word — "$14.99 once, for Pro in the web tools on this site. It does not unlock
+  // anything in the Android app." — and on 24 September 2026 it refused a correction to that sentence's ORDER. The
+  // lede opened with the price and then two clauses about what Pro is not, on the page where someone has decided to
+  // pay; rewriting it to lead with what Pro is broke a check that cared only about the characters. CLAIMS 50, for the
+  // third time on this project: test the property, not the phrasing. The property is what the page must promise, and
+  // the order it promises it in is copy.
   const buyFlat = readFileSync(join(ROOT, 'dist/pro/buy/index.html'), 'utf8').replace(/\s+/g, ' ');
-  ok(buyFlat.includes(`${PRO_OFFER.price} once, for Pro in the web tools on this site. It does not unlock anything in the Android app.`) && !buyFlat.includes(PRO_OFFER.covers),
-    '/pro/buy/ says a purchase covers the web tools only, and that it unlocks nothing in the Android app');
+  const saysCoversToday = buyFlat.includes(PRO_OFFER.coversToday);
+  const excludesTheApp = /(does|will) not unlock anything in (the Android|this) app/.test(buyFlat);
+  const namesThePrice = buyFlat.includes(PRO_OFFER.price);
+  ok(saysCoversToday && excludesTheApp && namesThePrice && !buyFlat.includes(PRO_OFFER.covers),
+    '/pro/buy/ names the price, says what a purchase covers today, and says it unlocks nothing in the Android app'
+    + (saysCoversToday && excludesTheApp && namesThePrice ? '' : `\n        missing: ${[!namesThePrice && 'the price', !saysCoversToday && 'what it covers', !excludesTheApp && 'the Android exclusion'].filter(Boolean).join(', ')}`));
   const appPromise = [siteJs, readFileSync(join(ROOT, 'dist/pro/buy/index.html'), 'utf8')].some((t) => /or the app\?|any device you sign in on/.test(t));
   ok(!appPromise, 'nothing tells a buyer a purchase crosses to or from the Android app, or follows them to "any device"');
   // Signing in from a locked feature, and Batch saying its files stay behind.

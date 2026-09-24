@@ -129,7 +129,7 @@ export function proSurfaces() {
   const WORDS = ['none', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
   const inApp = PRO_COPY.filter((c) => c.inApp);
   const webOnly = PRO_COPY.filter((c) => !c.inApp);
-  const list = (names) => (names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0] ?? '');
+  const list = commaAnd;
   const up = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   if (!inApp.length) return `These are on the website. The Android app has ${PRO_COPY.length === 1 ? 'it' : 'none of them'}.`;
   if (!webOnly.length) return `All ${(WORDS[PRO_COPY.length] ?? PRO_COPY.length).toString().toLowerCase()} are in the Android app as well.`;
@@ -142,8 +142,7 @@ export function proSurfaces() {
  * /pro/buy/ typed this list by hand — four names and four hrefs — which is the shape a fifth feature breaks silently.
  */
 export function proWhere() {
-  const links = PRO_COPY.map((c) => `<a href="${c.route}">${c.short}</a>`);
-  return links.length > 1 ? `${links.slice(0, -1).join(', ')} and ${links.at(-1)}` : links[0] ?? '';
+  return commaAnd(PRO_COPY.map((c) => `<a href="${c.route}">${c.short}</a>`));
 }
 
 /**
@@ -188,6 +187,26 @@ export function proLede(key, { selling = PRO.onSale, hidden = false } = {}) {
  */
 export const SELLING_SURFACE = /class="pro-strip"|class="pro-panel"|class="price__amount"/;
 
+/**
+ * "a, b and c". Written out inside proStrip, proSurfaces and proWhere before this existed, three times, identically —
+ * and adding proShorts would have made four copies of one sentence-joining rule. The same argument as everywhere else
+ * here: one fact, one place (24 September 2026).
+ */
+const commaAnd = (names) => (names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0] ?? '');
+
+/**
+ * The four, named, for a page where someone is deciding to pay.
+ *
+ * /pro/buy/ opened with the price, then what Pro is NOT, then what you do not need it for — three sentences on the
+ * page where someone has decided to buy, two of them about what they do not get (Maneesh, 24 September 2026). A count
+ * tells a reader how many things they get; a list tells them whether it is for them (owner). And it is generated,
+ * because a page that names features by hand goes stale the day a fifth arrives — which is exactly what was removed
+ * from this page's own "already yours" card a week ago.
+ */
+export function proShorts() {
+  return commaAnd(PRO_COPY.map((c) => c.short));
+}
+
 /** The state sentence, from the one flag that decides it. The wording matches the Android app's. */
 export function proState(selling = PRO.onSale) {
   return selling
@@ -202,8 +221,7 @@ export function proState(selling = PRO.onSale) {
  * owns Pro: after buying, the site stops selling (a Pro build removes it; production has no owners).
  */
 export function proStrip({ selling = PRO.onSale, hidden = false } = {}) {
-  const names = PRO_COPY.map((c) => c.strip);
-  const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
+  const list = commaAnd(PRO_COPY.map((c) => c.strip));
   const state = selling ? `${PRO.price} ${PRO.qualifier}` : 'not on sale yet';
   // Selling, the price comes with the way to pay (owner, 17 September 2026): naming a price without offering the purchase is
   // a defect. The link goes to the purchase page; no checkout opens on a tool page.

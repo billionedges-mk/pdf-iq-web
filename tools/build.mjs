@@ -18,7 +18,7 @@ import { TOOLS, PAGES, ALL, PRO_PAGES, HOME_TOOLS, HOME_APP_CARD, APP_FEATURES, 
 import { AUTH } from './auth-config.mjs';
 import { PADDLE } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
-import { PRO_COPY, PRO_FEATURES, SELLING_SURFACE, proState, proStrip, proPanel, proSheet, proSurfaces, proWhere, proLede, lockedPanelStatic } from './pro-copy.mjs';
+import { PRO_COPY, PRO_FEATURES, SELLING_SURFACE, proState, proStrip, proPanel, proSheet, proSurfaces, proWhere, proShorts, proLede, lockedPanelStatic } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
 import { ogImage } from './og-images.mjs';
 import { LANGUAGES } from './langs.mjs';
@@ -378,6 +378,7 @@ function substituteTokens(body, file) {
     proFeatureCountCap: COUNTS[PRO_COPY.length] ?? String(PRO_COPY.length),
     proSurfaces: proSurfaces(),
     proWhere: proWhere(),
+    proShorts: proShorts(),
   };
   const out = body.replace(/\{\{(\w+)\}\}/g, (_, name) => {
     if (!(name in tokens)) throw new Error(`unknown token {{${name}}} in ${file}`);

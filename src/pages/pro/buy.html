@@ -1,6 +1,14 @@
     <div class="tool-head">
       <h1 class="page-title">Buy Pro</h1>
-      <p class="page-lede">{{proPrice}} once, for {{proCoversToday}}. It does not unlock anything in the Android app. None of the {{webToolCount}} free tools needs this.</p>
+      <!-- What Pro is, then what it costs, then the caveats — in that order, because this is the page where someone
+           has decided to pay. It opened with the price and two sentences about what Pro is NOT (Maneesh, 24 September
+           2026). The app sentence stays word for word until vc18 is live on Play: it is one of the fourteen places the
+           flip finds by search (docs/sale-go-live.md §4). "None of the {{webToolCount}} free tools needs this" moved
+           from first to last — first it argues someone out of a purchase before they know what it is; last it is a
+           statement of confidence. -->
+      <p class="page-lede">{{proFeatureCountCap}} things the {{webToolCount}} free tools do not do &mdash; {{proShorts}}
+        &mdash; for {{proPrice}} {{proQualifier}}, not a subscription. It covers {{proCoversToday}}, and does not unlock
+        anything in the Android app. None of the {{webToolCount}} free tools needs this.</p>
     </div>
 
     <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="working">
