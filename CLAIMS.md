@@ -1664,6 +1664,20 @@ which rule wins, and a class name in two stylesheets is not a conflict to a scan
    clip — because "it looks right" and "the rule I wrote is what applies" are different claims.
 3. Where looking found a defect a check could have caught, write the check (verify:classes came from the first of these).
    Where it could not, say so plainly rather than inventing one that cannot fail.
+4. **Stating a constraint is not checking a case against it** (25 September 2026). Three more, in two days, all found
+   only by rendering: a squircle that read as a badge rather than an app icon, a share card drawing the app's mark in
+   the site's ink instead of its own navy, and an app icon placed 150px from the site's mark — which the same session
+   had already written the rule against, in the words "two similar marks in one chrome reads as a mistake". The rule
+   was right, was recent, and was violated by its author, because it was applied in source rather than by putting the
+   two marks side by side at the size they would appear.
+
+   **A visual property has no textual form**, which is why every instrument here is blind to it: a diff shows the
+   coordinates, not the shape; a check reads the class, not which rule won; and the person who wrote the constraint
+   reasons about the description rather than the thing. The rendering is the only representation that has the
+   property. So for anything whose defect would be visual — size, spacing, contrast, what sits next to what — the step
+   is not "consider whether it complies" but "put it on screen beside the thing it must not resemble, at the size it
+   will be". The measurement that follows is what makes the judgement reportable: the seam measured 4.6px at 96px and
+   about one pixel at 24px, which turned "it looks wrong" into a number the app side can act on.
 
 ### 48. A caveat is a guess until it has a number
 

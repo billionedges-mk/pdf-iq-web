@@ -697,6 +697,21 @@ exactly like the defect this section exists because of. Do not read a "still gra
 
   **Unblocks when:** the listing is live, which is the first moment the two are seen side by side by anyone else.
 
+  **Two copies on this side, and the re-compare must read both.** The icon came off the /app/ hero and the homepage
+  tile on 25 September — at 96px the amber gap is 4.6px and at 24px about one pixel, so it read as a stripe on a
+  square rather than two masses pulled apart, and beside the site's own mark it read as the site's mark twice. What
+  is left is:
+
+  - `public/app-icon.svg` — **nothing on the site renders it.** It is the human-readable reference, and that is a
+    new way for it to go stale: nobody will notice it is wrong, because nobody sees it. An unrendered file whose only
+    reader is the check that reads it is the shape this document already distrusts.
+  - `Bitmap.appIcon()` in `tools/png.mjs` — the copy that actually draws, on /app/'s share card, from its own
+    constants. This is what a visitor sees, and it is **not** the file above.
+
+  So the re-compare is three artefacts, not two: the app repo's XML, the SVG, and the rasteriser's numbers. If that
+  is one too many, the way to collapse it is to derive the rasteriser's constants from the SVG — or to delete the SVG
+  and let the rasteriser be the only copy, accepting that the comparable artefact is then a page of arithmetic.
+
   **`npm run verify:purchase-scope` refuses a half-done flip**, so the list above is a convenience and not the
   safeguard. It builds free, Pro and selling, reads the HTML **and the bundles**, and holds the two sentences to each
   other: while the site says a purchase covers the web tools, every page naming the scope must also exclude the app;
