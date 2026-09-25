@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" role="img" aria-label="The pdf-iq Android app icon">
+  <!--
+    The Android launcher icon, as a phone renders it. Redrawn from the app repo, 25 September 2026:
+      app/src/main/res/drawable/ic_launcher_background.xml  (amber #C87A1E behind everything)
+      app/src/main/res/drawable/ic_launcher_foreground.xml  ("the seam", direction 8c)
+    Two copies of one mark in two repositories drift; docs/sale-go-live.md §4 carries the re-compare,
+    for the day the listing makes the icon public. There is no build-time check: Cloudflare has no
+    sibling repo, and a check that silently skips is worse than none.
+
+    The 108dp canvas is cropped to the centre 72 — what survives the mask on a phone — and clipped
+    with a 22% corner radius, which is how Play renders a listing icon and how a squircle launcher
+    mask reads. Drawn first as a cubic near-circle: at 96px it read as a badge, and the cut stopped
+    short of the corners instead of running through them. The two navy paths are
+    the source's own coordinates, oversized on purpose so they bleed past every mask; the only thing
+    that must survive is the cut, and the cut runs through the centre.
+  -->
+  <defs>
+    <clipPath id="app-icon-squircle">
+      <rect x="18" y="18" width="72" height="72" rx="16" ry="16" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#app-icon-squircle)">
+    <rect x="18" y="18" width="72" height="72" fill="#C87A1E" />
+    <path fill="#1E2A38" d="M-109.211,-109.211L214.789,-109.211L-109.211,214.789Z" />
+    <path fill="#1E2A38" d="M217.211,-106.789L217.211,217.211L-106.789,217.211Z" />
+  </g>
+</svg>

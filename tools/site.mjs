@@ -117,7 +117,7 @@ export const PAGES = [
     title: 'pdf-iq for Android — the same tools, offline, on your phone',
     description:
       'The pdf-iq Android app runs {{appOfWeb}} tools on your device, offline, with share-sheet support and photos straight into a multi-page PDF. In testing, not yet on Play.',
-    ogSubject: 'Android app',
+    ogSubject: 'pdf-iq for Android',
     ogLine: 'The same tools, on your phone',
   },
   {

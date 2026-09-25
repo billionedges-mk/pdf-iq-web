@@ -668,6 +668,35 @@ exactly like the defect this section exists because of. Do not read a "still gra
   through a JS bundle, so a search of the pages cannot see it. That is the same failure as /app/ the time before, and
   the reason the count moved from 11 to 14 is that the list was the instrument rather than the search.
 
+- **The Android line on the purchase confirmation.** `/pro/buy/`'s `paid` card and `/account/`'s owned card gain one
+  sentence telling a buyer the app now honours what they just bought, and where to get it:
+
+  > **On Android:** install pdf-iq from Google Play and sign in with the same Google account. Pro is there too —
+  > nothing to enter, and nothing more to pay.
+
+  A plain text link, not a store badge: that is how the rest of the site links out, and it sidesteps the badge
+  question entirely. Two placements and no more — the confirmation is a moment, and `/account/` is where a buyer
+  comes back to. Not /pro/'s owned card, not the tool panels: an install prompt on every Pro surface turns the site
+  into an advert for the app. The Play-constraint sentence above stays exactly as it is.
+
+  **Unblocks when:** the same moment as the sentences above — vc18 **live on Play** — because the link and the claim
+  become true together. There is nothing to say before then: a purchase does not unlock the app, and there is no
+  listing to link to.
+
+  **Why it was nearly missed, which is the part worth keeping.** This entry did not exist until 25 September 2026,
+  and the card it belongs on did not exist until the 24th. **An inventory built for removals cannot notice an
+  addition**: every instrument here — the fourteen-place search, `verify:purchase-scope`, verify-retired — asks
+  whether a sentence that IS somewhere should still be there. None of them can ask whether a sentence that is nowhere
+  ought to exist. The agreement was made in the /app/ conversation and written down in neither record (CLAIMS 54).
+
+- **Re-compare the app icon.** `public/app-icon.svg` is a redraw of the Android launcher icon
+  (`app/src/main/res/drawable/ic_launcher_foreground.xml` and `ic_launcher_background.xml` in the app repo, copied
+  25 September 2026). Two copies of one mark in two repositories drift. No build-time check is possible — Cloudflare
+  has no sibling repo, and a check that silently skips is worse than none — so it is compared by eye against the
+  built app on the day the icon becomes public.
+
+  **Unblocks when:** the listing is live, which is the first moment the two are seen side by side by anyone else.
+
   **`npm run verify:purchase-scope` refuses a half-done flip**, so the list above is a convenience and not the
   safeguard. It builds free, Pro and selling, reads the HTML **and the bundles**, and holds the two sentences to each
   other: while the site says a purchase covers the web tools, every page naming the scope must also exclude the app;
@@ -675,6 +704,19 @@ exactly like the defect this section exists because of. Do not read a "still gra
   names all fourteen files including `assets/account-*.js`. In both states it asserts the Play constraint is still
   there, and that every mention of buying inside the app is one of the wordings it knows — a fifth phrasing fails
   loudly rather than passing unseen.
+
+## Play production access was refused, 25 September 2026
+
+"More testing required": testers not engaged during the closed test, and no updates showing feedback acted on.
+Another 14 days of closed testing before reapplying, so **roughly 9 October at the earliest**.
+
+**Nothing on the site changes.** Every Android sentence was written to under-promise — "it does not unlock anything
+in the Android app" is true of vc16 and stays true for as long as this takes (owner, 18 September 2026). They now
+hold for longer than anyone expected, which is what under-promising is for.
+
+**What it moves is §4's unblock, and only in date.** "vc18 live on Play" was chosen over "vc18 is built" or "vc18 is
+walked" because a buyer whose app has not updated gets nothing. A refusal that adds two weeks between built and
+listed is precisely the gap that condition was written for, arrived at from a direction nobody predicted.
 
 ## Sandbox measurement, for comparison (Preview f3c2dbf, 13 September 2026)
 

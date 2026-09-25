@@ -1,20 +1,30 @@
-    <div class="tool-head">
-      <h1 class="page-title">Android app</h1>
-      <p class="page-lede">{{appOfWebCap}} tools, on your phone, with no browser tab open.</p>
+    <!-- Someone arriving here wants the app. The page used to open with a title, a paragraph, and then a card
+         headed "Not publicly listed yet" — a disclaimer in third place, before anything showed what the thing is
+         (Maneesh, 25 September 2026). The state is still the third line, but as a fact in the hero rather than a
+         card of apology, and the icon arrives before any of it. -->
+    <div class="apphead">
+      <img class="apphead__icon" src="/app-icon.svg" width="96" height="96" alt="" />
+      <div class="apphead__words">
+        <h1 class="page-title">pdf-iq for Android</h1>
+        <p class="page-lede">{{appOfWebCap}} tools, on your phone, with no browser tab open.</p>
+        <p class="apphead__state">In closed testing on Google Play. When the public listing exists, the link will
+          be here — there are no store links until there is a store page to link to.</p>
+      </div>
     </div>
 
-    <p style="margin: 14px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--ink-78); max-width: 660px;">
-      This website already works offline on a phone. The app exists for the things a browser cannot
-      do: opening a PDF straight from a WhatsApp message, appearing in the Android share sheet, and
-      photographing several pages in a row &mdash; each becomes a page, in the order you add them.</p>
-
-    <div class="card card--flag" style="margin-top: 22px;">
-      <p class="kicker">Not publicly listed yet</p>
-      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">The app is in testing and
-        does not have a public Play Store listing at the time of writing. There are no store links
-        here yet, deliberately — we would rather show nothing than send you to a page that does not
-        exist.</p>
-    </div>
+    <section class="section" aria-label="What the app is for">
+      <h2 class="section__title">What a browser cannot do</h2>
+      <p class="section__lede">This website already works offline on a phone, and the tools are the same tools.
+        The app exists for three things a browser has no way to reach.</p>
+      <ul class="appdoes">
+        <li><strong>Opens a PDF straight from a WhatsApp message.</strong> No saving it somewhere first and
+          hunting for it afterwards.</li>
+        <li><strong>Appears in the Android share sheet.</strong> Share from any app and pdf-iq is in the list,
+          beside everything else.</li>
+        <li><strong>Photographs several pages in a row.</strong> Each becomes a page, in the order you add them
+          — a document, not a folder of pictures.</li>
+      </ul>
+    </section>
 
     <section class="section" aria-label="Price">
       <h2 class="section__title">Price</h2>
@@ -26,7 +36,7 @@
           <ul style="margin: 12px 0 0; padding-left: 18px; font-size: 14.5px; line-height: 1.6; color: var(--ink-78);">
             <!--APP_FEATURES-->
           </ul>
-          <p class="price__sub" style="margin-top: 14px;">No store link yet &mdash; the app is not publicly listed.</p>
+          <p class="price__sub" style="margin-top: 14px;">No store link yet &mdash; see the top of this page.</p>
         </div>
         <!--NOSALE--><div class="price">
           <p class="kicker">Pro &mdash; not yet</p>

@@ -234,8 +234,12 @@ worded so that it stays true if the measurement comes back badly.
 - ~~**`support@pdf-iq.com` must exist.**~~ Closed. Created before the nameserver move and tested in
   both directions afterwards — which is also how the MX carry-across was confirmed, the one step in
   the DNS sequence that fails silently.
-- **`/app` store buttons are inert placeholders**, clearly labelled, because the app has no public
-  Play listing yet. Replace with the real link when it is published.
+- ~~**`/app` store buttons are inert placeholders**, clearly labelled, because the app has no public
+  Play listing yet. Replace with the real link when it is published.~~ **Wrong since the page was rewritten
+  (found 25 September 2026): there are no store buttons on /app/.** There is a line saying there deliberately are
+  none, which is a different thing and needs no replacing — when the listing exists, a link appears where that line
+  is. The entry is struck rather than deleted because a record that described the page a version ago is how a
+  replacement gets made for a placeholder nobody would have found.
 - **Language models are committed to the repo** (~49 MB across six files). The alternative — a
   build-time fetch — makes the build depend on a third-party CDN staying up, which is a worse
   failure mode for a site whose whole argument is self-containment. Revisit only if repo size

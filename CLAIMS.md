@@ -1880,6 +1880,12 @@ expired.
 6. Prefer a check to a record wherever the record is a list of places. The inventory was wrong twice — once for a
    placeholder, once for a file that is not a page — so what enforces the flip now reads the built output, and the list
    is a convenience.
+7. **An inventory built for removals cannot notice an addition** (25 September 2026). Everything guarding the flip —
+   the fourteen-place search, verify-purchase-scope, verify-retired — asks whether a sentence that IS somewhere should
+   still be there. A line agreed for the same day but never written, an Android download mention on a purchase
+   confirmation, was in no record and no check: the card it belonged on did not exist when the inventory was built,
+   and nothing added it afterwards. So when a deferral is an addition rather than a removal, the record is the ONLY
+   instrument, and point 4 above stops being a nicety.
 
 ### 55. "Done" is a claim about the reporter, not about the world
 

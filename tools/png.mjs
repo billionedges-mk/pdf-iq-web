@@ -145,6 +145,35 @@ export class Bitmap {
     }
   }
 
+  /**
+   * The Android launcher icon: one navy mass cut on the anti-diagonal, with amber showing through the cut.
+   *
+   * Not `seam` above, which is the site's own mark — a square split on the OTHER diagonal into two solid halves.
+   * They are siblings and they are not the same drawing, and a share card that used one for the other would be
+   * wrong in a way nobody would question.
+   *
+   * Geometry from public/app-icon.svg: the 108dp canvas cropped to its centre 72, so a pixel's place in the
+   * original is 18 + its fraction of 72, and the cut is the band 105.578 < x+y < 110.422.
+   */
+  appIcon(x, y, size, inkColour, amberColour) {
+    const amber = hex(amberColour);
+    const ink = hex(inkColour);
+    // The amber rounded square is drawn first and then used as its own mask: the corner curve exists once, in
+    // roundRect, rather than being implemented a second time here to decide what is inside it.
+    this.roundRect(x, y, size, size, (size * 16) / 72, amberColour);
+    const k = 72 / size;
+    for (let v = 0; v < size; v++) {
+      for (let u = 0; u < size; u++) {
+        const px = Math.round(x) + u, py = Math.round(y) + v;
+        if (px < 0 || py < 0 || px >= this.w || py >= this.h) continue;
+        const i = (py * this.w + px) * 3;
+        if (this.px[i] !== amber[0] || this.px[i + 1] !== amber[1] || this.px[i + 2] !== amber[2]) continue;
+        const sum = 36 + (u + 0.5) * k + (v + 0.5) * k;
+        if (sum <= 105.578 || sum >= 110.422) this.set(px, py, ink);
+      }
+    }
+  }
+
   toPng() {
     const raw = Buffer.alloc(this.h * (this.w * 3 + 1));
     for (let y = 0; y < this.h; y++) {

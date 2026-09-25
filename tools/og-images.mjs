@@ -62,6 +62,12 @@ const attr = (tag, name) => {
 
 /** The route's mark, at `size`, top-left at `x,y`. Throws for a slug with no mark. */
 function mark(bmp, slug, x, y, size, p) {
+  // /app/ is the one route whose subject is a product someone installs, so its card carries the product's own
+  // icon rather than a drawn handset (owner, 25 September 2026). Its shapes are two triangles and a mask, which
+  // the rasteriser below — rects and circles — cannot express; it is drawn by png.mjs instead.
+  // Its own navy, not the card's ink: someone holding this card beside the Play listing is looking at one
+  // product's icon, and 'close to the site palette' is the wrong kind of right. The amber is the same value.
+  if (slug === 'app') return bmp.appIcon(x, y, size, '#1E2A38', p.amber);
   const shapes = ICONS[slug];
   if (!shapes) {
     throw new Error(
