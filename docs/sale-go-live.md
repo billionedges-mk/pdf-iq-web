@@ -712,6 +712,15 @@ exactly like the defect this section exists because of. Do not read a "still gra
   is one too many, the way to collapse it is to derive the rasteriser's constants from the SVG — or to delete the SVG
   and let the rasteriser be the only copy, accepting that the comparable artefact is then a page of arithmetic.
 
+  **Decided 25 September 2026, not built: derive the rasteriser's constants from the SVG.** It keeps a comparable
+  artefact — someone can open the SVG and see the mark — and turns three copies into two with a real dependency
+  between them. Deleting the SVG instead would leave the only readable form of the mark as arithmetic in a build
+  tool, which is worse to inherit (owner).
+
+  **Unblocks when:** anything touches either copy — the app side widens the separation, the share card's drawing
+  changes, or the listing's re-compare finds a difference. It is the kind of change to make when something forces
+  it, and nothing does: three artefacts that currently agree, with the disagreement named above.
+
   **`npm run verify:purchase-scope` refuses a half-done flip**, so the list above is a convenience and not the
   safeguard. It builds free, Pro and selling, reads the HTML **and the bundles**, and holds the two sentences to each
   other: while the site says a purchase covers the web tools, every page naming the scope must also exclude the app;
