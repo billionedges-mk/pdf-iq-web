@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-
 /**
  * One mark per tool.
  *
@@ -143,29 +141,22 @@ export const ICONS = {
     <rect x="9.75" y="9" width="4.5" height="12.5" rx="1.5" fill="currentColor"/>
     <rect x="17" y="2.5" width="4.5" height="19" rx="1.5" class="tm-a"/>`,
 
-  // A handset. Kept, though the app tile now uses the launcher icon (below): it is the fallback if that file
-  // ever goes, and deleting it would make icon('app') throw rather than draw something.
+  // A handset.
   app: `
     <rect x="6" y="2.5" width="12" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/>
     <rect x="9.5" y="16" width="5" height="2.6" rx="1.3" class="tm-a"/>`,
 };
 
 /**
- * The app tile wears the app's own launcher icon rather than a drawn handset: the tile is the one card on the
- * homepage that stands for a product somebody installs, and a category glyph makes it look like a seventh tool.
+ * The app tile wore the app's own launcher icon for a day (25 September 2026) and does not any more.
  *
- * Read from public/app-icon.svg, the same file the /app/ hero uses, so this repo holds one copy of a mark that
- * already exists twice across two repositories. Inlined rather than linked so the grid needs no extra request —
- * at most once per page, which is all the homepage does (the file carries a clipPath id).
+ * At 24px the amber seam is about one pixel: the mark becomes a dark square, which is less informative than the
+ * handset it replaced, and at every size it competes with the site's own mark rather than sitting beside it. The
+ * drawing is in public/app-icon.svg and on /app/'s share card, where it is 200px and alone.
  */
-const APP_ICON = readFileSync(new URL('../public/app-icon.svg', import.meta.url), 'utf8')
-  .replace(/<!--[\s\S]*?-->/g, '')
-  .replace(/^\s*<svg [^>]*>/, '<svg xmlns="http://www.w3.org/2000/svg" class="toolcard__mark toolcard__mark--icon" viewBox="18 18 72 72" width="24" height="24" aria-hidden="true" focusable="false">')
-  .trim();
 
 /** The inline SVG for one slug. Throws rather than rendering a blank card. */
 export function icon(slug) {
-  if (slug === 'app') return APP_ICON;
   const shapes = ICONS[slug];
   if (!shapes) {
     throw new Error(`no icon for '${slug}' — add one to tools/icons.mjs; a card must not ship without a mark`);

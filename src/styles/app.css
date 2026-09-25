@@ -321,17 +321,11 @@ input, button, select, textarea { font-family: inherit; }
 /* The /app/ hero: the app's own icon, then what it is, then where it is. The icon is the launcher icon as a
    phone renders it (public/app-icon.svg), not the site's mark — they are siblings, not the same drawing. */
 .apphead { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; }
-.apphead__icon { width: 96px; height: 96px; flex: 0 0 auto; }
 .apphead__words { flex: 1 1 320px; min-width: 0; }
 .apphead__state { margin: 12px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-78); max-width: 620px; }
-@media (max-width: 520px) { .apphead__icon { width: 72px; height: 72px; } }
-
 .appdoes { margin: 14px 0 0; padding-left: 20px; font-size: 15.5px; line-height: 1.62; color: var(--ink-78); max-width: 680px; }
 .appdoes li + li { margin-top: 8px; }
 .appdoes strong { color: var(--ink); font-weight: 600; }
-
-/* The app tile's mark is a filled product icon among line-art glyphs, so it carries its own corner radius. */
-.toolcard__mark--icon { border-radius: 5px; }
 
 /* The target run's attempts, written between the controls and the answer (src/pro/compress-target-ui.ts).
    Tabular figures so the running clock does not shuffle the line as it ticks. */
