@@ -705,21 +705,32 @@ exactly like the defect this section exists because of. Do not read a "still gra
   - `public/app-icon.svg` — **nothing on the site renders it.** It is the human-readable reference, and that is a
     new way for it to go stale: nobody will notice it is wrong, because nobody sees it. An unrendered file whose only
     reader is the check that reads it is the shape this document already distrusts.
-  - `Bitmap.appIcon()` in `tools/png.mjs` — the copy that actually draws, on /app/'s share card, from its own
-    constants. This is what a visitor sees, and it is **not** the file above.
+  - `Bitmap.appIcon()` in `tools/png.mjs` — what actually draws, on /app/'s share card. It no longer holds
+    constants of its own: `appIconGeometry()` in tools/og-images.mjs parses the crop, the corner radius and the two
+    hypotenuses out of the SVG and hands them over, refusing to draw if the file is not the shape it reads. So the
+    unrendered reference now has one reader that fails loudly, which is most of what made it dangerous.
 
   So the re-compare is three artefacts, not two: the app repo's XML, the SVG, and the rasteriser's numbers. If that
   is one too many, the way to collapse it is to derive the rasteriser's constants from the SVG — or to delete the SVG
   and let the rasteriser be the only copy, accepting that the comparable artefact is then a page of arithmetic.
 
-  **Decided 25 September 2026, not built: derive the rasteriser's constants from the SVG.** It keeps a comparable
+  **Decided 25 September 2026, applied on the 26th: derive the rasteriser's constants from the SVG.** It keeps a comparable
   artefact — someone can open the SVG and see the mark — and turns three copies into two with a real dependency
   between them. Deleting the SVG instead would leave the only readable form of the mark as arithmetic in a build
   tool, which is worse to inherit (owner).
 
-  **Unblocks when:** anything touches either copy — the app side widens the separation, the share card's drawing
-  changes, or the listing's re-compare finds a difference. It is the kind of change to make when something forces
-  it, and nothing does: three artefacts that currently agree, with the disagreement named above.
+  **The condition fired the next morning.** The app side widened the cut — 3.43dp of perpendicular separation to
+  6.85, doubled — and applying it by hand would have meant editing the same two numbers in two files on the same
+  afternoon. That is what the deferral was waiting for. Measured after: the share card's amber chord is 27px at a
+  200px mark against 26.9 predicted from the new paths.
+
+  **What is left to compare on listing day is two artefacts, not three:** the app repo's XML and this site's
+  `public/app-icon.svg`. Everything the site draws comes from the second.
+
+  **And their finding, which outranks the widening.** No seam width makes the mark read as two masses pulled apart
+  at web sizes — the masses bleed past the mask by design, so it is a dark square with an amber diagonal however
+  wide the cut (app session, 26 September, recorded in their drawable). The icon therefore stays off the /app/ hero
+  and off the homepage tile; a wider cut is not a reason to put it back.
 
   **`npm run verify:purchase-scope` refuses a half-done flip**, so the list above is a convenience and not the
   safeguard. It builds free, Pro and selling, reads the HTML **and the bundles**, and holds the two sentences to each

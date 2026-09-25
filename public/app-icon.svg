@@ -1,18 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" role="img" aria-label="The pdf-iq Android app icon">
   <!--
-    The Android launcher icon, as a phone renders it. Redrawn from the app repo, 25 September 2026:
+    The Android launcher icon, as a phone renders it. Redrawn from the app repo, 25 September 2026; seam widened
+    from their 26 September drawable:
       app/src/main/res/drawable/ic_launcher_background.xml  (amber #C87A1E behind everything)
       app/src/main/res/drawable/ic_launcher_foreground.xml  ("the seam", direction 8c)
-    Two copies of one mark in two repositories drift; docs/sale-go-live.md §4 carries the re-compare,
-    for the day the listing makes the icon public. There is no build-time check: Cloudflare has no
-    sibling repo, and a check that silently skips is worse than none.
 
-    The 108dp canvas is cropped to the centre 72 — what survives the mask on a phone — and clipped
-    with a 22% corner radius, which is how Play renders a listing icon and how a squircle launcher
-    mask reads. Drawn first as a cubic near-circle: at 96px it read as a badge, and the cut stopped
-    short of the corners instead of running through them. The two navy paths are
-    the source's own coordinates, oversized on purpose so they bleed past every mask; the only thing
-    that must survive is the cut, and the cut runs through the centre.
+    THIS FILE IS THE SOURCE OF THE GEOMETRY. tools/og-images.mjs parses the two path d attributes and the clip
+    radius out of it and hands them to Bitmap.appIcon, so the share card cannot drift from the drawing. Nothing on
+    the site renders the file itself — see docs/sale-go-live.md §4 — so this is the copy to change, and the one to
+    compare against the app repo on listing day.
+
+    The 108dp canvas is cropped to the centre 72 — what survives the mask on a phone — and clipped at a 22% corner
+    radius, which is how Play renders a listing icon. Drawn first as a cubic near-circle: at 96px it read as a badge
+    and the cut stopped short of the corners.
+
+    THE CUT, IN NUMBERS. The two navy paths are the source's own coordinates, oversized on purpose so they bleed
+    past every mask; each hypotenuse is a line x+y = c, and the amber shows between them.
+
+      26 Sep: 103.156 < x+y < 112.844 — 9.688 along the axis, 6.85dp perpendicular, 3.43dp inset per side.
+      25 Sep: 105.578 < x+y < 110.422 — 4.844 along the axis, 3.43dp perpendicular, 1.71dp inset per side.
+
+    State both, always. The app's own note said "Amber is 1.71dp of separation", meaning the inset PER SIDE, and
+    anyone widening from that number would have moved half what they intended (app session, 26 September).
+
+    KNOWN LIMIT, recorded in their drawable and confirmed here: no seam width makes this read as two masses pulled
+    apart at web sizes. The masses' outer edges bleed past the mask by design, so what a reader sees is a dark
+    square with an amber diagonal however wide the cut. That is why the icon is off the /app/ hero and off the
+    homepage tile, and why widening it does not put them back.
   -->
   <defs>
     <clipPath id="app-icon-squircle">
@@ -21,7 +35,7 @@
   </defs>
   <g clip-path="url(#app-icon-squircle)">
     <rect x="18" y="18" width="72" height="72" fill="#C87A1E" />
-    <path fill="#1E2A38" d="M-109.211,-109.211L214.789,-109.211L-109.211,214.789Z" />
-    <path fill="#1E2A38" d="M217.211,-106.789L217.211,217.211L-106.789,217.211Z" />
+    <path fill="#1E2A38" d="M-109.211,-109.211L212.367,-109.211L-109.211,212.367Z" />
+    <path fill="#1E2A38" d="M217.211,-104.367L217.211,217.211L-104.367,217.211Z" />
   </g>
 </svg>

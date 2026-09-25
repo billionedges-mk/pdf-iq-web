@@ -24,6 +24,7 @@
  *     nothing. Every check we had passed. Only opening one would have caught it, so this
  *     measures the thing opening it would have told you: how much of the card is not paper.
  */
+import { readFileSync } from 'node:fs';
 import { Bitmap } from './png.mjs';
 import { ICONS } from './icons.mjs';
 import { palette } from './og.mjs';
@@ -61,13 +62,41 @@ const attr = (tag, name) => {
 };
 
 /** The route's mark, at `size`, top-left at `x,y`. Throws for a slug with no mark. */
+/**
+ * The app icon's geometry, read out of public/app-icon.svg rather than repeated here.
+ *
+ * Each navy path is a triangle whose hypotenuse is a line x+y = c; the amber cut is the band between the two. Two
+ * of each triangle's three corners sit on its hypotenuse, so the constant is the one that appears twice — and if
+ * they ever disagree, the drawing is not the shape this code assumes and it says so rather than drawing something
+ * plausible.
+ */
+function appIconGeometry() {
+  const svg = readFileSync(join(ROOT, 'public/app-icon.svg'), 'utf8');
+  const box = /viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/.exec(svg);
+  const rx = /<rect[^>]*\brx="([\d.]+)"/.exec(svg);
+  const paths = [...svg.matchAll(/<path[^>]*\bd="M([^"]+)"/g)].map((m) => m[1]);
+  if (!box || !rx || paths.length !== 2) {
+    throw new Error('public/app-icon.svg is not the shape tools/og-images.mjs reads: it needs a viewBox, a clip rect with rx, and two navy paths');
+  }
+  const sums = (d) => d.split('L').map((pt) => pt.replace(/Z$/, '').split(',').map(Number)).map(([x, y]) => +(x + y).toFixed(3));
+  const edge = (d, pick) => {
+    const s = sums(d);
+    const c = pick(...s);
+    if (s.filter((v) => v === c).length !== 2) throw new Error(`a navy path in app-icon.svg has no two corners on one x+y line: ${s}`);
+    return c;
+  };
+  const [w, h] = [+box[3], +box[4]];
+  if (w !== h) throw new Error('app-icon.svg is not square');
+  return { view: { x: +box[1], y: +box[2], size: w }, radius: +rx[1], low: edge(paths[0], Math.max), high: edge(paths[1], Math.min) };
+}
+
 function mark(bmp, slug, x, y, size, p) {
   // /app/ is the one route whose subject is a product someone installs, so its card carries the product's own
   // icon rather than a drawn handset (owner, 25 September 2026). Its shapes are two triangles and a mask, which
   // the rasteriser below — rects and circles — cannot express; it is drawn by png.mjs instead.
   // Its own navy, not the card's ink: someone holding this card beside the Play listing is looking at one
   // product's icon, and 'close to the site palette' is the wrong kind of right. The amber is the same value.
-  if (slug === 'app') return bmp.appIcon(x, y, size, '#1E2A38', p.amber);
+  if (slug === 'app') return bmp.appIcon(x, y, size, '#1E2A38', p.amber, appIconGeometry());
   const shapes = ICONS[slug];
   if (!shapes) {
     throw new Error(

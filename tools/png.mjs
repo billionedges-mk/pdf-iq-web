@@ -152,24 +152,28 @@ export class Bitmap {
    * They are siblings and they are not the same drawing, and a share card that used one for the other would be
    * wrong in a way nobody would question.
    *
-   * Geometry from public/app-icon.svg: the 108dp canvas cropped to its centre 72, so a pixel's place in the
-   * original is 18 + its fraction of 72, and the cut is the band 105.578 < x+y < 110.422.
+   * `geom` comes from public/app-icon.svg, parsed by tools/og-images.mjs — never written out here. The numbers
+   * lived in both places for a day, and the app side then widened the cut, which would have meant hand-editing the
+   * same two constants in two files on the same afternoon (decided 25 September, applied 26th when that happened).
+   * It carries the crop (the 108dp canvas's visible centre), the corner radius, and the band `low < x+y < high`
+   * where the amber shows.
    */
-  appIcon(x, y, size, inkColour, amberColour) {
+  appIcon(x, y, size, inkColour, amberColour, geom) {
+    const { view, radius, low, high } = geom;
     const amber = hex(amberColour);
     const ink = hex(inkColour);
     // The amber rounded square is drawn first and then used as its own mask: the corner curve exists once, in
     // roundRect, rather than being implemented a second time here to decide what is inside it.
-    this.roundRect(x, y, size, size, (size * 16) / 72, amberColour);
-    const k = 72 / size;
+    this.roundRect(x, y, size, size, (size * radius) / view.size, amberColour);
+    const k = view.size / size;
     for (let v = 0; v < size; v++) {
       for (let u = 0; u < size; u++) {
         const px = Math.round(x) + u, py = Math.round(y) + v;
         if (px < 0 || py < 0 || px >= this.w || py >= this.h) continue;
         const i = (py * this.w + px) * 3;
         if (this.px[i] !== amber[0] || this.px[i + 1] !== amber[1] || this.px[i + 2] !== amber[2]) continue;
-        const sum = 36 + (u + 0.5) * k + (v + 0.5) * k;
-        if (sum <= 105.578 || sum >= 110.422) this.set(px, py, ink);
+        const sum = view.x + view.y + (u + 0.5) * k + (v + 0.5) * k;
+        if (sum <= low || sum >= high) this.set(px, py, ink);
       }
     }
   }
