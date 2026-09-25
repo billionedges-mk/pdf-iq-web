@@ -2132,6 +2132,25 @@ for as long as nobody adds a case that falls between them.
    decide what the answer should be, then make there be one detector.
 3. The tell that two exist: they were written at different times, for different needs, and nothing forces them to
    agree. Grep for the second copy whenever you write a rule about "which pages are X".
+4. **Three detectors, and the one under review was the least load-bearing** (26 September 2026). The app's launcher
+   mark ended up in three places at once: the XML in the app repo, `public/app-icon.svg` here, and the constants
+   inside `Bitmap.appIcon()` that actually rasterised /app/'s share card. The flip-day re-compare — the whole
+   safeguard — was aimed at the SVG, which nothing on the site rendered. It would have compared a file nobody saw
+   against the original, passed, and left the drawing a visitor actually saw unchecked in a third place. **When one
+   fact has several copies, the one a process was pointed at is not automatically the one that acts**; ask which copy
+   produces what a person sees, and point the check there.
+
+   **The cure, which is the part worth copying.** Not "keep the three in step": the rasteriser now *reads* the SVG —
+   `appIconGeometry()` parses the crop, the corner radius and both hypotenuses out of it and refuses to draw when
+   the file is not the shape it expects. Three artefacts became two, and the two that remain have a real dependency
+   rather than an agreement someone maintains. It also cured the SVG's own hazard from the other side: an unrendered
+   reference that nobody would notice going stale now has one reader that fails loudly.
+
+   **Every instance of this claim has ended the same way** — the price detectors ended with one exported
+   `SELLING_SURFACE` imported by both; this one ends with one drawing parsed by the only thing that draws it. The
+   shapes differ, the resolution does not: **stop transcribing the fact beside its user and make the user read it.**
+   The prompt was the deferral firing: the app side widened the cut, and applying it by hand would have meant editing
+   the same two numbers in two files on one afternoon.
 
 ### 62. "Everything we own is green" is not "it works"
 
