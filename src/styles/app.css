@@ -318,6 +318,16 @@ input, button, select, textarea { font-family: inherit; }
    stronger than the strip because it is the page's own subject rather than an aside about another tool, and it sits
    above the drop zone where the lede would otherwise be the last thing read. Still type, not a card: this is a
    sentence, not an offer panel. */
+/* ---------------------------------------------------------------- the way in
+   A reading page with no tabular content gets the other half of the pattern: four answers to what a reader arrives
+   asking, each linking to the clause that governs. It is deliberately not a summary — the note at its foot says so,
+   because a box that looked like a substitute for the terms would be worse than no box (26 September 2026). */
+.answer { margin: 22px 0 26px; background: var(--panel); }
+.answer__list { margin: 12px 0 0; padding-left: 20px; font-size: 15.5px; line-height: 1.6; color: var(--ink-78); }
+.answer__list li + li { margin-top: 9px; }
+.answer__list strong { color: var(--ink); font-weight: 600; }
+.answer__note { margin: 14px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--soft); }
+
 /* ---------------------------------------------------------------- facts, as a table
    Called .datatable, not .facts: .facts was already a <dl> grid further down this stylesheet, and a table wearing it
    inherited `display: grid` — thead and tbody became two grid items side by side, so the column headings sat in a
@@ -384,6 +394,7 @@ input, button, select, textarea { font-family: inherit; }
    it did not read as its own element (26 September 2026). The second defect in this section from an existing rule
    quietly winning; the first was .facts. Anything added to a .prose page gets checked against .prose p first. */
 .prose .bignum { margin: 26px 0 0; }
+.prose .answer { margin: 22px 0 26px; }
 .prose .bignum__say { margin: 8px 0 18px; }
 
 /* On /app/, the free app's price is not the headline. It was set at 38px in the mono face — the same size as the
