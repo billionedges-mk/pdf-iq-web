@@ -113,7 +113,8 @@ export const PAGES = [
     ogLine: 'Your files never leave your device',
   },
   {
-    slug: 'app', name: 'Android App', entry: null,
+    // The hero's screen switcher (src/entries/app.ts). The only page script on an information page.
+    slug: 'app', name: 'Android App', entry: 'app',
     title: 'pdf-iq for Android — the same tools, offline, on your phone',
     description:
       'The pdf-iq Android app runs {{appOfWeb}} tools on your device, offline, with share-sheet support and photos straight into a multi-page PDF. In testing, not yet on Play.',

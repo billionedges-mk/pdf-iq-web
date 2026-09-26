@@ -79,7 +79,8 @@ the work is done.
 63. [A page can describe a mechanism the system does not have, and every word of it be true](#63-a-page-can-describe-a-mechanism-the-system-does-not-have-and-every-word-of-it-be-true)  
 64. [The happy path is the one nobody writes copy for, and the only one everybody sees](#64-the-happy-path-is-the-one-nobody-writes-copy-for-and-the-only-one-everybody-sees)  
 65. [A mechanism you remove was doing more jobs than the one you removed it for](#65-a-mechanism-you-remove-was-doing-more-jobs-than-the-one-you-removed-it-for)  
-66. [A number that supports what you hoped for is the one to distrust, and precision is not the same as aim](#66-a-number-that-supports-what-you-hoped-for-is-the-one-to-distrust-and-precision-is-not-the-same-as-aim)
+66. [A number that supports what you hoped for is the one to distrust, and precision is not the same as aim](#66-a-number-that-supports-what-you-hoped-for-is-the-one-to-distrust-and-precision-is-not-the-same-as-aim)  
+67. [A design delivered as a working page brings its own dependencies, and they are invisible in the thing you are reviewing](#67-a-design-delivered-as-a-working-page-brings-its-own-dependencies-and-they-are-invisible-in-the-thing-you-are-reviewing)
 
 <!-- /index -->
 
@@ -2341,3 +2342,54 @@ page and said the headers were in a different place from the rows.
 defined, twice, for two different components. Its new form (a bare class with two base rules outside any media
 query) found a second instance on its first run, `.home-proof__dot`, written once for the hero's proof line and once
 for the readout. See [check 61].
+
+### 67. A design delivered as a working page brings its own dependencies, and they are invisible in the thing you are reviewing
+
+A redesign of /app/ arrived on 27 September 2026 as a single 1.8 MB HTML file: nav, hero, every section, real
+screenshots, the lot. It rendered. The question asked of it was whether the layout was better than what shipped
+that morning. It was.
+
+What the file also contained, in its head:
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+and forty-five `@font-face` rules across two families, each still carrying Google Fonts' own `unicode-range`
+comments. The page they were attached to is the one whose footer prints **"0 bytes sent · 0 third-party requests"**.
+
+That is not a style disagreement. It is the footer lying about the page it is in, on the site whose whole argument
+is that the counter can be checked. And it would have shipped, because **nobody reviewing a design reads its link
+tags**. What you approve is the layout; what you would ship is the file.
+
+The sharp part is that the two families were "IBM Plex Mono" and "Inter Tight" — the two this site already
+serves itself, as six subsetted woff2 files under `/fonts/` that `tools/build.mjs` writes the `@font-face` rules
+for. Rendered side by side, the design and a faithful build of it would have looked identical. The entire
+difference was that six same-origin files became seventeen cross-origin ones, and it lived in the single part of
+the artefact a design review never looks at.
+
+**The check, for any design that arrives as something that runs:**
+
+1. **Read the head before the body.** `link`, `script`, `@font-face`, `@import`, `url()` in CSS, anything with a
+   scheme in it. Grep the file for `http` before forming an opinion about the layout.
+2. **A bundle that inlines its assets still tells you what it wanted.** These `@font-face` rules pointed at bundled
+   ids, so the bundle itself made few requests — but the preconnect, the unicode-ranges and the family names all
+   said plainly where the CSS came from and what a faithful build of it would do. The build is what to review, not
+   the bundle's own request count.
+3. **Write down the claims the page must keep true before reading the design**, then walk the design against that
+   list. Here the list was short and already on disk — the footer counter, the price tokens, the sale states, what
+   a purchase covers — and it found the other three blockers without looking at the page at all: a hardcoded
+   `$14.99` in three places, "seven" in three and "Four things" in one, where the live page generates all of them;
+   no `SALE`/`NOSALE` blocks anywhere, so it built one of the two states the site must build; and a framework
+   template (`{{ s.n }}`, `{{ s.img }}`) on a site whose token substitution throws on any token it does not know.
+4. **This is [check 22] from the other side.** There, a design bundle carries claims that are not true of the build,
+   and the fix is to read every claim. Here the claims were right — most sentences were verbatim from the live page
+   — and what had to be read was the machinery. A design file is two documents: the one you are shown and the one
+   that runs. Review both, or you have reviewed neither.
+
+**And what the screenshots brought, which was not machinery at all.** Four real captures came with the design. One
+of them, the Read a scan result, shows the app's own paywall saying "Pro is sold at pdf-iq.com. Open it in your
+browser and sign in with the same Google account" — on a page whose price card says a web purchase "does not unlock
+anything in this app". Both cannot be true, and it is a claim about what money buys. It was not shipped; the other
+three were. The contradiction has been recorded in TECH_DEBT since 13 September ("The purchase page says 'web tools
+only' until the app honours a web purchase") and nothing had put the two sentences on one screen until a screenshot
+did. [check 19] with a picture instead of a sentence: a decision on one surface expires a claim published on
+another, and a capture of that surface is evidence the same way a quotation is.

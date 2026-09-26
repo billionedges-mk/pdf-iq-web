@@ -2,12 +2,11 @@
          headed "Not publicly listed yet" — a disclaimer in third place, before anything showed what the thing is
          (Maneesh, 25 September 2026). The state is still the third line, but as a fact in the hero rather than a
          card of apology, and the icon arrives before any of it. -->
-    <!-- No icon in this hero, and the reasoning behind that is now out of date rather than wrong. It was about the
-         OLD mark: one navy mass cut on the anti-diagonal, whose 4.6px gap read as a stripe at 96px and as a dark
-         square at 24px, and which sat 150px from a nav mark it too closely resembled. That drawing is retired. The
-         mark here now is a folded page, shared with the app and with the nav, and none of those measurements
-         describe it. Both this hero and the homepage tile are worth re-testing by rendering before either stays
-         empty on the strength of an argument about a different shape (26 September 2026). -->
+    <!-- One screenshot became three, from a design delivered as a working page (27 September 2026). What that
+         file also brought, invisibly, was a preconnect to fonts.googleapis.com and forty-five @font-face rules
+         across two families — on the page whose footer prints "0 bytes sent · 0 third-party requests". The
+         families were "IBM Plex Mono" and "Inter Tight": the two this site already serves itself, subsetted, from
+         /fonts/. Nothing added here loads anything from another origin. CLAIMS 67. -->
     <div class="apphead">
       <div class="apphead__words">
         <p class="apphead__badge">
@@ -17,27 +16,71 @@
         <p class="page-lede">{{appOfWebCap}} tools, on your phone, with no browser tab open.</p>
         <p class="apphead__state">In closed testing on Google Play. When the public listing exists, the link will
           be here — there are no store links until there is a store page to link to.</p>
+        <!-- Hidden until the script runs: tabs that do not switch are worse than no tabs. Without JavaScript this
+             page shows the first screenshot and nothing that looks clickable, which is where it was yesterday. -->
+        <div class="screens" data-screens hidden>
+          <p class="screens__hint" id="screens-label">Screens from the app</p>
+          <div class="screens__tabs" role="tablist" aria-labelledby="screens-label">
+            <button type="button" class="screens__tab" role="tab" id="screen-tab-0" aria-controls="screen-panel-0" aria-selected="true">
+              <span class="screens__n" aria-hidden="true">01</span>
+              <span class="screens__name">Compress</span>
+              <span class="screens__cap">Three settings, in plain words</span>
+            </button>
+            <button type="button" class="screens__tab" role="tab" id="screen-tab-1" aria-controls="screen-panel-1" aria-selected="false">
+              <span class="screens__n" aria-hidden="true">02</span>
+              <span class="screens__name">Compressed</span>
+              <span class="screens__cap">24.2 MB became 6.3 MB</span>
+            </button>
+            <button type="button" class="screens__tab" role="tab" id="screen-tab-2" aria-controls="screen-panel-2" aria-selected="false">
+              <span class="screens__n" aria-hidden="true">03</span>
+              <span class="screens__name">Photos to PDF</span>
+              <span class="screens__cap">Pages in the order you add them</span>
+            </button>
+          </div>
+        </div>
       </div>
-      <!-- Taken on the tablet, 1440x2304, box-averaged to 720 wide before publishing: the page shows it at about a
-           third of that, and the full-size original had the Recent list's thumbnails of real photographed paper
-           legible enough to zoom into. -->
-      <img class="apphead__shot" src="/app-home.png" width="720" height="553"
-           alt="The top of the app's home screen: Photos to PDF across the top, then Compress, Pages,
-                Merge &amp; split and Read a scan." />
+      <!-- Taken on the tablet at 1440x2304, cropped to the top of the screen, then
+           box-averaged to 720 wide. The documents in them are made up; nothing else is changed. -->
+      <figure class="appframe">
+        <div class="appframe__screen">
+          <div id="screen-panel-0" role="tabpanel" aria-labelledby="screen-tab-0">
+            <img class="appframe__shot" src="/app-compress.png" width="720" height="431"
+                 alt="Compress in the app: site-survey.pdf, 14 pages, 24.2 MB, above three settings —
+                      Smallest, Balanced and Gentle — each with a sentence saying what it costs." />
+          </div>
+          <div id="screen-panel-1" role="tabpanel" aria-labelledby="screen-tab-1" hidden>
+            <img class="appframe__shot" src="/app-compressed.png" width="720" height="431" loading="lazy"
+                 alt="The result: before 24.2 MB, after 6.3 MB, 74% smaller, 17.8 MB saved, and the file
+                      it wrote — 14 pages, 6.3 MB." />
+          </div>
+          <div id="screen-panel-2" role="tabpanel" aria-labelledby="screen-tab-2" hidden>
+            <img class="appframe__shot" src="/app-photos-to-pdf.png" width="720" height="431" loading="lazy"
+                 alt="Photos to PDF in the app: three photographed pages as numbered thumbnails, with
+                      &ldquo;3 photos &middot; 3 pages&rdquo; and &ldquo;Hold to reorder&rdquo;." />
+          </div>
+        </div>
+        <figcaption class="appframe__cap">Real screenshots, cropped to the top of each screen. Nothing inside the frame
+          is changed.</figcaption>
+      </figure>
     </div>
 
     <section class="section" aria-label="What the app is for">
       <h2 class="section__title">What a browser cannot do</h2>
       <p class="section__lede">This website already works offline on a phone, and the tools are the same tools.
         The app exists for three things a browser has no way to reach.</p>
-      <ul class="appdoes">
-        <li><strong>Opens a PDF straight from a WhatsApp message.</strong> No saving it somewhere first and
-          hunting for it afterwards.</li>
-        <li><strong>Appears in the Android share sheet.</strong> Share from any app and pdf-iq is in the list,
-          beside everything else.</li>
-        <li><strong>Photographs several pages in a row.</strong> Each becomes a page, in the order you add them
-          — a document, not a folder of pictures.</li>
-      </ul>
+      <!-- Numbered, because the lede says "three things" and a reader should be able to count them without
+           re-reading it. The numerals are the only decoration on this page and they carry the count. -->
+      <ol class="appdoes">
+        <li><span class="appdoes__n" aria-hidden="true">01</span>
+          <p><strong>Opens a PDF straight from a WhatsApp message.</strong> No saving it somewhere first and
+            hunting for it afterwards.</p></li>
+        <li><span class="appdoes__n" aria-hidden="true">02</span>
+          <p><strong>Appears in the Android share sheet.</strong> Share from any app and pdf-iq is in the list,
+            beside everything else.</p></li>
+        <li><span class="appdoes__n" aria-hidden="true">03</span>
+          <p><strong>Photographs several pages in a row.</strong> Each becomes a page, in the order you add them
+            — a document, not a folder of pictures.</p></li>
+      </ol>
       <figure class="appshot">
         <img src="/app-share-sheet.png" width="720" height="388" loading="lazy"
              alt="Android's share sheet open over a file list, with pdf-iq among the apps the PDF can be sent

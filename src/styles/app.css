@@ -439,23 +439,54 @@ input, button, select, textarea { font-family: inherit; }
 .apphead__badge .page-title { display: block; }
 .apphead__words { flex: 1 1 380px; min-width: 0; max-width: 560px; }
 .apphead__state { margin: 12px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-78); max-width: 620px; }
-/* The screenshots. Sized in CSS rather than by the file: the sources are 720 wide so a 2x screen has pixels to
-   spend, and width/height on the tag reserves the box so nothing jumps while they load. */
-/* On a phone the shot fills the column: fixed at 300px inside a 335px measure it left a 35px gap and read as
-   misaligned rather than placed. */
-@media (max-width: 560px) { .apphead__shot { width: 100%; } }
+/* The screen switcher. Three real captures, one shown at a time, and the list of names is the caption:
+   a reader who never touches a tab still learns what the app's screens are called and what each one shows.
+   The list ships hidden and src/entries/app.ts reveals it, so a page without JavaScript shows one screenshot
+   and no controls that do nothing.
 
-.apphead__shot {
-  width: 300px; height: auto; flex: 0 0 auto;
-  border: 1px solid var(--line); border-radius: 12px;
+   No device bezel around the frame. The captures are from a tablet, and drawing a phone around them would be
+   the one decoration on this page that says something untrue. */
+.screens { margin: 20px 0 0; }
+.screens__hint {
+  margin: 0 0 6px; font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-74);
+}
+.screens__tabs { display: flex; flex-direction: column; gap: 2px; max-width: 460px; }
+.screens__tab {
+  display: flex; flex-wrap: wrap; align-items: baseline; align-content: center; gap: 2px 12px;
+  min-height: 48px; padding: 8px 14px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--ink); text-align: left; cursor: pointer;
+  transition: background .18s ease;
+}
+.screens__tab:hover { background: var(--wash); }
+.screens__tab:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.screens__tab[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+.screens__n { font-family: var(--mono); font-size: 12.5px; color: var(--amber-text); }
+.screens__tab[aria-selected="true"] .screens__n { color: #E8B166; }
+.screens__name { font-size: 16px; font-weight: 600; }
+.screens__cap { font-size: 14px; color: var(--ink-76); }
+.screens__tab[aria-selected="true"] .screens__cap { color: rgba(255, 255, 255, .78); }
+
+.appframe { flex: 0 1 420px; min-width: 0; margin: 0; }
+.appframe__screen { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); }
+.appframe__shot { display: block; width: 100%; height: auto; }
+.appframe__cap { margin: 8px 0 0; font-family: var(--mono); font-size: 11.5px; line-height: 1.5; color: var(--ink-74); }
+/* On a phone the frame fills the column: fixed inside a 335px measure it left a gap and read as misaligned
+   rather than placed. Same reason the single shot had this rule before it. */
+@media (max-width: 700px) {
+  .appframe { flex: 1 1 100%; max-width: 340px; }
+  /* Stacked, the 40px column gap becomes a hole between the list and the screen it switches. */
+  .apphead { gap: 22px; }
 }
 
 .appshot { margin: 18px 0 0; max-width: 420px; }
 .appshot img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; }
 .appshot figcaption { margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--ink-60, var(--ink-78)); }
 
-.appdoes { margin: 14px 0 0; padding-left: 20px; font-size: 15.5px; line-height: 1.62; color: var(--ink-78); max-width: 680px; }
-.appdoes li + li { margin-top: 8px; }
+.appdoes { list-style: none; margin: 16px 0 0; padding: 0; max-width: 680px; display: grid; gap: 16px; }
+.appdoes li { display: flex; gap: 14px; align-items: baseline; }
+.appdoes__n { flex: 0 0 auto; min-width: 22px; font-family: var(--mono); font-size: 13.5px; color: var(--amber-text); }
+.appdoes p { margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--ink-78); }
 .appdoes strong { color: var(--ink); font-weight: 600; }
 
 /* The target run's attempts, written between the controls and the answer (src/pro/compress-target-ui.ts).

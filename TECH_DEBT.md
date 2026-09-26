@@ -648,3 +648,30 @@ no event explains.
 
 If the event was never delivered, the code was never the problem: check that the Paddle sandbox notification
 destination subscribes to `adjustment.created` and `adjustment.updated`, not only `transaction.completed`.
+
+## The /app/ screenshots stale with every app release (27 September 2026)
+
+/app/ carried two images until today: a home screen and a share sheet. It now carries four — a three-screen
+switcher in the hero (Compress, Compressed, Photos to PDF) plus the share sheet — and a fifth is expected, a fresh
+Home capture, once the app session next has the device.
+
+**The cadence, priced before it is discovered rather than after.** Every app release can stale every one of them.
+The launcher and header mark changed on 26 September and these captures were taken about eight hours before that,
+so the three now in the hero already predate the current mark. The crop removes the system taskbar, which is where
+the launcher icon appeared, and none of the three chosen screens shows the header mark — but that is luck rather
+than a rule, and the Home capture does show it. Anything that changes the app's chrome, type, wording or palette
+invalidates the set.
+
+**What that means in practice:** re-capturing is part of shipping an app release that changes the UI, not something
+to remember afterwards. Four to five captures, one pass on the device, one uniform crop. The crop is source rows
+68..930 of a 1440x2304 frame — status bar off the top, above the taskbar at the bottom, stopping below the screen's
+top block of content — then box-averaged to 720 wide.
+
+**Accepted deliberately** (owner, 27 September 2026): "yes, deliberately, with two conditions. The switcher ships
+with however many good screenshots exist, not five slots waiting to be filled. Four now, five when the fifth is
+worth taking. An empty state is worse than a shorter list. And it goes in TECH_DEBT with its cadence stated."
+
+It ships with three rather than four. The fourth capture, Read a scan, shows the app's paywall telling the reader
+that Pro bought on pdf-iq.com unlocks the app, which contradicts the price card three screens below it on the same
+page — see "The purchase page says 'web tools only' until the app honours a web purchase" and CLAIMS 67. The capture
+is good; the sentence inside it is the open question, and it is the app's sentence, not the website's.
