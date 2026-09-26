@@ -13,31 +13,50 @@
            enough to work from.</p>
       </div>
 
-      <h2>A tool said my file is damaged, but it opens elsewhere</h2>
+      <nav class="card answer" aria-label="What is on this page">
+        <p class="kicker">What people ask</p>
+        <ul class="answer__index">
+          <li><a href="#damaged">A tool said my file is damaged, but it opens elsewhere</a></li>
+          <li><a href="#compression">Compression barely changed my file</a></li>
+          <li><a href="#large-files">Something failed with a large file</a></li>
+          <li><a href="#offline">Does it work offline?</a></li>
+          <li><a href="#ocr-slow">OCR is slow</a></li>
+          <li><a href="#pages-without-text">Some pages came back without text</a></li>
+          <li><a href="#heic">An iPhone photo would not open</a></li>
+          <li><a href="#billing">Billing and Pro</a></li>
+          <li><a href="#security">Reporting a security issue</a></li>
+        </ul>
+      </nav>
+
+      <h2 id="damaged">A tool said my file is damaged, but it opens elsewhere</h2>
       <p>Some viewers repair a broken page index silently on open. We tell you instead, because a
          repair can change which pages end up in the result. Ask us and we will look at the
          specific error text you saw.</p>
 
-      <h2>Compression barely changed my file</h2>
+      <h2 id="compression">Compression barely changed my file</h2>
       <p>Then it was already close to its practical floor, and the result page tells you why using
          the actual image format, quality and resolution it found in your document rather than a
          stock sentence. If you need to hit a specific size, email the number and we will tell you
          whether it is reachable.</p>
 
-      <h2>Something failed with a large file</h2>
+      <h2 id="large-files">Something failed with a large file</h2>
+      <p class="bignum"><span class="bignum__n">{{maxFileSize}}</span></p>
+      <p class="bignum__say">The size each tool refuses above &mdash; the point where a tab on a desktop machine
+         stopped being able to write the result. <strong>Phones have less memory, and we have not measured them
+         yet.</strong></p>
       <p>Because processing happens in your browser, the ceiling is your device's memory rather
          than an upload limit. Splitting a very large file first almost always works, because
          splitting copies pages rather than rendering them. Each tool refuses files over
          {{maxFileSize}}, the point where a tab on a desktop machine stopped being able to write the
          result. Phones have less memory, and we have not measured them yet.</p>
 
-      <h2>Does it work offline?</h2>
+      <h2 id="offline">Does it work offline?</h2>
       <p>Yes. Load a tool once, then disconnect and use it. That is the simplest way to confirm for
          yourself that nothing is being uploaded.</p>
       <p>OCR is the one partial exception: it needs to fetch its language model the first time you
          use a given language. After that it is cached and works offline too.</p>
 
-      <h2>OCR is slow</h2>
+      <h2 id="ocr-slow">OCR is slow</h2>
       <p>It is the heaviest tool here, because every page has to be drawn and then read a word at
          a time. It uses several of your processor's cores at once to keep that bearable, and once
          it has read enough pages to know, it shows you the measured rate and how long is left.
@@ -45,19 +64,19 @@
       <p>The first run in a given language also downloads that language's model, which is between
          6 MB and 11 MB. That happens once and is then cached.</p>
 
-      <h2>Some pages came back without text</h2>
+      <h2 id="pages-without-text">Some pages came back without text</h2>
       <p>We would rather name the pages we could not read than quietly average them into a
          success. Handwriting and very noisy scans usually come back too uncertain to trust, and
          blank or photographic pages have nothing to find. The result panel lists which pages and
          why.</p>
 
-      <h2>An iPhone photo would not open</h2>
+      <h2 id="heic">An iPhone photo would not open</h2>
       <p>Recent iPhones save photos as HEIC, which Safari can read but Chrome and Firefox cannot.
          Sharing the photos out of the Photos app usually converts them to JPEG on the way, or you
          can set Camera &rarr; Formats to "Most Compatible" so the phone writes JPEG in the first
          place.</p>
 
-      <h2>Billing and Pro</h2>
+      <h2 id="billing">Billing and Pro</h2>
       <p><!--NOSALE-->Pro is not on sale yet, on either the web or the app. When it is, it will be bought on
          this website and not inside the Android app, and Paddle will handle the payment as
          merchant of record<!--/NOSALE--><!--SALE-->Pro is bought on this website, not inside the Android app, and Paddle
@@ -66,11 +85,11 @@
          statement allows. Refunds are covered on the <a href="/refunds/">refunds page</a>:
          thirty days, for any reason. Write to us as well and we will chase it with them.</p>
 
-      <h2>Reporting a security issue</h2>
+      <h2 id="security">Reporting a security issue</h2>
       <p>Email the same address with "security" in the subject. We answer these first, and we will
          credit you if you want the credit.</p>
 
-      <h2>Helpful in an email</h2>
+      <h2 id="helpful">Helpful in an email</h2>
       <ul>
         <li>Which tool, and what you clicked.</li>
         <li>The exact message on screen, or a screenshot of it.</li>

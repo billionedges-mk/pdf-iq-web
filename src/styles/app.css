@@ -327,6 +327,17 @@ input, button, select, textarea { font-family: inherit; }
 .answer__list li + li { margin-top: 9px; }
 .answer__list strong { color: var(--ink); font-weight: 600; }
 .answer__note { margin: 14px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--soft); }
+/* A page of questions gets an index rather than a summary: the way in depends on the shape of the page. Two
+   columns at desktop so nine questions are one glance rather than a column of links. */
+.answer__index { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 7px 28px; font-size: 15px; line-height: 1.5; }
+@media (min-width: 720px) { .answer__index { grid-template-columns: 1fr 1fr; } }
+/* On a phone this index is nine links in a column, and measured at 375 eight of them were under 24px tall — below
+   any tap-target guidance, on the device where an index is most useful. Each link becomes its own row instead. */
+@media (max-width: 719px) {
+  .answer__index { gap: 0; }
+  .answer__index li + li { border-top: 1px solid var(--line); }
+  .answer__index a { display: flex; align-items: center; min-height: 44px; }
+}
 
 /* ---------------------------------------------------------------- facts, as a table
    Called .datatable, not .facts: .facts was already a <dl> grid further down this stylesheet, and a table wearing it
@@ -384,7 +395,16 @@ input, button, select, textarea { font-family: inherit; }
    what it proves. "146–155 bytes" is trivia; "the size of a single ML Kit usage report, measured — far too small to
    carry a page" is evidence, and the number reads as evidence only because that sentence is under it. Where you
    cannot write that sentence, do not pull the number. And keep the habit that sentence has of stating its own limit:
-   "we did not decode them field by field, and that is the limit of what we checked". */
+   "we did not decode them field by field, and that is the limit of what we checked".
+
+   THE SECOND RULE, noticed after three of them existed (owner, 26 September 2026): PULL THE NUMBER A SCEPTICAL
+   READER IS LOOKING FOR, NOT THE ONE YOU WANT THEM TO SEE. /privacy/'s checkout table holds a 30-minute cookie and
+   a 13-month one, and the 13-month one is pulled. /terms/ holds a count of free tools and a liability cap, and the
+   cap is pulled. What a reader digs for is what they are worried about, and a flattering number is already in the
+   marketing — it does not need a page of terms to surface it.
+
+   Which is also why this cannot be applied mechanically, one per section: a page with no uncomfortable number has
+   nothing to pull, and manufacturing one to complete a set is the opposite of the rule. */
 .bignum { margin: 22px 0 0; display: flex; align-items: baseline; gap: 8px; }
 .bignum__n { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 40px; line-height: 1; color: var(--ink); }
 .bignum__u { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 16px; color: var(--soft); }
