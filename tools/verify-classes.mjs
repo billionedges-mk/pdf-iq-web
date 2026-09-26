@@ -70,8 +70,35 @@ for (const f of sources) {
   }
 }
 
+/**
+ * Two components wearing one class name.
+ *
+ * A class can be defined and still be wrong: .facts was a <dl> grid, a new table took the same name, and the table
+ * inherited `display: grid` — its headings laid out beside its rows instead of above them (26 September 2026). The
+ * undefined check above passed, correctly and uselessly. The site has been bitten by this before, by an .acct class
+ * that restyled the header (check 47).
+ *
+ * The signal is a base rule — `.x {` with nothing else in the selector — written twice outside any media query.
+ * An override belongs in a media query or in a more specific selector; the same bare selector twice is two authors
+ * who did not know about each other.
+ */
+const bases = new Map();
+for (const f of cssFiles) {
+  const css = readFileSync(f, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/@media[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, ' ');
+  for (const m of css.matchAll(/(^|\})\s*\.([-\w]+)\s*\{/g)) {
+    const name = m[2];
+    bases.set(name, (bases.get(name) ?? 0) + 1);
+  }
+}
+
+const twice = [...bases].filter(([, n]) => n > 1).sort(([a], [b]) => a.localeCompare(b));
+for (const [c, n] of twice) console.log(`FAIL  .${c} has ${n} base rules outside any media query — two components sharing one name?`);
+
 const missing = [...used].filter(([c]) => !defined.has(c)).sort(([a], [b]) => a.localeCompare(b));
 for (const [c, where] of missing) console.log(`FAIL  .${c} is used and never defined: ${[...where].join(', ')}`);
 console.log(`${used.size} classes used, ${defined.size} defined, ${missing.length} undefined`);
 if (!used.size || !defined.size) { console.log('FAIL  the scan read nothing'); process.exit(1); }
-process.exit(missing.length ? 1 : 0);
+console.log(`${bases.size} base classes, ${twice.length} defined more than once`);
+process.exit(missing.length || twice.length ? 1 : 0);

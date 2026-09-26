@@ -319,6 +319,11 @@ input, button, select, textarea { font-family: inherit; }
    above the drop zone where the lede would otherwise be the last thing read. Still type, not a card: this is a
    sentence, not an offer panel. */
 /* ---------------------------------------------------------------- facts, as a table
+   Called .datatable, not .facts: .facts was already a <dl> grid further down this stylesheet, and a table wearing it
+   inherited `display: grid` — thead and tbody became two grid items side by side, so the column headings sat in a
+   block to the LEFT of their own values with a 125px gap between (Maneesh, 26 September 2026). verify-classes did
+   not catch it because the class was defined; it was defined twice, for two different components. It checks for that
+   now.
    The site's first table, and it exists because /privacy/ is structured data written as prose: host, what it
    receives, how long it lasts. A table is not decoration here and it is not less precise than a paragraph — it
    forces a value into every cell, which is where prose hides a gap.
@@ -331,28 +336,28 @@ input, button, select, textarea { font-family: inherit; }
    four columns: inside it the rows ran 267, 723 and 679px tall and the table was taller than the prose it replaced.
    It keeps the left edge of the text and uses the empty column to its right. */
 @media (min-width: 880px) { .tbl-wrap { width: min(1040px, calc(100vw - 120px)); } }
-.facts { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 1.55; text-align: left; }
-.facts thead th {
+.datatable { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 1.55; text-align: left; }
+.datatable thead th {
   font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--soft);
   padding: 0 14px 8px 0; border-bottom: 1px solid var(--line); vertical-align: bottom;
 }
-.facts tbody th { font-weight: 700; color: var(--ink); }
-.facts tbody th, .facts tbody td {
+.datatable tbody th { font-weight: 700; color: var(--ink); }
+.datatable tbody th, .datatable tbody td {
   padding: 14px 14px 14px 0; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-78);
 }
-.facts tbody tr:last-child th, .facts tbody tr:last-child td { border-bottom: 0; }
-.facts th:last-child, .facts td:last-child { padding-right: 0; }
-.facts__sub { display: block; margin-top: 3px; font-size: 13px; font-weight: 400; color: var(--soft); }
+.datatable tbody tr:last-child th, .datatable tbody tr:last-child td { border-bottom: 0; }
+.datatable th:last-child, .datatable td:last-child { padding-right: 0; }
+.datatable__sub { display: block; margin-top: 3px; font-size: 13px; font-weight: 400; color: var(--soft); }
 
 @media (max-width: 700px) {
-  .facts, .facts tbody, .facts tbody tr, .facts tbody th, .facts tbody td { display: block; width: auto; }
-  .facts thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .facts tbody tr { padding: 14px 0; border-bottom: 1px solid var(--line); }
-  .facts tbody tr:last-child { border-bottom: 0; }
-  .facts tbody th { padding: 0 0 8px; border-bottom: 0; }
-  .facts tbody td { padding: 0 0 10px; border-bottom: 0; }
-  .facts tbody td:last-child { padding-bottom: 0; }
-  .facts tbody td::before {
+  .datatable, .datatable tbody, .datatable tbody tr, .datatable tbody th, .datatable tbody td { display: block; width: auto; }
+  .datatable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .datatable tbody tr { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .datatable tbody tr:last-child { border-bottom: 0; }
+  .datatable tbody th { padding: 0 0 8px; border-bottom: 0; }
+  .datatable tbody td { padding: 0 0 10px; border-bottom: 0; }
+  .datatable tbody td:last-child { padding-bottom: 0; }
+  .datatable tbody td::before {
     content: attr(data-label); display: block; margin-bottom: 2px;
     font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--soft);
   }
@@ -365,6 +370,12 @@ input, button, select, textarea { font-family: inherit; }
 .bignum__n { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 40px; line-height: 1; color: var(--ink); }
 .bignum__u { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 16px; color: var(--soft); }
 .bignum__say { margin: 8px 0 0; max-width: 640px; font-size: 15px; line-height: 1.6; color: var(--ink-78); }
+/* On a prose page these are <p>, and `.prose p { margin: 0 0 14px }` is one specificity point heavier than a bare
+   class — so the number rendered flush against the table above it with no separation at all, which is most of why
+   it did not read as its own element (26 September 2026). The second defect in this section from an existing rule
+   quietly winning; the first was .facts. Anything added to a .prose page gets checked against .prose p first. */
+.prose .bignum { margin: 26px 0 0; }
+.prose .bignum__say { margin: 8px 0 18px; }
 
 /* The /app/ hero: the app's own icon, then what it is, then where it is. The icon is the launcher icon as a
    phone renders it (public/app-icon.svg), not the site's mark — they are siblings, not the same drawing. */
@@ -866,8 +877,9 @@ textarea.askfield__input { resize: vertical; min-height: 104px; }
   font-size: 12.5px; color: var(--soft);
 }
 .home-readout li { display: flex; align-items: baseline; gap: 8px; }
-.home-proof__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); flex: 0 0 auto; transform: translateY(-1px); }
-.home-proof__dot--live { background: var(--amber); }
+/* The dot is defined once, with the hero's proof line above; the readout reuses that class rather than restating
+   it. The two copies were identical, so nothing computed changes. Found by verify-classes on the run added because
+   a new table took the name of an existing <dl> (26 September 2026). */
 .netreadout--dirty .home-proof__dot--live { animation: none; background: var(--ink); }
 
 .home-hero { text-align: center; max-width: 760px; margin: 0 auto; padding: clamp(40px, 8vw, 68px) 0 0; }
