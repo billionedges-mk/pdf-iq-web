@@ -2329,6 +2329,13 @@ page and said the headers were in a different place from the rows.
    and expect the person who looks to overturn them.
 4. This is [check 47] from a third side. There, looking found what checks could not. Here, looking found what
    *measuring* could not, which is worse, because a number reads as evidence in a way an impression does not.
+5. **And it can be aimed at the right property, on the wrong bytes.** A browser holding a stale asset produces a
+   confident measurement of a file that is no longer there, and the page cannot tell you it is doing it: /app/'s
+   hero measured 300×479 — the old uncropped shot — while production was serving 720×553, byte-identical to what
+   had been committed. Nothing in the render is marked "cached". **Fetch the bytes and compare them to what you
+   shipped; do not measure the picture.** That is what stopped this becoming the fourth false finding in a day, the
+   others being a wrapped phrase, an eaten backslash and a capital letter. Same shape as [check 57]: a cached
+   answer and a real one are the same sentence.
 
 **Related, from the same section:** `verify-classes` passed the collision "correctly and uselessly" — the class was
 defined, twice, for two different components. Its new form (a bare class with two base rules outside any media
