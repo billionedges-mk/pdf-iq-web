@@ -111,10 +111,13 @@ input, button, select, textarea { font-family: inherit; }
   align-items: center; column-gap: 18px;
 }
 .brand { grid-area: brand; display: flex; align-items: center; gap: 9px; text-decoration: none; min-height: 56px; }
-/* The brand square stays beside the wordmark (owner, 13 September 2026: the mockup only left it undrawn). */
+/* The brand square stays beside the wordmark (owner, 13 September 2026: the mockup only left it undrawn).
+   It was a 135-degree split of navy and amber until 26 September 2026, when one folded-page mark replaced both it
+   and the launcher seam. The drawing is public/mark.svg; it is a background-image rather than inline markup
+   because this element is a <span> in the header of every page and the file is 230 bytes of polygons. */
 .brand__mark {
-  width: 22px; height: 22px; border-radius: 3px; flex: 0 0 auto;
-  background: linear-gradient(135deg, #1E2A38 0 50%, var(--amber) 50% 100%);
+  width: 22px; height: 22px; flex: 0 0 auto;
+  background: url("/mark.svg") center / contain no-repeat;
 }
 .brand:hover { color: var(--ink); }
 .brand__word { font-size: 16.5px; font-weight: 700; letter-spacing: -.03em; }

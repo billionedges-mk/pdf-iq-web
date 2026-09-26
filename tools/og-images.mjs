@@ -63,40 +63,39 @@ const attr = (tag, name) => {
 
 /** The route's mark, at `size`, top-left at `x,y`. Throws for a slug with no mark. */
 /**
- * The app icon's geometry, read out of public/app-icon.svg rather than repeated here.
+ * The mark's polygons, read out of public/mark.svg rather than repeated here.
  *
- * Each navy path is a triangle whose hypotenuse is a line x+y = c; the amber cut is the band between the two. Two
- * of each triangle's three corners sit on its hypotenuse, so the constant is the one that appears twice — and if
- * they ever disagree, the drawing is not the shape this code assumes and it says so rather than drawing something
- * plausible.
+ * One mark now serves the wordmark and /app/'s card, so one parser serves both. It refuses anything that is not
+ * the two polygons it expects rather than drawing something plausible — the habit that caught a removed path and
+ * a corner nudged off its line when the previous mark was parsed this way.
  */
-function appIconGeometry() {
-  const svg = readFileSync(join(ROOT, 'public/app-icon.svg'), 'utf8');
-  const box = /viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/.exec(svg);
-  const rx = /<rect[^>]*\brx="([\d.]+)"/.exec(svg);
-  const paths = [...svg.matchAll(/<path[^>]*\bd="M([^"]+)"/g)].map((m) => m[1]);
-  if (!box || !rx || paths.length !== 2) {
-    throw new Error('public/app-icon.svg is not the shape tools/og-images.mjs reads: it needs a viewBox, a clip rect with rx, and two navy paths');
+function markGeometry() {
+  const svg = readFileSync(join(ROOT, 'public/mark.svg'), 'utf8');
+  const box = /viewBox="0 0 (\d+) (\d+)"/.exec(svg);
+  const polys = [...svg.matchAll(/<polygon points="([^"]+)"[^>]*fill="(#[0-9A-Fa-f]{6})"/g)]
+    .map((m) => ({
+      points: m[1].trim().split(/\s+/).map((pt) => pt.split(',').map(Number)),
+      fill: m[2].toUpperCase(),
+    }));
+  if (!box || box[1] !== '24' || box[2] !== '24' || polys.length !== 2) {
+    throw new Error('public/mark.svg is not the shape tools/og-images.mjs reads: a 24 grid and two polygons');
   }
-  const sums = (d) => d.split('L').map((pt) => pt.replace(/Z$/, '').split(',').map(Number)).map(([x, y]) => +(x + y).toFixed(3));
-  const edge = (d, pick) => {
-    const s = sums(d);
-    const c = pick(...s);
-    if (s.filter((v) => v === c).length !== 2) throw new Error(`a navy path in app-icon.svg has no two corners on one x+y line: ${s}`);
-    return c;
-  };
-  const [w, h] = [+box[3], +box[4]];
-  if (w !== h) throw new Error('app-icon.svg is not square');
-  return { view: { x: +box[1], y: +box[2], size: w }, radius: +rx[1], low: edge(paths[0], Math.max), high: edge(paths[1], Math.min) };
+  const [sheet, fold] = polys;
+  if (sheet.points.length !== 5 || fold.points.length !== 3) {
+    throw new Error(`the mark should be a five-sided sheet and a three-sided fold, not ${sheet.points.length} and ${fold.points.length}`);
+  }
+  return { sheet: sheet.points, fold: fold.points, sheetColour: sheet.fill, foldColour: fold.fill };
 }
 
 function mark(bmp, slug, x, y, size, p) {
-  // /app/ is the one route whose subject is a product someone installs, so its card carries the product's own
-  // icon rather than a drawn handset (owner, 25 September 2026). Its shapes are two triangles and a mask, which
-  // the rasteriser below — rects and circles — cannot express; it is drawn by png.mjs instead.
-  // Its own navy, not the card's ink: someone holding this card beside the Play listing is looking at one
-  // product's icon, and 'close to the site palette' is the wrong kind of right. The amber is the same value.
-  if (slug === 'app') return bmp.appIcon(x, y, size, '#1E2A38', p.amber, appIconGeometry());
+  // /app/ is the one route whose subject is a product someone installs, so its card carries the product's own mark
+  // rather than a drawn handset (owner, 25 September 2026). Polygons, which the rasteriser below — rects and
+  // circles — cannot express, so png.mjs draws it. Its own colours rather than the card's ink: someone holding
+  // this card beside the Play listing is looking at one product's mark.
+  if (slug === 'app') {
+    const g = markGeometry();
+    return bmp.mark(x, y, size, g.sheet, g.fold, g.sheetColour, g.foldColour);
+  }
   const shapes = ICONS[slug];
   if (!shapes) {
     throw new Error(
@@ -154,7 +153,8 @@ export function ogImage(route) {
   const bmp = new Bitmap(W, H, p.paper);
 
   bmp.rect(0, 0, W, 12, p.amber);
-  bmp.seam(LEFT, 96, 44, p.ink, p.amber);
+  const wordmark = markGeometry();
+  bmp.mark(LEFT, 96, 44, wordmark.sheet, wordmark.fold, wordmark.sheetColour, wordmark.foldColour);
   drawText(bmp, f.bold, 'pdf-iq', { x: LEFT + 62, y: 96 + 36, size: 44, colour: p.ink });
 
   // The subject, as large as it fits without reaching the mark.

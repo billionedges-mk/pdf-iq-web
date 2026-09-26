@@ -724,8 +724,14 @@ exactly like the defect this section exists because of. Do not read a "still gra
   afternoon. That is what the deferral was waiting for. Measured after: the share card's amber chord is 27px at a
   200px mark against 26.9 predicted from the new paths.
 
-  **What is left to compare on listing day is two artefacts, not three:** the app repo's XML and this site's
-  `public/app-icon.svg`. Everything the site draws comes from the second.
+  **Superseded on 26 September 2026: one mark replaced both.** The app sent a new drawing — a folded page, navy
+  sheet with an amber fold — which replaced the launcher seam AND the site's own 135-degree split. The website now
+  carries it in five places from two files: `public/mark.svg` (the nav, the favicon, and both share-card marks,
+  parsed by tools/og-images.mjs) and `public/app-icon.svg` (the reference copy, on the launcher ground).
+
+  **The re-compare still stands and is still by eye**, against the app repo's images/icon/pdf-iq-mark.svg and
+  pdf-iq-icon.svg. Nothing can check it automatically, and the copies here are stripped of the originals' C2PA
+  provenance manifest — about 8KB against 230 bytes of drawing — because the mark is inlined on every page.
 
   **And their finding, which outranks the widening.** No seam width makes the mark read as two masses pulled apart
   at web sizes — the masses bleed past the mask by design, so it is a dark square with an amber diagonal however
