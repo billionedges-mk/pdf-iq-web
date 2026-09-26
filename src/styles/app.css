@@ -348,6 +348,9 @@ input, button, select, textarea { font-family: inherit; }
 .datatable tbody tr:last-child th, .datatable tbody tr:last-child td { border-bottom: 0; }
 .datatable th:last-child, .datatable td:last-child { padding-right: 0; }
 .datatable__sub { display: block; margin-top: 3px; font-size: 13px; font-weight: 400; color: var(--soft); }
+/* A duration is a value, and every other value on this site is set in the mono face: the price, the byte counter,
+   the target settings. It makes the column scannable without a word of it changing. */
+.dur { font-family: var(--mono); font-size: 14px; color: var(--ink); }
 
 @media (max-width: 700px) {
   .datatable, .datatable tbody, .datatable tbody tr, .datatable tbody th, .datatable tbody td { display: block; width: auto; }
@@ -365,7 +368,13 @@ input, button, select, textarea { font-family: inherit; }
 
 /* One measured number per section, set large. It is the claim itself — the size of what leaves the device — not a
    figure lifted out of a sentence for decoration. Mono because every other number on this site is (the price, the
-   byte counter in the footer). */
+   byte counter in the footer).
+
+   THE RULE, from the first one that shipped (owner, 26 September 2026): a pulled number needs a sentence that says
+   what it proves. "146–155 bytes" is trivia; "the size of a single ML Kit usage report, measured — far too small to
+   carry a page" is evidence, and the number reads as evidence only because that sentence is under it. Where you
+   cannot write that sentence, do not pull the number. And keep the habit that sentence has of stating its own limit:
+   "we did not decode them field by field, and that is the limit of what we checked". */
 .bignum { margin: 22px 0 0; display: flex; align-items: baseline; gap: 8px; }
 .bignum__n { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 40px; line-height: 1; color: var(--ink); }
 .bignum__u { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 16px; color: var(--soft); }

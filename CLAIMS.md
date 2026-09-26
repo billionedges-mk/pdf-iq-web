@@ -78,7 +78,8 @@ the work is done.
 62. ["Everything we own is green" is not "it works"](#62-everything-we-own-is-green-is-not-it-works)  
 63. [A page can describe a mechanism the system does not have, and every word of it be true](#63-a-page-can-describe-a-mechanism-the-system-does-not-have-and-every-word-of-it-be-true)  
 64. [The happy path is the one nobody writes copy for, and the only one everybody sees](#64-the-happy-path-is-the-one-nobody-writes-copy-for-and-the-only-one-everybody-sees)  
-65. [A mechanism you remove was doing more jobs than the one you removed it for](#65-a-mechanism-you-remove-was-doing-more-jobs-than-the-one-you-removed-it-for)
+65. [A mechanism you remove was doing more jobs than the one you removed it for](#65-a-mechanism-you-remove-was-doing-more-jobs-than-the-one-you-removed-it-for)  
+66. [A number that supports what you hoped for is the one to distrust, and precision is not the same as aim](#66-a-number-that-supports-what-you-hoped-for-is-the-one-to-distrust-and-precision-is-not-the-same-as-aim)
 
 <!-- /index -->
 
@@ -2296,3 +2297,40 @@ leave with it.
    found that the diagnosis itself — mine and the owner's, from a screenshot — named the wrong faults: the processing
    view **did** show; the real faults were stranded focus and a silent control. Fourth time in a week that measuring
    changed the answer rather than confirming it.
+
+### 66. A number that supports what you hoped for is the one to distrust, and precision is not the same as aim
+
+Rebuilding /privacy/'s "what the app sends" as a table, the headline was that the page went from 13,807px to 11,671
+at 1280 and from 22,423 to 18,168 at 375 — a sixth shorter, from one section of twelve. Both numbers were measured
+on a **broken render**. The table had taken the name of an existing `<dl>` grid, so it inherited `display: grid`,
+`thead` and `tbody` collapsed into two items side by side, and the page was shorter **because the work was
+broken**. Fixed, the same section is about 2% LONGER than the prose it replaced (26 September 2026).
+
+**The breakage flattered the exact metric chosen as the headline, and that is not a coincidence.** A collapse
+shortens things. Height was the one number guaranteed to look good if the layout failed in the most likely way, and
+it was the number being quoted as the win. The measurement was correct; it was measuring a defect.
+
+**The second half is how the defect survived an hour of measuring.** Table box width, row heights, page height,
+overflow, stacking at 375 — all measured, all correct, all blind to the only property that mattered: whether a
+column's values sit under its heading. **A measurement can be precise and aimed at the wrong property**, and then it
+is not evidence about the thing it seems to be about. The columns were never measured until a person looked at the
+page and said the headers were in a different place from the rows.
+
+**The check:**
+
+1. **When a number supports the outcome you wanted, ask what would produce that number if the work were broken.**
+   If the answer is "this exact breakage", the number is not evidence yet. Shorter, faster, smaller and fewer are
+   the usual suspects, because failure removes things.
+2. **Name the property the claim is about, then measure THAT.** "The table is readable" is about columns under
+   headings, not about the table's bounding box. Write down which property you are asserting before choosing the
+   measurement, or the available number becomes the claim.
+3. A measurement taken without a rendering to compare against carries the rendering's faults silently. Where nothing
+   can be seen — a blank preview pane — say the measurements are unverified rather than reporting them as findings,
+   and expect the person who looks to overturn them.
+4. This is [check 47] from a third side. There, looking found what checks could not. Here, looking found what
+   *measuring* could not, which is worse, because a number reads as evidence in a way an impression does not.
+
+**Related, from the same section:** `verify-classes` passed the collision "correctly and uselessly" — the class was
+defined, twice, for two different components. Its new form (a bare class with two base rules outside any media
+query) found a second instance on its first run, `.home-proof__dot`, written once for the hero's proof line and once
+for the readout. See [check 61].

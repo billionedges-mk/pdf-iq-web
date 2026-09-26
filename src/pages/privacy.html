@@ -477,38 +477,77 @@
          text being processed in these locations.</p>
 
       <h2>How long we keep things</h2>
-      <ul>
-        <li><strong>Document text and summaries:</strong> not kept at all — discarded when the
-            request completes.</li>
-        <li><strong>Account and usage counters:</strong> kept while your account is active, and
-            deleted when you delete your account.</li><!--SALE-->
-        <li><strong>Your Pro purchase record:</strong> kept for as long as Pro is yours, including after you delete
-            your account, so that signing in again restores it. Deleted if you ask, which ends Pro; see
-            <a href="#purchase-record">the purchase record</a>.</li><!--/SALE-->
-        <li><strong>Analytics events</strong> — which features were used, which operations succeeded or failed, and
-            the device details sent with each: kept for 2 months, then deleted in Google's monthly
-            deletion pass. That is the event retention setting on our Google Analytics property.
-            A crash report carries a log of recent events and is kept longer; see crash reports below.
-            None of the events the app records itself is marked as a key event, so all of them follow
-            this period. Totals built from those events, such as how many people used a feature on a given day, are
-            not covered by either retention period: Google's retention setting &ldquo;does not affect standard
-            aggregated reports&rdquo;.</li>
-        <li><strong>The analytics identifier</strong> — the identifier that lets Analytics recognise the
-            same installation, with the data tied to it: kept for 14 months. Our property resets that
-            period whenever the app reports activity, so for as long as you keep using PDFiq the
-            identifier does not expire. It is deleted 14 months after the app last reported anything.
-            One event is kept for the same 14 months: the first time the app was opened on a device,
-            which Google marks as a key event.</li>
-        <li><strong>Crash reports</strong> — the stack trace, the identifiers sent with it, and a log of
-            the app's recent analytics events, so that a crash arrives with the steps that led to it:
-            Firebase keeps them for 90 days and then begins removing them from its live and backup systems, so
-            removal completes some time after that.</li>
-        <li><strong>Files the app creates on your phone:</strong> temporary working copies are
-            deleted automatically after 7 days or once 20 files accumulate. Files you explicitly
-            save go to your Documents folder and are yours — we never touch or delete them.</li>
-        <li><strong>Files this website creates:</strong> none. What you save, your browser saves
-            straight to your own disk.</li>
-      </ul>
+      <div class="tbl-wrap">
+        <table class="datatable">
+          <caption class="visually-hidden">How long each kind of data is kept</caption>
+          <thead>
+            <tr>
+              <th scope="col">What</th>
+              <th scope="col">How long</th>
+              <th scope="col">What that depends on</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Document text and summaries</th>
+              <td data-label="How long"><span class="dur">Not kept at all</span></td>
+              <td data-label="What that depends on">Discarded when the request completes.</td>
+            </tr>
+            <tr>
+              <th scope="row">Account and usage counters</th>
+              <td data-label="How long"><span class="dur">While your account is active</span></td>
+              <td data-label="What that depends on">Deleted when you delete your account.</td>
+            </tr><!--SALE-->
+            <tr>
+              <th scope="row">Your Pro purchase record</th>
+              <td data-label="How long"><span class="dur">As long as Pro is yours</span></td>
+              <td data-label="What that depends on">Kept after you delete your account, so that signing in again
+                restores it. Deleted if you ask, which ends Pro; see <a href="#purchase-record">the purchase
+                record</a>.</td>
+            </tr><!--/SALE-->
+            <tr>
+              <th scope="row">Analytics events<br><span class="datatable__sub">which features were used, which
+                operations succeeded or failed, and the device details sent with each</span></th>
+              <td data-label="How long"><span class="dur">2 months</span></td>
+              <td data-label="What that depends on">Then deleted in Google's monthly deletion pass. That is the event
+                retention setting on our Google Analytics property. None of the events the app records itself is
+                marked as a key event, so all of them follow this period. A crash report carries a log of recent
+                events and is kept longer &mdash; see the row below. Totals built from those events, such as how many
+                people used a feature on a given day, are not covered by either retention period: Google's retention
+                setting &ldquo;does not affect standard aggregated reports&rdquo;.</td>
+            </tr>
+            <tr>
+              <th scope="row">The analytics identifier<br><span class="datatable__sub">what lets Analytics recognise
+                the same installation, with the data tied to it</span></th>
+              <td data-label="How long"><span class="dur">14 months</span></td>
+              <td data-label="What that depends on">Our property resets that period whenever the app reports
+                activity, so for as long as you keep using PDFiq the identifier does not expire. It is deleted 14
+                months after the app last reported anything. One event is kept for the same 14 months: the first time
+                the app was opened on a device, which Google marks as a key event.</td>
+            </tr>
+            <tr>
+              <th scope="row">Crash reports<br><span class="datatable__sub">the stack trace, the identifiers sent with
+                it, and a log of the app's recent analytics events, so that a crash arrives with the steps that led to
+                it</span></th>
+              <td data-label="How long"><span class="dur">90 days</span></td>
+              <td data-label="What that depends on">Firebase then begins removing them from its live and backup
+                systems, so removal completes some time after that.</td>
+            </tr>
+            <tr>
+              <th scope="row">Files the app creates on your phone</th>
+              <td data-label="How long"><span class="dur">7 days, or 20 files</span></td>
+              <td data-label="What that depends on">Temporary working copies are deleted automatically after 7 days
+                or once 20 files accumulate. Files you explicitly save go to your Documents folder and are yours
+                &mdash; we never touch or delete them.</td>
+            </tr>
+            <tr>
+              <th scope="row">Files this website creates</th>
+              <td data-label="How long"><span class="dur">None are created</span></td>
+              <td data-label="What that depends on">What you save, your browser saves straight to your own disk.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <h2 id="deleting-your-account">Deleting your account and data</h2>
       <p><!--FREE-->If you signed in for Summarise<!--/FREE--><!--PRO-->If you have signed in — for Summarise in the app,
