@@ -97,45 +97,100 @@
          of the {{webToolCount}} tools never involves this form, and none of them asks you for anything.</p>
 
       <h3>Four things stored in your browser<!--PRO-->, and <!--NOSALE-->two<!--/NOSALE--><!--SALE-->up to four<!--/SALE--> more if you sign in<!--/PRO--></h3>
-      <p><!--FREE-->These stay<!--/FREE--><!--PRO-->The first four stay<!--/PRO--> on your device and are never sent to us. You can clear all of them at any time
-         through your browser's "clear site data" control.</p>
-      <ul>
-        <li>The OCR page records a single flag noting that a language model has already been
-            downloaded, so it can tell you whether the next run needs a download.</li>
-        <li>The OCR language model itself is cached by your browser after its first download, so
-            OCR keeps working with no connection.</li>
-        <li><strong>A file handed from one tool to the next.</strong> When you finish with a tool
-            and follow one of the "next" links — compress something and then split it, say — the
-            result has to survive the page change, because each tool is a separate page. It is put
-            into your browser's own storage on this site, picked up by the next tool, and deleted
-            in the same step. Anything left behind by a link you did not follow is deleted after
-            ten minutes. This is the only time a document of yours is written to storage rather
-            than only held in memory, it never leaves your device, and it does not happen unless
-            you click one of those links<!--SALE-->, or an <em>Unlock with Pro</em> button. Unlock keeps the file you have
-            open in the same way while you pay, together with the name of the Pro feature and the page you pressed it
-            on, so the purchase page can bring you back there with the file; it is picked up and deleted when you
-            arrive back<!--/SALE-->.</li>
-        <li><strong>The memory probe&rsquo;s last result.</strong> An internal page, linked from nowhere,
-            measures the largest file this device can process. If someone runs it, it keeps the
-            result &mdash; file sizes, timings, the browser&rsquo;s name, and the device&rsquo;s memory
-            and processor count &mdash; so a crash partway through does not lose the measurement. It
-            never holds a document of yours.</li>
-        <!--PRO--><li><strong>If you sign in for Pro: your sign-in</strong>, under {{authSessionKey}}, and — only
-            while you are away at Google's sign-in page — a check under {{authPendingKey}}. Unlike the four
-            above, part of your sign-in is sent to Google each time it is renewed. Both are described
-            under <a href="#if-you-sign-in">If you sign in</a>.</li><!--SALE-->
-        <li><strong>If you own Pro: a signed note saying so</strong>, under <code>pdfiq.entitlement</code>, so the
-            Pro features keep working in a page that is already open with no connection; opening a page still needs one. It holds your account identifier and Paddle's reference for the
-            purchase, is checked on your device without sending anything, and is removed when you sign out of this
-            browser, or when your account page finds the purchase was refunded. It is fetched from this site only
-            on your account page and the purchase page, never by a tool.</li>
-        <li><strong>Straight after paying: a note that your payment is being confirmed</strong>, under
-            <code>pdfiq.pending-purchase</code>. Paddle can say a payment went through a few seconds before it tells us, and
-            this note means that, if you close the page in between, the Pro features say your payment is being
-            confirmed rather than offering to sell Pro again. It holds Paddle's reference, your account identifier and
-            the time, and is removed when the purchase is confirmed or refunded, or when you sign out. After 24 hours it
-            is ignored, and removed the next time a page of this site looks for it.</li><!--/SALE--><!--/PRO-->
-      </ul>
+      <p>You can clear all of them at any time through your browser's &ldquo;clear site data&rdquo; control.</p>
+      <div class="tbl-wrap">
+        <table class="datatable">
+          <caption class="visually-hidden">What this site keeps in your browser</caption>
+          <thead>
+            <tr>
+              <th scope="col">What is stored</th>
+              <th scope="col">What it holds</th>
+              <th scope="col">When it goes</th>
+              <th scope="col">Sent anywhere?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">A flag from Read a scan</th>
+              <td data-label="What it holds">A single flag noting that a language model has already been downloaded,
+                so the page can tell you whether the next run needs a download.</td>
+              <td data-label="When it goes">When you clear site data.</td>
+              <td data-label="Sent anywhere?"><span class="dur">No</span></td>
+            </tr>
+            <tr>
+              <th scope="row">The OCR language model</th>
+              <td data-label="What it holds">The model itself, cached by your browser after its first download, so
+                OCR keeps working with no connection.</td>
+              <td data-label="When it goes">When you clear site data.</td>
+              <td data-label="Sent anywhere?"><span class="dur">No</span></td>
+            </tr>
+            <tr>
+              <th scope="row">A file handed from one tool to the next</th>
+              <td data-label="What it holds">When you finish with a tool and follow one of the &ldquo;next&rdquo;
+                links &mdash; compress something and then split it, say &mdash; the result has to survive the page
+                change, because each tool is a separate page. It is put into your browser's own storage on this site
+                and picked up by the next tool. <strong>This is the only time a document of yours is written to
+                storage rather than only held in memory</strong>, and it does not happen unless you click one of those
+                links<!--SALE-->, or an <em>Unlock with Pro</em> button. Unlock keeps the file you have open in the
+                same way while you pay, together with the name of the Pro feature and the page you pressed it on, so
+                the purchase page can bring you back there with the file<!--/SALE-->.</td>
+              <td data-label="When it goes">Deleted in the same step, as the next tool picks it up<!--SALE--> &mdash;
+                or when you arrive back from the purchase page<!--/SALE-->. Anything left behind by a link you did not
+                follow is deleted after ten minutes.</td>
+              <td data-label="Sent anywhere?"><span class="dur">No</span> &mdash; it never leaves your device.</td>
+            </tr>
+            <tr>
+              <th scope="row">The memory probe's last result<br><span class="datatable__sub">an internal page, linked
+                from nowhere, that measures the largest file this device can process</span></th>
+              <td data-label="What it holds">If someone runs it: file sizes, timings, the browser's name, and the
+                device's memory and processor count, so that a crash partway through does not lose the measurement. It
+                never holds a document of yours.</td>
+              <td data-label="When it goes">When you clear site data.</td>
+              <td data-label="Sent anywhere?"><span class="dur">No</span></td>
+            </tr><!--PRO-->
+            <tr>
+              <th scope="row">Your sign-in, if you sign in for Pro<br><span class="datatable__sub">under
+                {{authSessionKey}}</span></th>
+              <td data-label="What it holds">Your sign-in, described in full under
+                <a href="#if-you-sign-in">If you sign in</a>.</td>
+              <td data-label="When it goes">When you sign out, or when you clear site data.</td>
+              <td data-label="Sent anywhere?"><strong>Part of it.</strong> Unlike everything above, part of your
+                sign-in is sent to Google each time it is renewed.</td>
+            </tr>
+            <tr>
+              <th scope="row">A check while you are at Google's sign-in page<br><span class="datatable__sub">under
+                {{authPendingKey}}, in session storage</span></th>
+              <td data-label="What it holds">{{authPendingFields}}: two random values that let the page check that
+                Google's answer belongs to a sign-in it started, and the time it started.</td>
+              <td data-label="When it goes">All three are deleted when you come back, or when the tab is closed.</td>
+              <td data-label="Sent anywhere?">The two random values travel to Google in the sign-in link.</td>
+            </tr><!--SALE-->
+            <tr>
+              <th scope="row">A signed note that you own Pro<br><span class="datatable__sub">under
+                <code>pdfiq.entitlement</code></span></th>
+              <td data-label="What it holds">Your account identifier and Paddle's reference for the purchase, so the
+                Pro features keep working in a page that is already open with no connection; opening a page still
+                needs one.</td>
+              <td data-label="When it goes">When you sign out of this browser, or when your account page finds the
+                purchase was refunded.</td>
+              <td data-label="Sent anywhere?"><span class="dur">No</span> &mdash; it is checked on your device without
+                sending anything. It is fetched from this site only on your account page and the purchase page, never
+                by a tool.</td>
+            </tr>
+            <tr>
+              <th scope="row">A note that your payment is being confirmed<br><span class="datatable__sub">under
+                <code>pdfiq.pending-purchase</code>, straight after paying</span></th>
+              <td data-label="What it holds">Paddle's reference, your account identifier and the time. Paddle can say
+                a payment went through a few seconds before it tells us, and this note means that, if you close the
+                page in between, the Pro features say your payment is being confirmed rather than offering to sell Pro
+                again.</td>
+              <td data-label="When it goes">When the purchase is confirmed or refunded, or when you sign out. After 24
+                hours it is ignored, and removed the next time a page of this site looks for it.</td>
+              <td data-label="Sent anywhere?"><span class="dur">No</span></td>
+            </tr><!--/SALE--><!--/PRO-->
+          </tbody>
+        </table>
+      </div>
 
       <h3><!--FREE-->The one request this site makes<!--/FREE--><!--PRO-->Requests this site makes<!--/PRO--></h3>
       <p>OCR needs a language recognition model, which is between 6 MB and 11 MB depending on the
