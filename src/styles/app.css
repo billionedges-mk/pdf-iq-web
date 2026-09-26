@@ -432,11 +432,19 @@ input, button, select, textarea { font-family: inherit; }
    image at 484, and the section below began at 536 — a 302px hole under the words that made the image read as a
    leftover rather than an illustration (Maneesh, 26 September 2026). The text is now given a reading measure and
    the shot is larger, so the two are comparable objects and the space between them is a gap rather than a gulf. */
-.apphead { display: flex; align-items: center; gap: 40px; flex-wrap: wrap; }
+.apphead { display: flex; align-items: flex-start; gap: 40px; flex-wrap: wrap; }
+/* The mark and the page's name on one line, because this is the page about the thing the mark stands for. */
+.apphead__badge { display: flex; align-items: center; gap: 14px; margin: 0; }
+.apphead__badge img { flex: 0 0 auto; }
+.apphead__badge .page-title { display: block; }
 .apphead__words { flex: 1 1 380px; min-width: 0; max-width: 560px; }
 .apphead__state { margin: 12px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-78); max-width: 620px; }
 /* The screenshots. Sized in CSS rather than by the file: the sources are 720 wide so a 2x screen has pixels to
    spend, and width/height on the tag reserves the box so nothing jumps while they load. */
+/* On a phone the shot fills the column: fixed at 300px inside a 335px measure it left a 35px gap and read as
+   misaligned rather than placed. */
+@media (max-width: 560px) { .apphead__shot { width: 100%; } }
+
 .apphead__shot {
   width: 300px; height: auto; flex: 0 0 auto;
   border: 1px solid var(--line); border-radius: 12px;
@@ -790,6 +798,8 @@ input, button, select, textarea { font-family: inherit; }
 /* One mark per tool, from tools/icons.mjs. Ink follows the card's colour; the single amber
    shape in each is the accent. The seam this replaced was half amber by area and repeated
    eight times, so this spends less of the amber budget, not more. */
+/* The app tile is a product mark among category glyphs: fixed colours, its own corner radius. */
+.toolcard__mark--icon { border-radius: 3px; }
 .toolcard__mark { display: block; width: 26px; height: 26px; color: var(--ink); }
 .toolcard__mark .tm-a { fill: var(--amber); }
 .toolcard--outline .toolcard__mark { color: var(--ink-60, var(--ink-78)); }
@@ -915,7 +925,9 @@ textarea.askfield__input { resize: vertical; min-height: 104px; }
 
 .threeup {
   margin-top: clamp(32px, 4.5vw, 52px); padding-top: 26px; border-top: 1px solid var(--line-soft);
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px 30px;
+  /* Two by two, not three by one-and-a-void: auto-fit put three across and left the fourth alone in the first
+     column with 653 x 339px of nothing beside it (measured on production, 26 September 2026). */
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 24px 40px;
 }
 .threeup h2 { margin: 0 0 5px; font-size: 16px; font-weight: 700; }
 .threeup p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-78); }
