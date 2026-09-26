@@ -65,9 +65,10 @@ const attr = (tag, name) => {
 /**
  * The mark's polygons, read out of public/mark.svg rather than repeated here.
  *
- * One mark now serves the wordmark and /app/'s card, so one parser serves both. It refuses anything that is not
- * the two polygons it expects rather than drawing something plausible — the habit that caught a removed path and
- * a corner nudged off its line when the previous mark was parsed this way.
+ * One mark serves the wordmark and /app/'s card, so one parser serves both. It refuses anything that is not the
+ * shape it expects — two polygons and three rules — rather than drawing something plausible. That habit has caught
+ * a removed path and a corner nudged off its line, and it caught this change too: the mark gained three rules a few
+ * hours after the polygons arrived, and the parser stopped the build rather than dropping them (26 September 2026).
  */
 function markGeometry() {
   const svg = readFileSync(join(ROOT, 'public/mark.svg'), 'utf8');
@@ -77,14 +78,19 @@ function markGeometry() {
       points: m[1].trim().split(/\s+/).map((pt) => pt.split(',').map(Number)),
       fill: m[2].toUpperCase(),
     }));
-  if (!box || box[1] !== '24' || box[2] !== '24' || polys.length !== 2) {
-    throw new Error('public/mark.svg is not the shape tools/og-images.mjs reads: a 24 grid and two polygons');
+  const rules = [...svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"[^>]*fill="(#[0-9A-Fa-f]{6})"/g)]
+    .map((m) => ({ x: +m[1], y: +m[2], w: +m[3], h: +m[4], fill: m[5].toUpperCase() }));
+  if (!box || box[1] !== '24' || box[2] !== '24' || polys.length !== 2 || rules.length !== 3) {
+    throw new Error(`public/mark.svg is not the shape tools/og-images.mjs reads: a 24 grid, two polygons and three rules — found ${polys.length} and ${rules.length}`);
   }
   const [sheet, fold] = polys;
   if (sheet.points.length !== 5 || fold.points.length !== 3) {
     throw new Error(`the mark should be a five-sided sheet and a three-sided fold, not ${sheet.points.length} and ${fold.points.length}`);
   }
-  return { sheet: sheet.points, fold: fold.points, sheetColour: sheet.fill, foldColour: fold.fill };
+  if (new Set(rules.map((r) => r.fill)).size !== 1) {
+    throw new Error(`the three rules should share one colour, not ${[...new Set(rules.map((r) => r.fill))].join(', ')}`);
+  }
+  return { sheet: sheet.points, fold: fold.points, rules, sheetColour: sheet.fill, foldColour: fold.fill };
 }
 
 function mark(bmp, slug, x, y, size, p) {
@@ -94,7 +100,7 @@ function mark(bmp, slug, x, y, size, p) {
   // this card beside the Play listing is looking at one product's mark.
   if (slug === 'app') {
     const g = markGeometry();
-    return bmp.mark(x, y, size, g.sheet, g.fold, g.sheetColour, g.foldColour);
+    return bmp.mark(x, y, size, g);
   }
   const shapes = ICONS[slug];
   if (!shapes) {
@@ -153,8 +159,7 @@ export function ogImage(route) {
   const bmp = new Bitmap(W, H, p.paper);
 
   bmp.rect(0, 0, W, 12, p.amber);
-  const wordmark = markGeometry();
-  bmp.mark(LEFT, 96, 44, wordmark.sheet, wordmark.fold, wordmark.sheetColour, wordmark.foldColour);
+  bmp.mark(LEFT, 96, 44, markGeometry());
   drawText(bmp, f.bold, 'pdf-iq', { x: LEFT + 62, y: 96 + 36, size: 44, colour: p.ink });
 
   // The subject, as large as it fits without reaching the mark.

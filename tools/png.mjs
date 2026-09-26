@@ -141,11 +141,12 @@ export class Bitmap {
    * It was called `seam` when the site's mark was a square split on the diagonal, and it kept the name through the
    * launcher icon's own seam. Both are gone: one mark now, and one method that draws it (26 September 2026).
    *
-   * `sheet` and `fold` are polygons on the 24 grid the file uses, passed in rather than repeated here, so the card
-   * and the file cannot drift. Scanline fill: a point is inside when a ray crossing to the right of it crosses an
-   * odd number of edges.
+   * The geometry is passed in whole — polygons, rules and colours, on the 24 grid the file uses — rather than
+   * repeated here, so the card and the file cannot drift. Scanline fill: a point is inside when a ray crossing to
+   * the right of it crosses an odd number of edges. The rules are axis-aligned, so they are a rectangle test.
    */
-  mark(x, y, size, sheet, fold, sheetColour, foldColour) {
+  mark(x, y, size, geom) {
+    const { sheet, fold, rules, sheetColour, foldColour } = geom;
     const k = size / 24;
     const inside = (poly, px, py) => {
       let hit = false;
@@ -156,10 +157,14 @@ export class Bitmap {
       return hit;
     };
     const sheetRgb = hex(sheetColour), foldRgb = hex(foldColour);
+    const ruleRgb = hex(rules[0].fill);
     for (let v = 0; v < size; v++) {
       for (let u = 0; u < size; u++) {
         const px = (u + 0.5) / k, py = (v + 0.5) / k;
-        if (inside(fold, px, py)) this.set(Math.round(x) + u, Math.round(y) + v, foldRgb);
+        // The rules sit on the sheet, so they are tested first and never draw outside it.
+        if (rules.some((r) => px >= r.x && px < r.x + r.w && py >= r.y && py < r.y + r.h) && inside(sheet, px, py)) {
+          this.set(Math.round(x) + u, Math.round(y) + v, ruleRgb);
+        } else if (inside(fold, px, py)) this.set(Math.round(x) + u, Math.round(y) + v, foldRgb);
         else if (inside(sheet, px, py)) this.set(Math.round(x) + u, Math.round(y) + v, sheetRgb);
       }
     }
