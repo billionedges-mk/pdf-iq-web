@@ -328,45 +328,88 @@
          text, no summary and no file name in that record.</p>
 
       <h3 id="diagnostics">Diagnostics and analytics</h3>
-      <p>The app contains <strong>Firebase Crashlytics</strong>, which sends us crash reports, and
-         <strong>Firebase Analytics</strong>, which tells us which features are used and where
-         people run into problems. These record events such as "a PDF was created", "an operation failed",
-         "the free allowance ran out", "the Pro screen was opened", and whether a sign-in succeeded or failed
-         &mdash; never which account. <strong>Every number in them is a band rather than an exact value, and that is
-         true of every tool, not only Read a scan.</strong> When an operation finishes, what goes with the event is
-         which tool ran, how many pages it covered, how long it took and how many operations you have run this month
-         &mdash; each as a range (one, up to five, up to twenty, up to fifty, and so on). Read a scan is measured in
-         finer steps, because whether to ever cap it depends on them (none, up to three, up to five, up to ten, and so
-         on), and the highest band you reach in a month is kept against that identifier. <strong>When something fails,
-         what is recorded is the kind of failure, never the file.</strong> That list is fixed, and every entry on it
-         describes the shape of a document or the state of the service: corrupt, password-protected, an unsupported
-         type, no text layer, too large, too complex; storage full, a network failure, a rate limit. When you reach a
-         limit, they also record how long you have had the app, in bands (the same day, up to three days, up to a week,
-         and so on), and when pages are added they record where they came from &mdash; scanned, photographed, from the
-         gallery, or shared in &mdash; with the count as a range. Alongside these go
-         device model, operating system version, country, and an app-generated identifier.</p>
-      <p>Both start when the app starts. Neither is switched on by using a particular
-         feature, and there is no setting in PDFiq that turns either off &mdash; opening the
-         app is by itself enough to record a session, even if you close it again
-         without touching a tool. If you would rather they did not run at all, the only
-         way is not to install the app.</p>
-      <p>What they never receive is your document content, extracted text, summaries,
-         or file names.</p>
-      <p><strong>Google's ML Kit.</strong> Reading a scan uses Google's ML Kit. When it runs, ML
-         Kit sends Google a usage report: your device's manufacturer, model and Android build,
-         PDFiq's package name and version, which ML Kit feature ran and its version, how long it
-         took, the image settings it was given, the size of what went in and out, the type of event
-         and any error code, your language, country and time zone, and an identifier ML Kit
-         generates for this installation. It never contains the page, the picture, or any text from
-         them — the reports we read were 146 to 155 bytes each, far too small to carry
-         a page, and what was legible in them was the package name, the ML Kit version, the locale
-         and an identifier. We did not decode them field by field, and that is the limit of what we
-         checked. Google's own statement is that &ldquo;for the collected data listed on this page,
-         ML Kit does not transfer this data to third-parties&rdquo;. They go to Google for Google's
-         own purposes — measuring, debugging and improving those features, and
-         detecting misuse — not to our servers, and there is no setting in PDFiq or in
-         ML Kit that turns them off. If you are offline the report waits, and is sent the next time
-         you have a connection.</p>
+      <p>Three things in the app send anything to anyone, and none of them sends your document. This is each one,
+         when it sends, and what is in it.</p>
+
+      <div class="tbl-wrap">
+        <table class="facts">
+          <caption class="visually-hidden">What the PDFiq Android app sends, by sender</caption>
+          <thead>
+            <tr>
+              <th scope="col">What sends it</th>
+              <th scope="col">When</th>
+              <th scope="col">What is in it</th>
+              <th scope="col">What is never in it</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Firebase Crashlytics</th>
+              <td data-label="When">From the moment the app starts, and a report when it crashes.</td>
+              <td data-label="What is in it">The crash itself, with device model, operating system version, country,
+                and an app-generated identifier.</td>
+              <td data-label="Never">Your document content, extracted text, summaries or file names.</td>
+            </tr>
+            <tr>
+              <th scope="row">Firebase Analytics</th>
+              <td data-label="When">From the moment the app starts. Then when an operation finishes or fails, when
+                pages are added, and when you reach a limit.</td>
+              <td data-label="What is in it">Which tool ran, how many pages it covered, how long it took, and how many
+                operations you have run this month &mdash; each as a band, never an exact number. The kind of failure,
+                from a fixed list. Where added pages came from. How long you have had the app, in bands. Device model,
+                operating system version, country, and an app-generated identifier.</td>
+              <td data-label="Never">Your document content, extracted text, summaries or file names. Whether a sign-in
+                succeeded is recorded; which account it was is not.</td>
+            </tr>
+            <tr>
+              <th scope="row">Google&rsquo;s ML Kit<br><span class="facts__sub">only when Read a scan runs</span></th>
+              <td data-label="When">Each time Read a scan runs. If you are offline the report waits, and is sent the
+                next time you have a connection.</td>
+              <td data-label="What is in it">Your device&rsquo;s manufacturer, model and Android build; PDFiq&rsquo;s
+                package name and version; which ML Kit feature ran and its version; how long it took; the image
+                settings it was given; the size of what went in and out; the type of event and any error code; your
+                language, country and time zone; and an identifier ML Kit generates for this installation.</td>
+              <td data-label="Never">The page, the picture, or any text from them. These reports go to Google for
+                Google&rsquo;s own purposes, not to our servers.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="bignum"><span class="bignum__n">146&ndash;155</span><span class="bignum__u">bytes</span></p>
+      <p class="bignum__say">The size of a single ML Kit usage report, measured &mdash; far too small to carry a page.
+         What was legible in them was the package name, the ML Kit version, the locale and an identifier.
+         <strong>We did not decode them field by field, and that is the limit of what we checked.</strong>
+         Google&rsquo;s own statement is that &ldquo;for the collected data listed on this page, ML Kit does not
+         transfer this data to third-parties&rdquo;. They are used for measuring, debugging and improving those
+         features, and detecting misuse.</p>
+
+      <p><strong>Every number in the analytics is a band rather than an exact value</strong>, and that is true of every
+         tool, not only Read a scan. The events themselves are things like &ldquo;a PDF was created&rdquo;, &ldquo;an
+         operation failed&rdquo;, &ldquo;the free allowance ran out&rdquo; and &ldquo;the Pro screen was opened&rdquo;.
+         The bands are:</p>
+      <ul>
+        <li><strong>Pages and operations</strong> &mdash; one, up to five, up to twenty, up to fifty, and so on.</li>
+        <li><strong>Read a scan</strong> &mdash; finer steps, because whether to ever cap it depends on them: none, up
+          to three, up to five, up to ten, and so on. The highest band you reach in a month is kept against that
+          identifier.</li>
+        <li><strong>How long you have had the app</strong> &mdash; the same day, up to three days, up to a week, and so
+          on. Recorded when you reach a limit.</li>
+        <li><strong>Where pages came from</strong> &mdash; scanned, photographed, from the gallery, or shared in, with
+          the count as a range.</li>
+      </ul>
+
+      <p><strong>When something fails, what is recorded is the kind of failure, never the file.</strong> That list is
+         fixed, and every entry on it describes the shape of a document or the state of the service: corrupt,
+         password-protected, an unsupported type, no text layer, too large, too complex; storage full, a network
+         failure, a rate limit.</p>
+
+      <p><strong>None of the three can be switched off.</strong> Crashlytics and Analytics both start when the app
+         starts; neither is switched on by using a particular feature, and there is no setting in PDFiq that turns
+         either off &mdash; opening the app is by itself enough to record a session, even if you close it again without
+         touching a tool. There is no setting in PDFiq or in ML Kit that turns its reports off either. If you would
+         rather none of them ran, the only way is not to install the app.</p>
+
       <p>This is declared to Google Play on our Data Safety form as collecting app interactions,
          crash logs, diagnostics and device identifiers. It is stated here in the same terms.</p>
       <p>The app contains <strong>no advertising SDK</strong>. We do not sell, rent or share your

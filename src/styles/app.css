@@ -318,6 +318,54 @@ input, button, select, textarea { font-family: inherit; }
    stronger than the strip because it is the page's own subject rather than an aside about another tool, and it sits
    above the drop zone where the lede would otherwise be the last thing read. Still type, not a card: this is a
    sentence, not an offer panel. */
+/* ---------------------------------------------------------------- facts, as a table
+   The site's first table, and it exists because /privacy/ is structured data written as prose: host, what it
+   receives, how long it lasts. A table is not decoration here and it is not less precise than a paragraph — it
+   forces a value into every cell, which is where prose hides a gap.
+
+   Plain on purpose: hairline rules in the existing --line, no zebra, no borders around cells. Below 700px each row
+   becomes its own block with the column name in front of each value, because a four-column table on a phone is
+   either a horizontal scroll or a lie about how much fits. */
+.tbl-wrap { margin: 16px 0 0; overflow-x: auto; }
+/* The table breaks out of the reading measure. .prose caps at 629px, which is right for a paragraph and wrong for
+   four columns: inside it the rows ran 267, 723 and 679px tall and the table was taller than the prose it replaced.
+   It keeps the left edge of the text and uses the empty column to its right. */
+@media (min-width: 880px) { .tbl-wrap { width: min(1040px, calc(100vw - 120px)); } }
+.facts { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 1.55; text-align: left; }
+.facts thead th {
+  font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--soft);
+  padding: 0 14px 8px 0; border-bottom: 1px solid var(--line); vertical-align: bottom;
+}
+.facts tbody th { font-weight: 700; color: var(--ink); }
+.facts tbody th, .facts tbody td {
+  padding: 14px 14px 14px 0; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-78);
+}
+.facts tbody tr:last-child th, .facts tbody tr:last-child td { border-bottom: 0; }
+.facts th:last-child, .facts td:last-child { padding-right: 0; }
+.facts__sub { display: block; margin-top: 3px; font-size: 13px; font-weight: 400; color: var(--soft); }
+
+@media (max-width: 700px) {
+  .facts, .facts tbody, .facts tbody tr, .facts tbody th, .facts tbody td { display: block; width: auto; }
+  .facts thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .facts tbody tr { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .facts tbody tr:last-child { border-bottom: 0; }
+  .facts tbody th { padding: 0 0 8px; border-bottom: 0; }
+  .facts tbody td { padding: 0 0 10px; border-bottom: 0; }
+  .facts tbody td:last-child { padding-bottom: 0; }
+  .facts tbody td::before {
+    content: attr(data-label); display: block; margin-bottom: 2px;
+    font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--soft);
+  }
+}
+
+/* One measured number per section, set large. It is the claim itself — the size of what leaves the device — not a
+   figure lifted out of a sentence for decoration. Mono because every other number on this site is (the price, the
+   byte counter in the footer). */
+.bignum { margin: 22px 0 0; display: flex; align-items: baseline; gap: 8px; }
+.bignum__n { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 40px; line-height: 1; color: var(--ink); }
+.bignum__u { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 16px; color: var(--soft); }
+.bignum__say { margin: 8px 0 0; max-width: 640px; font-size: 15px; line-height: 1.6; color: var(--ink-78); }
+
 /* The /app/ hero: the app's own icon, then what it is, then where it is. The icon is the launcher icon as a
    phone renders it (public/app-icon.svg), not the site's mark — they are siblings, not the same drawing. */
 .apphead { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; }
