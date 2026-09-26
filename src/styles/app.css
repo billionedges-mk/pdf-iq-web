@@ -386,19 +386,29 @@ input, button, select, textarea { font-family: inherit; }
 .prose .bignum { margin: 26px 0 0; }
 .prose .bignum__say { margin: 8px 0 18px; }
 
+/* On /app/, the free app's price is not the headline. It was set at 38px in the mono face — the same size as the
+   h1 — which made the price of something nobody can download the heaviest element on the page. The Pro card beside
+   it keeps every bit of its weight, because Pro is the one thing on this page a reader can actually act on. */
+.price--mark .price__amount { font-size: 24px; }
+
 /* The /app/ hero: the app's own icon, then what it is, then where it is. The icon is the launcher icon as a
    phone renders it (public/app-icon.svg), not the site's mark — they are siblings, not the same drawing. */
-.apphead { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; }
-.apphead__words { flex: 1 1 320px; min-width: 0; }
+/* Two columns that look like two columns. The first build put a 240px image at the far right of a 1040px grid
+   beside a text column 782px wide, and the block's height was set by the image: the hero text ended at y=234, the
+   image at 484, and the section below began at 536 — a 302px hole under the words that made the image read as a
+   leftover rather than an illustration (Maneesh, 26 September 2026). The text is now given a reading measure and
+   the shot is larger, so the two are comparable objects and the space between them is a gap rather than a gulf. */
+.apphead { display: flex; align-items: center; gap: 40px; flex-wrap: wrap; }
+.apphead__words { flex: 1 1 380px; min-width: 0; max-width: 560px; }
 .apphead__state { margin: 12px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-78); max-width: 620px; }
 /* The screenshots. Sized in CSS rather than by the file: the sources are 720 wide so a 2x screen has pixels to
    spend, and width/height on the tag reserves the box so nothing jumps while they load. */
 .apphead__shot {
-  width: 240px; height: auto; flex: 0 0 auto; align-self: flex-start;
+  width: 300px; height: auto; flex: 0 0 auto;
   border: 1px solid var(--line); border-radius: 12px;
 }
 
-.appshot { margin: 12px 0 0; max-width: 380px; }
+.appshot { margin: 18px 0 0; max-width: 420px; }
 .appshot img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; }
 .appshot figcaption { margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--ink-60, var(--ink-78)); }
 
