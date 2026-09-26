@@ -6,7 +6,7 @@
   "description": "pdf-iq.com - client-side PDF tools. Files never leave the device.",
   "type": "module",
   "scripts": {
-    "prebuild": "node tools/licenses.mjs && node tools/contrast.mjs && node tools/claims-index.mjs --check && node tools/verify-classes.mjs && node tools/verify-font.mjs && node tools/verify-price-offers.mjs",
+    "prebuild": "node tools/licenses.mjs && node tools/contrast.mjs && node tools/claims-index.mjs --check && node tools/verify-classes.mjs && node tools/verify-font.mjs && node tools/verify-price-offers.mjs && node tools/verify-privacy-counts.mjs",
     "build": "node tools/build.mjs",
     "dev": "node tools/build.mjs --watch --serve",
     "licenses": "node tools/licenses.mjs",
@@ -43,7 +43,8 @@
     "verify:font": "node tools/verify-font.mjs",
     "verify:price-offers": "node tools/verify-price-offers.mjs",
     "verify:surfaces": "node tools/verify-surfaces.mjs",
-    "verify:purchase-scope": "node tools/verify-purchase-scope.mjs"
+    "verify:purchase-scope": "node tools/verify-purchase-scope.mjs",
+    "verify:privacy-counts": "node tools/verify-privacy-counts.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

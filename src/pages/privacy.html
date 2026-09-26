@@ -509,19 +509,45 @@
          this site and Cloudflare, which hosts it.<!--PRO--> Signing in for Pro uses Google Firebase, the
          same as the app; see <a href="#if-you-sign-in">If you sign in</a>.<!--/PRO--> The app uses a small
          number of providers, each for a specific purpose:</p>
-      <ul>
-        <li><strong>Google Firebase</strong> — sign-in, usage counters, hosting, analytics and
-            crash reports. Receives: account identifier, usage counts, diagnostic events.</li>
-        <li><strong>Google (Gemini API)</strong> — generating summaries. Receives: the extracted
-            text of a document you chose to summarise.</li>
-        <li><strong>Google (ML Kit, through Google Play services)</strong> — the text
-            recogniser used by Read a scan. Receives: the usage reports described under
-            <a href="#diagnostics">Diagnostics and analytics</a>. Never receives your document.</li>
-        <li><strong>Paddle</strong> — payment processing for the one-time Pro purchase, which is
-            made on pdf-iq.com rather than in the app. <!--NOSALE-->Will receive, once Pro is on sale: your payment<!--/NOSALE--><!--SALE-->Receives, when you buy Pro: your payment<!--/SALE-->
-            details, handled entirely by Paddle as merchant of record.<!--SALE--> Paddle's checkout also loads
-            services of its own choosing, listed under <a href="#checkout">the checkout</a>.<!--/SALE--></li>
-      </ul>
+      <div class="tbl-wrap">
+        <table class="datatable">
+          <caption class="visually-hidden">The app's providers, and what each one receives</caption>
+          <thead>
+            <tr>
+              <th scope="col">Who</th>
+              <th scope="col">What for</th>
+              <th scope="col">What they receive</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Google Firebase</th>
+              <td data-label="What for">Sign-in, usage counters, hosting, analytics and crash reports.</td>
+              <td data-label="What they receive">Account identifier, usage counts, diagnostic events.</td>
+            </tr>
+            <tr>
+              <th scope="row">Google (Gemini API)</th>
+              <td data-label="What for">Generating summaries.</td>
+              <td data-label="What they receive">The extracted text of a document you chose to summarise.</td>
+            </tr>
+            <tr>
+              <th scope="row">Google (ML Kit)<br><span class="datatable__sub">through Google Play services</span></th>
+              <td data-label="What for">The text recogniser used by Read a scan.</td>
+              <td data-label="What they receive">The usage reports described under
+                <a href="#diagnostics">Diagnostics and analytics</a>. <strong>Never receives your document.</strong></td>
+            </tr>
+            <tr>
+              <th scope="row">Paddle</th>
+              <td data-label="What for">Payment processing for the one-time Pro purchase, which is made on
+                pdf-iq.com rather than in the app.</td>
+              <td data-label="What they receive"><!--NOSALE-->Will receive, once Pro is on sale: your payment<!--/NOSALE--><!--SALE-->Receives, when you buy Pro: your payment<!--/SALE-->
+                details, handled entirely by Paddle as merchant of record.<!--SALE--> Paddle's checkout also loads
+                services of its own choosing, listed under <a href="#checkout">the checkout</a>.<!--/SALE--></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <p>We may also disclose information where we are legally required to, or where it is
          necessary to protect our rights or the safety of others.</p>
 
