@@ -275,23 +275,90 @@
       <p><em>Measured on Paddle's test checkout on 13 September 2026, both opening the checkout and completing a
          test payment. That is what this section describes. The live checkout is measured on the first real purchase,
          and this section is corrected to match what that measurement shows.</em></p>
-      <p><strong>When the checkout opens</strong>, Paddle's frame:</p>
-      <ul>
-        <li><strong>loads Stripe</strong>, from js.stripe.com, m.stripe.network and m.stripe.com. Stripe sets a
-            cookie named <code>m</code> on m.stripe.com that lasts about 13 months. Stripe describes m.stripe.com
-            as the address its script sends fraud-prevention signals to
-            (<a href="https://docs.stripe.com/disputes/prevention/advanced-fraud-detection">Stripe's description</a>).</li>
-        <li><strong>sets a Cloudflare cookie</strong> named <code>__cf_bm</code> on paddle.com, which Cloudflare's
-            bot protection uses and which expires after 30 minutes of inactivity
-            (<a href="https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/">Cloudflare's description</a>).</li>
-        <li><strong>loads Localize</strong>, from global.localizecdn.com;</li>
-        <li><strong>sends requests to Sentry</strong>, at ingest.sentry.io;</li>
-        <li><strong>sends events to Paddle's own checkout services</strong>, at paddle.com addresses;</li>
-        <li><strong>loads fonts from Google Fonts</strong>, at fonts.googleapis.com and fonts.gstatic.com.</li>
-      </ul>
-      <p><strong>When you pay</strong>, it also sends requests to r.stripe.com, another Stripe address; loads an
-         image from www.gstatic.com, a Google address; and loads card-brand images from buy.paddle.com and more of
-         Stripe's scripts. Paying sets no cookie beyond the two above.</p>
+      <div class="tbl-wrap">
+        <table class="datatable">
+          <caption class="visually-hidden">What Paddle's checkout frame loads, and what it sets</caption>
+          <thead>
+            <tr>
+              <th scope="col">What</th>
+              <th scope="col">Where from</th>
+              <th scope="col">When</th>
+              <th scope="col">Cookie it sets, and for how long</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Stripe</th>
+              <td data-label="Where from"><code>js.stripe.com</code>, <code>m.stripe.network</code>,
+                <code>m.stripe.com</code></td>
+              <td data-label="When">When the checkout opens</td>
+              <td data-label="Cookie"><code>m</code> on m.stripe.com, <span class="dur">about 13 months</span>.
+                Stripe describes m.stripe.com as the address its script sends fraud-prevention signals to
+                (<a href="https://docs.stripe.com/disputes/prevention/advanced-fraud-detection">Stripe's
+                description</a>).</td>
+            </tr>
+            <tr>
+              <th scope="row">Cloudflare's bot protection</th>
+              <td data-label="Where from"><code>paddle.com</code></td>
+              <td data-label="When">When the checkout opens</td>
+              <td data-label="Cookie"><code>__cf_bm</code>, <span class="dur">30 minutes of inactivity</span>
+                (<a href="https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/">Cloudflare's
+                description</a>).</td>
+            </tr>
+            <tr>
+              <th scope="row">Localize</th>
+              <td data-label="Where from"><code>global.localizecdn.com</code></td>
+              <td data-label="When">When the checkout opens</td>
+              <td data-label="Cookie"><span class="dur">None</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Sentry</th>
+              <td data-label="Where from"><code>ingest.sentry.io</code></td>
+              <td data-label="When">When the checkout opens</td>
+              <td data-label="Cookie"><span class="dur">None</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Paddle's own checkout services</th>
+              <td data-label="Where from">paddle.com addresses</td>
+              <td data-label="When">When the checkout opens</td>
+              <td data-label="Cookie"><span class="dur">None</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Google Fonts</th>
+              <td data-label="Where from"><code>fonts.googleapis.com</code>, <code>fonts.gstatic.com</code></td>
+              <td data-label="When">When the checkout opens</td>
+              <td data-label="Cookie"><span class="dur">None</span></td>
+            </tr>
+            <tr>
+              <th scope="row">More of Stripe</th>
+              <td data-label="Where from"><code>r.stripe.com</code>, and more of Stripe's scripts</td>
+              <td data-label="When">When you pay</td>
+              <td data-label="Cookie"><span class="dur">None</span></td>
+            </tr>
+            <tr>
+              <th scope="row">An image from Google</th>
+              <td data-label="Where from"><code>www.gstatic.com</code></td>
+              <td data-label="When">When you pay</td>
+              <td data-label="Cookie"><span class="dur">None</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Card-brand images</th>
+              <td data-label="Where from"><code>buy.paddle.com</code></td>
+              <td data-label="When">When you pay</td>
+              <td data-label="Cookie"><span class="dur">None</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Paying sets no cookie beyond the two above.</p>
+
+      <p class="bignum"><span class="bignum__n">13</span><span class="bignum__u">months</span></p>
+      <p class="bignum__say">The longest-lived thing a purchase leaves in your browser, and it is not ours:
+         Stripe's <code>m</code> cookie, set by the checkout frame, which Stripe describes as the address its script
+         sends fraud-prevention signals to. Everything else the checkout sets is the 30-minute
+         <code>__cf_bm</code>, or nothing at all. We measured what is set; what any of it is later used for is
+         Stripe's and Paddle's to answer, and their notices are linked below.</p>
+
       <p><strong>A report about Paddle's frame.</strong> Paddle's checkout frame carries a policy that expects only
          the checkout address above it. The purchase page is above that as well, so when the checkout opens your
          browser sends a short report to Sentry, the address Paddle's policy names. We read what it contains: it
