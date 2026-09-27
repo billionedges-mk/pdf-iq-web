@@ -689,6 +689,49 @@ exactly like the defect this section exists because of. Do not read a "still gra
   whether a sentence that IS somewhere should still be there. None of them can ask whether a sentence that is nowhere
   ought to exist. The agreement was made in the /app/ conversation and written down in neither record (CLAIMS 54).
 
+- **The Read a scan screenshot, held out of /app/'s hero switcher.** The switcher ships three real captures
+  (Compress, Compressed, Photos to PDF). A fourth exists, taken in the same pass on 26 September 2026 and just as
+  good: the Read a scan result, 24 pages of a scan as text. It is not on the page because its paywall block says
+
+  > Pro is sold at pdf-iq.com. Open it in your browser and sign in with the same Google account.
+
+  and the price card three screens below it on the same page says a purchase "does not unlock anything in this app".
+  Publishing both would put a contradiction about what money buys on one screen.
+
+  **The app's sentence is the true one.** Proved on production, by accident, on 27 September 2026: a signature
+  mismatch forced a clean install, so Maneesh bought Pro on pdf-iq.com with a real card, uninstalled the sideload and
+  installed vc20 **from Play** — a Play-signed build — and Pro was there. That is the production entitlement walk,
+  done sideways. The website's exclusion sentences are the stale half, and they have been since the app side landed
+  it; nothing on this site had been re-read against the app because nothing put the two sentences in one place until
+  a screenshot did.
+
+  **They are still correct for the public, and still ship**, because the condition on this item is not "does the app
+  honour a web purchase" — it is "can a buyer install the app that does". Production access was refused on
+  25 September and the track opens roughly 9 October: someone who pays today cannot get that build. So the sentences
+  stay until the flip.
+
+  **The capture does not actually carry the contradiction, and this was found after the decision to hold it.** The
+  set's crop is source rows 68..930, fixed by measuring the other three screens and then applied to this one. At
+  that crop the frame ends at the recognised text — title, `quarterly-report.pdf`, "Read from 24 pages.", and the
+  text itself. The paywall block sits about 400 rows below the cut and is not in the picture. So publishing it
+  would publish nothing false, and **the screenshot is not blocked by the flip**: nothing in the frame changes when
+  the sentences do.
+
+  **Held anyway** (owner, 27 September 2026), before that was known. The cropped frame is committed at
+  `docs/pending/app-read-a-scan.png` — outside `public/`, so it is versioned and not served — and shipping it is
+  one commit: move the file, add the panel, its tab and its alt text to `src/pages/app.html`. Do that whenever the
+  owner wants a fourth screen; it does not have to wait for anything.
+
+  **What does wait for the flip** is the app's own sentence, which is the app session's to change, and the fourteen
+  website sentences above.
+
+  **The part worth keeping.** This item's condition was written when the blocker was the app's capability. The
+  blocker is now distribution, and the condition happens to still be right — but only by luck. Had it been phrased
+  as the reason rather than the event ("when `BILLING_ENABLED` is split", which is how the TECH_DEBT entry stated
+  it), it would read as satisfied today and the flip would fire, publishing "covers both" to a public that cannot
+  install the app. **A condition that names the event survives its own reasoning; one that names the cause does
+  not.** Same family as CLAIMS 18, one level up: not a status that goes stale, but a trigger that comes true early.
+
 - **Re-compare the app icon.** `public/app-icon.svg` is a redraw of the Android launcher icon
   (`app/src/main/res/drawable/ic_launcher_foreground.xml` and `ic_launcher_background.xml` in the app repo, copied
   25 September 2026). Two copies of one mark in two repositories drift. No build-time check is possible — Cloudflare

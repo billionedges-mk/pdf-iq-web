@@ -2389,7 +2389,23 @@ the artefact a design review never looks at.
 of them, the Read a scan result, shows the app's own paywall saying "Pro is sold at pdf-iq.com. Open it in your
 browser and sign in with the same Google account" — on a page whose price card says a web purchase "does not unlock
 anything in this app". Both cannot be true, and it is a claim about what money buys. It was not shipped; the other
-three were. The contradiction has been recorded in TECH_DEBT since 13 September ("The purchase page says 'web tools
-only' until the app honours a web purchase") and nothing had put the two sentences on one screen until a screenshot
-did. [check 19] with a picture instead of a sentence: a decision on one surface expires a claim published on
-another, and a capture of that surface is evidence the same way a quotation is.
+three were.
+
+**Which one was stale, answered the same day: the website's.** A signature mismatch had forced a clean install that
+morning, so Pro bought on pdf-iq.com with a real card, a sideload uninstalled and vc20 installed from Play, had
+already proved the app honours a web purchase — a production entitlement walk done sideways. The exclusion sentences
+had been true when written and had not moved since. Nothing on this site had been re-read against the app because
+nothing put the two sentences in one place until a picture did. The sentences still ship, because a buyer cannot yet
+install that build.
+
+**And a last turn, which is the part to remember.** Cropped to the set's shape — the crop was fixed by measuring the
+other three screens — that capture ends above the paywall block: the contradicting sentence is about 400 rows below
+the cut and never reaches the page. So the picture that exposed the contradiction would not have published it. The
+evidence was in the full frame and the finding came from reading the full frame; **had the capture arrived already
+cropped, as a designer would reasonably have delivered it, none of this would have been visible at all.** It is held
+now by choice rather than by the flip (`docs/sale-go-live.md` §4).
+
+So: [check 19] with a picture instead of a sentence — a decision on one surface expires a claim published on
+another, and a capture of that surface is evidence the same way a quotation is. **A screenshot is a quotation of a
+surface you do not otherwise read.** The design was reviewed for its layout and its dependencies; the thing it
+actually settled was a money claim, and it settled it by being a photograph rather than an argument.

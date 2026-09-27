@@ -413,11 +413,20 @@ A web purchase is meant to cover the Android app, and /pro/, /terms and /refunds
 `GET /api/entitlement` says only `pro: true` for a uid; each surface decides what that unlocks. So
 the two feature lists must be kept in agreement deliberately.
 
-**The app cannot honour a web purchase yet** (app session, 13 September 2026). `BILLING_ENABLED`
+~~**The app cannot honour a web purchase yet** (app session, 13 September 2026). `BILLING_ENABLED`
 does two jobs there: it compiles the Pro features in, and it turns on the Play purchase path. A
 Paddle buyer needs the first and must never get the second. The flag has to be split before the app
-reads this entitlement. That is app work, recorded here because a web sale that says "covers both"
-depends on it.
+reads this entitlement.~~ **Done, and proved on production 27 September 2026.** A signature mismatch
+forced a clean install: Pro was bought on pdf-iq.com with a real card, the sideload uninstalled, and
+vc20 installed **from Play** — a Play-signed build — and Pro was there. The two feature lists still
+have to be kept in agreement deliberately, which is why this section stays.
+
+**What this does not unblock.** The website's "it does not unlock anything in the Android app" is
+now stale about the mechanism and still correct for a member of the public, who cannot install that
+build: Play production access was refused on 25 September 2026 and the track opens roughly
+9 October. The flip's condition is unchanged and is stated once, in `docs/sale-go-live.md` §4 —
+**vc18 live on Play** — because the trigger is an event a buyer can act on, not a capability. See
+the same file for why that distinction saved the trigger when the reason underneath it changed.
 
 ## Paddle's checkout frame talks to hosts this site's policy cannot govern
 
@@ -460,9 +469,12 @@ Unlock key, with the same ten-minute limit and pick-up-and-delete, and a /privac
 
 ## The purchase page says "web tools only" until the app honours a web purchase (13 September 2026)
 
-$14.99 covering both the website and the Android app was the pitch. Today a purchase covers one surface: the app cannot
-honour a web purchase until `BILLING_ENABLED` is split (see "What a Pro entitlement unlocks must be the same on both
-surfaces" above; approved in the app session, not built). /pro/buy/ said "covering both the web tools and the Android
+$14.99 covering both the website and the Android app was the pitch. Today the pages say a purchase covers one surface.
+That was written because the app could not honour a web purchase; it can, as of 27 September 2026 (see "What a Pro
+entitlement unlocks must be the same on both surfaces" above). **The sentences stay anyway, for a different reason
+than the one that put them there:** a buyer today cannot install the build that honours their purchase, because Play
+production access was refused on 25 September. The condition has not moved and is stated once, in
+`docs/sale-go-live.md` §4. /pro/buy/ said "covering both the web tools and the Android
 app", on the page where someone hands over money, and "covers the app" is a material part of what they think they are
 buying. The owner pulled it the same day.
 
@@ -671,7 +683,9 @@ top block of content — then box-averaged to 720 wide.
 with however many good screenshots exist, not five slots waiting to be filled. Four now, five when the fifth is
 worth taking. An empty state is worse than a shorter list. And it goes in TECH_DEBT with its cadence stated."
 
-It ships with three rather than four. The fourth capture, Read a scan, shows the app's paywall telling the reader
-that Pro bought on pdf-iq.com unlocks the app, which contradicts the price card three screens below it on the same
-page — see "The purchase page says 'web tools only' until the app honours a web purchase" and CLAIMS 67. The capture
-is good; the sentence inside it is the open question, and it is the app's sentence, not the website's.
+It ships with three rather than four. The fourth capture, Read a scan, is held — see `docs/sale-go-live.md` §4 for
+why and for the one commit that ships it. In short: the full frame shows the app's paywall telling the reader that
+Pro bought on pdf-iq.com unlocks the app, which contradicted the price card on this page until the app's half was
+proved on production on 27 September; the website's sentences are the stale ones and stay up until a buyer can
+install that build. The cropped frame does not reach the paywall block, so shipping it would publish nothing false.
+The cropped file is at `docs/pending/app-read-a-scan.png`, outside `public/`.
