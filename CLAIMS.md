@@ -2620,5 +2620,13 @@ reader can check — see [check 68] — rather than as the cause, which was now 
    the drawing and re-read the paragraph beside it; and the [check 68] sweep, which found two conditions met and
    unremarked and one done and unrecorded. None of the three looked unfinished.
 
-**Still open, as the standing example:** `.filechip__mark` draws the retired 135-degree split. Its rule is correct
-about a mark the site no longer uses.
+**The standing example, closed the hour this was written.** `.filechip__mark` drew the retired 135-degree split —
+a rule correct about a mark the site stopped using on 26 September 2026, on six tool pages, re-read several times
+without ever looking wrong. It is a folded page now, taken off `public/mark.svg`'s own geometry and without the
+three rules that make that drawing a logo, because a chip beside someone's file name should say "a document" and
+not "pdf-iq".
+
+**Leaving it open to illustrate the entry would have been the entry happening again** (owner, 27 September 2026),
+and that is the part worth keeping. A dissolved blocker held up as an example is still live on the site while it is
+being admired. **An example costs whatever it is an example of.** If it is cheap to fix, fixing it is the
+demonstration; the entry can describe what was wrong in the past tense, which is where a closed thing belongs.
