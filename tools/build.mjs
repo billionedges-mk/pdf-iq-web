@@ -390,8 +390,16 @@ function substituteTokens(body, file) {
     if (!(name in tokens)) throw new Error(`unknown token {{${name}}} in ${file}`);
     return tokens[name];
   });
-  const leftover = /\{\{(\w+)\}\}/.exec(out);
-  if (leftover) throw new Error(`token ${leftover[0]} survived substitution in ${file}`);
+  // Anything mustache-shaped that is still here, not only {{word}}. The narrow form could not see the shape every
+  // other template language writes — {{ s.name }}, with a space and a dot — and a design delivered as a working
+  // page arrived carrying exactly that (27 September 2026). It matched neither the substitution above nor this
+  // check, so it built without complaint and would have shipped as literal text on the page. Measured rather than
+  // assumed: the probe built clean and dist/app/index.html contained the expression verbatim.
+  //
+  // No page has a legitimate {{ in its prose today. If one ever needs to show the syntax it fails here first,
+  // which is the right way round for a check whose whole job is that nothing template-shaped reaches a reader.
+  const leftover = /\{\{[^}]*\}*/.exec(out);
+  if (leftover) throw new Error(`token ${leftover[0].trim()} survived substitution in ${file}`);
   return out;
 }
 

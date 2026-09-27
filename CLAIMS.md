@@ -81,7 +81,9 @@ the work is done.
 65. [A mechanism you remove was doing more jobs than the one you removed it for](#65-a-mechanism-you-remove-was-doing-more-jobs-than-the-one-you-removed-it-for)  
 66. [A number that supports what you hoped for is the one to distrust, and precision is not the same as aim](#66-a-number-that-supports-what-you-hoped-for-is-the-one-to-distrust-and-precision-is-not-the-same-as-aim)  
 67. [A design delivered as a working page brings its own dependencies, and they are invisible in the thing you are reviewing](#67-a-design-delivered-as-a-working-page-brings-its-own-dependencies-and-they-are-invisible-in-the-thing-you-are-reviewing)  
-68. [A trigger that comes true early: write an unblock condition as what the reader can observe, not as what you were waiting for](#68-a-trigger-that-comes-true-early-write-an-unblock-condition-as-what-the-reader-can-observe-not-as-what-you-were-waiting-for)
+68. [A trigger that comes true early: write an unblock condition as what the reader can observe, not as what you were waiting for](#68-a-trigger-that-comes-true-early-write-an-unblock-condition-as-what-the-reader-can-observe-not-as-what-you-were-waiting-for)  
+69. [A guard that lives in the tool you bypassed: checks attach to the path, not to the artefact](#69-a-guard-that-lives-in-the-tool-you-bypassed-checks-attach-to-the-path-not-to-the-artefact)  
+70. [A blocker that dissolved: a wrong one gets found, a narrow one survives every re-reading](#70-a-blocker-that-dissolved-a-wrong-one-gets-found-a-narrow-one-survives-every-re-reading)
 
 <!-- /index -->
 
@@ -2513,3 +2515,110 @@ nothing to do is not an event anybody writes up. It is the only one of the three
 **So a sweep has to record what it finds already true, not only what it finds newly actionable** — and the line to
 write is the boring one: *done, here is where I looked.* The three entries this sweep touched now each say which
 of the three they are.
+
+### 69. A guard that lives in the tool you bypassed: checks attach to the path, not to the artefact
+
+[check 67] is about what an outside artefact **brings** — a design delivered as a working page carried a preconnect
+to fonts.googleapis.com that no reviewer of its layout would have seen. This is the same seam from the other side:
+what an outside artefact **leaves behind**.
+
+Everything this repo verifies, it verifies *because the thing was built here*. `substituteTokens` throws on a token
+it does not know; `verify:price-offers` reads every built page for a price without a way to pay;
+`verify:sale-build` builds both states and compares them; `verify:classes` reads the pages and the stylesheets
+together. Not one of those is attached to a page. They are attached to **the act of building a page**.
+
+So an artefact that arrives finished skips every one of them, and **nobody decides to skip anything**. There is no
+moment where someone waves a check through. The file simply did not come along the road the checks are standing on.
+
+**Measured against the design bundle of 27 September 2026**, by planting each of its four blockers in a real page
+and running the build. The draft of this entry said three of the four had a guard that would have fired. **One did.**
+
+1. **No `SALE`/`NOSALE` blocks — caught.** An unconditional `/pro/buy/` link fails `verify:sale-build` twice, once
+   for "site, no flags" and once for "site, Pro without sale". The only blocker a guard catches unaided.
+2. **The framework expressions — a guard with a hole in it.** `{{ s.n }}`, `{{ s.name }}`, `{{ s.img }}`. Token
+   substitution throws on an unknown token, and a second check throws on one that survives, and **neither could see
+   these**: both matched `{{word}}` only, and a foreign expression has a space and a dot in it. The probe built
+   clean and `dist/app/index.html` contained `{{ s.name }}` verbatim — the exact outcome the surviving-token check
+   exists to prevent, produced by the shape every other template language writes. Widened the same day to anything
+   mustache-shaped, and run against the broken input before being believed.
+3. **The hardcoded `$14.99` — nothing fires, and nothing can.** In a selling build, a price with a Buy control
+   beside it is precisely what `verify:price-offers` wants to see; it is a check about offers, not about where a
+   number came from. A hand-typed price is invisible for exactly as long as it happens to be right, which is the
+   reason `{{proPrice}}` exists and not a thing any check can restate.
+4. **The Google Fonts load — covered, in a place the review cannot reach.** The Content-Security-Policy in
+   `public/_headers` says `style-src 'self'`, `font-src 'self'`, so fonts.googleapis.com is refused outright. But
+   that fires **in a browser, at runtime, as a console message** — and `_headers` is a Cloudflare Pages file. Open
+   the design as a local HTML file, which is how a design is read, and **there is no policy at all**. The one guard
+   that covered the defect did not exist in the form the artefact was being looked at, and at the first deploy it
+   would have spoken in a console nobody opens, on a page that renders correctly in fallback fonts.
+
+**I found all four by reading the file.** Naming the guards would have been faster for one of them and would have
+been *wrong* about two, which is the more useful half of this: writing "the build would have caught it" about a
+check nobody ran is [check 47] committed in the act of describing it. The audit is worth doing and its answer is
+worth measuring — the first number I wrote down, three of four, was flattering and false.
+
+**The check:**
+
+1. **When an artefact arrives from outside, ask what would have checked it had it been made here** — and run those
+   by hand, by name, before reading it for quality. The list is short and it is written down: this repo's guards are
+   `npm run` scripts with names on them.
+2. **A guard that only fires in production is not a guard during review.** Anything enforced by `_headers`, by
+   Cloudflare, or by the browser is absent from every local copy of the same file. Ask separately what the artefact
+   would do *after* deploying, because that is a different question from what it does now.
+3. **The absence is silent by construction.** A skipped check produces no output. There is no log line reading "the
+   token substitution did not run on this file", because it did not run. **You cannot notice a check that was never
+   invoked**, which is why the remedy has to be a list you read rather than a signal you wait for.
+4. **Same failure, different direction, on the app side the same week** (app session, relayed 27 September 2026): a
+   store asset was produced outside the script that knows the rule, and the rule was sitting in that script,
+   unread. Two artefacts with opposite requirements went wrong in opposite directions on consecutive days. The
+   generalisation is theirs; it is filed here because a lesson kept only where it was learned is a lesson two
+   sessions have to learn separately.
+
+**The remedy that survives the next artefact** is to move a check to the last moment the artefact is still ours
+rather than to the path it did not take — a tagging step, a pre-publish step, a release gate. It runs whether the
+thing was built here or arrived by email.
+
+### 70. A blocker that dissolved: a wrong one gets found, a narrow one survives every re-reading
+
+On 13 September 2026 this repo recorded: **"The app cannot honour a web purchase yet."** `BILLING_ENABLED` did two
+jobs in the app, a Paddle buyer needed one and must never get the other, and the flag had to be split first. It was
+true, it was specific, it named a mechanism, and fourteen sentences across seven files were written to match it —
+"it does not unlock anything in the Android app", on the pages where someone hands over money.
+
+The flag was split. The app shipped it. On 27 September a purchase made on pdf-iq.com with a real card turned up as
+Pro in a Play-signed build. **The blocker had dissolved, and nothing here noticed for as long as that took.**
+
+**Why nothing prompted a re-read: the entry never looked unfinished.** A blocker that is *wrong* gets found, because
+someone reads it and it does not match what they see. A blocker that is **true of something narrower than it
+sounds** reads as correct every single time. "The app cannot honour a web purchase" was true of the app as built on
+13 September, and the sentence does not carry its scope. Re-reading it produces agreement, which is indistinguishable
+from checking it.
+
+Nothing on this side could have caught it either: it is a fact about another repository, and every instrument here —
+`verify:purchase-scope`, `verify:retired`, the fourteen-place search — asks whether the *website* is internally
+consistent. It was. It was consistently wrong.
+
+**And then the failure that nearly followed.** The obvious move on learning the blocker had gone was to flip the
+fourteen sentences. That would have been wrong: a buyer still cannot install the build that honours their purchase,
+because Play production access was refused. **A dissolved blocker is permission to test the idea again, not
+permission to be right about it.** What saved it was that the unblock condition had been phrased as an event a
+reader can check — see [check 68] — rather than as the cause, which was now satisfied.
+
+**The check:**
+
+1. **A deferral records a fact about the world, and facts expire silently.** Give the fact a date and the name of
+   whoever could disprove it, not just the reasoning. "True of the app as built on 13 September 2026" invites a
+   re-test in a way "the app cannot honour a web purchase" does not.
+2. **Re-read blockers when the world moves, not when they look wrong**, because a narrow one never will. The
+   triggers worth watching: the other side shipped a release; a flag was split; a dependency changed hands.
+3. **When one dissolves, re-run the question, not the conclusion.** The conclusion was "so the sentences must say
+   less". The question is "what does a buyer get today", and its answer had two parts, only one of which had
+   changed.
+4. **It is a reading habit, not a fact about any one subsystem.** The same shape has surfaced three times in a day
+   here: this entry; the /app/ hero's "no icon in this hero" comment, whose whole argument was about measurements of
+   a mark that had since been redrawn — *out of date rather than wrong*, and caught only because someone changed
+   the drawing and re-read the paragraph beside it; and the [check 68] sweep, which found two conditions met and
+   unremarked and one done and unrecorded. None of the three looked unfinished.
+
+**Still open, as the standing example:** `.filechip__mark` draws the retired 135-degree split. Its rule is correct
+about a mark the site no longer uses.
