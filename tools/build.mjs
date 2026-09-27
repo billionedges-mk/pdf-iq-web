@@ -327,6 +327,12 @@ function footer() {
         <a href="/refunds/">Refunds</a>
         <a href="/support/">Support</a>
         <a href="/app/">Android app</a>
+        <!-- The only outbound link in the footer, and deliberately a plain one: no nofollow, because the point is
+             that it IS followed. Nothing on github.com/billionedges-mk had ever been crawled — nothing linked to
+             it — while pdf-iq.com is indexed and crawled weekly, so this is the shortest path a crawler has to the
+             source. The repository's Website field points back here, which closes the pair. It makes no request
+             and so does not touch the readout above it. -->
+        <a href="https://github.com/billionedges-mk/pdf-iq-web">Source on GitHub</a>
       </nav>
     </div>
   </footer>`;
