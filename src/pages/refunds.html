@@ -51,15 +51,21 @@
            the first one did not arrive.</p>
 
         <h2>Who pays it back</h2>
+        <!-- "Their invoice says" was the honest hedge while the only source was Paddle's description of its own
+             charge. It is read off a card statement now, on the live purchase recorded below, and the two agreed. -->
         <p>Paddle. They are the merchant of record for Pro, which means they take the payment, handle
            any sales tax or VAT, and issue the refund — so the charge comes from Paddle rather than from pdf-iq, and
-           Paddle is who returns the money. Their invoice says the payment appears on a statement as
+           Paddle is who returns the money. The payment appears on a statement as
            <strong>PADDLE.NET* BILLIONEDG</strong>, with our name cut short by the length a card statement allows.</p>
         <p>Refunds go back to the card or account you paid with. We cannot send it anywhere else. How
            long it then takes to appear is set by your bank rather than by us or by Paddle.</p>
-        <!-- Read off a real refund rather than assumed: a sandbox refund on 18 September 2026 returned the whole
-             $14.99, the $0.71 of VAT included, with the tax coming off our side and Paddle keeping their fee. Sandbox,
-             not a live charge, so docs/sale-go-live.md still says to confirm it on the first real one. -->
+        <!-- Measured on a live charge, 27 September 2026, which is what the three sentences in this section were
+             waiting for. Invoice 48239-10002, bought 26 September; txn_01m3a5ws3rp5v75nk9qey9zjgj refunded the same
+             day. $14.99 out and $14.99 back on the same card, the $2.29 of tax included — confirmed on the card by
+             the buyer, not read from Paddle's ledger, which is the distinction that made "a refund reaches your
+             card" a claim rather than a record. The sandbox refund this replaces (18 September 2026) returned the
+             same $14.99 with $0.71 of VAT in it: a different rate on the same price, which is why no tax amount is
+             written into the sentence. -->
         <p>A refund returns the full amount you paid, the tax included. Paddle processes it, and if what arrives is not
            that, write to us with the reference and we will take it up with them.</p>
 

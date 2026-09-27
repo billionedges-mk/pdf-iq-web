@@ -550,10 +550,23 @@ the sale draft.
 the receipt shows the buyer portal link and the statement descriptor is on the same charge. Until then neither
 sentence can be written from anything but a guess, and the softened wording is correct rather than temporary.
 
-**Satisfiable as of 27 September 2026, for the first time, and not acted on** (found by the CLAIMS 68 sweep). A
-purchase on pdf-iq.com with a real card, by a real buyer at an address he controls, was made this morning — it is
-the one that proved the app honours a web entitlement. Both clauses can now be answered: open the receipt, read what
-the buyer-portal link actually points at, and read the descriptor off the card statement.
+**The descriptor is CLOSED, 27 September 2026, measured on a card.** `PADDLE.NET* BILLIONEDG`, read off a real
+statement rather than off Paddle's description of its own charge: invoice 48239-10002, bought 26 September;
+`txn_01m3a5ws3rp5v75nk9qey9zjgj` refunded the same day; $14.99 out and $14.99 back on the same card, the $2.29 of
+tax included. /refunds says it plainly now and /support already did. **Two further claims came with it and neither
+was on this list**, because both had been written as flat sentences that happened to be true and were never marked
+as waiting: that a refund reaches the buyer's card at all rather than only Paddle's ledger, and that it returns the
+whole amount. Both are measured on the same charge.
+
+**The receipt sentence is not closed**, and it is the one this entry was originally about. A live invoice exists
+and is in hand; what it *links to* has still not been read, so /refunds' description of paddle.net as the route
+for a problem with a charge is still written from the sandbox invoice of 17 September. One glance answers it —
+see docs/sale-go-live.md, step 7, item 2.
+
+**The shape worth keeping.** This entry listed two sentences as waiting and three were. The two it missed read as
+finished prose — plain, present tense, no hedge — and nothing distinguished "true and checked" from "true and
+assumed" at the point a reader meets them. The sandbox provenance was in an HTML comment beside each, which is the
+right place for it and is not a list anyone can sweep. **A claim is not marked as unverified by being unverified.**
 
 **And the compound condition is the thing to notice.** "A live purchase has been made" was *also* true on
 24 September, when the measurement tool charged a real card — and it did not unblock this, because that receipt went

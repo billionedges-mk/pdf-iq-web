@@ -188,7 +188,8 @@ the sale working, not a mistake — but it is the first time a stranger could ar
 here against an unknown number afterwards.
 
 **6. One real purchase, by the owner.** The only way to check what sandbox cannot: the production price table (§3), the
-statement descriptor (sandbox said `PADDLE.NET* BILLIONEDG`), what the receipt email actually contains, and the
+statement descriptor (**confirmed live, 27 September 2026: a card statement reads `PADDLE.NET* BILLIONEDG`, the same
+string sandbox gave**), what the receipt email actually contains, and the
 production entitlement path end to end with the released app. Then refund it: the whole $14.99 back including tax, Pro
 clearing on web and app. **Remember the gap** — requested → approved is a delay Paddle owns, and the row staying granted
 in between is correct ("Walking a refund", below).
@@ -202,14 +203,25 @@ Pay, so the sign-in cannot be confused with the checkout:
    the buyer types nothing. This decides /refunds' wording, which currently says "write from the address you bought
    with" — an instruction nobody can follow if they signed in with one account and write from another (CLAIMS 63).
 2. **The receipt's contents and where its buyer-portal link goes.** The first purchase's receipt went to the
-   measurement address, which does not exist, so this is still untested after a completed purchase.
+   measurement address, which does not exist. **A live invoice now exists and is in hand — 48239-10002 — so this is
+   answerable in one glance rather than untestable.** It has not been answered: /refunds' sentence about paddle.net
+   being the route for a problem with a charge is still written from the *sandbox* invoice, and it is the only
+   sentence in that section still sourced that way. Open the receipt and read what its link points at.
 3. **The page state after Pay**, `ready → confirming → owned`, and how long from payment to "Pro is yours". The
    confirm loop says "not reached us yet" after **90 seconds**; production's webhook latency against that threshold
    has never been measured. The first run ended at `undefined`, which by the code only a document replacement can
    produce — the mid-payment sign-in redirect explains it, and this run falsifies or confirms that.
-4. **Where the refunded tax comes from.** The buyer should receive the whole $14.99 including the $2.29. Whether our
-   balance moves by $12.70 or by $14.99 is the difference between "Paddle returns the tax" and "we do", and /refunds
-   promises the amount without saying which.
+4. **Where the refunded tax comes from.** ~~The buyer should receive the whole $14.99 including the $2.29.~~
+   **Confirmed, 27 September 2026:** invoice 48239-10002, bought 26 September 2026; `txn_01m3a5ws3rp5v75nk9qey9zjgj` refunded the same day; $14.99 out
+and $14.99 back on the same card, the $2.29 of tax included, confirmed on the card statement rather than in Paddle's
+ledger. The prediction and the charge agree to the cent, and /refunds'
+   promise — "a refund returns the full amount you paid, the tax included" — is now measured rather than softened.
+
+   **The other half is still open, and it is the half this item was really about.** Whether *our* balance moves by
+   $12.70 or by $14.99 is the difference between "Paddle returns the tax" and "we do", and a buyer confirming
+   $14.99 on their card cannot answer it — the money reaching them is the same either way. It needs Paddle's
+   balance for the adjustment, not the card. Nothing on the site depends on the answer: /refunds promises the
+   amount without saying which, deliberately. This is a fact about our costs.
 
 **Switching the sale on and announcing it are not the same day.** Steps 0–6 put Pro on sale on pdf-iq.com; step 7 tells
 people. Nothing forces them together, and separating them is what closes the four measurements that need a real charge
