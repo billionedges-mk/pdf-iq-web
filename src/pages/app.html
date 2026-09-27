@@ -23,38 +23,65 @@
           <div class="screens__tabs" role="tablist" aria-labelledby="screens-label">
             <button type="button" class="screens__tab" role="tab" id="screen-tab-0" aria-controls="screen-panel-0" aria-selected="true">
               <span class="screens__n" aria-hidden="true">01</span>
-              <span class="screens__name">Compress</span>
-              <span class="screens__cap">Three settings, in plain words</span>
+              <span class="screens__name">Home</span>
+              <span class="screens__cap">The screen it opens on</span>
             </button>
             <button type="button" class="screens__tab" role="tab" id="screen-tab-1" aria-controls="screen-panel-1" aria-selected="false">
               <span class="screens__n" aria-hidden="true">02</span>
-              <span class="screens__name">Compressed</span>
-              <span class="screens__cap">24.2 MB became 6.3 MB</span>
+              <span class="screens__name">Compress</span>
+              <span class="screens__cap">Three settings, in plain words</span>
             </button>
             <button type="button" class="screens__tab" role="tab" id="screen-tab-2" aria-controls="screen-panel-2" aria-selected="false">
               <span class="screens__n" aria-hidden="true">03</span>
+              <span class="screens__name">Compressed</span>
+              <span class="screens__cap">24.2 MB became 6.3 MB</span>
+            </button>
+            <button type="button" class="screens__tab" role="tab" id="screen-tab-3" aria-controls="screen-panel-3" aria-selected="false">
+              <span class="screens__n" aria-hidden="true">04</span>
+              <span class="screens__name">Read a scan</span>
+              <span class="screens__cap">24 pages of a scan, as text</span>
+            </button>
+            <button type="button" class="screens__tab" role="tab" id="screen-tab-4" aria-controls="screen-panel-4" aria-selected="false">
+              <span class="screens__n" aria-hidden="true">05</span>
               <span class="screens__name">Photos to PDF</span>
               <span class="screens__cap">Pages in the order you add them</span>
             </button>
           </div>
         </div>
       </div>
-      <!-- Taken on the tablet at 1440x2304, cropped to the top of the screen, then
-           box-averaged to 720 wide. The documents in them are made up; nothing else is changed. -->
+      <!-- loading="lazy" on a hidden panel means the image is not fetched until the tab is clicked, so the first
+           click on each of the other four showed an empty frame while it arrived. They are fetched with the page
+           instead, at low priority: 194KB of screenshots on a page whose argument is screenshots, all same-origin.
+           The share sheet further down keeps its lazy attribute — that one really is below the fold. -->
+      <!-- Taken on the tablet, cropped to source rows 68..908 of the frame and box-averaged to 720 wide, so
+           every panel is the same size and switching does not move the page. 68 is below the status bar, which is
+           what takes the clock and the notification glyphs out; 908 is above the first thing each screen cuts
+           through. Home is 1440x2220 because the app session trimmed the taskbar before sending it, and it is the
+           only one of the five taken on a build carrying the new mark. The documents are made up. -->
       <figure class="appframe">
         <div class="appframe__screen">
           <div id="screen-panel-0" role="tabpanel" aria-labelledby="screen-tab-0">
-            <img class="appframe__shot" src="/app-compress.png" width="720" height="431"
-                 alt="Compress in the app: site-survey.pdf, 14 pages, 24.2 MB, above three settings —
-                      Smallest, Balanced and Gentle — each with a sentence saying what it costs." />
+            <img class="appframe__shot" src="/app-home.png" width="720" height="420"
+                 alt="The app&rsquo;s home screen: Photos to PDF across the top, then Compress, Pages, Merge &amp; split
+                      and Read a scan, each with a line saying what it does." />
           </div>
           <div id="screen-panel-1" role="tabpanel" aria-labelledby="screen-tab-1" hidden>
-            <img class="appframe__shot" src="/app-compressed.png" width="720" height="431" loading="lazy"
-                 alt="The result: before 24.2 MB, after 6.3 MB, 74% smaller, 17.8 MB saved, and the file
-                      it wrote — 14 pages, 6.3 MB." />
+            <img class="appframe__shot" src="/app-compress.png" width="720" height="420" fetchpriority="low"
+                 alt="Compress in the app: site-survey.pdf, 14 pages, 24.2 MB, above three settings &mdash;
+                      Smallest, Balanced and Gentle &mdash; each with a sentence saying what it costs." />
           </div>
           <div id="screen-panel-2" role="tabpanel" aria-labelledby="screen-tab-2" hidden>
-            <img class="appframe__shot" src="/app-photos-to-pdf.png" width="720" height="431" loading="lazy"
+            <img class="appframe__shot" src="/app-compressed.png" width="720" height="420" fetchpriority="low"
+                 alt="The result: before 24.2 MB, after 6.3 MB, 74% smaller, 17.8 MB saved, and the file it wrote
+                      &mdash; 14 pages, 6.3 MB." />
+          </div>
+          <div id="screen-panel-3" role="tabpanel" aria-labelledby="screen-tab-3" hidden>
+            <img class="appframe__shot" src="/app-read-a-scan.png" width="720" height="420" fetchpriority="low"
+                 alt="Read a scan in the app: quarterly-report.pdf, 24 pages, &ldquo;Read from 24 pages.&rdquo;, and the
+                      recognised text filling the screen." />
+          </div>
+          <div id="screen-panel-4" role="tabpanel" aria-labelledby="screen-tab-4" hidden>
+            <img class="appframe__shot" src="/app-photos-to-pdf.png" width="720" height="420" fetchpriority="low"
                  alt="Photos to PDF in the app: three photographed pages as numbered thumbnails, with
                       &ldquo;3 photos &middot; 3 pages&rdquo; and &ldquo;Hold to reorder&rdquo;." />
           </div>

@@ -675,17 +675,23 @@ than a rule, and the Home capture does show it. Anything that changes the app's 
 invalidates the set.
 
 **What that means in practice:** re-capturing is part of shipping an app release that changes the UI, not something
-to remember afterwards. Four to five captures, one pass on the device, one uniform crop. The crop is source rows
-68..930 of a 1440x2304 frame — status bar off the top, above the taskbar at the bottom, stopping below the screen's
-top block of content — then box-averaged to 720 wide.
+to remember afterwards. Five captures, one pass on the device, one uniform crop: **source rows 68..908, then
+box-averaged to 720 wide**, giving 720x420 panels that switch without moving the page. 68 is below the status bar
+and takes the clock and any notification glyphs with it; 908 is above the first thing any of the five screens cuts
+through — it moved down from 930 because Home's "SENDS TEXT TO OUR AI" label sat exactly on that line.
+
+**Ask for the frames uncropped** and do the cropping here (CLAIMS 67). Home arrived with its taskbar already
+trimmed, at 1440x2220 rather than 2304, which is why the row numbers have to be checked against each frame rather
+than applied blind — a frame trimmed from the bottom leaves the top bound alone, but nothing guarantees that.
 
 **Accepted deliberately** (owner, 27 September 2026): "yes, deliberately, with two conditions. The switcher ships
 with however many good screenshots exist, not five slots waiting to be filled. Four now, five when the fifth is
 worth taking. An empty state is worse than a shorter list. And it goes in TECH_DEBT with its cadence stated."
 
-It ships with three rather than four. The fourth capture, Read a scan, is held — see `docs/sale-go-live.md` §4 for
-why and for the one commit that ships it. In short: the full frame shows the app's paywall telling the reader that
-Pro bought on pdf-iq.com unlocks the app, which contradicted the price card on this page until the app's half was
-proved on production on 27 September; the website's sentences are the stale ones and stay up until a buyer can
-install that build. The cropped frame does not reach the paywall block, so shipping it would publish nothing false.
-The cropped file is at `docs/pending/app-read-a-scan.png`, outside `public/`.
+It ships with five: Home, Compress, Compressed, Read a scan, Photos to PDF. Read a scan was held for a few hours
+on 27 September while its full frame was read as carrying a contradiction — see `docs/sale-go-live.md` §4 and
+CLAIMS 67 — and shipped once the published crop was measured rather than assumed.
+
+**Four of the five are the 26 September pass and do not carry the new mark.** Only Home was taken on a build that
+has it, and it is the only one of the five whose app bar shows a mark at all, so the set is not visibly mixed. That
+is luck. The next pass replaces all five together.

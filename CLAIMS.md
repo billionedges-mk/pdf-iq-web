@@ -80,7 +80,8 @@ the work is done.
 64. [The happy path is the one nobody writes copy for, and the only one everybody sees](#64-the-happy-path-is-the-one-nobody-writes-copy-for-and-the-only-one-everybody-sees)  
 65. [A mechanism you remove was doing more jobs than the one you removed it for](#65-a-mechanism-you-remove-was-doing-more-jobs-than-the-one-you-removed-it-for)  
 66. [A number that supports what you hoped for is the one to distrust, and precision is not the same as aim](#66-a-number-that-supports-what-you-hoped-for-is-the-one-to-distrust-and-precision-is-not-the-same-as-aim)  
-67. [A design delivered as a working page brings its own dependencies, and they are invisible in the thing you are reviewing](#67-a-design-delivered-as-a-working-page-brings-its-own-dependencies-and-they-are-invisible-in-the-thing-you-are-reviewing)
+67. [A design delivered as a working page brings its own dependencies, and they are invisible in the thing you are reviewing](#67-a-design-delivered-as-a-working-page-brings-its-own-dependencies-and-they-are-invisible-in-the-thing-you-are-reviewing)  
+68. [A trigger that comes true early: write an unblock condition as what the reader can observe, not as what you were waiting for](#68-a-trigger-that-comes-true-early-write-an-unblock-condition-as-what-the-reader-can-observe-not-as-what-you-were-waiting-for)
 
 <!-- /index -->
 
@@ -2402,10 +2403,74 @@ install that build.
 other three screens — that capture ends above the paywall block: the contradicting sentence is about 400 rows below
 the cut and never reaches the page. So the picture that exposed the contradiction would not have published it. The
 evidence was in the full frame and the finding came from reading the full frame; **had the capture arrived already
-cropped, as a designer would reasonably have delivered it, none of this would have been visible at all.** It is held
-now by choice rather than by the flip (`docs/sale-go-live.md` §4).
+cropped, as a designer would reasonably have delivered it, none of this would have been visible at all.**
+
+**So: ask for the uncropped frame and do the cropping here.** It paid twice on the day it was noticed. The Read a
+scan capture carried a money claim four hundred rows below anything the page would use. The fresh Home capture,
+which did arrive trimmed, had had a taskbar removed that nobody on this side would have known to ask about —
+pinned apps and two PDFiq launcher icons — and its status bar still held three notification glyphs that the crop
+then took out. **A sensible crop removes exactly the material that tells you what you are looking at**, and the
+person making it is choosing, reasonably, on what the page needs rather than on what the reviewer needs. The
+screenshot is evidence about a surface nobody here can open; evidence arrives whole or it is testimony.
+
+(The capture was not held in the end. It ships, five panels, once the crop was measured rather than assumed —
+the frame stops well above the sentence.)
 
 So: [check 19] with a picture instead of a sentence — a decision on one surface expires a claim published on
 another, and a capture of that surface is evidence the same way a quotation is. **A screenshot is a quotation of a
 surface you do not otherwise read.** The design was reviewed for its layout and its dependencies; the thing it
 actually settled was a money claim, and it settled it by being a photograph rather than an argument.
+
+### 68. A trigger that comes true early: write an unblock condition as what the reader can observe, not as what you were waiting for
+
+Deferrals in this repo carry an **unblocks when**. On 27 September 2026 one of them was found to have been
+written twice, in two files, with the same intent and two different phrasings — and only one of them was still
+safe to act on.
+
+The deferral is the largest one here: fourteen sentences across seven files saying a Pro purchase "does not unlock
+anything in the Android app". Reverting them publishes "covers both".
+
+- `docs/sale-go-live.md` §4: **"Unblocks when: vc18 — the app release that honours a web purchase — is live on
+  Play."**
+- TECH_DEBT.md, the same deferral: "the app cannot honour a web purchase until `BILLING_ENABLED` is split".
+
+The first names an **event a reader can go and check**. The second names the **cause the author was waiting for**.
+They were written the same week, by people who meant the same thing.
+
+Then the world moved. The flag was split, the app shipped it, and on 27 September a purchase made on pdf-iq.com
+with a real card turned up as Pro in a Play-signed build — proved by accident, because a signature mismatch forced
+a clean install. **The cause is now satisfied. The event is not**, and will not be until roughly 9 October: Play
+production access was refused on 25 September, so nobody outside closed testing can install the build that honours
+their purchase.
+
+So the TECH_DEBT phrasing reads as met today. Acting on it would publish "your $14.99 covers the Android app" to
+people who cannot install the Android app that honours it — on the page where they hand over money, which is the
+exact failure the deferral exists to prevent.
+
+**The rule: phrase an unblock condition as the thing the reader can observe, not the thing you are waiting for.**
+
+1. **The cause changes when the world changes; the observable stays true to what it promises.** "When
+   `BILLING_ENABLED` is split" was a faithful description of the blocker on the day it was written and became a
+   wrong trigger the day the blocker moved, without anyone editing it. "Live on Play" cannot do that: it means the
+   same thing in every future.
+2. **You get the check for free.** Anyone — the owner, a session with no context, someone reading this in a
+   year — can open Play and see whether vc18 is there. Nobody can see whether a flag in another repository has
+   been split without going and looking, which is why nobody would have.
+3. **Two records of one deferral is how a stale condition survives**, which this document already knew (owner,
+   20 September 2026) and had already acted on: the condition is *stated once*, in the go-live doc, and TECH_DEBT
+   was supposed to hold only the reasoning. The prose leaked a second phrasing of it anyway. **A rule that says
+   "state it once" does not stop a restatement that does not look like one** — "until `BILLING_ENABLED` is split"
+   reads as explanation, not as a trigger, right up to the moment somebody treats it as one.
+4. **It survived by luck, not by design.** Nobody chose the observable phrasing for this reason; the go-live doc
+   happens to be written in terms of releases because that is what it is about. That is what makes it an entry
+   rather than a note — the next condition gets the phrasing it happens to get.
+
+**Distinct from [check 18].** There, a status goes stale in the direction that flatters: a thing that was true
+becomes false while still being displayed. Here nothing displayed is wrong — the condition is an instruction to a
+future reader, and it **becomes actionable too early**. A stale status misinforms; a premature trigger makes
+someone do the right thing at the wrong time, and they do it confidently, because the condition they were given
+was met.
+
+**Sweep, when next in these files:** every "unblocks when", "revisit when" and "until" in TECH_DEBT.md and
+docs/sale-go-live.md, asking of each — could a reader check this without asking anyone? If not, rewrite it as the
+event that would make them right.

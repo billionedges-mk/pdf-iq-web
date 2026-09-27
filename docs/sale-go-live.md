@@ -717,13 +717,14 @@ exactly like the defect this section exists because of. Do not read a "still gra
   would publish nothing false, and **the screenshot is not blocked by the flip**: nothing in the frame changes when
   the sentences do.
 
-  **Held anyway** (owner, 27 September 2026), before that was known. The cropped frame is committed at
-  `docs/pending/app-read-a-scan.png` — outside `public/`, so it is versioned and not served — and shipping it is
-  one commit: move the file, add the panel, its tab and its alt text to `src/pages/app.html`. Do that whenever the
-  owner wants a fourth screen; it does not have to wait for anything.
+  **Held for a few hours and then shipped** (owner, 27 September 2026: "I held it on an assumption the crop removes
+  — hold it no longer"). It is panel 04 of five on /app/.
 
   **What does wait for the flip** is the app's own sentence, which is the app session's to change, and the fourteen
-  website sentences above.
+  website sentences above. Neither touches the screenshot: nothing inside that frame changes when they do. **This
+  item stays in the inventory only as the record of why it was nearly not shipped** — a capture was read for a
+  contradiction that the published crop does not contain, and the distinction between "the surface says this" and
+  "the page publishes this" is worth having written down the next time a screenshot carries a claim.
 
   **The part worth keeping.** This item's condition was written when the blocker was the app's capability. The
   blocker is now distribution, and the condition happens to still be right — but only by luck. Had it been phrased
