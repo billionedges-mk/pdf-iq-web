@@ -2493,5 +2493,23 @@ problem", and neither has pending work attached to it, so neither can fire anyth
 So the sweep's question — *can a reader check this?* — is necessary and not sufficient. **The second question is
 whether anything makes the reader check.** A condition nobody re-reads is inert however well it is written, and the
 two-clause form is worse: the cheap clause fires on its own, and the expensive one waits for someone who has
-already stopped looking. Both are now marked "met, not acted on" where they live, which is the only thing that
-distinguishes them from conditions still waiting.
+already stopped looking.
+
+**And a third state, which the sweep did not have and found within the hour.** The owner opened the Play Console
+and the first item — repoint the privacy policy URL — **was already done**. Not met-and-waiting: done, by someone,
+at some point, and never written down. So the sweep had classified it as work outstanding, and would have again,
+and so would the next reader.
+
+That is worse than "met, not acted on", not better. A genuinely outstanding item costs one person one action. **A
+done-but-undocumented item costs every reader a check and returns nothing they will record**, because finding
+nothing to do is not an event anybody writes up. It is the only one of the three states that is self-sustaining:
+
+| state | what a reader finds | what it costs |
+|---|---|---|
+| waiting | the condition is not met | nothing; the record is correct |
+| met, not acted on | the condition is met, the work is not done | one action, once |
+| **done, not written down** | **the work is done; the record still says otherwise** | **a check, every reader, forever** |
+
+**So a sweep has to record what it finds already true, not only what it finds newly actionable** — and the line to
+write is the boring one: *done, here is where I looked.* The three entries this sweep touched now each say which
+of the three they are.

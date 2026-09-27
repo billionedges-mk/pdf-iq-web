@@ -28,17 +28,19 @@ rather than justifying a release of their own.
 
 **Precondition for all five:** `pdf-iq.com/privacy` returns 200 in a browser, not just in DNS.
 
-**MET, and unremarked, since the domain went live** (found by the CLAIMS 68 sweep, 27 September 2026). Measured:
-`https://pdf-iq.com/privacy` → 308 → `https://pdf-iq.com/privacy/` → 200, which is a 200 in a browser; and
-`https://billionedges.com/pdfiq/privacy.html` → 301 → the same page, single hop. So the heading's condition
-("deferred until pdf-iq.com is live") came true, the precondition it turns on came true with it, and **items 1 and
-2 — Play Console only, no build — have been actionable ever since**. Nothing fired, because nobody re-read a
-heading that had been true for weeks.
+**MET since the domain went live, and ITEM 1 IS DONE** (CLAIMS 68 sweep plus a Play Console reading, 27 September
+2026). Measured here: `https://pdf-iq.com/privacy` → 308 → `https://pdf-iq.com/privacy/` → 200, which is a 200 in
+a browser; and `https://billionedges.com/pdfiq/privacy.html` → 301 → the same page, single hop. Read in the
+Console by the owner: **the privacy policy URL is already `pdf-iq.com/privacy`**, not the billionedges one. So
+item 1 was done at some point and never written down.
 
-This is the opposite failure to the one CLAIMS 68 is about, and the cheaper one: the condition is phrased
-perfectly, as something anyone can check with a browser. **A well-phrased condition still needs someone to ask
-it.** The risk is small — the old URL redirects, so the live compliance link resolves to the corrected policy
-either way — which is exactly why it went unnoticed.
+**Item 2 — the Data safety deletion URL — was not part of that reading and its state is unknown.** Do not infer it
+from item 1: they are separate fields in separate Console sections, which is why the table lists them separately.
+
+**The finding is the recording, not the work.** A done item that reads as outstanding costs the same as an
+outstanding one every time someone plans around it, and it is worse than "met, not acted on" because nobody who
+checks will find anything to do — they will check, find it done, and not write that down either. This is the third
+state a sweep has to allow for: **done, undocumented, therefore outstanding forever**. See CLAIMS 68.
 
 ### Also waiting on the app, unrelated to the domain
 

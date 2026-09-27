@@ -807,6 +807,22 @@ exactly like the defect this section exists because of. Do not read a "still gra
 "More testing required": testers not engaged during the closed test, and no updates showing feedback acted on.
 Another 14 days of closed testing before reapplying, so **roughly 9 October at the earliest**.
 
+**Read in the Console, 27 September 2026: Production is Inactive, with "Apply for access to production" offered.**
+So the refusal **reset the application** rather than leaving it pending — there is no queue position to lose and
+nothing in flight. Reapplying is a fresh application whenever the 14 days are served, and nobody needs to wait for
+a decision that is not coming. That also means the 14 days are ours to count rather than Google's to confirm: the
+clock is the closed test's, and the only thing that starts a review is pressing the button.
+
+**And the tester count is 15** (same reading). Google's requirement is twelve testers for fourteen *continuous*
+days, so the count is no longer the binding half — the days are. **Do not read the "Twelve testers" in
+docs/pdfiq-strategy-locked.md as our number**: it is Google's threshold, and it has been sitting in a "Waiting on"
+table where a threshold and a population look identical. Fifteen is a reading with a date on it and will move.
+
+**Not the same population as the Firebase count.** CLAUDE.md records 17 Google sign-ins on pdfiq-b14cc as of
+13 September — that is everyone who has ever signed in to use Summarise, including two of Maneesh's own, and
+someone removed from the tester list stays in it. The two numbers measure different things and should not be
+reconciled.
+
 **Nothing on the site changes.** Every Android sentence was written to under-promise — "it does not unlock anything
 in the Android app" is true of vc16 and stays true for as long as this takes (owner, 18 September 2026). They now
 hold for longer than anyone expected, which is what under-promising is for.

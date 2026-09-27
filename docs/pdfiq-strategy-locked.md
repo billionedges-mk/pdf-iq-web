@@ -127,5 +127,5 @@ none.
 | | |
 |---|---|
 | Paddle seller approval | The whole Pro tier |
-| Twelve testers, fourteen continuous days | The app going public, and everything dated |
+| Twelve testers, fourteen continuous days &mdash; Google's threshold, not our count (15 on 27 September 2026) | The app going public, and everything dated |
 | `/for-professionals` answers | Whether the firms tier is built at all, and its cadence |
