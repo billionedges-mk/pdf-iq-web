@@ -2474,3 +2474,24 @@ was met.
 **Sweep, when next in these files:** every "unblocks when", "revisit when" and "until" in TECH_DEBT.md and
 docs/sale-go-live.md, asking of each — could a reader check this without asking anyone? If not, rewrite it as the
 event that would make them right.
+
+**Run the same day, 27 September 2026. No second premature trigger.** Every "unblocks when" in
+docs/sale-go-live.md names an event — "vc18 live on Play" twice, "the listing is live" once. TECH_DEBT has two
+loosely-phrased conditions, "if Play billing is ever switched on" and "revisit only if repo size becomes a
+problem", and neither has pending work attached to it, so neither can fire anything.
+
+**What it found instead was the opposite failure, twice: conditions phrased perfectly, met, and unremarked.**
+
+1. "Deferred until pdf-iq.com is live", with the precondition "`pdf-iq.com/privacy` returns 200 in a browser, not
+   just in DNS". Measured: 308 to `/privacy/`, 200. True for weeks. Two Play Console items needing no build have
+   been actionable throughout.
+2. "The first live purchase has been made and its receipt email opened." Satisfiable for the first time this
+   morning — and **its first clause had been true since 24 September in a way that made its second impossible**,
+   because that charge's receipt went to an address that does not exist. A reader checking the cheap clause would
+   have read it as met three days early.
+
+So the sweep's question — *can a reader check this?* — is necessary and not sufficient. **The second question is
+whether anything makes the reader check.** A condition nobody re-reads is inert however well it is written, and the
+two-clause form is worse: the cheap clause fires on its own, and the expensive one waits for someone who has
+already stopped looking. Both are now marked "met, not acted on" where they live, which is the only thing that
+distinguishes them from conditions still waiting.

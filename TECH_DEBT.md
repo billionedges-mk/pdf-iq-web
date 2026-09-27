@@ -28,6 +28,18 @@ rather than justifying a release of their own.
 
 **Precondition for all five:** `pdf-iq.com/privacy` returns 200 in a browser, not just in DNS.
 
+**MET, and unremarked, since the domain went live** (found by the CLAIMS 68 sweep, 27 September 2026). Measured:
+`https://pdf-iq.com/privacy` → 308 → `https://pdf-iq.com/privacy/` → 200, which is a 200 in a browser; and
+`https://billionedges.com/pdfiq/privacy.html` → 301 → the same page, single hop. So the heading's condition
+("deferred until pdf-iq.com is live") came true, the precondition it turns on came true with it, and **items 1 and
+2 — Play Console only, no build — have been actionable ever since**. Nothing fired, because nobody re-read a
+heading that had been true for weeks.
+
+This is the opposite failure to the one CLAIMS 68 is about, and the cheaper one: the condition is phrased
+perfectly, as something anyone can check with a browser. **A well-phrased condition still needs someone to ask
+it.** The risk is small — the old URL redirects, so the live compliance link resolves to the corrected policy
+either way — which is exactly why it went unnoticed.
+
 ### Also waiting on the app, unrelated to the domain
 
 - ~~**`billionedges.com/pdfiq/privacy.html` is a stale duplicate.**~~ Closed. The redirect is live and
@@ -537,6 +549,20 @@ the sale draft.
 **Unblocks when:** the first live purchase has been made and its receipt email opened — one event answers both, since
 the receipt shows the buyer portal link and the statement descriptor is on the same charge. Until then neither
 sentence can be written from anything but a guess, and the softened wording is correct rather than temporary.
+
+**Satisfiable as of 27 September 2026, for the first time, and not acted on** (found by the CLAIMS 68 sweep). A
+purchase on pdf-iq.com with a real card, by a real buyer at an address he controls, was made this morning — it is
+the one that proved the app honours a web entitlement. Both clauses can now be answered: open the receipt, read what
+the buyer-portal link actually points at, and read the descriptor off the card statement.
+
+**And the compound condition is the thing to notice.** "A live purchase has been made" was *also* true on
+24 September, when the measurement tool charged a real card — and it did not unblock this, because that receipt went
+to `pdfiq-sandbox-measure@example.com`, an address that does not exist (docs/sale-go-live.md, "The measurement that
+charged a real card"). Anyone checking only the first clause would have read this as met three days ago and gone
+looking for an email nobody could open. **A condition with two clauses that fire on different schedules reads as
+met when the cheaper one fires**, and the fact that saves it here — the address did not exist — is recorded in a
+different file from the condition. The statement descriptor alone has been answerable since the 24th: it is on that
+charge, and needs no email at all.
 
 ## Two proposals waiting on the owner, not on work (20 September 2026)
 
