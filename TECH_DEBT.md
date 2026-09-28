@@ -704,9 +704,12 @@ destination subscribes to `adjustment.created` and `adjustment.updated`, not onl
 
 ## The /app/ screenshots stale with every app release (27 September 2026)
 
-/app/ carried two images until today: a home screen and a share sheet. It now carries four — a three-screen
-switcher in the hero (Compress, Compressed, Photos to PDF) plus the share sheet — and a fifth is expected, a fresh
-Home capture, once the app session next has the device.
+/app/ carried two images until 27 September 2026: a home screen and a share sheet. It carries six now — a
+five-screen switcher in the hero (Home, Compress, Compressed, Read a scan, Photos to PDF) plus the share sheet.
+
+*(This paragraph said "four, and a fifth is expected" for a day, because Home arrived an hour after it was written
+and the correction was appended below instead of applied here. An entry about things going stale, going stale in
+its own first sentence. CLAIMS 70.)*
 
 **The cadence, priced before it is discovered rather than after.** Every app release can stale every one of them.
 The launcher and header mark changed on 26 September and these captures were taken about eight hours before that,
@@ -735,4 +738,9 @@ CLAIMS 67 — and shipped once the published crop was measured rather than assum
 
 **Four of the five are the 26 September pass and do not carry the new mark.** Only Home was taken on a build that
 has it, and it is the only one of the five whose app bar shows a mark at all, so the set is not visibly mixed. That
-is luck. The next pass replaces all five together.
+is luck rather than design: the four that predate the mark simply do not show an app bar with a mark in it.
+
+**The recapture was dropped** (owner, 28 September 2026). So there is no pass pending and nothing is waiting on the
+device. The cadence above stands as the recipe for whenever one is wanted — not as work outstanding, and not as a
+thing anyone should expect to arrive. **If a release changes the app's chrome, type, wording or palette, the set
+becomes wrong at that moment and the decision to recapture is a fresh one**; nothing here will raise it.

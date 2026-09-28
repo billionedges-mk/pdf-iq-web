@@ -212,10 +212,11 @@ Pay, so the sign-in cannot be confused with the checkout:
    has never been measured. The first run ended at `undefined`, which by the code only a document replacement can
    produce — the mid-payment sign-in redirect explains it, and this run falsifies or confirms that.
 4. **Where the refunded tax comes from.** ~~The buyer should receive the whole $14.99 including the $2.29.~~
-   **Confirmed, 27 September 2026:** invoice 48239-10002, bought 26 September 2026; `txn_01m3a5ws3rp5v75nk9qey9zjgj` refunded the same day; $14.99 out
-and $14.99 back on the same card, the $2.29 of tax included, confirmed on the card statement rather than in Paddle's
-ledger. The prediction and the charge agree to the cent, and /refunds'
-   promise — "a refund returns the full amount you paid, the tax included" — is now measured rather than softened.
+   **Confirmed, 27 September 2026:** invoice 48239-10002, bought 26 September 2026;
+   `txn_01m3a5ws3rp5v75nk9qey9zjgj` refunded the same day; $14.99 out and $14.99 back on the same card, the
+   $2.29 of tax included, confirmed on the card statement rather than in Paddle's ledger. The prediction and the
+   charge agree to the cent, and /refunds' promise — "a refund returns the full amount you paid, the tax
+   included" — is now measured rather than softened.
 
    **The other half is still open, and it is the half this item was really about.** Whether *our* balance moves by
    $12.70 or by $14.99 is the difference between "Paddle returns the tax" and "we do", and a buyer confirming
