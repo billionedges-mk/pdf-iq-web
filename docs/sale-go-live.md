@@ -218,9 +218,10 @@ Pay, so the sign-in cannot be confused with the checkout:
    has never been measured. The first run ended at `undefined`, which by the code only a document replacement can
    produce — the mid-payment sign-in redirect explains it, and this run falsifies or confirms that.
 4. **Where the refunded tax comes from.** ~~The buyer should receive the whole $14.99 including the $2.29.~~
-   **Confirmed, 27 September 2026:** **invoice 48239-10001**, bought 24 September 2026, India at 18% — the one
-   recorded above as "$12.70, tax $2.29, total $14.99". Refunded in full to the same card with the $2.29 included,
-   confirmed on the card statement rather than in Paddle's ledger. The prediction and the charge agree to the cent,
+   **Confirmed, 27 September 2026:** **invoice 48239-10001**, `txn_01m3a5ws3rp5v75nk9qey9zjgj`, bought
+   24 September 2026, India at 18% — the one recorded above as "$12.70, tax $2.29, total $14.99", and the same
+   transaction as "The revocation path, proven on production with a real charge" below. Refunded in full to the
+   same card with the $2.29 included, confirmed on the card statement rather than in Paddle's ledger. The prediction and the charge agree to the cent,
    and /refunds' promise — "a refund returns the full amount you paid, the tax included" — is now measured rather
    than softened.
 
@@ -623,7 +624,8 @@ next check. Watch it rather than assume it.
 
 ## The revocation path, proven on production with a real charge (24 September 2026)
 
-`txn_01m3a5ws3rp5v75nk9qey9zjgj`, a real card:
+`txn_01m3a5ws3rp5v75nk9qey9zjgj`, a real card — **invoice 48239-10001**, India at 18%, $12.70 + $2.29, the
+measurement-tool purchase whose customer address was `pdfiq-sandbox-measure@example.com`:
 
 | | |
 |---|---|

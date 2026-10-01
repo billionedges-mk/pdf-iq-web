@@ -553,8 +553,10 @@ the receipt shows the buyer portal link and the statement descriptor is on the s
 sentence can be written from anything but a guess, and the softened wording is correct rather than temporary.
 
 **The descriptor is CLOSED, 27 September 2026, measured on a card.** `PADDLE.NET* BILLIONEDG`, read off a real
-statement rather than off Paddle's description of its own charge: **invoice 48239-10001**, bought 24 September,
-India at 18% — $12.70 + $2.29 — refunded in full to the same card with the $2.29 included. /refunds says it plainly
+statement rather than off Paddle's description of its own charge: **invoice 48239-10001**,
+`txn_01m3a5ws3rp5v75nk9qey9zjgj`, bought 24 September, India at 18% — $12.70 + $2.29 — refunded in full to the
+same card with the $2.29 included. The same transaction is the one in docs/sale-go-live.md's "revocation path,
+proven on production" timeline: granted 17:04:30, refund requested 17:22, revoked 17:25:17. /refunds says it plainly
 now and /support already did.
 
 *(This passage said 48239-10002 until 1 October 2026. That is the 26 September repurchase, Abu Dhabi at 5%, whose
