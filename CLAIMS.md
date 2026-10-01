@@ -2200,9 +2200,10 @@ email on the transaction was the address the site sent, and not one the buyer ha
 2026). Someone who signs in with one Google account and writes from their work address is told their purchase cannot
 be found, on both routes, and the page told them to do exactly that.
 
-**Settled by observation, not inference (24 September 2026).** Asked directly during the second purchase — "can you
+**Settled by observation, not inference (26 September 2026).** Asked directly during the clean repurchase — "can you
 edit the email on Paddle's checkout, or is it fixed?" — the answer was fixed. Invoice 48239-10002 went to the sign-in
-address and the receipt arrived there. So the instruction can be written without a hedge: the address is always the
+address and the receipt arrived there. (Dated 24 September here until 1 October: that is 48239-10001, a different
+charge in a different country at a different rate, and the two were being read as one purchase in four files.) So the instruction can be written without a hedge: the address is always the
 Google account they signed in with, and a sentence saying "unless you changed it at the checkout" would have been a
 caveat for a case that cannot happen.
 

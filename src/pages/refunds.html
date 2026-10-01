@@ -34,9 +34,10 @@
               reference and the transaction id; paddle.net asks for the email the purchase was made with. -->
         <!-- "the address you bought with" assumed the buyer typed one. They do not: the purchase page hands Paddle
              the Google sign-in address (src/checkout/checkout.ts, customer: { email }), and the field is fixed at the
-             checkout — asked directly during a real purchase on 24 September 2026, and corroborated by invoice
-             48239-10002 going to the sign-in address. So someone writing from a different address was told their
-             purchase could not be found, on both routes, by an instruction nobody could follow (CLAIMS 63). -->
+             checkout — asked directly during the clean repurchase on 26 September 2026, invoice 48239-10002, which
+             went to the sign-in address and whose receipt arrived there. So someone writing from a different address
+             was told their purchase could not be found, on both routes, by an instruction nobody could follow
+             (CLAIMS 63). -->
         <p>Write to <a href="mailto:support@pdf-iq.com">support@pdf-iq.com</a> from the Google account you signed in
            with &mdash; that is the address the purchase is recorded against, because the page hands it to Paddle
            rather than asking you to type one. If you have Paddle's invoice for the purchase, quote the reference on
@@ -59,13 +60,20 @@
            <strong>PADDLE.NET* BILLIONEDG</strong>, with our name cut short by the length a card statement allows.</p>
         <p>Refunds go back to the card or account you paid with. We cannot send it anywhere else. How
            long it then takes to appear is set by your bank rather than by us or by Paddle.</p>
-        <!-- Measured on a live charge, 27 September 2026, which is what the three sentences in this section were
-             waiting for. Invoice 48239-10002, bought 26 September; txn_01m3a5ws3rp5v75nk9qey9zjgj refunded the same
-             day. $14.99 out and $14.99 back on the same card, the $2.29 of tax included — confirmed on the card by
-             the buyer, not read from Paddle's ledger, which is the distinction that made "a refund reaches your
-             card" a claim rather than a record. The sandbox refund this replaces (18 September 2026) returned the
-             same $14.99 with $0.71 of VAT in it: a different rate on the same price, which is why no tax amount is
-             written into the sentence. -->
+        <!-- Measured on a live charge, which is what the three sentences in this section were waiting for:
+             INVOICE 48239-10001, bought 24 September 2026, India at 18% — subtotal $12.70, tax $2.29, total $14.99.
+             Refunded in full to the same card, the $2.29 included, and confirmed on the statement by the buyer
+             rather than read from Paddle's ledger, which is the distinction that made "a refund reaches your card"
+             a claim rather than a record. The descriptor on that statement is the one named above.
+
+             NOT 48239-10002, which this comment named until 1 October 2026. That is a different purchase — the
+             clean repurchase of 26 September, Abu Dhabi at 5%, $14.28 + $0.71 — and quoting its number beside the
+             India purchase's $2.29 put two charges in one sentence. The arithmetic is what settles it without
+             anyone's recollection: $14.99 x 18/118 is $2.287 and $14.99 x 5/105 is $0.714, so the tax figure names
+             the invoice.
+
+             Three VAT rates have now been seen on the same $14.99 — 18%, 5%, and 5% again in the 18 September
+             sandbox refund — which is why no tax amount is written into the sentence a reader sees. -->
         <p>A refund returns the full amount you paid, the tax included. Paddle processes it, and if what arrives is not
            that, write to us with the reference and we will take it up with them.</p>
 

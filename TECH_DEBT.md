@@ -553,9 +553,14 @@ the receipt shows the buyer portal link and the statement descriptor is on the s
 sentence can be written from anything but a guess, and the softened wording is correct rather than temporary.
 
 **The descriptor is CLOSED, 27 September 2026, measured on a card.** `PADDLE.NET* BILLIONEDG`, read off a real
-statement rather than off Paddle's description of its own charge: invoice 48239-10002, bought 26 September;
-`txn_01m3a5ws3rp5v75nk9qey9zjgj` refunded the same day; $14.99 out and $14.99 back on the same card, the $2.29 of
-tax included. /refunds says it plainly now and /support already did. **Two further claims came with it and neither
+statement rather than off Paddle's description of its own charge: **invoice 48239-10001**, bought 24 September,
+India at 18% — $12.70 + $2.29 — refunded in full to the same card with the $2.29 included. /refunds says it plainly
+now and /support already did.
+
+*(This passage said 48239-10002 until 1 October 2026. That is the 26 September repurchase, Abu Dhabi at 5%, whose
+tax is $0.71; quoting its number beside $2.29 named one purchase by the other's invoice. Corrected against the
+rate table below and against docs/sale-go-live.md, which had carried "invoice 48239-10001, India, 18%, tax $2.29"
+since the day it happened — the right answer was in the repo the whole time, two files away.)* **Two further claims came with it and neither
 was on this list**, because both had been written as flat sentences that happened to be true and were never marked
 as waiting: that a refund reaches the buyer's card at all rather than only Paddle's ledger, and that it returns the
 whole amount. Both are measured on the same charge.

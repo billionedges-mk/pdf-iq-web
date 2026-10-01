@@ -199,9 +199,15 @@ in between is correct ("Walking a refund", below).
 **What is still open after 24 September 2026, and all four ride on one clean repurchase** — signed in BEFORE pressing
 Pay, so the sign-in cannot be confused with the checkout:
 
-1. **Is Paddle's one-page email field editable?** The page sends `customer: { email }` from the Google sign-in and
-   the buyer types nothing. This decides /refunds' wording, which currently says "write from the address you bought
-   with" — an instruction nobody can follow if they signed in with one account and write from another (CLAIMS 63).
+1. ~~**Is Paddle's one-page email field editable?**~~ **ANSWERED: it is fixed, not editable.** Asked directly
+   during the clean repurchase on 26 September 2026 (invoice 48239-10002), which went to the sign-in address and
+   whose receipt arrived there. /refunds was rewritten the same day and CLAIMS 63 records the reasoning: the
+   instruction now says the address is the Google account you signed in with, without the hedge a caveat for an
+   impossible case would have added.
+
+   **It stayed on this list for five days after it was answered**, and the answer was written down in two other
+   files the whole time. That is the third state from CLAIMS 68 — done, not written down here, therefore reading as
+   outstanding — found by a status check that read the files instead of remembering them.
 2. **The receipt's contents and where its buyer-portal link goes.** The first purchase's receipt went to the
    measurement address, which does not exist. **A live invoice now exists and is in hand — 48239-10002 — so this is
    answerable in one glance rather than untestable.** It has not been answered: /refunds' sentence about paddle.net
@@ -212,17 +218,29 @@ Pay, so the sign-in cannot be confused with the checkout:
    has never been measured. The first run ended at `undefined`, which by the code only a document replacement can
    produce — the mid-payment sign-in redirect explains it, and this run falsifies or confirms that.
 4. **Where the refunded tax comes from.** ~~The buyer should receive the whole $14.99 including the $2.29.~~
-   **Confirmed, 27 September 2026:** invoice 48239-10002, bought 26 September 2026;
-   `txn_01m3a5ws3rp5v75nk9qey9zjgj` refunded the same day; $14.99 out and $14.99 back on the same card, the
-   $2.29 of tax included, confirmed on the card statement rather than in Paddle's ledger. The prediction and the
-   charge agree to the cent, and /refunds' promise — "a refund returns the full amount you paid, the tax
-   included" — is now measured rather than softened.
+   **Confirmed, 27 September 2026:** **invoice 48239-10001**, bought 24 September 2026, India at 18% — the one
+   recorded above as "$12.70, tax $2.29, total $14.99". Refunded in full to the same card with the $2.29 included,
+   confirmed on the card statement rather than in Paddle's ledger. The prediction and the charge agree to the cent,
+   and /refunds' promise — "a refund returns the full amount you paid, the tax included" — is now measured rather
+   than softened.
 
-   **The other half is still open, and it is the half this item was really about.** Whether *our* balance moves by
-   $12.70 or by $14.99 is the difference between "Paddle returns the tax" and "we do", and a buyer confirming
-   $14.99 on their card cannot answer it — the money reaching them is the same either way. It needs Paddle's
-   balance for the adjustment, not the card. Nothing on the site depends on the answer: /refunds promises the
-   amount without saying which, deliberately. This is a fact about our costs.
+   *(Recorded here as 48239-10002 until 1 October 2026. That is the 26 September repurchase, Abu Dhabi at 5%, whose
+   tax is $0.71 — one purchase named by the other's invoice number, in the one place that already held both sets of
+   figures.)*
+
+   **The other half is still open, and it is the half this item was really about.** Whether the tax comes back to
+   us or off us is not visible from the card: the buyer gets $14.99 either way. It needs Paddle's balance for the
+   adjustment.
+
+   **Both options this item offered are wrong, and the sandbox already said so.** "$12.70 or $14.99" leaves out
+   Paddle's transaction fee, which they keep on a refund. The 18 September sandbox refund read: paid $14.99, tax
+   withheld −$0.71, fee −$1.25, **net −$13.03 to us** — total, minus the tax, minus the fee. On 48239-10001 the net
+   received was $11.45 ($14.99 − $2.29 − $1.25), so if the live adjustment debits $11.45 the sandbox answer holds
+   and the tax comes back to us. **The question is therefore "does the adjustment equal the net we received", which
+   is one number to look at rather than a choice between two.**
+
+   Nothing on the site depends on it: /refunds promises the amount without saying which, deliberately. This is a
+   fact about our costs.
 
 **Switching the sale on and announcing it are not the same day.** Steps 0–6 put Pro on sale on pdf-iq.com; step 7 tells
 people. Nothing forces them together, and separating them is what closes the four measurements that need a real charge
@@ -738,6 +756,20 @@ exactly like the defect this section exists because of. Do not read a "still gra
   item stays in the inventory only as the record of why it was nearly not shipped** — a capture was read for a
   contradiction that the published crop does not contain, and the distinction between "the surface says this" and
   "the page publishes this" is worth having written down the next time a screenshot carries a claim.
+
+  **The app's sentence, for whoever does the flip.** `ProOffering.WHERE_TO_BUY` currently reads:
+
+  > Pro is sold at pdf-iq.com. Open it in your browser and sign in with the same Google account.
+
+  It states where Pro is sold and leaves the reader to infer that buying there works here — "sign in with the same
+  Google account" carries the promise by implication. That inference is **correct**, proved on production on
+  27 September 2026, and the website's half will say it outright at the flip: *"Signing in to the Android app with
+  the same account unlocks it there too."* **The question for the app session is whether their sentence should say
+  so too, once the app is public**, rather than leaving the strongest thing it can say to implication.
+
+  Their constraint, not ours: Google's Payments policy allows information about buying elsewhere but not a call to
+  action, so whatever it becomes has to stay a `Text` and not a button or a link. Recorded here because the only
+  other copy of this question was in a session scratchpad, which is not a place a question survives (1 October 2026).
 
   **The part worth keeping.** This item's condition was written when the blocker was the app's capability. The
   blocker is now distribution, and the condition happens to still be right — but only by luck. Had it been phrased
