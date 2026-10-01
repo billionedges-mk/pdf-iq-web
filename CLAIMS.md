@@ -83,7 +83,8 @@ the work is done.
 67. [A design delivered as a working page brings its own dependencies, and they are invisible in the thing you are reviewing](#67-a-design-delivered-as-a-working-page-brings-its-own-dependencies-and-they-are-invisible-in-the-thing-you-are-reviewing)  
 68. [A trigger that comes true early: write an unblock condition as what the reader can observe, not as what you were waiting for](#68-a-trigger-that-comes-true-early-write-an-unblock-condition-as-what-the-reader-can-observe-not-as-what-you-were-waiting-for)  
 69. [A guard that lives in the tool you bypassed: checks attach to the path, not to the artefact](#69-a-guard-that-lives-in-the-tool-you-bypassed-checks-attach-to-the-path-not-to-the-artefact)  
-70. [A blocker that dissolved: a wrong one gets found, a narrow one survives every re-reading](#70-a-blocker-that-dissolved-a-wrong-one-gets-found-a-narrow-one-survives-every-re-reading)
+70. [A blocker that dissolved: a wrong one gets found, a narrow one survives every re-reading](#70-a-blocker-that-dissolved-a-wrong-one-gets-found-a-narrow-one-survives-every-re-reading)  
+71. [Declining to guess was right; declining to look was the actual error](#71-declining-to-guess-was-right-declining-to-look-was-the-actual-error)
 
 <!-- /index -->
 
@@ -2631,3 +2632,65 @@ not "pdf-iq".
 and that is the part worth keeping. A dissolved blocker held up as an example is still live on the site while it is
 being admired. **An example costs whatever it is an example of.** If it is cheap to fix, fixing it is the
 demonstration; the entry can describe what was wrong in the past tense, which is where a closed thing belongs.
+
+### 71. Declining to guess was right; declining to look was the actual error
+
+Three times in two days a sentence here said a thing was unknown, and the thing was written down
+in this repository at the time it was written.
+
+1. **Which invoice carried which tax.** `docs/sale-go-live.md` had carried "India, 18% — subtotal $12.70, tax
+   $2.29, total $14.99 … invoice 48239-10001" since the day it happened. Four files meanwhile attributed that
+   $2.29 to invoice **48239-10002**, a different purchase in a different country at a different rate. One file
+   right, four wrong, for five days.
+2. **Whether Paddle's checkout email field is editable.** Answered on 26 September and written into both
+   `src/pages/refunds.html` and [check 63] the same day. `docs/sale-go-live.md`'s open list carried it as an
+   open question for five days after that.
+3. **Which purchase a transaction id belonged to.** I wrote "I have no record placing it". The repo had a section
+   headed "The revocation path, proven on production with a real charge (24 September 2026)" that opened with that
+   exact id and a timeline — granted 17:04:30, refund requested 17:22, revoked 17:25:17 — matching the owner's
+   reading of Paddle's page to the minute. It was three screens from the item that needed it.
+
+**Not guessing is a virtue people already have.** Nobody in any of those three cases invented an answer; each time
+the honest sentence was written instead. **Looking first is the part that does not occur to anyone**, because
+*"I don't have a record"* feels like a complete answer. It is a complete answer about you. It says nothing about
+the repository.
+
+**The check, and it is the whole entry:**
+
+> **Before writing "unknown", "no record", "not stated anywhere" or "we never measured it" — grep for it.**
+> Name the string you searched and where you searched it.
+
+The asymmetry is total. Finding it costs seconds. Not finding it costs a wrong sentence in a file people act on,
+and the wrong sentence is *persuasive*, because it was written carefully by someone being scrupulous.
+
+**Why it is so hard to notice.** A fact filed in the wrong place is invisible to the person who needs it and
+**perfectly visible to anyone reading the file it is in**. Nobody is wrong. Nothing is stale. No check can fire,
+because every instrument here asks whether a sentence is true, and both sentences are. The two readers simply never
+meet. That is [check 69] one layer in: there, an artefact arriving from outside skips the checks standing on the
+path it did not take; here, a fact arriving into one document skips the documents that needed it.
+
+**Distinct from [check 68]'s third state, and easy to confuse with it** — I filed instance 2 under it before seeing
+the difference. Same symptom, different cause, different remedy:
+
+| | where the fact is | what fixes it |
+|---|---|---|
+| [check 68], third state | done in the world, written nowhere | write it down |
+| **this** | **written down, in a file that does not know the one needing it** | **look before declaring it missing** |
+
+The Play Console privacy URL is the genuine third-state case: done in a console, recorded in no file. Instance 2
+above is this one wearing its clothes.
+
+**Search by every form the fact has** — the id, the invoice number, the amount, the date, the rate. A fact filed
+elsewhere is usually filed under a different name than the one you are missing it by, which is why a single search
+term is a coin toss.
+
+**And when you do look, check the instrument can see the shape you are looking for.** The first audit written to
+sweep up the remains of instance 1 was a `grep`, and grep reads one line at a time while every real mention here
+wrapped across two or three. It reported clean for the defect **and clean for the control** — and the control
+saying clean is the tell, which is only a tell because the control was there. Rewritten to read each file whole
+with a window and a control that must be found. **Looking with an instrument that could not have found it is the
+same outcome as not looking, and it feels like diligence.** See [check 47].
+
+*(Its one remaining hit is a known false positive — a paragraph that names the wrong pairing in order to withdraw
+it — and it is left in the output rather than filtered away. A check tuned until it agrees with you is a check you
+have stopped reading.)*

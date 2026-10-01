@@ -206,8 +206,11 @@ Pay, so the sign-in cannot be confused with the checkout:
    impossible case would have added.
 
    **It stayed on this list for five days after it was answered**, and the answer was written down in two other
-   files the whole time. That is the third state from CLAIMS 68 — done, not written down here, therefore reading as
-   outstanding — found by a status check that read the files instead of remembering them.
+   files the whole time — `src/pages/refunds.html` and CLAIMS 63. **That is CLAIMS 71, not CLAIMS 68's third
+   state**, and it was filed as the latter for a day before the difference was clear: nothing here was undone and
+   nothing was unrecorded, the record simply sat in files this list does not read. Done-and-unwritten is fixed by
+   writing it down; written-in-the-wrong-file is fixed by looking before declaring it open. Found by a status check
+   that read the files instead of remembering them.
 2. **The receipt's contents and where its buyer-portal link goes.** The first purchase's receipt went to the
    measurement address, which does not exist. **A live invoice now exists and is in hand — 48239-10002 — so this is
    answerable in one glance rather than untestable.** It has not been answered: /refunds' sentence about paddle.net
