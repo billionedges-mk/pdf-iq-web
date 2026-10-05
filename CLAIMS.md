@@ -84,7 +84,8 @@ the work is done.
 68. [A trigger that comes true early: write an unblock condition as what the reader can observe, not as what you were waiting for](#68-a-trigger-that-comes-true-early-write-an-unblock-condition-as-what-the-reader-can-observe-not-as-what-you-were-waiting-for)  
 69. [A guard that lives in the tool you bypassed: checks attach to the path, not to the artefact](#69-a-guard-that-lives-in-the-tool-you-bypassed-checks-attach-to-the-path-not-to-the-artefact)  
 70. [A blocker that dissolved: a wrong one gets found, a narrow one survives every re-reading](#70-a-blocker-that-dissolved-a-wrong-one-gets-found-a-narrow-one-survives-every-re-reading)  
-71. [Declining to guess was right; declining to look was the actual error](#71-declining-to-guess-was-right-declining-to-look-was-the-actual-error)
+71. [Declining to guess was right; declining to look was the actual error](#71-declining-to-guess-was-right-declining-to-look-was-the-actual-error)  
+72. [A measure that reconstructs its own defect the moment it meets the real system](#72-a-measure-that-reconstructs-its-own-defect-the-moment-it-meets-the-real-system)
 
 <!-- /index -->
 
@@ -2712,3 +2713,50 @@ same outcome as not looking, and it feels like diligence.** See [check 47].
 *(Its one remaining hit is a known false positive — a paragraph that names the wrong pairing in order to withdraw
 it — and it is left in the output rather than filtered away. A check tuned until it agrees with you is a check you
 have stopped reading.)*
+
+### 72. A measure that reconstructs its own defect the moment it meets the real system
+
+The sitemap had no `lastmod`. The fix was to give each page a date that moves when its content moves, instead of
+the date of whatever deploy happened last — a lastmod that tracks deploys is noise, and a crawler learns to ignore
+the field.
+
+The hash was taken over the rendered `<main>`: not the `<head>`, which carries the build id and the hashed asset
+names, and not the chrome, which changes for seventeen pages at once. Both exclusions were right. It was seeded
+from git, it survived repeated local builds unchanged, and a planted edit moved exactly one page and left fourteen
+alone. Then it shipped, and **every page came back stamped with the deploy date**.
+
+**The rendered page depends on which build rendered it.** Production is a selling build with the Pro flag on and
+renders different price blocks from the free build the hashes were computed in. Not one hash matched, every page
+looked changed, and each got the date of the deploy — **which is precisely the value the work existed to remove**.
+It did not fail to help. It rebuilt the defect, out of parts chosen to avoid it, and reported success all the way
+through local testing.
+
+**The check, for anything that compares a thing to a stored version of itself:**
+
+1. **Ask what else the input depends on besides the thing being measured.** A hash over rendered output is a hash
+   over output *and* over every flag, environment variable and feature state that shaped it. The question is not
+   "does this change when the content changes" — it did — but "does it change when anything else does".
+2. **A measure that can be computed in two environments must be computed in both before it is believed.** Every
+   local test here passed, repeatedly, because every local test ran in one build state. The states were a
+   `CF_PAGES_BRANCH` away and were never tried.
+3. **Prefer an input that cannot vary.** The fix was to hash the page's source file, which has one value whatever
+   is building it — and which is also the artefact the dates were seeded from, so the hash and the date finally
+   describe one thing. **When a derived value and a stored value disagree about what they are measuring, the
+   disagreement is invisible until something external moves.**
+
+**And the diagnosis, which is the part worth carrying.** Fifteen pages, fourteen moved, one held. **A total failure
+reads as "the thing did not run"; a near-total one has a witness.** The page that held was /for-professionals/, the
+only page whose content happens not to vary with the sale flag — so it had the same hash in both build states and
+kept its date. **That was a control, and nobody designed it.** Had the set been uniform the symptom would have been
+fifteen identical wrong dates, indistinguishable from the file never deploying, and the first guess would have been
+Cloudflare rather than the hash.
+
+So: **when a failure is nearly total, find what survived and ask what is different about it.** The exception is
+carrying the explanation. It is the same reading as [check 66] from the other end — there a number flattered the
+outcome and had to be distrusted; here a number was wrong in fourteen places and the fifteenth, being right, named
+the cause.
+
+**Related, in the same change:** the field was given a deliberately conservative limit — a change reaching a page
+through a token or a generated block leaves lastmod where it is. Being told "nothing new" about a page that did
+change costs one re-crawl; the opposite costs the field's credibility, and a field is only read while it is
+believed. That is the reason it was empty before, and the reason to be careful what is put in it.
