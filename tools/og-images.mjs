@@ -70,7 +70,7 @@ const attr = (tag, name) => {
  * a removed path and a corner nudged off its line, and it caught this change too: the mark gained three rules a few
  * hours after the polygons arrived, and the parser stopped the build rather than dropping them (26 September 2026).
  */
-function markGeometry() {
+export function markGeometry() {
   const svg = readFileSync(join(ROOT, 'public/mark.svg'), 'utf8');
   const box = /viewBox="0 0 (\d+) (\d+)"/.exec(svg);
   const polys = [...svg.matchAll(/<polygon points="([^"]+)"[^>]*fill="(#[0-9A-Fa-f]{6})"/g)]

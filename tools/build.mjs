@@ -20,7 +20,8 @@ import { PADDLE } from './paddle-config.mjs';
 import { faqBlock } from './faq.mjs';
 import { PRO_COPY, PRO_FEATURES, SELLING_SURFACE, proState, proStrip, proPanel, proSheet, proSurfaces, proWhere, proShorts, proLede, lockedPanelStatic } from './pro-copy.mjs';
 import { icon } from './icons.mjs';
-import { ogImage } from './og-images.mjs';
+import { ogImage, markGeometry } from './og-images.mjs';
+import { Bitmap } from './png.mjs';
 import { LANGUAGES } from './langs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -899,10 +900,43 @@ async function build() {
     }
     // The homepage describes the application itself. Not added elsewhere: a tool page is a
     // page about one feature, and claiming each is a separate application would be untrue.
+    //
+    // One @graph rather than three scripts. The site is a publisher, a website and an application, and a crawler
+    // given three unlinked descriptions has to guess which name belongs to which — the @ids say it instead.
+    //
+    // Every value here is already somewhere a reader can see it: BillionEdges is named as the publisher on
+    // /privacy/ ("pdf-iq.com and the PDFiq Android app are published by BillionEdges"), the support address is on
+    // /support/ and /refunds/, and both sameAs targets answer 200 and are ours — billionedges.com still redirects
+    // /pdfiq/* here, and the GitHub organisation is where this repository lives and what the footer links into.
+    //
+    // NO SearchAction on the WebSite. The usual boilerplate declares one; this site has no search, and markup that
+    // describes a feature the page does not have is the same defect as copy that does.
     if (page.slug === '') {
+      const org = {
+        '@type': 'Organization',
+        '@id': `${ORIGIN}/#organization`,
+        name: 'BillionEdges',
+        url: `${ORIGIN}/`,
+        logo: { '@type': 'ImageObject', url: `${ORIGIN}/logo.png`, width: 512, height: 512 },
+        sameAs: ['https://billionedges.com', 'https://github.com/billionedges-mk'],
+        contactPoint: {
+          '@type': 'ContactPoint',
+          contactType: 'customer support',
+          email: 'support@pdf-iq.com',
+          availableLanguage: 'English',
+        },
+      };
+      const site = {
+        '@type': 'WebSite',
+        '@id': `${ORIGIN}/#website`,
+        name: 'pdf-iq',
+        url: `${ORIGIN}/`,
+        inLanguage: 'en',
+        publisher: { '@id': `${ORIGIN}/#organization` },
+      };
       const app = {
-        '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
+        '@id': `${ORIGIN}/#app`,
         name: 'pdf-iq',
         url: ORIGIN + '/',
         applicationCategory: 'UtilitiesApplication',
@@ -911,9 +945,11 @@ async function build() {
         isAccessibleForFree: true,
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
         featureList: HOME_TOOLS.map((t) => t.cardName ?? t.name),
+        publisher: { '@id': `${ORIGIN}/#organization` },
       };
+      const graph = { '@context': 'https://schema.org', '@graph': [org, site, app] };
       body += `
-      <script type="application/ld+json">${JSON.stringify(app).replace(/</g, '\\u003c')}</script>`;
+      <script type="application/ld+json">${JSON.stringify(graph).replace(/</g, '\\u003c')}</script>`;
     }
     if (body.includes('<!--FAQ-->')) {
       const tool = TOOLS.find((t) => t.slug === page.slug);
@@ -991,6 +1027,19 @@ async function build() {
   copyFonts();
   copyVendor();
   copyStatic();
+
+  // The logo the Organization in the homepage's JSON-LD points at. Drawn here rather than committed as a file
+  // because it comes off public/mark.svg's own geometry, through the same markGeometry() that refuses to draw if
+  // that file is not the shape it reads — so the logo a crawler fetches cannot quietly differ from the mark in the
+  // nav. 512 square with a margin, which is what Google asks of an Organization logo; an SVG would be the same
+  // drawing but is not reliably eligible.
+  {
+    const bmp = new Bitmap(512, 512, '#FAF8F4');
+    bmp.mark(96, 96, 320, markGeometry());
+    const png = bmp.toPng();
+    if (png.length < 500) throw new Error('the logo came out empty');
+    writeFileSync(join(OUT, 'logo.png'), png);
+  }
 
   writeFileSync(join(OUT, 'sitemap.xml'), sitemap());
   // Share images, drawn straight to PNG. Every indexed route gets one; a route that
