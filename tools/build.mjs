@@ -802,18 +802,27 @@ function robots() {
 /**
  * The content of one page, as a hash, for deciding whether its lastmod should move.
  *
- * Scoped to <main> on purpose. The <head> carries the build id and the hashed asset filenames, which change on
- * every build and have nothing to do with what the page says; the chrome carries a nav that changes for all
- * seventeen pages at once. Hashing either would make lastmod mean "when we last deployed", which is the value
- * being replaced, and a lastmod that moves when nothing was written is a lastmod a crawler learns to ignore.
+ * The page's SOURCE file, not its rendered output. The rendered version was tried first and failed on contact with
+ * production: a selling Pro build renders different price blocks from a free one, so hashes committed from a local
+ * free build matched nothing on Cloudflare and every page was stamped with the deploy date — which is the value
+ * this exists to replace. Exactly one page agreed across both, /for-professionals/, whose content happens not to
+ * vary with the Pro flag, and that single disagreement is what named the cause.
  *
- * Throws rather than falling back: a page with no <main> would silently get today's date for ever.
+ * A source file cannot vary by build state. It is also the artefact the dates were seeded from, so the hash and
+ * the date now describe the same thing.
+ *
+ * What it cannot see: a change reaching the page through a token or a generated block — a price in site.mjs, a
+ * question in faq.mjs. Those leave lastmod where it was. That is the conservative direction and it is deliberate:
+ * a crawler told "nothing new" about a page that did change costs one re-crawl, where the opposite costs the
+ * field's credibility, and lastmod is only used at all while it is believed.
+ *
+ * Line endings are folded before hashing: this repo holds a mix, and a checkout that normalises them must not look
+ * like every page was rewritten.
  */
 function contentSha(slug) {
-  const html = readFileSync(join(OUT, slug ? `${slug}/index.html` : 'index.html'), 'utf8');
-  const main = /<main\b[^>]*>([\s\S]*?)<\/main>/i.exec(html);
-  if (!main) throw new Error(`/${slug} has no <main>, so its lastmod cannot be taken from its content`);
-  return createHash('sha256').update(main[1].replace(/\s+/g, ' ').trim()).digest('hex').slice(0, 16);
+  const file = join(ROOT, `src/pages/${slug || 'index'}.html`);
+  if (!existsSync(file)) throw new Error(`no source file for /${slug} at ${file}; its lastmod has nothing to hash`);
+  return createHash('sha256').update(readFileSync(file, 'utf8').replace(/\r\n/g, '\n')).digest('hex').slice(0, 16);
 }
 
 /**

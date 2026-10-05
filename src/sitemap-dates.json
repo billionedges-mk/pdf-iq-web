@@ -1,70 +1,70 @@
 {
   "app": {
-    "sha": "f6bb11336bdf4dbe",
-    "date": "2026-10-05"
+    "sha": "a37a74db30be742b",
+    "date": "2026-09-27"
   },
   "batch": {
-    "sha": "9d1208e916a02fbb",
-    "date": "2026-10-05"
+    "sha": "739e6a92988cab94",
+    "date": "2026-09-24"
   },
   "compress": {
-    "sha": "9aa4452ce93eb284",
-    "date": "2026-10-05"
+    "sha": "4cd73c21e51dcdac",
+    "date": "2026-09-24"
   },
   "for-professionals": {
-    "sha": "0ffc40e3acbf456f",
+    "sha": "13c138f7e78f921f",
     "date": "2026-09-17"
   },
   "images-to-pdf": {
-    "sha": "c7cf9d4671c98aec",
-    "date": "2026-10-05"
+    "sha": "4aa84831403000b0",
+    "date": "2026-09-24"
   },
   "index": {
-    "sha": "133280319eb04769",
-    "date": "2026-10-05"
+    "sha": "782719b8670daad5",
+    "date": "2026-09-17"
   },
   "merge": {
-    "sha": "11039222d04dba79",
-    "date": "2026-10-05"
+    "sha": "9697618c40c783f6",
+    "date": "2026-09-17"
   },
   "ocr": {
-    "sha": "3f1a075fb4b2a5f3",
-    "date": "2026-10-05"
+    "sha": "1d7214ca97757d4c",
+    "date": "2026-09-24"
   },
   "password": {
-    "sha": "d44e85ba800de326",
-    "date": "2026-10-05"
+    "sha": "e17a9135eac60460",
+    "date": "2026-09-24"
   },
   "privacy": {
-    "sha": "a8422d24e9b8f1c4",
-    "date": "2026-10-05"
+    "sha": "f1e78147b9da7975",
+    "date": "2026-09-26"
   },
   "pro": {
-    "sha": "888d41002da35315",
-    "date": "2026-10-05"
+    "sha": "3a3530f06da5bec8",
+    "date": "2026-09-24"
   },
   "refunds": {
-    "sha": "758547e42f14f6ab",
-    "date": "2026-10-05"
+    "sha": "bedeb8ba488065d3",
+    "date": "2026-10-01"
   },
   "reorder": {
-    "sha": "53ed54173d4f3b01",
-    "date": "2026-10-05"
+    "sha": "9417fcaf620900d3",
+    "date": "2026-09-17"
   },
   "rotate": {
-    "sha": "bc22b8fa6406800a",
-    "date": "2026-10-05"
+    "sha": "6c8493659e12adab",
+    "date": "2026-09-17"
   },
   "split": {
-    "sha": "043cd758e83ae31f",
-    "date": "2026-10-05"
+    "sha": "03af288b920e120b",
+    "date": "2026-09-17"
   },
   "support": {
-    "sha": "aed2ac7483b422b1",
-    "date": "2026-10-05"
+    "sha": "d09a777e7a4cecd9",
+    "date": "2026-09-26"
   },
   "terms": {
-    "sha": "c97efe40289347d8",
-    "date": "2026-10-05"
+    "sha": "fee5330fb4f58bf1",
+    "date": "2026-09-26"
   }
 }
