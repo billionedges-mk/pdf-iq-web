@@ -12,7 +12,18 @@ step 0 below.
 thing switched: with a purchase page live and no database, no schema or no notification destination, someone can pay and
 never receive Pro, and the only record of it is Paddle's.
 
-## The day, in order
+## The day, in order — **STEPS 0 TO 6 DONE, 24 September 2026**
+
+The flags were set on pdf-iq-web Production that afternoon, the build deployed, and the first real purchase followed:
+invoice 48239-10001 at 17:04, India, 18%. **Pro has been on sale on pdf-iq.com since then.** Step 7 is the only one
+still open.
+
+**Nothing said so for eleven days**, on the largest item in this file, while the same file recorded that purchase in
+detail two sections down. A checklist records intent, and nothing records completion unless somebody goes back —
+which is the same shape as the conditions the CLAIMS 68 sweep found met and unremarked, one level up: there a
+condition came true and no one returned to it; here the whole procedure ran and no one returned to the page
+describing it. The steps below are left as written, because what they say to do was right; only their state was
+missing.
 
 The owner's plan of 18 September 2026, with what the code requires folded into it. **Sandbox is untouched throughout.**
 
@@ -46,7 +57,7 @@ change rather than writing one. What it turned up:
   `<!--SALE-->` block and changes with the flag, on /pro/, /app/, /terms, /support, /privacy and the homepage panel —
   that was built on 17 September and this section was not updated. What is left is /privacy's checkout section, whose
   italic line says the live checkout has not been measured yet: that is **step 1's** output, not step 0's, and cannot
-  be written before the measurement. The Android sentences wait for vc18 (§4).
+  be written before the measurement. The Android sentences wait for the app being publicly on Play (§4).
 
 **Each rule is narrowed, not deleted.** Deleting a guard leaves nothing where a reason used to be:
 
@@ -194,7 +205,9 @@ production entitlement path end to end with the released app. Then refund it: th
 clearing on web and app. **Remember the gap** — requested → approved is a delay Paddle owns, and the row staying granted
 in between is correct ("Walking a refund", below).
 
-**7. Only then** announce, and apply for Play production access.
+**7. Only then** announce, and apply for Play production access. — **THE ONLY STEP STILL OPEN.** Production access
+was refused on 25 September 2026 and the application reset rather than staying pending, so reapplying is a fresh
+application once the closed test has served its days. §4's flip rides on the same event.
 
 **What is still open after 24 September 2026, and all four ride on one clean repurchase** — signed in BEFORE pressing
 Pay, so the sign-in cannot be confused with the checkout:
@@ -685,10 +698,15 @@ exactly like the defect this section exists because of. Do not read a "still gra
   to `covers` is what makes every exclusion sentence false, so they move together or the site contradicts itself for as
   long as the gap lasts (owner, 20 September 2026).
 
-  **Unblocks when:** vc18 — the app release that honours a web purchase — is **live on Play**. Not when it is built,
-  not when it is walked (owner, 18 September 2026: "doesn't unlock" errs toward under-promising, which is the safe
-  side), and not when the sale merely opens: a buyer whose app has not updated still gets nothing there. Today's pages
-  are true of vc16 and false the moment vc18 ships, which is why this cannot lag the release.
+  **Unblocks when: the app is publicly listed on Play** — vc25 or later at the time of writing. Not when it is
+  built, not when it is walked (owner, 18 September 2026: "doesn't unlock" errs toward under-promising, which is the
+  safe side), and not when the sale merely opens: a buyer whose app has not updated still gets nothing there.
+
+  **The version number in this condition has moved twice** — vc18, then vc20 when a web purchase was proved to
+  unlock a Play-signed build on 27 September, then vc25. The event did not move. That is CLAIMS 68 confirmed by its
+  own example: naming an event a reader can check is what let the identifier inside it drift without the trigger
+  going wrong. The release number is now written as a parenthetical, because it is a detail that will drift again
+  and the thing to check is the listing.
 
   `PRO.coversToday` retires in favour of `PRO.covers`; each trailing exclusion becomes "Signing in to the Android app
   with the same account unlocks it there too"; and **"buying happens on this website rather than inside the Android
@@ -715,8 +733,8 @@ exactly like the defect this section exists because of. Do not read a "still gra
   comes back to. Not /pro/'s owned card, not the tool panels: an install prompt on every Pro surface turns the site
   into an advert for the app. The Play-constraint sentence above stays exactly as it is.
 
-  **Unblocks when:** the same moment as the sentences above — vc18 **live on Play** — because the link and the claim
-  become true together. There is nothing to say before then: a purchase does not unlock the app, and there is no
+  **Unblocks when:** the same moment as the sentences above — **the app publicly listed on Play** — because the link
+  and the claim become true together. There is nothing to say before then: a purchase does not unlock the app, and there is no
   listing to link to.
 
   **Why it was nearly missed, which is the part worth keeping.** This entry did not exist until 25 September 2026,

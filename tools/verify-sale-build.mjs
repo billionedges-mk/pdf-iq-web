@@ -273,9 +273,21 @@ for (const [which, label, env, reason] of refusals) {
   ok(!/Disallow: \//.test(robots) && /Sitemap:/.test(robots), 'selling on production: robots.txt still allows the crawl and names the sitemap');
   ok(!/content="noindex/.test(home) && !/content="noindex/.test(tool), 'selling on production: the homepage and the free tools are still indexable');
   ok((sitemap.match(/<loc>/g) ?? []).length > 10, `selling on production: the sitemap still lists the free pages (${(sitemap.match(/<loc>/g) ?? []).length})`);
-  for (const proPage of ['account', 'batch', 'password', 'pro/buy']) {
+  // Two kinds of page, two reasons, and they were one loop until 5 October 2026 — which is how "they are Pro-only"
+  // came to look like a sufficient argument for all four. It was never the reason for these two.
+  //
+  //   a state of a transaction        /account/, /pro/buy/   nothing a stranger should arrive on from a search
+  //   a product page that is paid     /batch/, /password/    exactly what a stranger searching for it should find
+  //
+  // The first pair stays out of search however the sale is going. The second pair was noindex only while Pro could
+  // not be bought, and that reason expired when the sale opened on 24 September 2026.
+  for (const proPage of ['account', 'pro/buy']) {
     const html = readFileSync(join(ROOT, `dist/${proPage}/index.html`), 'utf8');
-    ok(/content="noindex/.test(html) && !sitemap.includes(`/${proPage}/</loc>`), `selling on production: /${proPage}/ is noindex and absent from the sitemap`);
+    ok(/content="noindex/.test(html) && !sitemap.includes(`/${proPage}/</loc>`), `selling on production: /${proPage}/ is a step in a purchase and stays out of search`);
+  }
+  for (const proPage of ['batch', 'password']) {
+    const html = readFileSync(join(ROOT, `dist/${proPage}/index.html`), 'utf8');
+    ok(!/content="noindex/.test(html) && sitemap.includes(`/${proPage}/</loc>`), `selling on production: /${proPage}/ is a product page and is findable`);
   }
 }
 

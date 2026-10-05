@@ -1,0 +1,70 @@
+{
+  "app": {
+    "sha": "f6bb11336bdf4dbe",
+    "date": "2026-10-05"
+  },
+  "batch": {
+    "sha": "9d1208e916a02fbb",
+    "date": "2026-10-05"
+  },
+  "compress": {
+    "sha": "9aa4452ce93eb284",
+    "date": "2026-10-05"
+  },
+  "for-professionals": {
+    "sha": "0ffc40e3acbf456f",
+    "date": "2026-09-17"
+  },
+  "images-to-pdf": {
+    "sha": "c7cf9d4671c98aec",
+    "date": "2026-10-05"
+  },
+  "index": {
+    "sha": "133280319eb04769",
+    "date": "2026-10-05"
+  },
+  "merge": {
+    "sha": "11039222d04dba79",
+    "date": "2026-10-05"
+  },
+  "ocr": {
+    "sha": "3f1a075fb4b2a5f3",
+    "date": "2026-10-05"
+  },
+  "password": {
+    "sha": "d44e85ba800de326",
+    "date": "2026-10-05"
+  },
+  "privacy": {
+    "sha": "a8422d24e9b8f1c4",
+    "date": "2026-10-05"
+  },
+  "pro": {
+    "sha": "888d41002da35315",
+    "date": "2026-10-05"
+  },
+  "refunds": {
+    "sha": "758547e42f14f6ab",
+    "date": "2026-10-05"
+  },
+  "reorder": {
+    "sha": "53ed54173d4f3b01",
+    "date": "2026-10-05"
+  },
+  "rotate": {
+    "sha": "bc22b8fa6406800a",
+    "date": "2026-10-05"
+  },
+  "split": {
+    "sha": "043cd758e83ae31f",
+    "date": "2026-10-05"
+  },
+  "support": {
+    "sha": "aed2ac7483b422b1",
+    "date": "2026-10-05"
+  },
+  "terms": {
+    "sha": "c97efe40289347d8",
+    "date": "2026-10-05"
+  }
+}

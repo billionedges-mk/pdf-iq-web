@@ -439,7 +439,8 @@ have to be kept in agreement deliberately, which is why this section stays.
 now stale about the mechanism and still correct for a member of the public, who cannot install that
 build: Play production access was refused on 25 September 2026 and the track opens roughly
 9 October. The flip's condition is unchanged and is stated once, in `docs/sale-go-live.md` §4 —
-**vc18 live on Play** — because the trigger is an event a buyer can act on, not a capability. See
+**the app publicly listed on Play** — because the trigger is an event a buyer can act on, not a
+capability, and not a release number: vc18 became vc20 became vc25 while the event stayed put. See
 the same file for why that distinction saved the trigger when the reason underneath it changed.
 
 ## Paddle's checkout frame talks to hosts this site's policy cannot govern
@@ -501,7 +502,7 @@ buying. The owner pulled it the same day.
   in the Android app. A refund removes it from this website." (production, 8b9273a).
 - The old phrases from /terms and /refunds are in tools/retired-claims.mjs, so verify:retired refuses them.
 
-**Unblocks when:** vc18 is live on Play. **The change itself is recorded once, in `docs/sale-go-live.md` §4** — the
+**Unblocks when:** the app is publicly listed on Play. **The change itself is recorded once, in `docs/sale-go-live.md` §4** — the
 inventory, the wording each sentence becomes, the retired-claims deletions, and `npm run verify:purchase-scope`, which
 refuses a flip that leaves any of them behind. It is not restated here: this entry held its own trigger ("tested on a
 device") and its own count ("all six places"), both of which had drifted from the go-live doc's, and two records of one

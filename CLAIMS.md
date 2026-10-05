@@ -2494,6 +2494,24 @@ problem", and neither has pending work attached to it, so neither can fire anyth
    because that charge's receipt went to an address that does not exist. A reader checking the cheap clause would
    have read it as met three days early.
 
+**A fourth, found eleven days later, and it is the largest item in either file.** `docs/sale-go-live.md` is a
+procedure for switching the sale on: steps 0 to 7, each with what to set and what to check. The sale went on on
+24 September 2026 — flags set, build deployed, a real card charged at 17:04 — and **the document never said so**.
+Two sections further down it records that purchase in detail, which is only possible on a live sale.
+
+**A checklist records intent, and nothing records completion unless somebody goes back.** That is this check one
+level up: there, a condition came true and no one returned to the line that named it; here, the whole procedure ran
+and no one returned to the page describing it. A list of steps has no state. Every item reads "to do" for ever, and
+the fuller and more careful the list, the more convincing it is as a description of work outstanding. **Write the
+state on the heading, with the date, at the moment it changes** — the steps themselves were right and were left
+exactly as written; only whether they had been done was missing.
+
+**And the same entry's own condition drifted while being right.** §4 said "vc18 live on Play". It became vc20 when
+a web purchase was proved to unlock a Play-signed build on 27 September, and vc25 by 5 October. **The release
+number moved twice and the event did not**, which is this check confirmed by its own example: naming something a
+reader can go and look at is what let the identifier inside it go stale without the trigger going wrong. It is now
+written as "the app is publicly listed on Play", with the version as a parenthetical that is free to drift.
+
 So the sweep's question — *can a reader check this?* — is necessary and not sufficient. **The second question is
 whether anything makes the reader check.** A condition nobody re-reads is inert however well it is written, and the
 two-clause form is worse: the cheap clause fires on its own, and the expensive one waits for someone who has

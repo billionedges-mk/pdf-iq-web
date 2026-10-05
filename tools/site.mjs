@@ -10,7 +10,7 @@ export const ORIGIN = 'https://pdf-iq.com';
 /** The seven tools, in nav order. `nav` is the short label in the header. */
 export const TOOLS = [
   {
-    slug: 'merge', nav: 'Merge', name: 'Merge PDF', entry: 'merge',
+    slug: 'merge', nav: 'Merge PDF', name: 'Merge PDF', entry: 'merge',
     title: 'Merge PDF free — no upload, no signup, works offline',
     description:
       'Merge PDF files free, without uploading them. Combine PDFs into one file in the order you set — it runs in your browser, so they never leave your device.',
@@ -23,7 +23,7 @@ export const TOOLS = [
     ogLine: 'Your files never leave your device',
   },
   {
-    slug: 'split', nav: 'Split', name: 'Split PDF', entry: 'split',
+    slug: 'split', nav: 'Split PDF', name: 'Split PDF', entry: 'split',
     title: 'Split PDF free — no upload, no signup, works offline',
     description:
       'Split a PDF free, without uploading it. Pull out a page range or cut one file into several — it runs in your browser, so the file stays on your device.',
@@ -36,7 +36,7 @@ export const TOOLS = [
     ogLine: 'Your files never leave your device',
   },
   {
-    slug: 'compress', nav: 'Compress', name: 'Compress PDF', entry: 'compress',
+    slug: 'compress', nav: 'Compress PDF', name: 'Compress PDF', entry: 'compress',
     title: 'Compress PDF free — no upload, no signup, works offline',
     description:
       'Compress a PDF free, without uploading it — for email or a filing. It runs in your browser, and we say so plainly when a file will not get any smaller.',
@@ -62,7 +62,7 @@ export const TOOLS = [
     ogLine: 'Your files never leave your device',
   },
   {
-    slug: 'rotate', nav: 'Rotate', name: 'Rotate PDF', entry: 'rotate',
+    slug: 'rotate', nav: 'Rotate PDF', name: 'Rotate PDF', entry: 'rotate',
     title: 'Rotate PDF free — no upload, no signup, works offline',
     description:
       'Rotate PDF pages free, without uploading the file. Turn sideways scans the right way up in your browser — nothing leaves your device.',
@@ -75,7 +75,7 @@ export const TOOLS = [
     ogLine: 'Your files never leave your device',
   },
   {
-    slug: 'reorder', nav: 'Reorder', name: 'Reorder Pages', entry: 'reorder',
+    slug: 'reorder', nav: 'Reorder pages', name: 'Reorder Pages', entry: 'reorder',
     title: 'Reorder PDF pages free — no upload, no account',
     description:
       'Reorder or delete PDF pages free, without uploading the file. Move pages on a grid of the real pages, in your browser — nothing leaves your device.',
@@ -88,7 +88,7 @@ export const TOOLS = [
     ogLine: 'Your files never leave your device',
   },
   {
-    slug: 'ocr', nav: 'OCR', name: 'OCR PDF', entry: 'ocr',
+    slug: 'ocr', nav: 'OCR PDF', name: 'OCR PDF', entry: 'ocr',
     title: 'OCR PDF free — read the text off a scan, no upload',
     description:
       'OCR a PDF free, without uploading it. Read the text in a scanned document so you can copy it or save it as text — it runs in your browser, on your own device.',
@@ -454,7 +454,11 @@ export const PRO_PAGES = [
   {
     // Batch is the feature that carries the tier: a few things done properly across many files.
     // docs/batch.md is its contract, written before the code.
-    slug: 'batch', name: 'Batch', nav: 'Batch', entry: 'batch-page', entryDir: 'pro', noindex: true,
+    // Indexable since 5 October 2026. It was noindex because Pro was not purchasable, and that stopped being true
+    // when the sale opened on 24 September: someone searching "batch compress pdf" lands on a page that states the
+    // price, says what the free tools do instead, and has a working drop zone. /account/ and /pro/buy/ stay out of
+    // search for a different reason — see tools/verify-sale-build.mjs, where the two reasons are now separate.
+    slug: 'batch', name: 'Batch', nav: 'Batch',  entry: 'batch-page', entryDir: 'pro',
     title: 'Batch — one operation across many PDFs — pdf-iq',
     description: 'Compress, read the text from, or rotate many PDFs at once, on your device. Part of Pro.',
     ogSubject: 'Batch',
@@ -464,7 +468,8 @@ export const PRO_PAGES = [
     // `nav` puts it in the tool bar of a flag-on build. Without it the page existed and nothing
     // on the site led to it: someone looking for the feature found no trace of it (12 September
     // 2026). A route nobody can reach is the same as a route that is not there.
-    slug: 'password', name: 'Password', nav: 'Password', entry: 'password', entryDir: 'pro', noindex: true,
+    // Indexable since 5 October 2026, for the reason given on Batch above.
+    slug: 'password', name: 'Password', nav: 'Password', entry: 'password', entryDir: 'pro',
     title: 'Password protect a PDF, or remove one — pdf-iq',
     description: 'Add a password to a PDF, or take one off, on your device. Part of Pro.',
     ogSubject: 'Password',

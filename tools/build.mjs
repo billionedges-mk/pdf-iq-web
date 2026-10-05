@@ -24,6 +24,7 @@ import { ogImage } from './og-images.mjs';
 import { LANGUAGES } from './langs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const SITEMAP_DATES = join(ROOT, 'src/sitemap-dates.json');
 const NL = String.fromCharCode(10);
 
 /**
@@ -798,12 +799,55 @@ function robots() {
 }
 
 
+/**
+ * The content of one page, as a hash, for deciding whether its lastmod should move.
+ *
+ * Scoped to <main> on purpose. The <head> carries the build id and the hashed asset filenames, which change on
+ * every build and have nothing to do with what the page says; the chrome carries a nav that changes for all
+ * seventeen pages at once. Hashing either would make lastmod mean "when we last deployed", which is the value
+ * being replaced, and a lastmod that moves when nothing was written is a lastmod a crawler learns to ignore.
+ *
+ * Throws rather than falling back: a page with no <main> would silently get today's date for ever.
+ */
+function contentSha(slug) {
+  const html = readFileSync(join(OUT, slug ? `${slug}/index.html` : 'index.html'), 'utf8');
+  const main = /<main\b[^>]*>([\s\S]*?)<\/main>/i.exec(html);
+  if (!main) throw new Error(`/${slug} has no <main>, so its lastmod cannot be taken from its content`);
+  return createHash('sha256').update(main[1].replace(/\s+/g, ' ').trim()).digest('hex').slice(0, 16);
+}
+
+/**
+ * src/sitemap-dates.json is the record of when each page last said something different. The build compares the
+ * hash it just produced against the stored one and keeps the stored date when they agree, so a page that has not
+ * changed keeps its date through any number of deploys.
+ *
+ * It is committed, and the build rewrites it. Locally that leaves a diff to commit, which is the point — the diff
+ * IS the record that a page changed. On Cloudflare the rewrite is discarded with the container, so a page whose
+ * content changed in a commit that did not update this file gets the deploy date until someone builds and commits
+ * it; that is a worse date, not a wrong one.
+ *
+ * Entries for routes absent from this build are carried through untouched: a free build has no /batch/, and
+ * dropping its date because this build could not see it would reset it on the next Pro build.
+ */
 function sitemap() {
   // noindex pages are not listed: a sitemap entry is a request to index, so listing one
   // while telling robots not to index it sends two opposite instructions.
-  const urls = ROUTES.filter((p) => !p.noindex).map(
-    (p) => `  <url><loc>${ORIGIN}${href(p.slug)}</loc><changefreq>monthly</changefreq></url>`
-  ).join('\n');
+  const indexed = ROUTES.filter((p) => !p.noindex);
+  const stored = existsSync(SITEMAP_DATES) ? JSON.parse(readFileSync(SITEMAP_DATES, 'utf8')) : {};
+  const today = new Date().toISOString().slice(0, 10);
+  const next = { ...stored };
+
+  const urls = indexed.map((p) => {
+    const key = p.slug || 'index';
+    const sha = contentSha(p.slug);
+    const date = stored[key]?.sha === sha ? stored[key].date : today;
+    next[key] = { sha, date };
+    return `  <url><loc>${ORIGIN}${href(p.slug)}</loc><lastmod>${date}</lastmod></url>`;
+  }).join('\n');
+
+  // No <changefreq>: Google documents it as ignored, and this site does not emit fields nobody reads.
+  const sorted = Object.fromEntries(Object.keys(next).sort().map((k) => [k, next[k]]));
+  writeFileSync(SITEMAP_DATES, `${JSON.stringify(sorted, null, 2)}\n`);
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 }
 
