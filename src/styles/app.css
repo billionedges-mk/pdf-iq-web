@@ -291,24 +291,49 @@ input, button, select, textarea { font-family: inherit; }
   padding: clamp(20px, 4vw, 44px) 20px 40px;
 }
 
+/* ---------- the footer, in three bands ----------
+
+   One row of eight links became a proof line, three named groups and a base line, separated by rules. The bands
+   stack, so the rules run the width of the shell and the whole thing reflows to one column on a phone without a
+   media query — the groups are an auto-fit grid and collapse on their own.
+
+   The readout keeps var(--mono), which leads with the self-hosted IBM Plex Mono and falls back to the system
+   stack. The point of the instruction was that nothing may tell a font CDN anything, and nothing here does: it is
+   the same two families every other page already loads from this origin, and the footer would otherwise be the
+   one place on the site whose monospace is a different typeface from the monospace above it. */
 .site-footer { border-top: 1px solid var(--line-soft); background: rgba(255, 255, 255, .94); }
-.site-footer__inner {
-  max-width: var(--shell); margin: 0 auto; padding: 11px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 14px 20px; flex-wrap: wrap;
-}
+.site-footer__inner { max-width: var(--shell); margin: 0 auto; padding: 0 20px; }
+.footband { padding: 16px 0; }
+.footband + .footband { border-top: 1px solid var(--line); }
+
+.footband--proof { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px; }
 .netreadout {
   margin: 0; display: flex; align-items: center; gap: 9px;
-  font-family: var(--mono); font-size: 12.5px; color: var(--ink-76);
+  font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--ink);
 }
 .netreadout__dot {
   width: 7px; height: 7px; border-radius: 50%; background: var(--amber);
   animation: pdfiq-pulse 2.4s ease-in-out infinite; flex: 0 0 auto;
 }
 .netreadout--dirty .netreadout__dot { animation: none; background: var(--ink); }
-.footer-nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; }
-.footer-nav a { text-decoration: none; color: var(--ink-78); display: inline-flex; align-items: center; min-height: 40px; }
-.footer-nav a:hover { color: var(--amber-text); }
+.footband__aside { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--soft); }
+
+.footgroups { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 28px 24px; }
+/* min-width:0 so a long label cannot push a grid column past its track and give the page a sideways scroll. */
+.footgroup { min-width: 0; }
+.footgroup__head {
+  margin: 0 0 10px; font-size: 11.5px; font-weight: 600; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--soft);
+}
+.footgroup__list { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.footgroup__list a {
+  display: inline-flex; align-items: center; min-height: 34px;
+  font-size: 14px; color: var(--ink); text-decoration: none;
+}
+.footgroup__list a:hover { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
+
+.footband--base { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 12.5px; color: var(--soft); }
+.footband--base p { margin: 0; }
 
 /* ---------- type ---------- */
 

@@ -315,27 +315,82 @@ ${proSheetMarkup}
   </div>` : ''}`;
 }
 
+/**
+ * The footer, in three bands.
+ *
+ * It was one row of eight links with no grouping and no legal line. Eight links in a row is a list of whatever
+ * happened to be added; three named groups say what kind of thing each one is, and the base line says who takes
+ * the money — which a site selling something has to say somewhere other than its checkout.
+ *
+ * EVERY DESTINATION THAT EXISTED STILL EXISTS, unchanged: /for-professionals/, /account/, /privacy/, /terms/,
+ * /refunds/, /support/, /app/ and the GitHub repository. Eight more were added — the seven tools and /pro/ — and
+ * no href was edited. "Android app" points at /app/ and never at Google Play: the app is not publicly listed, and
+ * this site carries no store links until there is a store page to link to.
+ *
+ * The tool labels are shorter here than in the nav ("Compress", not "Compress PDF") because a column headed Tools
+ * would otherwise say PDF seven times. They are keyed by slug and the build throws on a tool with no label, so a
+ * new tool cannot ship missing from the footer — the same reason tools/icons.mjs throws.
+ */
+const FOOTER_TOOL_LABEL = {
+  compress: 'Compress', merge: 'Merge', split: 'Split', 'images-to-pdf': 'Images to PDF',
+  rotate: 'Rotate', reorder: 'Reorder pages', ocr: 'OCR',
+};
+
 function footer() {
+  const toolLinks = TOOLS.map((t) => {
+    const label = FOOTER_TOOL_LABEL[t.slug];
+    if (!label) throw new Error(`no footer label for tool '${t.slug}' — add one to FOOTER_TOOL_LABEL`);
+    return `          <li><a href="${href(t.slug)}">${label}</a></li>`;
+  }).join('\n');
+
+  // The year is taken from the build rather than typed: a literal is right for one January and wrong every
+  // January after, and nothing in this repo would notice.
+  const year = new Date().getFullYear();
+
   return `  <footer class="site-footer">
     <div class="site-footer__inner">
-      <p class="netreadout" data-netreadout>
-        <span class="netreadout__dot" aria-hidden="true"></span>
-        <span data-netreadout-text>0 bytes sent &middot; 0 third-party requests</span>
-      </p>
-      <nav class="footer-nav" aria-label="Site">
-        <a href="/for-professionals/">Using this at work?</a>${PRO ? '\n        <a href="/account/">Account</a>' : ''}
-        <a href="/privacy/">Privacy</a>
-        <a href="/terms/">Terms</a>
-        <a href="/refunds/">Refunds</a>
-        <a href="/support/">Support</a>
-        <a href="/app/">Android app</a>
-        <!-- The only outbound link in the footer, and deliberately a plain one: no nofollow, because the point is
-             that it IS followed. Nothing on github.com/billionedges-mk had ever been crawled — nothing linked to
-             it — while pdf-iq.com is indexed and crawled weekly, so this is the shortest path a crawler has to the
-             source. The repository's Website field points back here, which closes the pair. It makes no request
-             and so does not touch the readout above it. -->
-        <a href="https://github.com/billionedges-mk/pdf-iq-web">Source on GitHub</a>
+      <div class="footband footband--proof">
+        <p class="netreadout" data-netreadout>
+          <span class="netreadout__dot" aria-hidden="true"></span>
+          <span data-netreadout-text>0 bytes sent &middot; 0 third-party requests</span>
+        </p>
+        <p class="footband__aside">Turn off your wifi: ${TOKENS.offlineNow} free tools still work.</p>
+      </div>
+      <nav class="footband footgroups" aria-label="Site">
+        <div class="footgroup">
+          <p class="footgroup__head" id="footgroup-tools">Tools</p>
+          <ul class="footgroup__list" aria-labelledby="footgroup-tools">
+${toolLinks}
+          </ul>
+        </div>
+        <div class="footgroup">
+          <p class="footgroup__head" id="footgroup-pdfiq">pdf-iq</p>
+          <ul class="footgroup__list" aria-labelledby="footgroup-pdfiq">
+            <li><a href="/pro/">Pro &mdash; paid once</a></li>
+            <li><a href="/app/">Android app</a></li>
+            <li><a href="/for-professionals/">Using this at work?</a></li>
+            <!-- The only outbound link in the footer, and deliberately a plain one: no nofollow, because the point
+                 is that it IS followed. Nothing on github.com/billionedges-mk had ever been crawled — nothing
+                 linked to it — while pdf-iq.com is indexed and crawled weekly, so this is the shortest path a
+                 crawler has to the source. The repository's Website field points back here, which closes the
+                 pair. It makes no request and so does not touch the readout above it. -->
+            <li><a href="https://github.com/billionedges-mk/pdf-iq-web">Source on GitHub</a></li>
+          </ul>
+        </div>
+        <div class="footgroup">
+          <p class="footgroup__head" id="footgroup-help">Help and legal</p>
+          <ul class="footgroup__list" aria-labelledby="footgroup-help">
+            <li><a href="/support/">Support</a></li>${PRO ? '\n            <li><a href="/account/">Your account</a></li>' : ''}
+            <li><a href="/privacy/">Privacy</a></li>
+            <li><a href="/terms/">Terms</a></li>
+            <li><a href="/refunds/">Refunds</a></li>
+          </ul>
+        </div>
       </nav>
+      <div class="footband footband--base">
+        <p>&copy; ${year} BillionEdges</p>
+        <p>Payments are handled by Paddle, the merchant of record</p>
+      </div>
     </div>
   </footer>`;
 }
