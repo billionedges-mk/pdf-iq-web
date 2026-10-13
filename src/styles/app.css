@@ -34,6 +34,9 @@
   --ink-76: rgba(17, 18, 20, .76);
   --ink-74: rgba(17, 18, 20, .74);
   --line: rgba(17, 18, 20, .16);
+  /* The homepage lattice, and the one colour the trail script reads from the stylesheet along with --amber and
+     --gold. Fainter than --wash (.06) on purpose: it is a texture under the page, not a rule across it. */
+  --grid-line: rgba(17, 18, 20, .055);
   --line-soft: rgba(17, 18, 20, .14);
   --line-strong: rgba(17, 18, 20, .28);
   --wash: rgba(17, 18, 20, .06);
@@ -53,6 +56,28 @@
 [hidden] { display: none !important; }
 
 html, body { margin: 0; padding: 0; background: var(--paper); }
+
+/* ---------- the homepage lattice (src/entries/home.ts draws the trail on it) ----------
+
+   ON THE ROOT, not on the body, and that is the whole reason this works. The canvas has to sit above the page
+   background and below every card, header and footer, which is what a negative z-index does — but a negative
+   z-index paints above the ROOT's background and below the background of any in-flow block. With the lattice on
+   the body it would be hidden by the body's own box; on the root it is the background the canvas sits on top of.
+   The body is made transparent here so it cannot cover it either.
+
+   "center top" is what the script's origin formula mirrors: the first vertical line lands at
+   ((width - 28) / 2) % 28 and the rows start at the top of the document, scrolling with it. */
+html.page-home {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: center top;
+}
+html.page-home body { background: transparent; }
+/* width/height, not inset alone: a canvas is a replaced element, so width:auto resolves to its intrinsic 300x150
+   and inset:0 does not stretch it. Measured at 300x150 in the viewport before this line existed. */
+.gridtrail { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 
 body {
   font-family: var(--sans);

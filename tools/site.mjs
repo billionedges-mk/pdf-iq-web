@@ -106,7 +106,10 @@ export const TOOLS = [
 export const PAGES = [
   {
     // No page-specific bundle: the homepage is static, and net.js ships on every page.
-    slug: '', name: 'Home', entry: null, shell: '1120px',
+    // src/entries/home.ts: the grid trail, and the only page script that is not a tool. Scoped here rather
+    // than in the shared document shell, which is how it reaches one page and not seventeen — a route's
+    // "entry" is what emits its <script>, so a page without one loads nothing extra.
+    slug: '', name: 'Home', entry: 'home', shell: '1120px',
     title: 'Free PDF tools run in your browser — no upload, no signup',
     description:
       'Free PDF tools that work without uploading anything — compress, merge, split, rotate, reorder, convert and OCR. The work happens on your own device.',

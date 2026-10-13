@@ -427,7 +427,7 @@ function document_({ page, body, css, assets }) {
   const shell = page.shell ? ` style="--shell: ${page.shell}"` : '';
   const script = page.entry ? `\n  <script type="module" src="/assets/${assets.get(page.entry)}"></script>` : '';
   return `<!doctype html>
-<html lang="en">
+<html lang="en"${page.slug === '' ? ' class="page-home"' : ''}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -452,7 +452,7 @@ ${hasShareImage(page) ? `<meta property="og:image" content="${ORIGIN}/og/${page.
 ${FONT_PRELOADS}
 <style>${css}</style>
 </head>
-<body${shell}>
+<body${shell}>${page.slug === '' ? '\n  <canvas class="gridtrail" data-gridtrail aria-hidden="true"></canvas>' : ''}
 ${PREVIEW_DEPLOY ? PREVIEW_BANNER + '\n' : ''}<a class="skip-link" href="#main">${TOOLS.some((t) => t.slug === page.slug) ? 'Skip to the tool' : 'Skip to content'}</a>
 ${header(page.slug, sells)}
   <main class="site-main${page.slug === '' ? ' site-main--home' : ''}" id="main">
