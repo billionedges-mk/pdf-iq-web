@@ -560,8 +560,9 @@ same card with the $2.29 included. The same transaction is the one in docs/sale-
 proven on production" timeline: granted 17:04:30, refund requested 17:22, revoked 17:25:17. /refunds says it plainly
 now and /support already did.
 
-*(This passage said 48239-10002 until 1 October 2026. That is the 26 September repurchase, Abu Dhabi at 5%, whose
-tax is $0.71; quoting its number beside $2.29 named one purchase by the other's invoice. Corrected against the
+*(This passage said 48239-10002 until 1 October 2026. That is the second purchase of the same day, 24 September
+2026 at 17:53 UTC, Abu Dhabi at 5%, whose tax is $0.71; quoting its number beside $2.29 named one purchase by the
+other's invoice. Corrected against the
 rate table below and against docs/sale-go-live.md, which had carried "invoice 48239-10001, India, 18%, tax $2.29"
 since the day it happened — the right answer was in the repo the whole time, two files away.)* **Two further claims came with it and neither
 was on this list**, because both had been written as flat sentences that happened to be true and were never marked

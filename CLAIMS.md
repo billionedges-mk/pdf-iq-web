@@ -2202,10 +2202,19 @@ email on the transaction was the address the site sent, and not one the buyer ha
 2026). Someone who signs in with one Google account and writes from their work address is told their purchase cannot
 be found, on both routes, and the page told them to do exactly that.
 
-**Settled by observation, not inference (26 September 2026).** Asked directly during the clean repurchase — "can you
-edit the email on Paddle's checkout, or is it fixed?" — the answer was fixed. Invoice 48239-10002 went to the sign-in
-address and the receipt arrived there. (Dated 24 September here until 1 October: that is 48239-10001, a different
-charge in a different country at a different rate, and the two were being read as one purchase in four files.) So the instruction can be written without a hedge: the address is always the
+**Settled by observation, not inference (24 September 2026, 17:53 UTC).** Asked directly during the second purchase
+— "can you edit the email on Paddle's checkout, or is it fixed?" — the answer was fixed. Invoice 48239-10002 went to
+the sign-in address and the receipt arrived there.
+
+*(The date on this paragraph has been wrong once and is worth the full history. Written as 24 September when it
+happened. Changed to 26 September on 1 October in 920858a, in error, while untangling two invoices that had been
+read as one purchase. Restored to 24 September on 23 October 2026 after checking two independent records: Paddle's
+transaction, completed_at 2026-09-24T17:53:31.933Z and billed_at 17:53:30.538Z, and the D1 purchases row granted at
+17:53:31. There is no 26 September purchase. Invoice 48239-10002 belongs to the 24 September transaction, which was
+the SECOND of two that day — the first, 48239-10001, was charged at 17:04 and revoked at 17:25. The time is written
+into the sentence now so it can be checked against either record without reading this note.)*
+
+So the instruction can be written without a hedge: the address is always the
 Google account they signed in with, and a sentence saying "unless you changed it at the checkout" would have been a
 caveat for a case that cannot happen.
 
@@ -2661,8 +2670,8 @@ in this repository at the time it was written.
    $2.29, total $14.99 … invoice 48239-10001" since the day it happened. Four files meanwhile attributed that
    $2.29 to invoice **48239-10002**, a different purchase in a different country at a different rate. One file
    right, four wrong, for five days.
-2. **Whether Paddle's checkout email field is editable.** Answered on 26 September and written into both
-   `src/pages/refunds.html` and [check 63] the same day. `docs/sale-go-live.md`'s open list carried it as an
+2. **Whether Paddle's checkout email field is editable.** Answered on 24 September 2026, 17:53 UTC, and written
+   into both `src/pages/refunds.html` and [check 63] the same day. `docs/sale-go-live.md`'s open list carried it as an
    open question for five days after that.
 3. **Which purchase a transaction id belonged to.** I wrote "I have no record placing it". The repo had a section
    headed "The revocation path, proven on production with a real charge (24 September 2026)" that opened with that

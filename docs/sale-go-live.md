@@ -213,8 +213,8 @@ application once the closed test has served its days. §4's flip rides on the sa
 Pay, so the sign-in cannot be confused with the checkout:
 
 1. ~~**Is Paddle's one-page email field editable?**~~ **ANSWERED: it is fixed, not editable.** Asked directly
-   during the clean repurchase on 26 September 2026 (invoice 48239-10002), which went to the sign-in address and
-   whose receipt arrived there. /refunds was rewritten the same day and CLAIMS 63 records the reasoning: the
+   during the second purchase of 24 September 2026, 17:53 UTC (invoice 48239-10002), which went to the sign-in
+   address and whose receipt arrived there. /refunds was rewritten the same day and CLAIMS 63 records the reasoning: the
    instruction now says the address is the Google account you signed in with, without the hedge a caveat for an
    impossible case would have added.
 
@@ -241,9 +241,10 @@ Pay, so the sign-in cannot be confused with the checkout:
    and /refunds' promise — "a refund returns the full amount you paid, the tax included" — is now measured rather
    than softened.
 
-   *(Recorded here as 48239-10002 until 1 October 2026. That is the 26 September repurchase, Abu Dhabi at 5%, whose
-   tax is $0.71 — one purchase named by the other's invoice number, in the one place that already held both sets of
-   figures.)*
+   *(Recorded here as 48239-10002 until 1 October 2026. That is the second purchase of the same day, 24 September
+   2026 at 17:53 UTC, Abu Dhabi at 5%, whose tax is $0.71 — one purchase named by the other's invoice number, in
+   the one place that already held both sets of figures. It was briefly recorded as a 26 September purchase; there
+   is no such purchase, and the date was corrected on 23 October 2026 against Paddle and D1.)*
 
    **The other half is still open, and it is the half this item was really about.** Whether the tax comes back to
    us or off us is not visible from the card: the buyer gets $14.99 either way. It needs Paddle's balance for the
