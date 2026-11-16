@@ -408,12 +408,25 @@ const FONT_PRELOADS = [
 // The homepage tool grid is generated from TOOLS rather than written out by hand.
 // It was duplicated once — in site.mjs and again in index.html — and the two drifted
 // within a day, which is exactly how a corrected claim comes back.
+/**
+ * The homepage grid. Seven tool cards and the app card, from one source.
+ *
+ * A card with `links` renders as a div carrying its own anchors instead of being one anchor itself, because an
+ * anchor cannot contain an anchor. Only the app card has two destinations today; the branch is on the data rather
+ * than on the slug so the next one needs no code here.
+ */
 function toolGrid() {
-  const card = (t) => `      <a class="toolcard${t.outline ? ' toolcard--outline' : ''}" href="${href(t.slug)}">
-        ${icon(t.slug)}
+  const body = (t) => `        ${icon(t.slug)}
         <span class="toolcard__name">${esc(t.cardName ?? t.name)}</span>
-        <span class="toolcard__note">${esc(t.card)}</span>
-      </a>`;
+        <span class="toolcard__note">${esc(t.card)}</span>`;
+  const card = (t) => {
+    const cls = `toolcard${t.outline ? ' toolcard--outline' : ''}`;
+    if (!t.links) return `      <a class="${cls}" href="${href(t.slug)}">\n${body(t)}\n      </a>`;
+    const links = t.links
+      .map((l) => `          <a class="toolcard__go" href="${l.href}"${l.external ? ' rel="external"' : ''}>${esc(l.text)}</a>`)
+      .join('\n');
+    return `      <div class="${cls} toolcard--links">\n${body(t)}\n        <span class="toolcard__gos">\n${links}\n        </span>\n      </div>`;
+  };
   return [...HOME_TOOLS, HOME_APP_CARD].map(card).join('\n');
 }
 

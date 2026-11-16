@@ -14,6 +14,16 @@
           <span class="page-title">pdf-iq for Android</span>
         </p>
         <p class="page-lede">{{appOfWebCap}} tools, on your phone, with no browser tab open.</p>
+        <!-- The primary action on the page whose whole job is the app, added 16 November 2026. It was an inline
+             anchor in the muted sentence below and nothing else: 14.5px at var(--ink-78), on a page that then had
+             to tell a reader where its own link was. "Plain anchor, no store badge" still holds and this is one —
+             the site's own .btn, text, no Google image. That rule was written for the purchase confirmation, where
+             an install prompt would turn a receipt into an advert; /app/ is not a receipt.
+
+             Under the lede rather than beside the title: .apphead__badge is a flex row holding a 48px mark and a
+             clamp()ed heading, and a button in it wraps badly before 400px. -->
+        <p class="apphead__get"><a class="btn" href="https://play.google.com/store/apps/details?id=com.billionedges.pdfiq"
+          rel="external">Get it on Google Play</a></p>
         <!-- "When the public listing exists, the link will be here" was the promise this page made from 25 September,
              and it is kept here rather than quietly dropped. The listing went public on 16 November 2026 — vc29 (1.2.0),
              production track, 178 countries — so the link is here. A plain anchor and no store badge: that is how the
@@ -134,7 +144,11 @@
           <ul style="margin: 12px 0 0; padding-left: 18px; font-size: 14.5px; line-height: 1.6; color: var(--ink-78);">
             <!--APP_FEATURES-->
           </ul>
-          <p class="price__sub" style="margin-top: 14px;">Free on Google Play &mdash; the link is at the top of this page.</p>
+          <!-- The pointer clause went on 16 November 2026, the hour the hero got a real button. "The link is at the
+               top of this page" was true and was an admission: a page that has to say where its link is has already
+               told you the link is not findable. With a .btn in the hero the sentence has nothing left to do, and
+               what belongs in a price card is the price. -->
+          <p class="price__sub" style="margin-top: 14px;">Free on Google Play.</p>
         </div>
         <!--NOSALE--><div class="price">
           <p class="kicker">Pro &mdash; not yet</p>

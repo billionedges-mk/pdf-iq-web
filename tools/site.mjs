@@ -511,6 +511,23 @@ export const HOME_APP_CARD = {
     ? `All ${word(WEB_TOOLS.length)} of these, on a phone. Free on Google Play.`
     : `${cap(word(APP_TOOLS.length))} of these ${word(WEB_TOOLS.length)}, on a phone. Free on Google Play.`,
   outline: true,
+  /**
+   * Two destinations, which is why this card is not a single anchor like the other seven.
+   *
+   * From 30 August to 16 November the whole card linked to /app/ and nothing on the homepage linked to Play —
+   * there was no listing to link to. The listing went public on 16 November 2026 and the card went on saying
+   * "Free on Google Play." with no way to get there, which is a sentence that asks a question and does not
+   * answer it. Nothing was removed to cause that: toolGrid() has rendered one anchor per card since the
+   * homepage redesign, and an anchor cannot contain an anchor, so there was nowhere to put a second link.
+   *
+   * Play first because someone reading a card headed "Android app" and the words "Free on Google Play" has
+   * usually decided; /app/ second because the argument for the app lives there and losing the route to it
+   * would be a worse trade than the detour.
+   */
+  links: [
+    { href: 'https://play.google.com/store/apps/details?id=com.billionedges.pdfiq', text: 'Get it on Google Play', external: true },
+    { href: '/app/', text: 'What it does' },
+  ],
 };
 
 export const HOME_TOOLS = HOME_ORDER.map((slug) => {

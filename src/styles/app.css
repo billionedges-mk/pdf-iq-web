@@ -488,6 +488,9 @@ input, button, select, textarea { font-family: inherit; }
 .apphead__badge img { flex: 0 0 auto; }
 .apphead__badge .page-title { display: block; }
 .apphead__words { flex: 1 1 380px; min-width: 0; max-width: 560px; }
+/* The install button. Its own paragraph so it keeps a line of its own at every width rather than sitting in the
+   flow of the state sentence, which is where the only link to Play used to live. */
+.apphead__get { margin: 16px 0 0; }
 .apphead__state { margin: 12px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-78); max-width: 620px; }
 /* The screen switcher. Three real captures, one shown at a time, and the list of names is the caption:
    a reader who never touches a tab still learns what the app's screens are called and what each one shows.
@@ -898,6 +901,16 @@ input, button, select, textarea { font-family: inherit; }
   letter-spacing: -.015em; color: var(--ink);
 }
 .toolcard__note { display: block; margin-top: 6px; font-size: 14.5px; line-height: 1.5; color: var(--ink-78); }
+/* A card with two destinations is a div, not an anchor, so it loses the whole-card hover the other seven have.
+   The border still answers, and each link carries its own underline — which is the honest affordance for a card
+   whose two halves go to different places. */
+.toolcard--links:hover { border-color: var(--amber); background: var(--card-hover); }
+.toolcard__gos { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; }
+.toolcard__go {
+  font-size: 15px; font-weight: 600; color: var(--ink); text-decoration: underline;
+  text-underline-offset: 3px; min-height: 34px; display: inline-flex; align-items: center;
+}
+.toolcard__go:hover { color: var(--gold); }
 
 .section { margin-top: clamp(32px, 4.5vw, 52px); padding-top: 26px; border-top: 1px solid var(--line-soft); }
 .section__title { margin: 0; font-size: clamp(21px, 3vw, 27px); font-weight: 800; letter-spacing: -.02em; }
