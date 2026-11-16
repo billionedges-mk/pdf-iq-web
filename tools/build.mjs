@@ -409,24 +409,20 @@ const FONT_PRELOADS = [
 // It was duplicated once — in site.mjs and again in index.html — and the two drifted
 // within a day, which is exactly how a corrected claim comes back.
 /**
- * The homepage grid. Seven tool cards and the app card, from one source.
+ * The homepage grid. Seven tool cards and the app card, from one source, every one of them a single anchor.
  *
- * A card with `links` renders as a div carrying its own anchors instead of being one anchor itself, because an
- * anchor cannot contain an anchor. Only the app card has two destinations today; the branch is on the data rather
- * than on the slug so the next one needs no code here.
+ * A card may name its own `href` — the app card points at the Play listing — and otherwise goes to its slug.
+ * It briefly rendered a card with two links as a div instead; the card is too narrow to hold a pair, and the
+ * wrap cost every other card in the row 90px of height. See HOME_APP_CARD for the measurements. The mechanism
+ * went with the decision: a generic branch with no user, explaining a choice that has been reversed, is worse
+ * than no branch.
  */
 function toolGrid() {
-  const body = (t) => `        ${icon(t.slug)}
+  const card = (t) => `      <a class="toolcard${t.outline ? ' toolcard--outline' : ''}" href="${t.href ?? href(t.slug)}"${t.external ? ' rel="external"' : ''}>
+        ${icon(t.slug)}
         <span class="toolcard__name">${esc(t.cardName ?? t.name)}</span>
-        <span class="toolcard__note">${esc(t.card)}</span>`;
-  const card = (t) => {
-    const cls = `toolcard${t.outline ? ' toolcard--outline' : ''}`;
-    if (!t.links) return `      <a class="${cls}" href="${href(t.slug)}">\n${body(t)}\n      </a>`;
-    const links = t.links
-      .map((l) => `          <a class="toolcard__go" href="${l.href}"${l.external ? ' rel="external"' : ''}>${esc(l.text)}</a>`)
-      .join('\n');
-    return `      <div class="${cls} toolcard--links">\n${body(t)}\n        <span class="toolcard__gos">\n${links}\n        </span>\n      </div>`;
-  };
+        <span class="toolcard__note">${esc(t.card)}</span>
+      </a>`;
   return [...HOME_TOOLS, HOME_APP_CARD].map(card).join('\n');
 }
 

@@ -512,22 +512,30 @@ export const HOME_APP_CARD = {
     : `${cap(word(APP_TOOLS.length))} of these ${word(WEB_TOOLS.length)}, on a phone. Free on Google Play.`,
   outline: true,
   /**
-   * Two destinations, which is why this card is not a single anchor like the other seven.
+   * One destination, and it is Play.
    *
-   * From 30 August to 16 November the whole card linked to /app/ and nothing on the homepage linked to Play —
-   * there was no listing to link to. The listing went public on 16 November 2026 and the card went on saying
-   * "Free on Google Play." with no way to get there, which is a sentence that asks a question and does not
-   * answer it. Nothing was removed to cause that: toolGrid() has rendered one anchor per card since the
-   * homepage redesign, and an anchor cannot contain an anchor, so there was nowhere to put a second link.
+   * THE HISTORY, because the reasoning changed twice. From 30 August to 16 November the whole card linked to
+   * /app/ and nothing on the homepage linked to Play — there was no listing to link to. The listing went
+   * public on 16 November 2026 and the card went on saying "Free on Google Play." with no way to get there,
+   * which is a sentence that asks a question and does not answer it. Nothing was removed to cause that:
+   * toolGrid() had rendered one anchor per card since the homepage redesign, and an anchor cannot contain an
+   * anchor, so there was nowhere to put a second link.
    *
-   * Play first because someone reading a card headed "Android app" and the words "Free on Google Play" has
-   * usually decided; /app/ second because the argument for the app lives there and losing the route to it
-   * would be a worse trade than the detour.
+   * It was then given two — Play, and /app/ as "What it does" — on the reasoning that losing the grid route
+   * to the page that argues for the app was a worse trade than the detour. THAT WAS SOUND ABOUT THE TRADE IT
+   * COULD SEE AND WRONG ABOUT THE ONE IT COULD NOT: the card is 185px wide inside and narrower just above the
+   * 860px breakpoint, and the pair needs 242px. They wrapped to two lines, each link carrying min-height 34px,
+   * so the card grew 84px of content to 160px and every other card in its grid row stretched to match. The
+   * defect was 90px of dead space under Rotate, Reorder and OCR — paid for by seven cards to give one card a
+   * second link. Shorter copy does not rescue it; "Google Play" + "What it does" measured 183px against 185,
+   * which is two pixels of slack at the WIDEST point of the 4-up range.
+   *
+   * So: one anchor, like the other seven, and it goes to Play rather than /app/. A card whose note already
+   * reads "Free on Google Play." and whose click goes to Google Play is coherent, and /app/ is still reached
+   * from the footer. The home page keeps the direct install route, which was the point of the exercise.
    */
-  links: [
-    { href: 'https://play.google.com/store/apps/details?id=com.billionedges.pdfiq', text: 'Get it on Google Play', external: true },
-    { href: '/app/', text: 'What it does' },
-  ],
+  href: 'https://play.google.com/store/apps/details?id=com.billionedges.pdfiq',
+  external: true,
 };
 
 export const HOME_TOOLS = HOME_ORDER.map((slug) => {

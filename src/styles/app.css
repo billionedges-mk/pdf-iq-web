@@ -901,16 +901,6 @@ input, button, select, textarea { font-family: inherit; }
   letter-spacing: -.015em; color: var(--ink);
 }
 .toolcard__note { display: block; margin-top: 6px; font-size: 14.5px; line-height: 1.5; color: var(--ink-78); }
-/* A card with two destinations is a div, not an anchor, so it loses the whole-card hover the other seven have.
-   The border still answers, and each link carries its own underline — which is the honest affordance for a card
-   whose two halves go to different places. */
-.toolcard--links:hover { border-color: var(--amber); background: var(--card-hover); }
-.toolcard__gos { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; }
-.toolcard__go {
-  font-size: 15px; font-weight: 600; color: var(--ink); text-decoration: underline;
-  text-underline-offset: 3px; min-height: 34px; display: inline-flex; align-items: center;
-}
-.toolcard__go:hover { color: var(--gold); }
 
 .section { margin-top: clamp(32px, 4.5vw, 52px); padding-top: 26px; border-top: 1px solid var(--line-soft); }
 .section__title { margin: 0; font-size: clamp(21px, 3vw, 27px); font-weight: 800; letter-spacing: -.02em; }
