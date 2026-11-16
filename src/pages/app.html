@@ -14,8 +14,15 @@
           <span class="page-title">pdf-iq for Android</span>
         </p>
         <p class="page-lede">{{appOfWebCap}} tools, on your phone, with no browser tab open.</p>
-        <p class="apphead__state">In closed testing on Google Play. When the public listing exists, the link will
-          be here — there are no store links until there is a store page to link to.</p>
+        <!-- "When the public listing exists, the link will be here" was the promise this page made from 25 September,
+             and it is kept here rather than quietly dropped. The listing went public on 16 November 2026 — vc29 (1.2.0),
+             production track, 178 countries — so the link is here. A plain anchor and no store badge: that is how the
+             rest of the site links out, and the badge question never had to be answered. The Play constraint stays on
+             the page it matters most on; buying happens here, not in the app, and that is policy rather than a stage
+             the product passes through. -->
+        <p class="apphead__state">Free on Google Play &mdash;
+          <a href="https://play.google.com/store/apps/details?id=com.billionedges.pdfiq" rel="external">install
+          pdf-iq</a>. Pro is still bought on this website rather than inside the Android app.</p>
         <!-- Hidden until the script runs: tabs that do not switch are worse than no tabs. Without JavaScript this
              page shows the first screenshot and nothing that looks clickable, which is where it was yesterday. -->
         <div class="screens" data-screens hidden>
@@ -127,12 +134,12 @@
           <ul style="margin: 12px 0 0; padding-left: 18px; font-size: 14.5px; line-height: 1.6; color: var(--ink-78);">
             <!--APP_FEATURES-->
           </ul>
-          <p class="price__sub" style="margin-top: 14px;">No store link yet &mdash; see the top of this page.</p>
+          <p class="price__sub" style="margin-top: 14px;">Free on Google Play &mdash; the link is at the top of this page.</p>
         </div>
         <!--NOSALE--><div class="price">
           <p class="kicker">Pro &mdash; not yet</p>
           <p class="price__amount">{{proPrice}}<span>{{proQualifier}}</span></p>
-          <p class="price__sub">paid once, not a subscription · covers {{proCoversToday}}, not the Android app &middot; <a href="/refunds/">refunds</a></p>
+          <p class="price__sub">paid once, not a subscription · covers {{proCovers}} &middot; <a href="/refunds/">refunds</a></p>
           <p class="price__sub">{{priceIsTotal}}</p>
           <!--PRO--><p class="price__sub"><a href="/account/">Sign in</a> &mdash; only for Pro; the tools never need it.</p><!--/PRO-->
           <p class="price__note">A PDF tool gets used a few times a year. Subscription is the usual
@@ -145,9 +152,10 @@
         <div class="price" data-pro-strip hidden>
           <p class="kicker">Pro &mdash; on the website</p>
           <p class="price__amount">{{proPrice}}<span>{{proQualifier}}</span></p>
-          <p class="price__sub">paid once, not a subscription · covers {{proCoversToday}}, not the Android app &middot; <a href="/refunds/">refunds</a></p>
+          <p class="price__sub">paid once, not a subscription · covers {{proCovers}} &middot; <a href="/refunds/">refunds</a></p>
           <p class="price__note">A PDF tool gets used a few times a year. Subscription is the usual
-            model; this is bought once and kept. It is bought on the website, and it does not unlock anything in this app.</p>
+            model; this is bought once and kept. It is bought on the website, and signing in to the Android app with
+            the same account unlocks it there too.</p>
           <!--PRO_FEATURES-->
           <p class="price__sub">{{proSurfaces}}</p>
           <p class="price__sub">{{priceIsTotal}}</p>

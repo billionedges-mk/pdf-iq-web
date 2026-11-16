@@ -236,7 +236,7 @@ export function proStrip({ selling = PRO.onSale, hidden = false } = {}) {
  *
  * What it says is what is true of the build (owner, 13 and 16 September 2026):
  *  - a price only while Pro can be bought; until then "not on sale yet";
- *  - what a purchase covers today, the web tools, and plainly not the Android app (TECH_DEBT.md, "The purchase page says
+ *  - what a purchase covers, both surfaces since the app was listed on 16 November 2026 (docs/sale-go-live.md §4;
  *    web tools only": this panel is one of the five places that change back together);
  *  - never shown to someone who owns Pro. A Pro build writes it hidden and src/pro/strip.ts shows it only to someone who
  *    does not own Pro, as with the strip. Production writes it visible, and has no owners.
@@ -252,8 +252,8 @@ export function proPanel({ selling = PRO.onSale, hidden = false } = {}) {
   const count = WORDS[PRO_COPY.length] ?? String(PRO_COPY.length);
   const line = `${count} ${PRO_COPY.length === 1 ? 'thing' : 'things'} the free tools don&rsquo;t do.`;
   const terms = selling
-    ? `Bought once, not a subscription. It covers ${PRO.coversToday}, and does not unlock anything in the Android app.`
-    : `When it goes on sale: bought once, not a subscription, covering ${PRO.coversToday}. It will not unlock anything in the Android app.`;
+    ? `Bought once, not a subscription. It covers ${PRO.covers}: signing in to the Android app with the same account unlocks it there too.`
+    : `When it goes on sale: bought once, not a subscription, covering ${PRO.covers}. Signing in to the Android app with the same account unlocks it there too.`;
   return `<section class="pro-panel" aria-label="Pro" data-pro-strip${hidden ? ' hidden' : ''}>
       <div class="pro-panel__in">
         <div>
@@ -290,8 +290,8 @@ export function proSheet({ selling = PRO.onSale, hidden = false } = {}) {
   const count = WORDS[PRO_COPY.length] ?? String(PRO_COPY.length);
   const items = PRO_COPY.map((c) => `        <li>${tick}<span><b>${c.panel[0]}</b> &mdash; ${c.panel[1]}</span></li>`).join(NL);
   const terms = selling
-    ? `Bought once, not a subscription. It covers ${PRO.coversToday}, and does not unlock anything in the Android app.`
-    : `When it goes on sale: bought once, not a subscription, covering ${PRO.coversToday}. It will not unlock anything in the Android app.`;
+    ? `Bought once, not a subscription. It covers ${PRO.covers}: signing in to the Android app with the same account unlocks it there too.`
+    : `When it goes on sale: bought once, not a subscription, covering ${PRO.covers}. Signing in to the Android app with the same account unlocks it there too.`;
   const action = selling
     ? `      <a class="btn sheet__buy" href="/pro/buy/">Buy Pro &mdash; ${PRO.price} ${PRO.qualifier}</a>` + NL
     : '';

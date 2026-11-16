@@ -116,7 +116,7 @@ function localStubCard(): void {
  *  - owning Pro, from the server on this visit, or from the signed token already in this browser when the server could
  *    not be asked, and it says which;
  *  - Paddle's payment reference, from that token: the one thing support can act on;
- *  - that Pro here does not unlock anything in the Android app (BILLING_ENABLED is not split).
+ *  - that signing in to the Android app with the same account unlocks Pro there too (live 16 November 2026).
  *
  * Not said, because the page cannot know them: a purchase date (the server keeps when the record last changed, which a
  * refund or a re-link also moves), whether the app knows, and any Summaries count (an app feature; the web has none).
@@ -180,8 +180,16 @@ function ownedCard(reference: string | null, unchecked: string): HTMLElement {
   const body = document.createElement('p');
   body.className = 'acct-owned__body';
   body.textContent = 'This browser knows it, so a Pro feature in a page that is already open keeps working with no connection; '
-    + 'opening a page still needs one. Pro on this website does not unlock anything in the Android app.';
+    + 'opening a page still needs one. Signing in to the Android app with the same account unlocks it there too.';
   card.append(head, body);
+
+  // The one place a buyer comes back to, and one of exactly two that say where to get the app — the other is the
+  // just-paid card on /pro/buy/. Not /pro/'s owned card and not the tool panels: an install prompt on every Pro
+  // surface turns the site into an advert for the app (docs/sale-go-live.md §4). Plain text, no store badge.
+  const android = document.createElement('p');
+  android.className = 'acct-owned__body';
+  android.textContent = 'On Android: install pdf-iq from Google Play and sign in with the same Google account. Pro is there too — nothing to enter, and nothing more to pay.';
+  card.append(android);
   if (unchecked) {
     const note = document.createElement('p');
     note.className = 'acct-owned__body';

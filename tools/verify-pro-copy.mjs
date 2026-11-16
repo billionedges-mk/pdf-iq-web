@@ -105,8 +105,13 @@ if (!PRO.onSale) {
     ok(PRO_COPY.every((c) => panel.includes(`<b>${c.panel[0]}</b> &mdash; ${c.panel[1]}`)), `${label}: the panel lists every Pro feature`);
     ok(selling ? panel.includes(`${PRO.price} ${PRO.qualifier}`) && !panel.includes('not on sale') : panel.includes('not on sale yet') && !panel.includes(PRO.price),
       selling ? 'on sale: the panel names the price' : 'not on sale: the panel says so and names no price');
-    ok(panel.includes(PRO.coversToday) && /(does|will) not unlock anything in the Android app/.test(panel) && !panel.includes(PRO.covers),
-      `${label}: the panel says a purchase covers the web tools, and plainly not the Android app`);
+    // Flipped on 16 November 2026 with the copy it guards. It asserted the opposite until then — the web tools only,
+      // and plainly NOT the Android app — which is the correct assertion for a product whose app could not honour a
+      // web purchase. Both halves are asserted, not just the new one: the positive claim must be there AND the old
+      // exclusion must be gone, because a page that says both is worse than a page that says neither.
+    ok(panel.includes(PRO.covers) && /unlocks it there too/.test(panel)
+      && !/(does|will) not unlock anything in (the Android|this) app/.test(panel),
+      `${label}: the panel says a purchase covers both surfaces, and that signing in to the app unlocks it there`);
     ok(selling ? panel.includes('href="/pro/buy/"') : !SELLING.some((w) => panel.toLowerCase().includes(w)) && !panel.includes('/pro/buy/'),
       selling ? 'on sale: the panel offers the purchase beside the price' : 'not on sale: the panel offers no purchase');
     // The line under "Pro" has to fit all of them: "Four things the free tools don't do", counted from PRO_COPY. Not the

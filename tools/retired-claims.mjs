@@ -26,32 +26,15 @@ export const RETIRED = [
     why: 'Already false on a sale build; the homepage now has one Pro panel whose state comes from the same flag as the strip (brief, claim 3).',
     instead: 'the Pro panel: "not on sale yet", or the price while Pro can be bought',
   },
-  // A web purchase covering the Android app: true of the plan, false of the product. The app cannot honour a web purchase
-  // until BILLING_ENABLED is split (approved in the app session, not built). Owner, 13 September 2026: the pages that
-  // define the purchase say only what is true. These come back, deleted from here in the same commit, when the app honours
-  // web purchases and it has been tested on a device. Every place is found by searching the built site for the phrase, not
-  // from a list: a hand-written list of five missed /app/, which took the wording through a {{proCovers}} placeholder.
-  {
-    phrase: 'covering both the website and the Android app',
-    why: 'The app cannot honour a web purchase (BILLING_ENABLED not split). /refunds, the page that defines a refund of what was bought.',
-    instead: 'A Pro purchase is a one-time unlock covering Pro in the web tools on this site; it does not unlock anything in the Android app.',
-  },
-  {
-    phrase: 'both the web tools and the Android app',
-    why: 'PRO.covers, written into /app/ (price card), /pro/ (lede and price card) and the homepage price card through the '
-      + '{{proCovers}} placeholder; /app/ was missing from a hand-written list of five. Off production 17 September 2026.',
-    instead: 'Pro in the web tools on this site (PRO.coversToday); it does not unlock anything in the Android app',
-  },
-  {
-    phrase: 'the purchase covers both',
-    why: 'Same claim, in /terms, which the checkout links to.',
-    instead: 'Buying happens on this website rather than inside the Android app.',
-  },
-  {
-    phrase: 'bought once rather than once per device',
-    why: 'Same claim in /terms: "once per device" implied the app was included in the one purchase.',
-    instead: 'It covers Pro in the web tools on this site. It does not unlock anything in the Android app.',
-  },
+  // FOUR ENTRIES DELETED HERE ON 16 NOVEMBER 2026, the day PDFiq was publicly listed on Google Play.
+  //
+  // They retired the claim that a web purchase covers the Android app, which was true of the plan and false of the
+  // product from 13 September until the listing. One of them was the literal value of PRO.covers, so with the flip
+  // they would have failed the build on the very sentence the flip exists to publish — which is the design: the
+  // guard had to be removed deliberately, in the same commit, by someone who had read why it was there.
+  //
+  // They are not restorable as a group: the claim they retired is now true. The record of what they said and why
+  // lives in this file's history and in docs/sale-go-live.md §4, which is where the flip is specified.
   // The tax sentence written from the SANDBOX price table, which added US and Canadian sales tax on top of a
   // tax-inclusive price. The live account is configured the other way: measured against the production price on
   // 20 September 2026, all ten places returned a $14.99 total (CLAIMS 56, "faithful to the wrong world"). Both

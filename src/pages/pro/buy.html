@@ -7,8 +7,8 @@
            from first to last — first it argues someone out of a purchase before they know what it is; last it is a
            statement of confidence. -->
       <p class="page-lede">{{proFeatureCountCap}} things the {{webToolCount}} free tools do not do &mdash; {{proShorts}}
-        &mdash; for {{proPrice}} {{proQualifier}}, not a subscription. It covers {{proCoversToday}}, and does not unlock
-        anything in the Android app. None of the {{webToolCount}} free tools needs this.</p>
+        &mdash; for {{proPrice}} {{proQualifier}}, not a subscription. It covers {{proCovers}}: signing in to the
+        Android app with the same account unlocks it there too. None of the {{webToolCount}} free tools needs this.</p>
     </div>
 
     <section class="card" style="margin-top: 22px; max-width: 700px;" data-buy="working">
@@ -50,6 +50,14 @@
       <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6; font-weight: 600;" role="status" data-buy-return hidden>&nbsp;</p>
       <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;">What you have now is {{proWhere}}, each on the
         tool it belongs to.</p>
+      <!-- One of exactly two places that say where to get the app; the other is /account/'s owned card. Not /pro/'s
+           owned card and not the tool panels: an install prompt on every Pro surface turns the site into an advert
+           for the app (docs/sale-go-live.md §4). Plain text and no store badge, which is how the rest of the site
+           links out and sidesteps the badge question. It says nothing before the app is listed, which is why it
+           arrives in the same commit as the sentences and not earlier. -->
+      <p style="margin: 10px 0 0; font-size: 15.5px; line-height: 1.6;"><strong>On Android:</strong> install pdf-iq
+        from Google Play and sign in with the same Google account. Pro is there too &mdash; nothing to enter, and
+        nothing more to pay.</p>
       <p class="hint" style="margin-top: 10px;">{{proSurfaces}}</p>
     </section>
 

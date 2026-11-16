@@ -120,7 +120,7 @@ export const PAGES = [
     slug: 'app', name: 'Android App', entry: 'app',
     title: 'pdf-iq for Android — the same tools, offline, on your phone',
     description:
-      'The pdf-iq Android app runs {{appOfWeb}} tools on your device, offline, with share-sheet support and photos straight into a multi-page PDF. In testing, not yet on Play.',
+      'The pdf-iq Android app runs {{appOfWeb}} tools on your device, offline, with share-sheet support and photos straight into a multi-page PDF. Free on Google Play.',
     ogSubject: 'pdf-iq for Android',
     ogLine: 'The same tools, on your phone',
   },
@@ -246,22 +246,21 @@ export const PRO = {
   /** Rendered next to the amount. Not "/mo" — there is no recurring charge to describe. */
   qualifier: 'once',
   /**
-   * What the PURCHASE covers, when the app can honour one. Not rendered today: there is no {{proCovers}} token, and
-   * tools/retired-claims.mjs fails the build if this sentence reappears on a built page.
+   * What the PURCHASE covers. Live since 16 November 2026, when PDFiq was publicly listed on Google Play — the
+   * event docs/sale-go-live.md §4 named as the trigger, and the one the condition was deliberately written around
+   * rather than a version number, which drifted vc18 → vc20 → vc25 → vc29 while the event stood still (CLAIMS 68).
+   *
+   * `coversToday` is gone rather than left set to the same string. It existed to say "this is narrower than the
+   * intention"; leaving it would make every check that asks which of the two is rendered answer "the narrow one"
+   * for ever. tools/verify-purchase-scope.mjs reads its absence and flips with it, which is why this is one
+   * deletion and not a string edit.
    *
    * It is a claim about the payment, not about the features, and the two are not the same sentence: a purchase can
    * cover both surfaces while a feature exists on only one. Whichever page carries this must also carry proSurfaces()
    * (pro-copy.mjs), which says which features the app has — and tools/verify-surfaces.mjs enforces exactly that on the
-   * built page, so the pairing cannot be forgotten when this returns.
+   * built page, so the pairing cannot be forgotten.
    */
   covers: 'both the web tools and the Android app',
-  /**
-   * What a purchase covers TODAY. The Android app cannot honour a web purchase until its BILLING_ENABLED flag is split
-   * (approved in the app session, not built), so `covers` above is an intention, not a shipped capability. The pages
-   * that define the purchase say only what is true (owner, 13 September 2026). When the app honours web purchases and it
-   * has been tested on a device, all five places go back to `covers` together: TECH_DEBT.md lists them.
-   */
-  coversToday: 'Pro in the web tools on this site',
   // The features live in tools/pro-copy.mjs (PRO_COPY), beside everything else said about each one, and PRO_FEATURES
   // is derived from it there. This held a second copy of the same four strings until 19 September 2026.
   /**
@@ -350,9 +349,9 @@ export const TOKENS = {
 
   proQualifier: PRO.qualifier,
   proCadence: PRO.cadence,
-  // No proCovers token: PRO.covers (the app honouring a web purchase) is not true yet, and a token for it is how it got
-  // onto /app/ unlisted. It comes back with the places TECH_DEBT.md names, not before.
-  proCoversToday: PRO.coversToday,
+  // {{proCovers}} replaced {{proCoversToday}} on 16 November 2026, the day the app was publicly listed. The token was
+  // withheld until then because a token is how this claim once reached /app/ while it was still untrue.
+  proCovers: PRO.covers,
   /**
    * What the buyer pays, in one place because it was written into four pages and a check, and all five were wrong
    * together (20 September 2026).
@@ -509,8 +508,8 @@ export const HOME_APP_CARD = {
   // seven" — so flipping ocr.inApp when Read a scan shipped in vc14 would have moved every
   // other count and left this one saying six.
   card: APP_TOOLS.length === WEB_TOOLS.length
-    ? `All ${word(WEB_TOOLS.length)} of these, on a phone. In testing, not yet on Play.`
-    : `${cap(word(APP_TOOLS.length))} of these ${word(WEB_TOOLS.length)}, on a phone. In testing, not yet on Play.`,
+    ? `All ${word(WEB_TOOLS.length)} of these, on a phone. Free on Google Play.`
+    : `${cap(word(APP_TOOLS.length))} of these ${word(WEB_TOOLS.length)}, on a phone. Free on Google Play.`,
   outline: true,
 };
 

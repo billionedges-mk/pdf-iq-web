@@ -160,12 +160,16 @@ for (const [label, env] of [['site, no flags', {}], ['site, Pro without sale', {
   // third time on this project: test the property, not the phrasing. The property is what the page must promise, and
   // the order it promises it in is copy.
   const buyFlat = readFileSync(join(ROOT, 'dist/pro/buy/index.html'), 'utf8').replace(/\s+/g, ' ');
-  const saysCoversToday = buyFlat.includes(PRO_OFFER.coversToday);
-  const excludesTheApp = /(does|will) not unlock anything in (the Android|this) app/.test(buyFlat);
+  // Flipped on 16 November 2026 with the copy. Until then this asserted the narrow scope and the exclusion, and
+  // refused PRO.covers outright; the purchase page is where someone hands over money, so what it promises about the
+  // app has to be checked in whichever direction is currently true.
+  const saysWhatItCovers = buyFlat.includes(PRO_OFFER.covers);
+  const reachesTheApp = /unlocks it there too/.test(buyFlat);
   const namesThePrice = buyFlat.includes(PRO_OFFER.price);
-  ok(saysCoversToday && excludesTheApp && namesThePrice && !buyFlat.includes(PRO_OFFER.covers),
-    '/pro/buy/ names the price, says what a purchase covers today, and says it unlocks nothing in the Android app'
-    + (saysCoversToday && excludesTheApp && namesThePrice ? '' : `\n        missing: ${[!namesThePrice && 'the price', !saysCoversToday && 'what it covers', !excludesTheApp && 'the Android exclusion'].filter(Boolean).join(', ')}`));
+  ok(saysWhatItCovers && reachesTheApp && namesThePrice
+    && !/(does|will) not unlock anything in (the Android|this) app/.test(buyFlat),
+    '/pro/buy/ names the price, says what a purchase covers, and says signing in to the Android app unlocks it there'
+    + (saysWhatItCovers && reachesTheApp && namesThePrice ? '' : `\n        missing: ${[!namesThePrice && 'the price', !saysWhatItCovers && 'what it covers', !reachesTheApp && 'the Android sentence'].filter(Boolean).join(', ')}`));
   const appPromise = [siteJs, readFileSync(join(ROOT, 'dist/pro/buy/index.html'), 'utf8')].some((t) => /or the app\?|any device you sign in on/.test(t));
   ok(!appPromise, 'nothing tells a buyer a purchase crosses to or from the Android app, or follows them to "any device"');
   // Signing in from a locked feature, and Batch saying its files stay behind.
